@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>XS Members — Tablero (Desktop)</title>
 
-  <!-- Tu fuente (incluye Nunito) -->
   <link rel="stylesheet" href="https://cadamenudo.github.io/UI-UX/css-fonts.css"/>
 
   <style>
@@ -30,10 +29,7 @@
     }
 
     /* ===== Layout ===== */
-    .app{
-      display:flex;
-      min-height:100vh;
-    }
+    .app{ display:flex; min-height:100vh; }
 
     /* ===== Sidebar ===== */
     .sidebar{
@@ -80,16 +76,9 @@
       cursor:pointer;
       user-select:none;
     }
-    .nav a:hover{
-      background:#f2f5ff;
-    }
-    .nav a.active{
-      background:var(--primary);
-      color:#fff;
-    }
-    .nav .spacer{
-      height:10px;
-    }
+    .nav a:hover{ background:#f2f5ff; }
+    .nav a.active{ background:var(--primary); color:#fff; }
+
     .nav .section-title{
       font-size:12px;
       font-weight:900;
@@ -112,16 +101,10 @@
       background:transparent;
     }
     .subnav a:hover{ background:#f7f7fb; }
-    .subnav a.active{
-      background:#eef2ff;
-      color:var(--primary);
-    }
+    .subnav a.active{ background:#eef2ff; color:var(--primary); }
 
     /* ===== Main ===== */
-    .main{
-      flex:1;
-      padding:26px 28px;
-    }
+    .main{ flex:1; padding:26px 28px; }
 
     .welcome{
       background:#fff;
@@ -139,18 +122,13 @@
       margin:8px 0 22px;
       box-shadow:0 10px 24px rgba(15,23,42,.05);
     }
-    .welcome span{
-      font-size:18px;
-      font-weight:800;
-      color:var(--muted);
-    }
 
-    /* Grid like screenshot: big center + right column */
+    /* ===== Grid (fila 1) ===== */
     .grid{
       display:grid;
       grid-template-columns: 1.45fr .95fr;
       gap:22px;
-      align-items:start;
+      align-items:stretch; /* <-- clave: mismas alturas */
     }
 
     .card{
@@ -160,10 +138,17 @@
       box-shadow:var(--shadow);
     }
 
-    /* ===== Stage Card ===== */
-    .stage{
-      padding:22px;
+    /* Hacer que ambas tarjetas se estiren igual en la fila 1 */
+    .grid > .card{ height:100%; }
+    .stage, .cadaMenudo{
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      min-height:0;
     }
+
+    /* ===== Stage Card ===== */
+    .stage{ padding:22px; }
     .stage .title{
       font-size:22px;
       font-weight:900;
@@ -286,67 +271,127 @@
       transition:.15s ease;
       user-select:none;
     }
-    .btn-dark{
-      background:#0b1220;
-      color:#fff;
-    }
+    .btn-dark{ background:#0b1220; color:#fff; }
     .btn-dark:hover{ transform:translateY(-1px); }
 
+    /* Empuja el botón hacia el fondo para igualar alturas visuales */
     .stageActions{
       display:flex;
       justify-content:flex-end;
-      margin-top:14px;
+      margin-top:auto; /* <-- clave */
+      padding-top:14px;
     }
 
-    /* ===== Right Top mini cards ===== */
-    .rightTop{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:16px;
-    }
-    .mini{
-      padding:16px;
-      min-height:138px;
-      display:flex;
-      flex-direction:column;
-      justify-content:space-between;
-    }
-    .mini .miniHead{
+    /* ===== Cada Menudo (Widget grande) ===== */
+    .cadaMenudo{ padding:18px; }
+
+    .cmTop{
       display:flex;
       align-items:flex-start;
       justify-content:space-between;
-      gap:10px;
+      gap:12px;
+      margin-bottom:12px;
     }
-    .mini .miniHead .brandText{
+    .cmBrand{
       font-weight:1000;
-      font-size:18px;
-      line-height:1.05;
+      font-size:22px;
+      line-height:1;
       color:var(--secondary);
     }
-    .mini .arrow{
-      width:34px;height:34px;border-radius:12px;
-      border:1px solid var(--stroke);
-      display:grid;place-items:center;
-      color:#334155;
-      background:#fff;
-      font-weight:900;
+    .cmBrand small{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:18px;height:18px;
+      border-radius:6px;
+      background:#eef2ff;
+      color:var(--primary);
+      font-size:12px;
+      margin-left:6px;
+      font-weight:1000;
     }
-    .mini .miniMeta{
+    .cmBtn{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      border:1px solid var(--stroke);
+      background:#fff;
+      padding:10px 12px;
+      border-radius:12px;
+      font-weight:900;
+      cursor:pointer;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .cmBtn .plus{
+      width:24px;height:24px;border-radius:8px;
+      background:#eef2ff;
+      color:var(--primary);
+      display:grid;place-items:center;
+      font-weight:1000;
+    }
+    .cmBanner{
+      background:#ecfdf5;
+      border:1px solid #bbf7d0;
+      color:#16a34a;
+      padding:12px 12px;
+      border-radius:14px;
+      font-weight:900;
       display:flex;
       align-items:center;
-      justify-content:space-between;
       gap:10px;
-      margin-top:10px;
-      padding-top:10px;
-      border-top:1px dashed #e7eaf0;
+      margin-bottom:14px;
+    }
+    .cmBanner .check{
+      width:22px;height:22px;border-radius:999px;
+      border:2px solid #22c55e;
+      display:grid;place-items:center;
+      font-size:12px;
+      line-height:0;
+      flex:0 0 auto;
+    }
+    .cmStats{
+      border:1px solid var(--stroke);
+      border-radius:14px;
+      background:#fff;
+      padding:14px;
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+      box-shadow:0 10px 24px rgba(15,23,42,.06);
+      margin-top:auto; /* <-- ayuda a usar toda la altura */
+    }
+    .cmStat{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 10px;
+      border-radius:12px;
+      background:#f8fafc;
+      min-width:0;
+    }
+    .cmIcon{
+      width:34px;height:34px;border-radius:999px;
+      display:grid;place-items:center;
+      background:#eef2ff;
+      color:var(--primary);
+      font-weight:1000;
+      flex:0 0 auto;
+    }
+    .cmK{
+      font-size:12px;
       color:var(--muted);
       font-weight:900;
-      font-size:12px;
+      margin-bottom:2px;
     }
-    .mini .miniValue{
-      font-size:24px;
+    .cmV{
+      font-size:14px;
       font-weight:1000;
-      color:#111827;
+      color:#0f172a;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:100%;
     }
 
     /* ===== Bottom area: MoneyMap + Video ===== */
@@ -427,10 +472,7 @@
       text-decoration:none;
     }
 
-    .videoWrap{
-      padding:0;
-      overflow:hidden;
-    }
+    .videoWrap{ padding:0; overflow:hidden; }
     .videoHeader{
       padding:16px 18px 10px;
       font-size:22px;
@@ -462,131 +504,20 @@
     }
     .video .play button:hover{ transform:scale(1.04); }
 
-    /* helper */
     .muted{ color:var(--muted); font-weight:800; }
 
-    /* Desktop-first: si quieres, comenta esto */
     @media (max-width: 1100px){
       .grid, .bottom{ grid-template-columns: 1fr; }
-      .rightTop{ grid-template-columns: 1fr 1fr; }
       .moneymap{ grid-template-columns: 1fr; }
       .sidebar{ width:260px; }
       .welcome{ font-size:28px; }
     }
-  /* --- Cada Menudo (Widget grande) --- */
-  .cadaMenudo{
-    padding:18px;
-    min-height: 318px;
-  }
-  .cmTop{
-    display:flex;
-    align-items:flex-start;
-    justify-content:space-between;
-    gap:12px;
-    margin-bottom:12px;
-  }
-  .cmBrand{
-    font-weight:1000;
-    font-size:22px;
-    line-height:1;
-    color:var(--secondary);
-  }
-  .cmBrand small{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    width:18px;height:18px;
-    border-radius:6px;
-    background:#eef2ff;
-    color:var(--primary);
-    font-size:12px;
-    margin-left:6px;
-    font-weight:1000;
-  }
-  .cmBtn{
-    display:inline-flex;
-    align-items:center;
-    gap:10px;
-    border:1px solid var(--stroke);
-    background:#fff;
-    padding:10px 12px;
-    border-radius:12px;
-    font-weight:900;
-    cursor:pointer;
-    user-select:none;
-  }
-  .cmBtn .plus{
-    width:24px;height:24px;border-radius:8px;
-    background:#eef2ff;
-    color:var(--primary);
-    display:grid;place-items:center;
-    font-weight:1000;
-  }
-  .cmBanner{
-    background:#ecfdf5;
-    border:1px solid #bbf7d0;
-    color:#16a34a;
-    padding:12px 12px;
-    border-radius:14px;
-    font-weight:900;
-    display:flex;
-    align-items:center;
-    gap:10px;
-    margin-bottom:14px;
-  }
-  .cmBanner .check{
-    width:22px;height:22px;border-radius:999px;
-    border:2px solid #22c55e;
-    display:grid;place-items:center;
-    font-size:12px;
-    line-height:0;
-  }
-
-  .cmStats{
-    border:1px solid var(--stroke);
-    border-radius:14px;
-    background:#fff;
-    padding:14px;
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:12px;
-    box-shadow:0 10px 24px rgba(15,23,42,.06);
-  }
-  .cmStat{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:10px 10px;
-    border-radius:12px;
-    background:#f8fafc;
-  }
-  .cmIcon{
-    width:34px;height:34px;border-radius:999px;
-    display:grid;place-items:center;
-    background:#eef2ff;
-    color:var(--primary);
-    font-weight:1000;
-  }
-  .cmK{
-    font-size:12px;
-    color:var(--muted);
-    font-weight:900;
-    margin-bottom:2px;
-  }
-  .cmV{
-    font-size:14px;
-    font-weight:1000;
-    color:#0f172a;
-  }
-</style>
-
   </style>
 </head>
 
 <body>
   <div class="app">
 
-    <!-- ===== Sidebar ===== -->
     <aside class="sidebar">
       <div class="brand">
         <div class="logo">XS</div>
@@ -611,15 +542,11 @@
       </nav>
     </aside>
 
-    <!-- ===== Main ===== -->
     <main class="main">
-      <div class="welcome">
-        Bienvenido, Frank 👋
-      </div>
+      <div class="welcome">Bienvenido, Frank 👋</div>
 
-      <!-- top grid -->
       <section class="grid">
-        <!-- stage card -->
+        <!-- Etapa financiera -->
         <div class="card stage">
           <h2 class="title">¿En qué etapa financiera estás?</h2>
           <div class="divider"></div>
@@ -657,62 +584,47 @@
           </div>
         </div>
 
-<!-- right: Cada Menudo (widget grande) -->
-<div class="card cadaMenudo">
+        <!-- Cada Menudo -->
+        <div class="card cadaMenudo">
+          <div class="cmTop">
+            <div class="cmBrand">Cada<br/>menudo<small>i</small></div>
+            <div class="cmBtn"><span class="plus">＋</span>Nueva Transacción</div>
+          </div>
 
-  <div class="cmTop">
-    <div class="cmBrand">
-      Cada<br/>menudo<small>i</small>
-    </div>
+          <div class="cmBanner">
+            <span class="check">✓</span>
+            SUPER: Tienes un sobrante de <strong>$2,759.51</strong>.
+          </div>
 
-    <div class="cmBtn">
-      <span class="plus">＋</span>
-      Nueva Transacción
-    </div>
-  </div>
+          <div class="cmStats">
+            <div class="cmStat">
+              <div class="cmIcon">↗</div>
+              <div>
+                <div class="cmK">Ingresos</div>
+                <div class="cmV">$12,250.00</div>
+              </div>
+            </div>
 
-  <div class="cmBanner">
-    <span class="check">✓</span>
-    SUPER: Tienes un sobrante de <strong>$2,759.51</strong>.
-  </div>
+            <div class="cmStat">
+              <div class="cmIcon">🧾</div>
+              <div>
+                <div class="cmK">Gastos</div>
+                <div class="cmV">$8,490.49</div>
+              </div>
+            </div>
 
-  <div class="cmStats">
-    <div class="cmStat">
-      <div class="cmIcon">↗</div>
-      <div>
-        <div class="cmK">Ingresos</div>
-        <div class="cmV">$12,250.00</div>
-      </div>
-    </div>
-
-    <div class="cmStat">
-      <div class="cmIcon">🧾</div>
-      <div>
-        <div class="cmK">Gastos</div>
-        <div class="cmV">$8,490.49</div>
-      </div>
-    </div>
-
-    <div class="cmStat">
-      <div class="cmIcon">💰</div>
-      <div>
-        <div class="cmK">Ahorros</div>
-        <div class="cmV">$1,000.00</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- (Opcional) si luego quieres agregar tabs y listas como en la imagen,
-       aquí puedes insertar un bloque "Últimas transacciones" y "Recordatorios" -->
-</div>
-
+            <div class="cmStat">
+              <div class="cmIcon">💰</div>
+              <div>
+                <div class="cmK">Ahorros</div>
+                <div class="cmV">$1,000.00</div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- bottom grid -->
       <section class="bottom">
-        <!-- money map -->
         <div class="card moneymap">
           <div class="mm-left">
             <div>
@@ -765,7 +677,6 @@
           </div>
         </div>
 
-        <!-- video -->
         <div class="card videoWrap">
           <div class="videoHeader">Ultimo PAX</div>
           <div class="video" aria-label="Video placeholder">
@@ -779,13 +690,10 @@
   </div>
 
   <script>
-    // Solo para demo: activar item del sidebar al hacer click (visual)
     const nav = document.getElementById('nav');
     nav.addEventListener('click', (e) => {
       const a = e.target.closest('a');
       if(!a) return;
-
-      // quitar active de todos
       [...nav.querySelectorAll('a')].forEach(x => x.classList.remove('active'));
       a.classList.add('active');
     });
