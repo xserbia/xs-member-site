@@ -473,6 +473,114 @@
       .sidebar{ width:260px; }
       .welcome{ font-size:28px; }
     }
+    <style>
+  /* --- Cada Menudo (Widget grande) --- */
+  .cadaMenudo{
+    padding:18px;
+    min-height: 318px;
+  }
+  .cmTop{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:12px;
+  }
+  .cmBrand{
+    font-weight:1000;
+    font-size:22px;
+    line-height:1;
+    color:var(--secondary);
+  }
+  .cmBrand small{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:18px;height:18px;
+    border-radius:6px;
+    background:#eef2ff;
+    color:var(--primary);
+    font-size:12px;
+    margin-left:6px;
+    font-weight:1000;
+  }
+  .cmBtn{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    border:1px solid var(--stroke);
+    background:#fff;
+    padding:10px 12px;
+    border-radius:12px;
+    font-weight:900;
+    cursor:pointer;
+    user-select:none;
+  }
+  .cmBtn .plus{
+    width:24px;height:24px;border-radius:8px;
+    background:#eef2ff;
+    color:var(--primary);
+    display:grid;place-items:center;
+    font-weight:1000;
+  }
+  .cmBanner{
+    background:#ecfdf5;
+    border:1px solid #bbf7d0;
+    color:#16a34a;
+    padding:12px 12px;
+    border-radius:14px;
+    font-weight:900;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .cmBanner .check{
+    width:22px;height:22px;border-radius:999px;
+    border:2px solid #22c55e;
+    display:grid;place-items:center;
+    font-size:12px;
+    line-height:0;
+  }
+
+  .cmStats{
+    border:1px solid var(--stroke);
+    border-radius:14px;
+    background:#fff;
+    padding:14px;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+    box-shadow:0 10px 24px rgba(15,23,42,.06);
+  }
+  .cmStat{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 10px;
+    border-radius:12px;
+    background:#f8fafc;
+  }
+  .cmIcon{
+    width:34px;height:34px;border-radius:999px;
+    display:grid;place-items:center;
+    background:#eef2ff;
+    color:var(--primary);
+    font-weight:1000;
+  }
+  .cmK{
+    font-size:12px;
+    color:var(--muted);
+    font-weight:900;
+    margin-bottom:2px;
+  }
+  .cmV{
+    font-size:14px;
+    font-weight:1000;
+    color:#0f172a;
+  }
+</style>
+
   </style>
 </head>
 
@@ -564,16 +672,55 @@
               </div>
             </div>
 
-            <div class="card mini">
-              <div class="miniHead">
-                <div class="brandText">mc<br/><span style="font-size:12px;color:var(--muted);font-weight:1000">El Menudo Cuenta</span></div>
-                <div class="arrow">→</div>
-              </div>
-              <div class="miniMeta">
-                <div>Mi Futuro</div>
-                <div class="miniValue">$0.00</div>
-              </div>
-            </div>
+<!-- right: Cada Menudo (widget grande) -->
+<div class="card cadaMenudo">
+
+  <div class="cmTop">
+    <div class="cmBrand">
+      Cada<br/>menudo<small>i</small>
+    </div>
+
+    <div class="cmBtn">
+      <span class="plus">＋</span>
+      Nueva Transacción
+    </div>
+  </div>
+
+  <div class="cmBanner">
+    <span class="check">✓</span>
+    SUPER: Tienes un sobrante de <strong>$2,759.51</strong>.
+  </div>
+
+  <div class="cmStats">
+    <div class="cmStat">
+      <div class="cmIcon">↗</div>
+      <div>
+        <div class="cmK">Ingresos</div>
+        <div class="cmV">$12,250.00</div>
+      </div>
+    </div>
+
+    <div class="cmStat">
+      <div class="cmIcon">🧾</div>
+      <div>
+        <div class="cmK">Gastos</div>
+        <div class="cmV">$8,490.49</div>
+      </div>
+    </div>
+
+    <div class="cmStat">
+      <div class="cmIcon">💰</div>
+      <div>
+        <div class="cmK">Ahorros</div>
+        <div class="cmV">$1,000.00</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- (Opcional) si luego quieres agregar tabs y listas como en la imagen,
+       aquí puedes insertar un bloque "Últimas transacciones" y "Recordatorios" -->
+</div>
+
           </div>
         </div>
       </section>
