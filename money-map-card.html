@@ -50,6 +50,7 @@ body {
 }
 
 .modal-content {
+  position: relative; /* IMPORTANTE: agregado */
   width: 100%;
   max-width: 1400px;
   height: 90vh;
@@ -65,6 +66,22 @@ body {
   width: 100%;
   height: 100%;
   border: none;
+}
+
+/* Loading spinner */
+.loading-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2rem;
+  color: #3b82f6;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 </style>
 </head>
@@ -473,6 +490,7 @@ function MoneyMapCard({ totales, userProfile, currency, ingresoBruto, ahorro, de
 // ============= MAIN APP =============
 function App() {
   const [showModal, setShowModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [moneyMapData, setMoneyMapData] = useState({
     totales: {
       activosTotales: 0,
@@ -497,11 +515,9 @@ function App() {
   // Escuchar mensajes del iframe del Money Map
   useEffect(() => {
     const handleMessage = (event) => {
-      // Verificar el origen por seguridad
       if (event.data && event.data.type === 'MONEY_MAP_DATA') {
-        console.log('Datos recibidos del Money Map:', event.data.data);
+        console.log('📥 Datos recibidos del Money Map:', event.data.data);
         setMoneyMapData(event.data.data);
-        setShowModal(false);
       }
     };
 
@@ -510,12 +526,23 @@ function App() {
   }, []);
 
   const handleOpenMoneyMap = () => {
+    console.log('🚀 Abriendo Money Map...');
     setShowModal(true);
+    setIsLoading(true);
   };
 
   const handleCloseModal = () => {
+    console.log('❌ Cerrando Money Map...');
     setShowModal(false);
+    setIsLoading(false);
   };
+
+  const handleIframeLoad = () => {
+    console.log('✅ Money Map cargado');
+    setIsLoading(false);
+  };
+
+  console.log('Estado del modal:', showModal);
 
   return (
     <div className="container">
@@ -524,52 +551,60 @@ function App() {
         onOpenMoneyMap={handleOpenMoneyMap}
       />
 
-{showModal && (
-  <div className="modal-overlay" onClick={handleCloseModal}>
-    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-      {/* Botón de cerrar */}
-      <button
-        onClick={handleCloseModal}
-        style={{
-          position: 'absolute',
-          top: '20px',
-          right: '20px',
-          zIndex: 10000,
-          background: 'rgba(0, 0, 0, 0.7)',
-          border: 'none',
-          width: '40px',
-          height: '40px',
-          borderRadius: '50%',
-          fontSize: '24px',
-          cursor: 'pointer',
-          color: 'white',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all 0.2s'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = '#ef4444';
-          e.currentTarget.style.transform = 'scale(1.1)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'rgba(0, 0, 0, 0.7)';
-          e.currentTarget.style.transform = 'scale(1)';
-        }}
-      >
-        ×
-      </button>
+      {showModal && (
+        <div className="modal-overlay" onClick={handleCloseModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            {/* Botón de cerrar */}
+            <button
+              onClick={handleCloseModal}
+              style={{
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                zIndex: 10000,
+                background: 'rgba(0, 0, 0, 0.7)',
+                border: 'none',
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                fontSize: '24px',
+                cursor: 'pointer',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#ef4444';
+                e.currentTarget.style.transform = 'scale(1.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(0, 0, 0, 0.7)';
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+            >
+              ×
+            </button>
 
-      {/* Iframe */}
-      <iframe 
-        src="https://xserbia.github.io/xs-member-site/money-map.html"
-        className="modal-iframe"
-        title="Money Map"
-        allow="fullscreen"
-      />
-    </div>
-  </div>
-)}
+            {/* Loading spinner */}
+            {isLoading && (
+              <div className="loading-spinner">
+                🔄
+              </div>
+            )}
+
+            {/* Iframe */}
+            <iframe 
+              src="https://xserbia.github.io/xs-member-site/money-map.html"
+              className="modal-iframe"
+              title="Money Map"
+              allow="fullscreen"
+              onLoad={handleIframeLoad}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
