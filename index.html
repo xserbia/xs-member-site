@@ -106,21 +106,135 @@
     /* ===== Main ===== */
     .main{ flex:1; padding:26px 28px; }
 
-    .welcome{
-      background:#fff;
-      border:1px solid var(--stroke);
-      border-radius:16px;
-      padding:18px 22px;
-      font-size:34px;
-      font-weight:900;
-      letter-spacing:-.02em;
+    /* ===== TOP ROW (Bienvenida + Etapa mini + Promo coaching) ===== */
+    .topRow{
+      display:grid;
+      grid-template-columns: 1.4fr 1fr 1fr;
+      gap:22px;
+      margin:8px 0 22px;
+      align-items:stretch;
+    }
+    .topRow .card{ height:100%; }
+
+    .welcomeCard{
+      padding:22px 24px;
       display:flex;
+      flex-direction:column;
+      justify-content:center;
+      min-height:120px;
+      box-shadow:0 10px 24px rgba(15,23,42,.05);
+    }
+    .welcomeTitle{
+      font-size:34px;
+      font-weight:1000;
+      letter-spacing:-.02em;
+      line-height:1.05;
+    }
+    .welcomeSub{
+      margin-top:8px;
+      color:var(--muted);
+      font-weight:700;
+      font-size:14px;
+    }
+
+    .stageMini{
+      padding:18px 18px 16px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      min-height:120px;
+    }
+    .stageMiniTop{
+      display:flex;
+      justify-content:space-between;
       align-items:center;
       gap:10px;
+    }
+    .stageBadge{
+      font-size:11px;
+      font-weight:1000;
+      background:#eef2ff;
+      color:var(--primary);
+      padding:6px 10px;
+      border-radius:999px;
+      letter-spacing:.05em;
+    }
+    .stagePercent{
+      font-size:20px;
+      font-weight:1000;
+      color:var(--secondary);
+    }
+    .stageMini h3{
+      margin:12px 0 4px;
+      font-size:18px;
+      font-weight:1000;
+    }
+    .stageMini p{
+      margin:0;
+      font-size:13px;
+      color:var(--muted);
+      font-weight:700;
+      line-height:1.35;
+    }
+    .miniProgress{
+      height:6px;
+      background:#e5e7eb;
+      border-radius:999px;
+      overflow:hidden;
+      margin-top:12px;
+    }
+    .miniBar{
+      width:64%;
+      height:100%;
+      background:linear-gradient(90deg,var(--primary),var(--secondary));
+    }
+    .miniBtn{
+      margin-top:12px;
+      padding:10px 12px;
+      font-size:13px;
       width:max-content;
-      max-width:100%;
-      margin:8px 0 22px;
-      box-shadow:0 10px 24px rgba(15,23,42,.05);
+    }
+
+    .coachingPromo{
+      padding:18px;
+      background:linear-gradient(135deg,#3956E8,#7459D9);
+      color:#fff;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      min-height:120px;
+    }
+    .promoBadge{
+      font-size:11px;
+      font-weight:1000;
+      background:rgba(255,255,255,.16);
+      padding:6px 10px;
+      border-radius:999px;
+      width:max-content;
+      letter-spacing:.05em;
+    }
+    .coachingPromo h3{
+      margin:12px 0 6px;
+      font-size:18px;
+      font-weight:1000;
+    }
+    .coachingPromo p{
+      margin:0;
+      font-size:13px;
+      opacity:.92;
+      font-weight:600;
+      line-height:1.35;
+    }
+    .btn-primary{
+      background:#fff;
+      color:var(--primary);
+    }
+    .btn-primary:hover{ transform:translateY(-1px); }
+    .promoBtn{
+      margin-top:12px;
+      padding:10px 12px;
+      font-size:13px;
+      width:max-content;
     }
 
     /* ===== Grid (fila 1) ===== */
@@ -128,7 +242,7 @@
       display:grid;
       grid-template-columns: 1.45fr .95fr;
       gap:22px;
-      align-items:stretch; /* <-- clave: mismas alturas */
+      align-items:stretch; /* mismas alturas */
     }
 
     .card{
@@ -138,7 +252,7 @@
       box-shadow:var(--shadow);
     }
 
-    /* Hacer que ambas tarjetas se estiren igual en la fila 1 */
+    /* ===== Stage Card grande + Cada Menudo grande ===== */
     .grid > .card{ height:100%; }
     .stage, .cadaMenudo{
       height:100%;
@@ -274,11 +388,10 @@
     .btn-dark{ background:#0b1220; color:#fff; }
     .btn-dark:hover{ transform:translateY(-1px); }
 
-    /* Empuja el botón hacia el fondo para igualar alturas visuales */
     .stageActions{
       display:flex;
       justify-content:flex-end;
-      margin-top:auto; /* <-- clave */
+      margin-top:auto;
       padding-top:14px;
     }
 
@@ -359,7 +472,7 @@
       grid-template-columns:repeat(3,1fr);
       gap:12px;
       box-shadow:0 10px 24px rgba(15,23,42,.06);
-      margin-top:auto; /* <-- ayuda a usar toda la altura */
+      margin-top:auto;
     }
     .cmStat{
       display:flex;
@@ -507,10 +620,10 @@
     .muted{ color:var(--muted); font-weight:800; }
 
     @media (max-width: 1100px){
+      .topRow{ grid-template-columns: 1fr; }
       .grid, .bottom{ grid-template-columns: 1fr; }
       .moneymap{ grid-template-columns: 1fr; }
       .sidebar{ width:260px; }
-      .welcome{ font-size:28px; }
     }
   </style>
 </head>
@@ -543,10 +656,37 @@
     </aside>
 
     <main class="main">
-      <div class="welcome">Bienvenido, Frank 👋</div>
 
+      <!-- TOP ROW -->
+      <section class="topRow">
+        <div class="card welcomeCard">
+          <div class="welcomeTitle">Bienvenido, Frank 👋</div>
+          <div class="welcomeSub">Aquí tienes tu resumen financiero hoy.</div>
+        </div>
+
+        <div class="card stageMini">
+          <div class="stageMiniTop">
+            <div class="stageBadge">ETAPA</div>
+            <div class="stagePercent">64%</div>
+          </div>
+          <h3>Supervivencia</h3>
+          <p>Estás trabajando en cubrir tus gastos básicos.</p>
+          <div class="miniProgress"><div class="miniBar"></div></div>
+          <button class="btn btn-dark miniBtn">Ver detalles</button>
+        </div>
+
+        <div class="card coachingPromo">
+          <div class="promoBadge">XS COACHING</div>
+          <div>
+            <h3>¿Listo para avanzar?</h3>
+            <p>Recibe guía personalizada para salir de esta etapa más rápido.</p>
+          </div>
+          <button class="btn btn-primary promoBtn">Reservar Sesión</button>
+        </div>
+      </section>
+
+      <!-- FILA 1 (Etapa grande + Cada Menudo) -->
       <section class="grid">
-        <!-- Etapa financiera -->
         <div class="card stage">
           <h2 class="title">¿En qué etapa financiera estás?</h2>
           <div class="divider"></div>
@@ -584,7 +724,6 @@
           </div>
         </div>
 
-        <!-- Cada Menudo -->
         <div class="card cadaMenudo">
           <div class="cmTop">
             <div class="cmBrand">Cada<br/>menudo<small>i</small></div>
@@ -624,6 +763,7 @@
         </div>
       </section>
 
+      <!-- FILA 2 (Money Map + Video) -->
       <section class="bottom">
         <div class="card moneymap">
           <div class="mm-left">
@@ -686,6 +826,7 @@
           </div>
         </div>
       </section>
+
     </main>
   </div>
 
