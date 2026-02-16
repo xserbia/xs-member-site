@@ -850,9 +850,25 @@ function App() {
     };
   }, [ingresoBruto, ahorro, deudas, gastosDiarios, seguros, impuestos, efectivo, inversiones, retiro, bienesRaices, bienesPersonales, tarjetas, lineaPersonal, lineaPropiedad, hipoteca, prestamoAuto, prestamosEducativos, otrosPrestamos, modoCalculo]);
 
-  return (
-    <div className="app-container" style={{position: 'relative', minHeight: '100vh'}}>
-      {/* Onboarding Modal */}
+return (
+  <div className="app-container" style={{position: 'relative', minHeight: '100vh'}}>
+    {/* Sincronizar datos con Card */}
+    <DataSync
+      totales={totales}
+      userProfile={userProfile}
+      currency={currency}
+      ingresoBruto={ingresoBruto}
+      ahorro={ahorro}
+      deudas={deudas}
+      gastosEsenciales={gastosEsenciales}
+      reservaEmergencia={reservaEmergencia}
+      pagoMensualDeudas={pagoMensualDeudas}
+      modoCalculo={modoCalculo}
+      impuestos={impuestos}
+      seguros={seguros}
+    />
+    
+    {/* Onboarding Modal */}
       <OnboardingModal
         isOpen={showOnboardingModal}
         onClose={() => setShowOnboardingModal(false)}
