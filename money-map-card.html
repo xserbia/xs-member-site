@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Money Map Card</title>
+
 <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
@@ -13,33 +14,33 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800;9..144,900&display=swap" rel="stylesheet">
 
 <style>
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ✅ EMBED MODE: sin padding, sin fondo, ocupa 100% del iframe */
+html, body {
+  height: 100%;
+}
 body {
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #f1f5f9;
+  background: transparent;      /* <-- antes #f1f5f9 */
   color: #0f172a;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  padding: 2rem;
+  padding: 0;                   /* <-- antes 2rem */
+  overflow: hidden;             /* <-- evita scroll interno raro */
 }
 
 .container {
-  max-width: 680px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: 100%;              /* <-- antes 680px */
+  margin: 0;                    /* <-- antes auto */
+  padding: 0;                   /* <-- por si acaso */
 }
 
-/* Modal Styles */
+/* Modal Styles (se queda igual) */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(0, 0, 0, 0.8);
   z-index: 9999;
   display: flex;
@@ -50,7 +51,7 @@ body {
 }
 
 .modal-content {
-  position: relative; /* IMPORTANTE: agregado */
+  position: relative;
   width: 100%;
   max-width: 1400px;
   height: 90vh;
@@ -68,7 +69,6 @@ body {
   border: none;
 }
 
-/* Loading spinner */
 .loading-spinner {
   position: absolute;
   top: 50%;
@@ -78,13 +78,13 @@ body {
   color: #3b82f6;
   animation: spin 1s linear infinite;
 }
-
 @keyframes spin {
   from { transform: translate(-50%, -50%) rotate(0deg); }
   to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 </style>
 </head>
+
 <body>
 <div id="root"></div>
 
@@ -95,7 +95,7 @@ const formatCurrency = (value, currencyCode = 'USD') => {
   if (value === null || value === undefined || value === '') return '$0';
   const num = typeof value === 'string' ? parseFloat(value.replace(/,/g, '')) : value;
   if (isNaN(num)) return '$0';
-  
+
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: currencyCode,
@@ -113,29 +113,29 @@ function MoneyMapCard({ totales, userProfile, currency, ingresoBruto, ahorro, de
   const getMoneyMapStatus = () => {
     const hasNoData = !ingresoBruto && !totales.activosTotales && !totales.pasivosTotales;
     if (hasNoData) return 'new';
-    
-    const hasPartialData = !gastosEsenciales || !reservaEmergencia || 
+
+    const hasPartialData = !gastosEsenciales || !reservaEmergencia ||
                           (!ingresoBruto || !ahorro || !deudas) ||
                           (totales.activosTotales === 0 && totales.pasivosTotales === 0);
     if (hasPartialData) return 'incomplete';
-    
+
     return 'complete';
   };
 
   const status = getMoneyMapStatus();
-  
+
   const mult = modoCalculo === 'anual' ? 1 : 12;
   const ingresoBrutoAnual = ingresoBruto * mult;
   const ingresoNetoAnual = ingresoBrutoAnual - ((parseNumber(userProfile.impuestos) || 0) * mult) - ((parseNumber(userProfile.seguros) || 0) * mult);
   const ahorroAnual = ahorro * mult;
   const pagoMensualDeuda = modoCalculo === 'anual' ? deudas / 12 : deudas;
-  
+
   const mesesReserva = gastosEsenciales > 0 ? reservaEmergencia / gastosEsenciales : 0;
   const tasaAhorro = ingresoBrutoAnual > 0 ? ahorroAnual / ingresoBrutoAnual : 0;
   const dtiNeto = (ingresoNetoAnual / 12) > 0 ? pagoMensualDeuda / (ingresoNetoAnual / 12) : 0;
   const patrimonioActivos = totales.activosTotales > 0 ? totales.patrimonioNeto / totales.activosTotales : 0;
   const riquezaNeta = ingresoBrutoAnual > 0 ? totales.patrimonioNeto / ingresoBrutoAnual : 0;
-  
+
   const getRiquezaBenchmark = (age) => {
     const benchmarks = [
       {age:25, good:2.5, great:5}, {age:30, good:3, great:6}, {age:35, good:3.5, great:7},
@@ -143,10 +143,10 @@ function MoneyMapCard({ totales, userProfile, currency, ingresoBruto, ahorro, de
       {age:55, good:5.5, great:11}, {age:60, good:6, great:12}, {age:65, good:6.5, great:13},
       {age:70, good:7, great:14}
     ];
-    
+
     if(age < 25) return benchmarks[0];
     if(age >= 70) return benchmarks[benchmarks.length-1];
-    
+
     for(let i=0; i<benchmarks.length-1; i++) {
       if(age >= benchmarks[i].age && age < benchmarks[i+1].age) {
         const t = (age - benchmarks[i].age) / (benchmarks[i+1].age - benchmarks[i].age);
@@ -158,13 +158,13 @@ function MoneyMapCard({ totales, userProfile, currency, ingresoBruto, ahorro, de
     }
     return benchmarks[benchmarks.length-1];
   };
-  
+
   const edad = parseInt(userProfile.edad) || 30;
   const benchmark = getRiquezaBenchmark(edad);
 
   const getMetricStatus = (value, goodThreshold, greatThreshold, isInverse = false) => {
     if (!isFinite(value)) return { level: 'none', emoji: '—', color: '#94a3b8' };
-    
+
     if (isInverse) {
       if (value <= greatThreshold) return { level: 'great', emoji: '✅', color: '#10b981' };
       if (value <= goodThreshold) return { level: 'good', emoji: '⚠️', color: '#f59e0b' };
@@ -177,41 +177,11 @@ function MoneyMapCard({ totales, userProfile, currency, ingresoBruto, ahorro, de
   };
 
   const metricas = {
-    mesesReserva: {
-      nombre: 'Reserva',
-      valor: mesesReserva.toFixed(1) + 'm',
-      meta: '6m',
-      status: getMetricStatus(mesesReserva, 3, 6),
-      icon: '💧'
-    },
-    tasaAhorro: {
-      nombre: 'Ahorro',
-      valor: (tasaAhorro * 100).toFixed(0) + '%',
-      meta: '30%',
-      status: getMetricStatus(tasaAhorro, 0.15, 0.30),
-      icon: '🐷'
-    },
-    dtiNeto: {
-      nombre: 'DTI',
-      valor: (dtiNeto * 100).toFixed(0) + '%',
-      meta: '≤36%',
-      status: getMetricStatus(dtiNeto, 0.43, 0.36, true),
-      icon: '🏦'
-    },
-    patrimonioActivos: {
-      nombre: 'Patrimonio',
-      valor: (patrimonioActivos * 100).toFixed(0) + '%',
-      meta: '70%',
-      status: getMetricStatus(patrimonioActivos, 0.50, 0.70),
-      icon: '💎'
-    },
-    riquezaNeta: {
-      nombre: 'Riqueza',
-      valor: riquezaNeta.toFixed(1) + 'x',
-      meta: benchmark.great.toFixed(1) + 'x',
-      status: getMetricStatus(riquezaNeta, benchmark.good, benchmark.great),
-      icon: '📈'
-    }
+    mesesReserva: { nombre: 'Reserva', valor: mesesReserva.toFixed(1) + 'm', meta: '6m', status: getMetricStatus(mesesReserva, 3, 6), icon: '💧' },
+    tasaAhorro: { nombre: 'Ahorro', valor: (tasaAhorro * 100).toFixed(0) + '%', meta: '30%', status: getMetricStatus(tasaAhorro, 0.15, 0.30), icon: '🐷' },
+    dtiNeto: { nombre: 'DTI', valor: (dtiNeto * 100).toFixed(0) + '%', meta: '≤36%', status: getMetricStatus(dtiNeto, 0.43, 0.36, true), icon: '🏦' },
+    patrimonioActivos: { nombre: 'Patrimonio', valor: (patrimonioActivos * 100).toFixed(0) + '%', meta: '70%', status: getMetricStatus(patrimonioActivos, 0.50, 0.70), icon: '💎' },
+    riquezaNeta: { nombre: 'Riqueza', valor: riquezaNeta.toFixed(1) + 'x', meta: benchmark.great.toFixed(1) + 'x', status: getMetricStatus(riquezaNeta, benchmark.good, benchmark.great), icon: '📈' }
   };
 
   const calculateOverallScore = () => {
@@ -219,11 +189,11 @@ function MoneyMapCard({ totales, userProfile, currency, ingresoBruto, ahorro, de
     const greatCount = statusValues.filter(s => s === 'great').length;
     const goodCount = statusValues.filter(s => s === 'good').length;
     const total = statusValues.filter(s => s !== 'none').length;
-    
+
     if (total === 0) return { level: 'none', color: '#94a3b8', emoji: '—', text: 'Sin datos' };
-    
+
     const score = (greatCount * 100 + goodCount * 60) / total;
-    
+
     if (score >= 85) return { level: 'great', color: '#10b981', emoji: '🎉', text: 'Excelente' };
     if (score >= 65) return { level: 'good', color: '#f59e0b', emoji: '👍', text: 'Bien' };
     return { level: 'needs-work', color: '#ef4444', emoji: '⚡', text: 'Mejorar' };
@@ -254,7 +224,7 @@ function MoneyMapCard({ totales, userProfile, currency, ingresoBruto, ahorro, de
           borderRadius: '50%',
           filter: 'blur(30px)'
         }}></div>
-        
+
         <div style={{position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column'}}>
           <div style={{marginBottom: '1.25rem'}}>
             <div style={{fontSize: '2.5rem', marginBottom: '0.5rem'}}>🗺️</div>
@@ -418,7 +388,6 @@ function MoneyMapCard({ totales, userProfile, currency, ingresoBruto, ahorro, de
             padding: '0.75rem',
             border: `2px solid ${metrica.status.color}20`,
             position: 'relative',
-            transition: 'all 0.2s ease',
             cursor: 'pointer',
             display: 'flex',
             flexDirection: 'column',
@@ -427,18 +396,10 @@ function MoneyMapCard({ totales, userProfile, currency, ingresoBruto, ahorro, de
             <div style={{position: 'absolute', top: '6px', right: '6px', fontSize: '1rem', lineHeight: '1'}}>
               {metrica.status.emoji}
             </div>
-            <div style={{fontSize: '1.5rem', marginBottom: '0.35rem', lineHeight: '1'}}>
-              {metrica.icon}
-            </div>
-            <div style={{fontSize: '0.65rem', color: '#64748b', marginBottom: '0.25rem', fontWeight: '600', lineHeight: '1.2'}}>
-              {metrica.nombre}
-            </div>
-            <div style={{fontSize: '1.1rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.25rem', fontFamily: "'Fraunces', serif", lineHeight: '1'}}>
-              {metrica.valor}
-            </div>
-            <div style={{fontSize: '0.6rem', color: metrica.status.color, fontWeight: '600', lineHeight: '1'}}>
-              Meta: {metrica.meta}
-            </div>
+            <div style={{fontSize: '1.5rem', marginBottom: '0.35rem', lineHeight: '1'}}>{metrica.icon}</div>
+            <div style={{fontSize: '0.65rem', color: '#64748b', marginBottom: '0.25rem', fontWeight: '600', lineHeight: '1.2'}}>{metrica.nombre}</div>
+            <div style={{fontSize: '1.1rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.25rem', fontFamily: "'Fraunces', serif", lineHeight: '1'}}>{metrica.valor}</div>
+            <div style={{fontSize: '0.6rem', color: metrica.status.color, fontWeight: '600', lineHeight: '1'}}>Meta: {metrica.meta}</div>
           </div>
         ))}
       </div>
@@ -466,7 +427,7 @@ function MoneyMapCard({ totales, userProfile, currency, ingresoBruto, ahorro, de
             {formatCurrency(totales.patrimonioNeto, currency)}
           </div>
         </div>
-        
+
         <button onClick={onOpenMoneyMap} style={{
           padding: '0.65rem 1.25rem',
           background: '#3b82f6',
@@ -476,7 +437,6 @@ function MoneyMapCard({ totales, userProfile, currency, ingresoBruto, ahorro, de
           fontSize: '0.85rem',
           fontWeight: '700',
           cursor: 'pointer',
-          transition: 'all 0.2s ease',
           fontFamily: "'DM Sans', sans-serif",
           whiteSpace: 'nowrap'
         }}>
@@ -487,22 +447,12 @@ function MoneyMapCard({ totales, userProfile, currency, ingresoBruto, ahorro, de
   );
 }
 
-// ============= MAIN APP =============
 function App() {
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [moneyMapData, setMoneyMapData] = useState({
-    totales: {
-      activosTotales: 0,
-      pasivosTotales: 0,
-      patrimonioNeto: 0
-    },
-    userProfile: {
-      nombre: '',
-      edad: '30',
-      impuestos: 0,
-      seguros: 0
-    },
+    totales: { activosTotales: 0, pasivosTotales: 0, patrimonioNeto: 0 },
+    userProfile: { nombre: '', edad: '30', impuestos: 0, seguros: 0 },
     currency: 'USD',
     ingresoBruto: 0,
     ahorro: 0,
@@ -512,49 +462,27 @@ function App() {
     modoCalculo: 'mensual'
   });
 
-  // Escuchar mensajes del iframe del Money Map
   useEffect(() => {
     const handleMessage = (event) => {
       if (event.data && event.data.type === 'MONEY_MAP_DATA') {
-        console.log('📥 Datos recibidos del Money Map:', event.data.data);
         setMoneyMapData(event.data.data);
       }
     };
-
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  const handleOpenMoneyMap = () => {
-    console.log('🚀 Abriendo Money Map...');
-    setShowModal(true);
-    setIsLoading(true);
-  };
-
-  const handleCloseModal = () => {
-    console.log('❌ Cerrando Money Map...');
-    setShowModal(false);
-    setIsLoading(false);
-  };
-
-  const handleIframeLoad = () => {
-    console.log('✅ Money Map cargado');
-    setIsLoading(false);
-  };
-
-  console.log('Estado del modal:', showModal);
+  const handleOpenMoneyMap = () => { setShowModal(true); setIsLoading(true); };
+  const handleCloseModal = () => { setShowModal(false); setIsLoading(false); };
+  const handleIframeLoad = () => { setIsLoading(false); };
 
   return (
     <div className="container">
-      <MoneyMapCard
-        {...moneyMapData}
-        onOpenMoneyMap={handleOpenMoneyMap}
-      />
+      <MoneyMapCard {...moneyMapData} onOpenMoneyMap={handleOpenMoneyMap} />
 
       {showModal && (
         <div className="modal-overlay" onClick={handleCloseModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            {/* Botón de cerrar */}
             <button
               onClick={handleCloseModal}
               style={{
@@ -587,15 +515,9 @@ function App() {
               ×
             </button>
 
-            {/* Loading spinner */}
-            {isLoading && (
-              <div className="loading-spinner">
-                🔄
-              </div>
-            )}
+            {isLoading && (<div className="loading-spinner">🔄</div>)}
 
-            {/* Iframe */}
-            <iframe 
+            <iframe
               src="https://xserbia.github.io/xs-member-site/money-map.html"
               className="modal-iframe"
               title="Money Map"
@@ -609,7 +531,9 @@ function App() {
   );
 }
 
-ReactDOM.render(<App />, document.getElementById('root'));
+/* React 18: createRoot */
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
 </script>
 </body>
 </html>
