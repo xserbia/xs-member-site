@@ -50,7 +50,7 @@ body {
 }
 
 .modal-content {
-  position: relative; /* IMPORTANTE: agregado */
+  position: relative;
   width: 100%;
   max-width: 1400px;
   height: 90vh;
@@ -231,12 +231,13 @@ function MoneyMapCard({ totales, userProfile, currency, ingresoBruto, ahorro, de
 
   const overallScore = calculateOverallScore();
 
+  // ============= CARD ESTADO "NEW" =============
   if (status === 'new') {
     return (
       <div style={{
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         borderRadius: '16px',
-        padding: '1.75rem',
+        padding: '1.5rem',
         color: 'white',
         boxShadow: '0 4px 20px rgba(102, 126, 234, 0.25)',
         display: 'flex',
@@ -256,21 +257,30 @@ function MoneyMapCard({ totales, userProfile, currency, ingresoBruto, ahorro, de
         }}></div>
         
         <div style={{position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column'}}>
-          <div style={{marginBottom: '1.25rem'}}>
-            <div style={{fontSize: '2.5rem', marginBottom: '0.5rem'}}>🗺️</div>
-            <h3 style={{fontSize: '1.35rem', fontWeight: '800', marginBottom: '0.5rem', fontFamily: "'Fraunces', serif"}}>
-              Descubre tu Money Map
-            </h3>
-            <p style={{fontSize: '0.875rem', opacity: 0.9, lineHeight: '1.5'}}>
-              Análisis completo de 5 métricas financieras clave
-            </p>
+          {/* Header con logo y título en línea */}
+          <div style={{display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem'}}>
+            <div style={{fontSize: '3rem', lineHeight: '1'}}>🗺️</div>
+            <div style={{flex: 1}}>
+              <h3 style={{
+                fontSize: '1.35rem',
+                fontWeight: '800',
+                marginBottom: '0.25rem',
+                fontFamily: "'Fraunces', serif",
+                lineHeight: '1.2'
+              }}>
+                Descubre tu Money Map
+              </h3>
+              <p style={{fontSize: '0.8rem', opacity: 0.9, lineHeight: '1.3'}}>
+                Análisis completo de 5 métricas clave
+              </p>
+            </div>
           </div>
 
           <div style={{
             background: 'rgba(255,255,255,0.15)',
             borderRadius: '10px',
             padding: '1rem',
-            marginBottom: '1.25rem',
+            marginBottom: '1rem',
             backdropFilter: 'blur(10px)',
             flex: 1
           }}>
@@ -289,7 +299,7 @@ function MoneyMapCard({ totales, userProfile, currency, ingresoBruto, ahorro, de
 
           <button onClick={onOpenMoneyMap} style={{
             width: '100%',
-            padding: '0.875rem 1.5rem',
+            padding: '0.75rem 1.5rem',
             background: 'white',
             color: '#667eea',
             border: 'none',
@@ -308,25 +318,36 @@ function MoneyMapCard({ totales, userProfile, currency, ingresoBruto, ahorro, de
     );
   }
 
+  // ============= CARD ESTADO "INCOMPLETE" =============
   if (status === 'incomplete') {
     return (
       <div style={{
         background: 'white',
         borderRadius: '16px',
-        padding: '1.75rem',
+        padding: '1.5rem',
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
         border: '2px solid #fbbf24',
         display: 'flex',
         flexDirection: 'column'
       }}>
-        <div style={{marginBottom: '1.25rem'}}>
-          <div style={{fontSize: '2.5rem', marginBottom: '0.5rem'}}>⚠️</div>
-          <h3 style={{fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.35rem', color: '#f59e0b', fontFamily: "'Fraunces', serif"}}>
-            Money Map Incompleto
-          </h3>
-          <p style={{color: '#64748b', fontSize: '0.85rem', lineHeight: '1.4'}}>
-            Completa más datos para tu análisis
-          </p>
+        {/* Header con logo y título en línea */}
+        <div style={{display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem'}}>
+          <div style={{fontSize: '3rem', lineHeight: '1'}}>⚠️</div>
+          <div style={{flex: 1}}>
+            <h3 style={{
+              fontSize: '1.25rem',
+              fontWeight: '800',
+              marginBottom: '0.25rem',
+              color: '#f59e0b',
+              fontFamily: "'Fraunces', serif",
+              lineHeight: '1.2'
+            }}>
+              Money Map Incompleto
+            </h3>
+            <p style={{color: '#64748b', fontSize: '0.8rem', lineHeight: '1.3'}}>
+              Completa más datos para tu análisis
+            </p>
+          </div>
         </div>
 
         <div style={{
@@ -334,7 +355,7 @@ function MoneyMapCard({ totales, userProfile, currency, ingresoBruto, ahorro, de
           border: '2px solid #fbbf24',
           borderRadius: '10px',
           padding: '1rem',
-          marginBottom: '1.25rem',
+          marginBottom: '1rem',
           flex: 1
         }}>
           <div style={{fontWeight: '700', marginBottom: '0.65rem', color: '#92400e', fontSize: '0.875rem'}}>
@@ -352,7 +373,7 @@ function MoneyMapCard({ totales, userProfile, currency, ingresoBruto, ahorro, de
 
         <button onClick={onOpenMoneyMap} style={{
           width: '100%',
-          padding: '0.875rem 1.5rem',
+          padding: '0.75rem 1.5rem',
           background: '#f59e0b',
           color: 'white',
           border: 'none',
@@ -369,39 +390,54 @@ function MoneyMapCard({ totales, userProfile, currency, ingresoBruto, ahorro, de
     );
   }
 
+  // ============= CARD ESTADO "COMPLETE" =============
   return (
     <div style={{
       background: 'white',
       borderRadius: '16px',
-      padding: '1.75rem',
+      padding: '1.5rem',
       boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
       border: `2px solid ${overallScore.color}`,
       display: 'flex',
       flexDirection: 'column'
     }}>
+      {/* Header con logo y título en línea + score badge */}
       <div style={{
         display: 'flex',
-        alignItems: 'flex-start',
+        alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: '1.25rem',
+        marginBottom: '1rem',
         paddingBottom: '0.75rem',
-        borderBottom: '2px solid #e2e8f0'
+        borderBottom: '2px solid #e2e8f0',
+        gap: '1rem'
       }}>
-        <div style={{flex: 1}}>
-          <h3 style={{fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.25rem', fontFamily: "'Fraunces', serif", color: '#1e293b'}}>
-            🗺️ Money Map
-          </h3>
-          <p style={{color: '#64748b', fontSize: '0.8rem', lineHeight: '1.3'}}>
-            Resumen de salud financiera
-          </p>
+        <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1}}>
+          <div style={{fontSize: '2rem', lineHeight: '1'}}>🗺️</div>
+          <div style={{flex: 1}}>
+            <h3 style={{
+              fontSize: '1.1rem',
+              fontWeight: '800',
+              marginBottom: '0.15rem',
+              fontFamily: "'Fraunces', serif",
+              color: '#1e293b',
+              lineHeight: '1.2'
+            }}>
+              Money Map
+            </h3>
+            <p style={{color: '#64748b', fontSize: '0.75rem', lineHeight: '1.2'}}>
+              Resumen de salud financiera
+            </p>
+          </div>
         </div>
+        
         <div style={{
           background: `linear-gradient(135deg, ${overallScore.color} 0%, ${overallScore.color}dd 100%)`,
           color: 'white',
           padding: '0.5rem 0.75rem',
           borderRadius: '10px',
           textAlign: 'center',
-          minWidth: '75px'
+          minWidth: '70px',
+          flexShrink: 0
         }}>
           <div style={{fontSize: '1.5rem', lineHeight: '1'}}>{overallScore.emoji}</div>
           <div style={{fontSize: '0.65rem', marginTop: '0.25rem', opacity: 0.95, fontWeight: '600', letterSpacing: '0.3px'}}>
@@ -410,7 +446,7 @@ function MoneyMapCard({ totales, userProfile, currency, ingresoBruto, ahorro, de
         </div>
       </div>
 
-      <div style={{display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.75rem', marginBottom: '1.25rem', flex: 1}}>
+      <div style={{display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.75rem', marginBottom: '1rem', flex: 1}}>
         {Object.entries(metricas).map(([key, metrica]) => (
           <div key={key} style={{
             background: '#f8fafc',
