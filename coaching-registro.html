@@ -3,34 +3,34 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Coaching Personalizado — Registro</title>
+  <title>Coaching Personalizado 1:1</title>
 
-  <!-- Tipografía (puedes cambiar a tu fuente de marca) -->
+  <!-- Fuente similar al mockup (puedes cambiarla) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      --bg:#f6f8ff;
-      --card:#ffffff;
       --ink:#0b1220;
-      --muted:#64748b;
-      --primary:#3956E8;
-      --secondary:#7459D9;
-      --stroke:#e6eaf2;
-      --radius:22px;
-      --shadow: 0 18px 60px rgba(15, 23, 42, .10);
+      --muted:#6b7a90;
+      --primary:#134b78;        /* azul del mockup */
+      --primary2:#0e3f66;
+      --bg:#f4f7fb;
+      --card:#ffffff;
+      --stroke:#e7edf6;
+      --shadow: 0 20px 60px rgba(15, 23, 42, .10);
+      --radius:26px;
     }
 
-    *{ box-sizing:border-box; }
+    *{box-sizing:border-box}
     body{
       margin:0;
-      font-family:"DM Sans", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-family:"DM Sans",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
       color:var(--ink);
       background:
-        radial-gradient(1200px 600px at 18% 10%, rgba(57,86,232,.18), transparent 55%),
-        radial-gradient(900px 500px at 80% 30%, rgba(116,89,217,.16), transparent 55%),
+        radial-gradient(900px 500px at 70% 15%, rgba(19,75,120,.10), transparent 60%),
+        radial-gradient(800px 500px at 25% 30%, rgba(19,75,120,.08), transparent 60%),
         var(--bg);
     }
 
@@ -42,407 +42,253 @@
       padding:28px 16px;
     }
 
+    /* ====== LAYOUT PRINCIPAL (como el mockup) ====== */
     .hero{
-      width:min(1120px, 100%);
-      background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.78));
-      border:1px solid rgba(230,234,242,.9);
-      box-shadow:var(--shadow);
-      border-radius:28px;
-      overflow:hidden;
-    }
-
-    /* Top bar */
-    .topbar{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding:18px 22px;
-      background:linear-gradient(90deg, rgba(57,86,232,.10), rgba(116,89,217,.08));
-      border-bottom:1px solid rgba(230,234,242,.9);
-      gap:12px;
-    }
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      font-weight:800;
-      letter-spacing:-.2px;
-    }
-    .logo{
-      width:38px; height:38px;
-      border-radius:12px;
-      background:linear-gradient(135deg, var(--primary), var(--secondary));
-      box-shadow:0 12px 30px rgba(57,86,232,.25);
-    }
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      font-weight:700;
-      font-size:.9rem;
-      padding:8px 12px;
-      border-radius:999px;
-      color:#0b1220;
-      background:rgba(255,255,255,.65);
-      border:1px solid rgba(230,234,242,.9);
-    }
-    .pill svg{ width:16px; height:16px; }
-
-    /* Main grid */
-    .grid{
+      width:min(1180px, 100%);
       display:grid;
-      grid-template-columns: 1.05fr .95fr;
-      gap:18px;
-      padding:22px;
+      grid-template-columns: 1fr 1.1fr;
+      gap:34px;
+      align-items:end;
     }
 
-    /* Left: Coach card */
-    .coachCard{
-      background:var(--card);
-      border:1px solid rgba(230,234,242,.9);
-      border-radius:var(--radius);
-      padding:22px;
-      display:flex;
-      flex-direction:column;
-      gap:14px;
+    /* ====== IZQUIERDA: TITULOS + FOTO + PRICE TAG ====== */
+    .left{
       position:relative;
-      overflow:hidden;
-    }
-    .coachCard:before{
-      content:"";
-      position:absolute;
-      inset:-2px -2px auto auto;
-      width:220px; height:220px;
-      background:radial-gradient(circle at 30% 30%, rgba(57,86,232,.18), transparent 60%);
-      border-radius:50%;
-      transform:translate(40px,-60px);
-      pointer-events:none;
+      padding:10px 0;
     }
 
-    .headline{
-      margin:0;
-      font-size:2.2rem;
-      line-height:1.05;
-      letter-spacing:-.9px;
-    }
-    .sub{
-      margin:0;
-      color:var(--muted);
-      font-size:1.02rem;
-      line-height:1.45;
-      max-width:52ch;
-    }
-
-    .coachRow{
-      display:flex;
-      gap:16px;
-      align-items:center;
-      margin-top:6px;
-    }
-    .coachPhoto{
-      width:112px;
-      height:112px;
-      border-radius:22px;
-      border:1px solid rgba(230,234,242,.9);
-      background:#eef2ff;
-      overflow:hidden;
-      flex:0 0 auto;
-    }
-    .coachPhoto img{
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      object-position:center 18%;
-      display:block;
-    }
-
-    .coachMeta{
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      min-width:0;
-    }
-    .coachName{
-      font-size:1.2rem;
+    .kicker{
+      text-align:center;
       font-weight:800;
-      margin:0;
+      color:var(--primary);
       letter-spacing:-.2px;
-    }
-    .badge{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      width:fit-content;
-      padding:7px 10px;
-      border-radius:999px;
-      border:1px solid rgba(230,234,242,.9);
-      background:rgba(57,86,232,.08);
-      color:#1f2a44;
-      font-weight:700;
-      font-size:.9rem;
-    }
-    .badge .dot{
-      width:10px; height:10px; border-radius:50%;
-      background:linear-gradient(135deg, var(--primary), var(--secondary));
+      font-size:2.1rem;
+      margin:0 0 6px;
     }
 
-    .bullets{
-      margin:10px 0 0;
-      padding:0;
-      list-style:none;
-      display:grid;
-      gap:10px;
+    .title{
+      text-align:center;
+      font-weight:900;
+      color:var(--primary);
+      letter-spacing:-1px;
+      line-height:1.02;
+      margin:0;
+      font-size:4.1rem;
     }
-    .bullets li{
+
+    .title .thin{
+      display:block;
+      font-weight:900;
+    }
+
+    .coachWrap{
+      margin-top:26px;
       display:flex;
-      gap:10px;
-      align-items:flex-start;
-      color:#1f2a44;
+      justify-content:flex-start;
+      align-items:flex-end;
+      position:relative;
+      min-height:520px;
     }
-    .check{
-      flex:0 0 auto;
-      width:20px; height:20px;
-      border-radius:6px;
-      background:rgba(16,185,129,.14);
-      display:grid;
-      place-items:center;
-      margin-top:2px;
-      border:1px solid rgba(16,185,129,.25);
-    }
-    .check svg{ width:14px; height:14px; }
 
-    .priceBar{
-      margin-top:auto;
-      background:linear-gradient(135deg, rgba(57,86,232,.10), rgba(116,89,217,.08));
-      border:1px solid rgba(230,234,242,.9);
+    .coachImg{
+      width:min(520px, 100%);
+      max-width:520px;
+      height:auto;
+      display:block;
+      filter: drop-shadow(0 24px 40px rgba(15, 23, 42, .18));
       border-radius:18px;
-      padding:14px 16px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      flex-wrap:wrap;
-    }
-    .priceBar b{
-      font-size:1.2rem;
-      letter-spacing:-.3px;
-    }
-    .small{
-      color:var(--muted);
-      font-size:.92rem;
     }
 
-    /* Right: Form card */
-    .formCard{
-      background:var(--card);
-      border:1px solid rgba(230,234,242,.9);
-      border-radius:var(--radius);
-      padding:22px;
+    /* Price badge inferior izquierda */
+    .priceBadge{
+      position:absolute;
+      left:210px; /* mueve esto si cambias el tamaño de la imagen */
+      bottom:24px;
+      background:rgba(255,255,255,.92);
+      border:1px solid rgba(231,237,246,.9);
+      box-shadow: 0 18px 40px rgba(15, 23, 42, .10);
+      border-radius:18px;
+      padding:12px 14px;
+      max-width:320px;
+      backdrop-filter: blur(6px);
     }
-    .formTitle{
-      margin:0 0 12px;
-      font-size:1.25rem;
-      font-weight:800;
-      letter-spacing:-.3px;
+    .priceTop{
+      display:flex;
+      align-items:baseline;
+      gap:10px;
+      font-weight:900;
+      color:var(--primary);
+      letter-spacing:-.2px;
+      margin-bottom:2px;
+    }
+    .priceTop .from{font-size:1.05rem; font-weight:800; opacity:.95}
+    .priceTop .amt{font-size:2.2rem; color:#f59e0b; line-height:1}
+    .priceSub{
+      color:var(--primary);
+      font-weight:700;
+      font-size:.96rem;
+      line-height:1.25;
+      opacity:.95;
+    }
+
+    /* ====== DERECHA: CARD FORM ====== */
+    .right{
+      display:flex;
+      justify-content:flex-end;
+    }
+
+    .card{
+      width:min(560px, 100%);
+      background:var(--card);
+      border:1px solid rgba(231,237,246,.95);
+      box-shadow:var(--shadow);
+      border-radius:var(--radius);
+      padding:34px 34px 26px;
+    }
+
+    .card h2{
+      margin:0 0 18px;
+      font-size:2.05rem;
+      letter-spacing:-.6px;
+      color:#3a4a5f;
+      font-weight:900;
+      text-align:center;
     }
 
     .field{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-      margin-top:12px;
+      margin-top:14px;
     }
-    label{
-      font-size:.92rem;
-      font-weight:700;
-      color:#1f2a44;
-    }
-    input{
+
+    .input{
       width:100%;
-      padding:14px 14px;
-      border-radius:14px;
-      border:1px solid var(--stroke);
-      outline:none;
-      font-size:1rem;
-      background:#fbfcff;
-      transition:.18s ease;
-    }
-    input:focus{
-      border-color:rgba(57,86,232,.55);
-      box-shadow:0 0 0 4px rgba(57,86,232,.14);
+      padding:16px 18px;
+      border-radius:12px;
+      border:2px solid #d8e3f0;
       background:#fff;
+      font-size:1.18rem;
+      outline:none;
+      transition:.15s ease;
+      color:#314255;
+    }
+    .input::placeholder{ color:#8aa0b8; font-weight:500; }
+    .input:focus{
+      border-color: rgba(19,75,120,.65);
+      box-shadow:0 0 0 5px rgba(19,75,120,.12);
     }
 
     .cta{
-      margin-top:16px;
       width:100%;
-      border:none;
-      border-radius:16px;
-      padding:14px 16px;
-      font-size:1.05rem;
-      font-weight:800;
-      cursor:pointer;
+      border:0;
+      margin-top:18px;
+      padding:18px 18px;
+      border-radius:12px;
+      background: linear-gradient(180deg, #1b6aa4, var(--primary2));
       color:#fff;
-      background:linear-gradient(135deg, var(--primary), var(--secondary));
-      box-shadow:0 14px 34px rgba(57,86,232,.22);
+      font-size:1.5rem;
+      font-weight:900;
+      letter-spacing:-.3px;
+      cursor:pointer;
+      box-shadow: 0 18px 40px rgba(19,75,120,.25);
       transition: transform .12s ease, filter .12s ease;
     }
-    .cta:hover{ transform: translateY(-1px); filter:brightness(1.02); }
-    .cta:active{ transform: translateY(0px); }
+    .cta:hover{ transform: translateY(-1px); filter:brightness(1.03); }
+    .cta:active{ transform: translateY(0); }
 
-    .secureRow{
+    .secure{
+      margin-top:16px;
       display:flex;
       align-items:center;
       justify-content:center;
       gap:10px;
-      color:var(--muted);
-      font-size:.92rem;
-      margin-top:12px;
-    }
-    .secureRow svg{ width:18px; height:18px; }
-
-    .legal{
-      margin-top:14px;
-      color:var(--muted);
-      font-size:.85rem;
-      line-height:1.4;
-    }
-    .legal a{
       color:var(--primary);
-      text-decoration:none;
-      font-weight:700;
+      font-weight:800;
+      letter-spacing:-.2px;
     }
-    .legal a:hover{ text-decoration:underline; }
+    .secure svg{ width:18px; height:18px; }
 
-    /* Responsive */
-    @media (max-width: 980px){
-      .grid{ grid-template-columns: 1fr; }
-      .headline{ font-size:2rem; }
-      .coachRow{ align-items:flex-start; }
+    /* ====== RESPONSIVE ====== */
+    @media (max-width: 1050px){
+      .hero{ grid-template-columns: 1fr; gap:18px; align-items:start; }
+      .right{ justify-content:center; }
+      .coachWrap{ justify-content:center; }
+      .priceBadge{ left:50%; transform:translateX(-10%); }
+      .kicker,.title{ text-align:center; }
     }
-    @media (max-width: 520px){
-      .headline{ font-size:1.8rem; }
-      .coachPhoto{ width:92px; height:92px; border-radius:18px; }
-      .topbar{ padding:14px 14px; }
-      .grid{ padding:14px; }
+
+    @media (max-width: 620px){
+      .kicker{ font-size:1.6rem; }
+      .title{ font-size:2.6rem; }
+      .card{ padding:22px 18px 18px; border-radius:22px; }
+      .card h2{ font-size:1.5rem; }
+      .input{ font-size:1.05rem; padding:14px 14px; }
+      .cta{ font-size:1.25rem; padding:16px 16px; }
+      .coachWrap{ min-height:auto; }
+      .priceBadge{ position:static; transform:none; margin:14px auto 0; }
     }
   </style>
 </head>
 
 <body>
   <div class="wrap">
-    <main class="hero" role="main">
-      <div class="topbar">
-        <div class="brand">
-          <div class="logo" aria-hidden="true"></div>
-          <div>Coaching Personalizado</div>
-        </div>
+    <main class="hero">
+      <!-- IZQUIERDA -->
+      <section class="left" aria-label="Hero coaching">
+        <h1 class="kicker">Empieza tu</h1>
+        <p class="title">
+          Coaching Personalizado
+          <span class="thin">Uno a Uno con Andrés</span>
+        </p>
 
-        <div class="pill" title="Transacción segura">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M7 10V8a5 5 0 0 1 10 0v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            <path d="M6 10h12v10H6V10Z" stroke="currentColor" stroke-width="2" />
-            <path d="M12 14v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-          Pago seguro
-        </div>
-      </div>
+        <div class="coachWrap">
+          <!-- Reemplaza el src por tu archivo real -->
+          <img class="coachImg" src="XS-10.jpg" alt="Andrés - Coach" />
 
-      <section class="grid">
-        <!-- LEFT -->
-        <div class="coachCard">
-          <h1 class="headline">Empieza tu Coaching 1:1</h1>
-          <p class="sub">
-            Tu primera sesión es el punto de partida: clarificamos tu situación, definimos metas y sales con un plan concreto
-            para las próximas semanas.
-          </p>
-
-          <div class="coachRow">
-            <div class="coachPhoto">
-              <!-- Reemplaza src por tu imagen. Ideal: PNG/JPG 600x800 -->
-              <img src="XS-10.jpg" alt="Foto del coach" />
+          <div class="priceBadge" aria-label="Precio">
+            <div class="priceTop">
+              <span class="from">¡Inicia solo</span>
+              <span class="amt">$199!</span>
             </div>
-            <div class="coachMeta">
-              <p class="coachName">Andrés</p>
-              <span class="badge"><span class="dot" aria-hidden="true"></span>Coach Personal</span>
-              <div class="small">Sesiones por videollamada · Agenda flexible</div>
-            </div>
-          </div>
-
-          <ul class="bullets">
-            <li>
-              <span class="check" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path d="M20 6 9 17l-5-5" stroke="#0f766e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </span>
-              <div><b>Plan personalizado</b> basado en tus números y tu realidad.</div>
-            </li>
-            <li>
-              <span class="check" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path d="M20 6 9 17l-5-5" stroke="#0f766e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </span>
-              <div><b>Prioridades claras</b>: deudas, ahorro, metas y próximos pasos.</div>
-            </li>
-            <li>
-              <span class="check" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path d="M20 6 9 17l-5-5" stroke="#0f766e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </span>
-              <div><b>Seguimiento</b> con tareas y enfoque semanal.</div>
-            </li>
-          </ul>
-
-          <div class="priceBar">
-            <div>
-              <div class="small">Desde</div>
-              <b>$199</b> <span class="small">/ sesión</span>
-            </div>
-            <div class="small">Garantía de satisfacción · Cupos limitados</div>
+            <div class="priceSub">Garantía de reembolso si no estás satisfecho</div>
           </div>
         </div>
-
-        <!-- RIGHT -->
-        <aside class="formCard">
-          <h2 class="formTitle">Regístrate para continuar</h2>
-
-          <!-- Nota: Esto es un mockup. Conecta action="" a tu backend / Wix / Stripe Checkout -->
-          <form action="#" method="post" autocomplete="on">
-            <div class="field">
-              <label for="name">Nombre completo</label>
-              <input id="name" name="name" type="text" placeholder="Tu nombre" required />
-            </div>
-
-            <div class="field">
-              <label for="email">Correo electrónico</label>
-              <input id="email" name="email" type="email" placeholder="tu@correo.com" required />
-            </div>
-
-            <div class="field">
-              <label for="phone">Teléfono (opcional)</label>
-              <input id="phone" name="phone" type="tel" placeholder="+1 (___) ___-____" />
-            </div>
-
-            <button class="cta" type="submit">Continuar al pago</button>
-
-            <div class="secureRow">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M12 2 20 6v7c0 5-3.5 9-8 9s-8-4-8-9V6l8-4Z" stroke="currentColor" stroke-width="2"/>
-                <path d="M9.5 12.5 11 14l3.5-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              Tus datos están protegidos
-            </div>
-
-            <p class="legal">
-              Al continuar, aceptas nuestros <a href="#" target="_blank" rel="noopener">Términos</a> y la
-              <a href="#" target="_blank" rel="noopener">Política de Privacidad</a>.
-            </p>
-          </form>
-        </aside>
       </section>
+
+      <!-- DERECHA -->
+      <aside class="right" aria-label="Registro">
+        <div class="card">
+          <h2>Regístrate para Coaching Uno a Uno</h2>
+
+          <!-- Mock form: conecta action a tu backend / Wix / Stripe checkout -->
+          <form action="#" method="post">
+            <div class="field">
+              <input class="input" type="text" name="nombre" placeholder="Nombre Completo" required />
+            </div>
+
+            <div class="field">
+              <input class="input" type="email" name="email" placeholder="Correo Electrónico" required />
+            </div>
+
+            <div class="field">
+              <input class="input" type="tel" name="telefono" placeholder="Teléfono" />
+            </div>
+
+            <div class="field">
+              <input class="input" type="text" name="postal" placeholder="Código Postal" />
+            </div>
+
+            <button class="cta" type="submit">Empezar</button>
+
+            <div class="secure">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M7 10V8a5 5 0 0 1 10 0v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M6 10h12v10H6V10Z" stroke="currentColor" stroke-width="2"/>
+                <path d="M12 14v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              Pago Seguro
+            </div>
+          </form>
+        </div>
+      </aside>
     </main>
   </div>
 </body>
