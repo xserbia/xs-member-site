@@ -1,539 +1,773 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Money Map Card</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>XS Members — Tablero (Desktop)</title>
 
-<script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+  <link rel="stylesheet" href="https://cadamenudo.github.io/UI-UX/css-fonts.css"/>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800;9..144,900&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --primary:#3956E8;
+      --secondary:#7459D9;
+      --accent:#E8C239;
+      --bg:#f3f5f9;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --stroke:#e5e7eb;
+      --shadow:0 14px 34px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:"Nunito",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
 
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
+    /* ===== Layout ===== */
+    .app{ display:flex; min-height:100vh; }
 
-/* ✅ EMBED MODE: sin padding, sin fondo, ocupa 100% del iframe */
-html, body {
-  height: 100%;
-}
-body {
-  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: transparent;      /* <-- antes #f1f5f9 */
-  color: #0f172a;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  padding: 0;                   /* <-- antes 2rem */
-  overflow: hidden;             /* <-- evita scroll interno raro */
-}
+    /* ===== Sidebar ===== */
+    .sidebar{
+      width:290px;
+      background:#fff;
+      border-right:1px solid var(--stroke);
+      padding:26px 22px;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:8px 10px 18px;
+      margin-bottom:10px;
+    }
+    .brand .logo{
+      width:44px;height:44px;border-radius:12px;
+      background:linear-gradient(135deg, var(--primary), var(--secondary));
+      display:grid;place-items:center;
+      color:#fff;font-weight:900;
+    }
+    .brand .name{
+      font-weight:900;
+      letter-spacing:.2px;
+      font-size:18px;
+      line-height:1.1;
+    }
+    .nav{
+      margin-top:12px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .nav a{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      text-decoration:none;
+      color:var(--text);
+      font-weight:700;
+      padding:12px 14px;
+      border-radius:14px;
+      transition:.15s ease;
+      cursor:pointer;
+      user-select:none;
+    }
+    .nav a:hover{ background:#f2f5ff; }
+    .nav a.active{ background:var(--primary); color:#fff; }
 
-.container {
-  width: 100%;
-  max-width: 100%;              /* <-- antes 680px */
-  margin: 0;                    /* <-- antes auto */
-  padding: 0;                   /* <-- por si acaso */
-}
+    .nav .section-title{
+      font-size:12px;
+      font-weight:900;
+      color:var(--muted);
+      margin:14px 10px 6px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+    .subnav{
+      margin-left:12px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .subnav a{
+      padding:10px 12px;
+      font-weight:700;
+      color:#1f2937;
+      border-radius:12px;
+      background:transparent;
+    }
+    .subnav a:hover{ background:#f7f7fb; }
+    .subnav a.active{ background:#eef2ff; color:var(--primary); }
 
-/* Modal Styles (se queda igual) */
-.modal-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  overflow-y: auto;
-}
+    /* ===== Main ===== */
+    .main{ flex:1; padding:26px 28px; }
 
-.modal-content {
-  position: relative;
-  width: 100%;
-  max-width: 1400px;
-  height: 90vh;
-  background: white;
-  border-radius: 20px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 25px 70px rgba(0,0,0,0.5);
-}
+    .card{
+      background:var(--card);
+      border:1px solid var(--stroke);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+    }
 
-.modal-iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-}
+    /* ===== TOP ROW ===== */
+    .topRow{
+      display:grid;
+      grid-template-columns: 1.05fr 1.7fr .85fr;
+      gap:22px;
+      margin:8px 0 22px;
+      align-items:stretch;
+    }
+    .topRow .card{ height:100%; }
 
-.loading-spinner {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 2rem;
-  color: #3b82f6;
-  animation: spin 1s linear infinite;
-}
-@keyframes spin {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to { transform: translate(-50%, -50%) rotate(360deg); }
-}
-</style>
+    .welcomeCard{
+      padding:18px 22px;
+      display:flex;
+      align-items:center;
+      min-height:86px;
+      box-shadow:0 10px 24px rgba(15,23,42,.05);
+    }
+    .welcomeTitle{
+      font-size:34px;
+      font-weight:1000;
+      letter-spacing:-.02em;
+      line-height:1.05;
+      white-space:nowrap;
+    }
+
+    /* Tabs Etapas */
+    .etapasCard{
+      padding:14px 16px;
+      display:flex;
+      align-items:center;
+      min-height:86px;
+      overflow:hidden;
+    }
+    .etapasWrap{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      width:100%;
+      overflow:auto;
+      padding-bottom:2px;
+      scrollbar-width: none;
+    }
+    .etapasWrap::-webkit-scrollbar{ display:none; }
+
+    .pillTab{
+      flex:0 0 auto;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid #dbe1f0;
+      background:#fff;
+      font-weight:900;
+      font-size:13px;
+      color:#111827;
+      box-shadow:0 6px 16px rgba(15,23,42,.06);
+      cursor:pointer;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .pillTab .dot{
+      width:10px;height:10px;border-radius:3px;
+      background:#ef4444;
+    }
+    .pillTab[data-etapa="1"] .dot{ background:#ef4444; }
+    .pillTab[data-etapa="2"] .dot{ background:#f59e0b; }
+    .pillTab[data-etapa="3"] .dot{ background:#eab308; }
+    .pillTab[data-etapa="4"] .dot{ background:#22c55e; }
+    .pillTab[data-etapa="5"] .dot{ background:#3b82f6; }
+
+    .pillTab.active{
+      border-color:#c7d2fe;
+      box-shadow:0 10px 22px rgba(57,86,232,.12);
+      background:#f7f8ff;
+    }
+
+    /* Coaching promo */
+    .coachCard{
+      padding:10px;
+      display:grid;
+      grid-template-columns: 86px 1fr;
+      gap:12px;
+      align-items:center;
+      min-height:86px;
+    }
+    .coachImg{
+      width:86px;
+      height:66px;
+      border-radius:14px;
+      overflow:hidden;
+      border:1px solid var(--stroke);
+      background:#f1f5f9;
+      display:grid;
+      place-items:center;
+    }
+    .coachImg img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+    }
+    .coachInfo{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      min-width:0;
+    }
+    .coachTitle{
+      font-weight:1000;
+      font-size:22px;
+      line-height:1;
+      color:#0f172a;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:0;
+      cursor:pointer;
+      font-weight:1000;
+      font-family:inherit;
+      transition:.15s ease;
+      user-select:none;
+      width:max-content;
+      font-size:13px;
+    }
+    .btn-outline{
+      background:#fff;
+      border:1px solid #c7d2fe;
+      color:#1d4ed8;
+    }
+    .btn-outline:hover{ transform:translateY(-1px); }
+    .btn-dark{ background:#0b1220; color:#fff; }
+    .btn-dark:hover{ transform:translateY(-1px); }
+
+    /* ===== Grid fila 1 ===== */
+    .grid{
+      display:grid;
+      grid-template-columns: 1.45fr .95fr;
+      gap:22px;
+      align-items:stretch;
+    }
+    .grid > .card{ height:100%; }
+    .stage, .cadaMenudo{
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+    }
+
+    /* ===== Stage Card ===== */
+    .stage{ padding:22px; }
+    .stage .title{
+      font-size:22px;
+      font-weight:900;
+      text-align:center;
+      margin:0 0 14px;
+      color:var(--secondary);
+    }
+    .stage .divider{
+      height:2px;
+      background:#eae7ff;
+      width:72%;
+      margin:0 auto 16px;
+      border-radius:999px;
+    }
+    .stageRow{
+      display:grid;
+      grid-template-columns: 84px 1fr 150px;
+      gap:14px;
+      align-items:start;
+    }
+    .sos{
+      width:70px;height:70px;border-radius:16px;
+      background:linear-gradient(135deg,#ff3b30,#ff8a3d);
+      display:grid;place-items:center;
+      color:#fff;font-weight:1000;
+      letter-spacing:.06em;
+      box-shadow:0 10px 20px rgba(255,59,48,.25);
+      margin-top:6px;
+    }
+    .stageInfo h3{ margin:0; font-size:20px; font-weight:1000; }
+    .stageInfo p{ margin:6px 0 0; color:var(--muted); font-weight:700; font-size:14px; }
+
+    .progressBox{
+      border:1px solid #dbeafe;
+      background:#eff6ff;
+      border-radius:14px;
+      padding:12px;
+      text-align:center;
+    }
+    .progressBox .label{
+      font-size:11px;
+      color:#2563eb;
+      font-weight:900;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+    }
+    .progressBox .value{
+      margin-top:6px;
+      font-size:30px;
+      font-weight:1000;
+      color:#1d4ed8;
+    }
+
+    .needs{
+      margin-top:14px;
+      border:1px solid #fcd34d;
+      background:#fff7d6;
+      border-radius:14px;
+      padding:12px 14px;
+    }
+    .needsTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .needsTop .left{
+      font-weight:900;
+      font-size:12px;
+      color:#92400e;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .bar{
+      flex:1;
+      height:8px;
+      border-radius:999px;
+      background:#fde68a;
+      overflow:hidden;
+      border:1px solid rgba(146,64,14,.18);
+      margin-left:8px;
+    }
+    .bar > i{
+      display:block;
+      height:100%;
+      width:50%;
+      background:#f59e0b;
+      border-radius:999px;
+    }
+    .needs ul{
+      margin:0;
+      padding-left:18px;
+      color:#7c2d12;
+      font-weight:800;
+      font-size:12.5px;
+      line-height:1.6;
+    }
+    .stageActions{
+      display:flex;
+      justify-content:flex-end;
+      margin-top:auto;
+      padding-top:14px;
+    }
+
+    /* ===== Cada Menudo ===== */
+    .cadaMenudo{ padding:18px; }
+    .cmTop{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    .cmBrand{
+      font-weight:1000;
+      font-size:22px;
+      line-height:1;
+      color:var(--secondary);
+    }
+    .cmBrand small{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:18px;height:18px;
+      border-radius:6px;
+      background:#eef2ff;
+      color:var(--primary);
+      font-size:12px;
+      margin-left:6px;
+      font-weight:1000;
+    }
+    .cmBtn{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      border:1px solid var(--stroke);
+      background:#fff;
+      padding:10px 12px;
+      border-radius:12px;
+      font-weight:900;
+      cursor:pointer;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .cmBtn .plus{
+      width:24px;height:24px;border-radius:8px;
+      background:#eef2ff;
+      color:var(--primary);
+      display:grid;place-items:center;
+      font-weight:1000;
+    }
+    .cmBanner{
+      background:#ecfdf5;
+      border:1px solid #bbf7d0;
+      color:#16a34a;
+      padding:12px 12px;
+      border-radius:14px;
+      font-weight:900;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-bottom:14px;
+    }
+    .cmBanner .check{
+      width:22px;height:22px;border-radius:999px;
+      border:2px solid #22c55e;
+      display:grid;place-items:center;
+      font-size:12px;
+      line-height:0;
+      flex:0 0 auto;
+    }
+    .cmStats{
+      border:1px solid var(--stroke);
+      border-radius:14px;
+      background:#fff;
+      padding:14px;
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+      box-shadow:0 10px 24px rgba(15,23,42,.06);
+      margin-top:auto;
+    }
+    .cmStat{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 10px;
+      border-radius:12px;
+      background:#f8fafc;
+      min-width:0;
+    }
+    .cmIcon{
+      width:34px;height:34px;border-radius:999px;
+      display:grid;place-items:center;
+      background:#eef2ff;
+      color:var(--primary);
+      font-weight:1000;
+      flex:0 0 auto;
+    }
+    .cmK{
+      font-size:12px;
+      color:var(--muted);
+      font-weight:900;
+      margin-bottom:2px;
+    }
+    .cmV{
+      font-size:14px;
+      font-weight:1000;
+      color:#0f172a;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:100%;
+    }
+
+    /* ===== Bottom area: MoneyMap + Video ===== */
+    .bottom{
+      margin-top:22px;
+      display:grid;
+      grid-template-columns: 1.45fr .95fr;
+      gap:22px;
+      align-items:start;
+    }
+
+    /* ✅ NUEVO: card de Money Map como contenedor del iframe */
+    .moneymapEmbed{
+      padding:0;                 /* importante: el contenido lo maneja el iframe */
+      overflow:hidden;           /* para respetar radius */
+      display:flex;
+      flex-direction:column;
+      min-height:360px;          /* ajustable */
+    }
+
+    .mmFrame{
+      width:100%;
+      height:360px;              /* <-- ajusta este número (320–420 suele ser ideal) */
+      border:0;
+      display:block;
+      background:transparent;
+    }
+
+    /* Opcional: header arriba del iframe (si lo quieres) */
+    .mmHeader{
+      padding:16px 18px 10px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      border-bottom:1px solid var(--stroke);
+      background:#fff;
+    }
+    .mmTitle{
+      font-weight:1000;
+      font-size:22px;
+      line-height:1.05;
+    }
+    .mmSub{
+      margin-top:6px;
+      color:var(--muted);
+      font-weight:800;
+      font-size:12.5px;
+    }
+
+    .videoWrap{ padding:0; overflow:hidden; }
+    .videoHeader{
+      padding:16px 18px 10px;
+      font-size:22px;
+      font-weight:1000;
+      background:transparent;
+    }
+    .video{
+      position:relative;
+      width:100%;
+      aspect-ratio: 16/9;
+      background:linear-gradient(135deg,#0ea5e9,#1d4ed8 60%, #7c3aed);
+      border-top:1px solid var(--stroke);
+    }
+    .video .play{
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+    }
+    .video .play button{
+      width:72px;height:72px;border-radius:999px;
+      border:2px solid rgba(255,255,255,.85);
+      background:rgba(0,0,0,.18);
+      color:#fff;
+      font-size:28px;
+      cursor:pointer;
+      backdrop-filter: blur(6px);
+      transition:.15s ease;
+    }
+    .video .play button:hover{ transform:scale(1.04); }
+
+    .muted{ color:var(--muted); font-weight:800; }
+
+    @media (max-width: 1100px){
+      .topRow{ grid-template-columns: 1fr; }
+      .grid, .bottom{ grid-template-columns: 1fr; }
+      .sidebar{ width:260px; }
+      .mmFrame{ height:380px; } /* un poquito más alto en 1 columna */
+    }
+  </style>
 </head>
 
 <body>
-<div id="root"></div>
+  <div class="app">
 
-<script type="text/babel">
-const { useState, useEffect } = React;
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">XS</div>
+        <div>
+          <div class="name">XAVIER</div>
+          <div class="muted" style="font-size:12px;margin-top:2px;">Members</div>
+        </div>
+      </div>
 
-const formatCurrency = (value, currencyCode = 'USD') => {
-  if (value === null || value === undefined || value === '') return '$0';
-  const num = typeof value === 'string' ? parseFloat(value.replace(/,/g, '')) : value;
-  if (isNaN(num)) return '$0';
+      <nav class="nav" id="nav">
+        <a class="active" data-key="tablero">Tablero</a>
+        <a data-key="pax">Pregúntale a Xavier</a>
+        <a data-key="coaching">XS Coaching</a>
+        <a data-key="calculadoras">Calculadoras</a>
 
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currencyCode,
-    maximumFractionDigits: 0
-  }).format(num);
-};
+        <div class="section-title">Conocimiento</div>
+        <div class="subnav">
+          <a data-key="riesgo">Manejo de riesgo</a>
+          <a data-key="deuda">Peligro al endeudarse</a>
+          <a data-key="gratificacion">Gratificación inmediata</a>
+        </div>
+      </nav>
+    </aside>
 
-const parseNumber = (value) => {
-  if (value === null || value === undefined || value === '') return 0;
-  const num = typeof value === 'string' ? parseFloat(value.replace(/,/g, '')) : value;
-  return isNaN(num) ? 0 : num;
-};
+    <main class="main">
 
-function MoneyMapCard({ totales, userProfile, currency, ingresoBruto, ahorro, deudas, gastosEsenciales, reservaEmergencia, modoCalculo, onOpenMoneyMap }) {
-  const getMoneyMapStatus = () => {
-    const hasNoData = !ingresoBruto && !totales.activosTotales && !totales.pasivosTotales;
-    if (hasNoData) return 'new';
+      <!-- TOP ROW -->
+      <section class="topRow">
+        <div class="card welcomeCard">
+          <div class="welcomeTitle">Bienvenido, Frank 👋</div>
+        </div>
 
-    const hasPartialData = !gastosEsenciales || !reservaEmergencia ||
-                          (!ingresoBruto || !ahorro || !deudas) ||
-                          (totales.activosTotales === 0 && totales.pasivosTotales === 0);
-    if (hasPartialData) return 'incomplete';
+        <div class="card etapasCard">
+          <div class="etapasWrap" id="etapasWrap">
+            <div class="pillTab active" data-etapa="1"><span class="dot"></span>Etapa 1</div>
+            <div class="pillTab" data-etapa="2"><span class="dot"></span>Etapa 2</div>
+            <div class="pillTab" data-etapa="3"><span class="dot"></span>Etapa 3</div>
+            <div class="pillTab" data-etapa="4"><span class="dot"></span>Etapa 4</div>
+            <div class="pillTab" data-etapa="5"><span class="dot"></span>Etapa 5</div>
+          </div>
+        </div>
 
-    return 'complete';
-  };
+        <div class="card coachCard">
+          <div class="coachImg">
+            <img src="https://images.unsplash.com/photo-1603415526960-f7e0328d69c2?auto=format&fit=crop&w=300&q=60" alt="Coach"/>
+          </div>
+          <div class="coachInfo">
+            <div class="coachTitle">Uno a Uno</div>
+            <button class="btn btn-outline">Reservar Sesión</button>
+          </div>
+        </div>
+      </section>
 
-  const status = getMoneyMapStatus();
+      <!-- FILA 1 -->
+      <section class="grid">
+        <div class="card stage">
+          <h2 class="title">¿En qué etapa financiera estás?</h2>
+          <div class="divider"></div>
 
-  const mult = modoCalculo === 'anual' ? 1 : 12;
-  const ingresoBrutoAnual = ingresoBruto * mult;
-  const ingresoNetoAnual = ingresoBrutoAnual - ((parseNumber(userProfile.impuestos) || 0) * mult) - ((parseNumber(userProfile.seguros) || 0) * mult);
-  const ahorroAnual = ahorro * mult;
-  const pagoMensualDeuda = modoCalculo === 'anual' ? deudas / 12 : deudas;
+          <div class="stageRow">
+            <div class="sos">SOS</div>
 
-  const mesesReserva = gastosEsenciales > 0 ? reservaEmergencia / gastosEsenciales : 0;
-  const tasaAhorro = ingresoBrutoAnual > 0 ? ahorroAnual / ingresoBrutoAnual : 0;
-  const dtiNeto = (ingresoNetoAnual / 12) > 0 ? pagoMensualDeuda / (ingresoNetoAnual / 12) : 0;
-  const patrimonioActivos = totales.activosTotales > 0 ? totales.patrimonioNeto / totales.activosTotales : 0;
-  const riquezaNeta = ingresoBrutoAnual > 0 ? totales.patrimonioNeto / ingresoBrutoAnual : 0;
+            <div class="stageInfo">
+              <h3>Etapa 1: Supervivencia</h3>
+              <p>Estás luchando para cubrir gastos básicos</p>
 
-  const getRiquezaBenchmark = (age) => {
-    const benchmarks = [
-      {age:25, good:2.5, great:5}, {age:30, good:3, great:6}, {age:35, good:3.5, great:7},
-      {age:40, good:4, great:8}, {age:45, good:4.5, great:9}, {age:50, good:5, great:10},
-      {age:55, good:5.5, great:11}, {age:60, good:6, great:12}, {age:65, good:6.5, great:13},
-      {age:70, good:7, great:14}
-    ];
+              <div class="needs">
+                <div class="needsTop">
+                  <div class="left">⚠️ Áreas que necesitas mejorar</div>
+                  <div class="bar" title="50% completado"><i></i></div>
+                  <div style="font-weight:1000;color:#92400e;font-size:12px;">50%</div>
+                </div>
+                <ul>
+                  <li>No tienes ni un mes de reserva de emergencia</li>
+                  <li>No estás ahorrando casi nada para tu futuro</li>
+                  <li>Estás usando deuda para sobrevivir</li>
+                  <li>Seguro de Vida (tienes dependientes)</li>
+                </ul>
+              </div>
 
-    if(age < 25) return benchmarks[0];
-    if(age >= 70) return benchmarks[benchmarks.length-1];
+              <div class="stageActions">
+                <button class="btn btn-dark">Hacerlo de nuevo</button>
+              </div>
+            </div>
 
-    for(let i=0; i<benchmarks.length-1; i++) {
-      if(age >= benchmarks[i].age && age < benchmarks[i+1].age) {
-        const t = (age - benchmarks[i].age) / (benchmarks[i+1].age - benchmarks[i].age);
-        return {
-          good: benchmarks[i].good + t * (benchmarks[i+1].good - benchmarks[i].good),
-          great: benchmarks[i].great + t * (benchmarks[i+1].great - benchmarks[i].great)
-        };
-      }
-    }
-    return benchmarks[benchmarks.length-1];
-  };
+            <div class="progressBox">
+              <div class="label">TU PROGRESO EN ESTA ETAPA</div>
+              <div class="value">64%</div>
+            </div>
+          </div>
+        </div>
 
-  const edad = parseInt(userProfile.edad) || 30;
-  const benchmark = getRiquezaBenchmark(edad);
-
-  const getMetricStatus = (value, goodThreshold, greatThreshold, isInverse = false) => {
-    if (!isFinite(value)) return { level: 'none', emoji: '—', color: '#94a3b8' };
-
-    if (isInverse) {
-      if (value <= greatThreshold) return { level: 'great', emoji: '✅', color: '#10b981' };
-      if (value <= goodThreshold) return { level: 'good', emoji: '⚠️', color: '#f59e0b' };
-      return { level: 'poor', emoji: '🚨', color: '#ef4444' };
-    } else {
-      if (value >= greatThreshold) return { level: 'great', emoji: '✅', color: '#10b981' };
-      if (value >= goodThreshold) return { level: 'good', emoji: '⚠️', color: '#f59e0b' };
-      return { level: 'poor', emoji: '🚨', color: '#ef4444' };
-    }
-  };
-
-  const metricas = {
-    mesesReserva: { nombre: 'Reserva', valor: mesesReserva.toFixed(1) + 'm', meta: '6m', status: getMetricStatus(mesesReserva, 3, 6), icon: '💧' },
-    tasaAhorro: { nombre: 'Ahorro', valor: (tasaAhorro * 100).toFixed(0) + '%', meta: '30%', status: getMetricStatus(tasaAhorro, 0.15, 0.30), icon: '🐷' },
-    dtiNeto: { nombre: 'DTI', valor: (dtiNeto * 100).toFixed(0) + '%', meta: '≤36%', status: getMetricStatus(dtiNeto, 0.43, 0.36, true), icon: '🏦' },
-    patrimonioActivos: { nombre: 'Patrimonio', valor: (patrimonioActivos * 100).toFixed(0) + '%', meta: '70%', status: getMetricStatus(patrimonioActivos, 0.50, 0.70), icon: '💎' },
-    riquezaNeta: { nombre: 'Riqueza', valor: riquezaNeta.toFixed(1) + 'x', meta: benchmark.great.toFixed(1) + 'x', status: getMetricStatus(riquezaNeta, benchmark.good, benchmark.great), icon: '📈' }
-  };
-
-  const calculateOverallScore = () => {
-    const statusValues = Object.values(metricas).map(m => m.status.level);
-    const greatCount = statusValues.filter(s => s === 'great').length;
-    const goodCount = statusValues.filter(s => s === 'good').length;
-    const total = statusValues.filter(s => s !== 'none').length;
-
-    if (total === 0) return { level: 'none', color: '#94a3b8', emoji: '—', text: 'Sin datos' };
-
-    const score = (greatCount * 100 + goodCount * 60) / total;
-
-    if (score >= 85) return { level: 'great', color: '#10b981', emoji: '🎉', text: 'Excelente' };
-    if (score >= 65) return { level: 'good', color: '#f59e0b', emoji: '👍', text: 'Bien' };
-    return { level: 'needs-work', color: '#ef4444', emoji: '⚡', text: 'Mejorar' };
-  };
-
-  const overallScore = calculateOverallScore();
-
-  if (status === 'new') {
-    return (
-      <div style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        borderRadius: '16px',
-        padding: '1.75rem',
-        color: 'white',
-        boxShadow: '0 4px 20px rgba(102, 126, 234, 0.25)',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        <div style={{
-          position: 'absolute',
-          top: '-30px',
-          right: '-30px',
-          width: '150px',
-          height: '150px',
-          background: 'rgba(255,255,255,0.1)',
-          borderRadius: '50%',
-          filter: 'blur(30px)'
-        }}></div>
-
-        <div style={{position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column'}}>
-          <div style={{marginBottom: '1.25rem'}}>
-            <div style={{fontSize: '2.5rem', marginBottom: '0.5rem'}}>🗺️</div>
-            <h3 style={{fontSize: '1.35rem', fontWeight: '800', marginBottom: '0.5rem', fontFamily: "'Fraunces', serif"}}>
-              Descubre tu Money Map
-            </h3>
-            <p style={{fontSize: '0.875rem', opacity: 0.9, lineHeight: '1.5'}}>
-              Análisis completo de 5 métricas financieras clave
-            </p>
+        <div class="card cadaMenudo">
+          <div class="cmTop">
+            <div class="cmBrand">Cada<br/>menudo<small>i</small></div>
+            <div class="cmBtn"><span class="plus">＋</span>Nueva Transacción</div>
           </div>
 
-          <div style={{
-            background: 'rgba(255,255,255,0.15)',
-            borderRadius: '10px',
-            padding: '1rem',
-            marginBottom: '1.25rem',
-            backdropFilter: 'blur(10px)',
-            flex: 1
-          }}>
-            <div style={{display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.75rem', height: '100%'}}>
-              {['💧 Reserva', '🐷 Ahorro', '🏦 Deuda', '💎 Patrimonio', '📈 Riqueza'].map((item, idx) => {
-                const [icon, label] = item.split(' ');
-                return (
-                  <div key={idx} style={{textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center'}}>
-                    <div style={{fontSize: '1.5rem', marginBottom: '0.25rem'}}>{icon}</div>
-                    <div style={{fontSize: '0.7rem', opacity: 0.9}}>{label}</div>
-                  </div>
-                );
-              })}
+          <div class="cmBanner">
+            <span class="check">✓</span>
+            SUPER: Tienes un sobrante de <strong>$2,759.51</strong>.
+          </div>
+
+          <div class="cmStats">
+            <div class="cmStat">
+              <div class="cmIcon">↗</div>
+              <div>
+                <div class="cmK">Ingresos</div>
+                <div class="cmV">$12,250.00</div>
+              </div>
+            </div>
+
+            <div class="cmStat">
+              <div class="cmIcon">🧾</div>
+              <div>
+                <div class="cmK">Gastos</div>
+                <div class="cmV">$8,490.49</div>
+              </div>
+            </div>
+
+            <div class="cmStat">
+              <div class="cmIcon">💰</div>
+              <div>
+                <div class="cmK">Ahorros</div>
+                <div class="cmV">$1,000.00</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FILA 2 (Money Map real + Video) -->
+      <section class="bottom">
+
+        <!-- ✅ Money Map: ahora es el card real -->
+        <div class="card moneymapEmbed">
+          <!-- Si NO quieres header, borra este bloque -->
+          <div class="mmHeader">
+            <div>
+              <div class="mmTitle">X Money Map</div>
+              <div class="mmSub">Tu radiografía financiera en 5 métricas.</div>
             </div>
           </div>
 
-          <button onClick={onOpenMoneyMap} style={{
-            width: '100%',
-            padding: '0.875rem 1.5rem',
-            background: 'white',
-            color: '#667eea',
-            border: 'none',
-            borderRadius: '10px',
-            fontSize: '0.95rem',
-            fontWeight: '700',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            fontFamily: "'DM Sans', sans-serif"
-          }}>
-            🚀 Comenzar Money Map
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (status === 'incomplete') {
-    return (
-      <div style={{
-        background: 'white',
-        borderRadius: '16px',
-        padding: '1.75rem',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-        border: '2px solid #fbbf24',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
-        <div style={{marginBottom: '1.25rem'}}>
-          <div style={{fontSize: '2.5rem', marginBottom: '0.5rem'}}>⚠️</div>
-          <h3 style={{fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.35rem', color: '#f59e0b', fontFamily: "'Fraunces', serif"}}>
-            Money Map Incompleto
-          </h3>
-          <p style={{color: '#64748b', fontSize: '0.85rem', lineHeight: '1.4'}}>
-            Completa más datos para tu análisis
-          </p>
+          <iframe
+            class="mmFrame"
+            src="https://xserbia.github.io/xs-member-site/money-map-card.html"
+            title="Money Map Card"
+            loading="lazy"
+          ></iframe>
         </div>
 
-        <div style={{
-          background: '#fffbeb',
-          border: '2px solid #fbbf24',
-          borderRadius: '10px',
-          padding: '1rem',
-          marginBottom: '1.25rem',
-          flex: 1
-        }}>
-          <div style={{fontWeight: '700', marginBottom: '0.65rem', color: '#92400e', fontSize: '0.875rem'}}>
-            📋 Datos faltantes:
-          </div>
-          <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.8rem', color: '#78350f'}}>
-            {!ingresoBruto && <div>• Ingreso bruto</div>}
-            {!ahorro && <div>• Ahorro</div>}
-            {!deudas && <div>• Pagos deuda</div>}
-            {!gastosEsenciales && <div>• Gastos esenciales</div>}
-            {!reservaEmergencia && <div>• Reserva emergencia</div>}
-            {totales.activosTotales === 0 && <div>• Activos</div>}
-          </div>
-        </div>
-
-        <button onClick={onOpenMoneyMap} style={{
-          width: '100%',
-          padding: '0.875rem 1.5rem',
-          background: '#f59e0b',
-          color: 'white',
-          border: 'none',
-          borderRadius: '10px',
-          fontSize: '0.95rem',
-          fontWeight: '700',
-          cursor: 'pointer',
-          transition: 'all 0.2s ease',
-          fontFamily: "'DM Sans', sans-serif"
-        }}>
-          ✏️ Completar Money Map
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{
-      background: 'white',
-      borderRadius: '16px',
-      padding: '1.75rem',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-      border: `2px solid ${overallScore.color}`,
-      display: 'flex',
-      flexDirection: 'column'
-    }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        justifyContent: 'space-between',
-        marginBottom: '1.25rem',
-        paddingBottom: '0.75rem',
-        borderBottom: '2px solid #e2e8f0'
-      }}>
-        <div style={{flex: 1}}>
-          <h3 style={{fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.25rem', fontFamily: "'Fraunces', serif", color: '#1e293b'}}>
-            🗺️ Money Map
-          </h3>
-          <p style={{color: '#64748b', fontSize: '0.8rem', lineHeight: '1.3'}}>
-            Resumen de salud financiera
-          </p>
-        </div>
-        <div style={{
-          background: `linear-gradient(135deg, ${overallScore.color} 0%, ${overallScore.color}dd 100%)`,
-          color: 'white',
-          padding: '0.5rem 0.75rem',
-          borderRadius: '10px',
-          textAlign: 'center',
-          minWidth: '75px'
-        }}>
-          <div style={{fontSize: '1.5rem', lineHeight: '1'}}>{overallScore.emoji}</div>
-          <div style={{fontSize: '0.65rem', marginTop: '0.25rem', opacity: 0.95, fontWeight: '600', letterSpacing: '0.3px'}}>
-            {overallScore.text}
-          </div>
-        </div>
-      </div>
-
-      <div style={{display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.75rem', marginBottom: '1.25rem', flex: 1}}>
-        {Object.entries(metricas).map(([key, metrica]) => (
-          <div key={key} style={{
-            background: '#f8fafc',
-            borderRadius: '10px',
-            padding: '0.75rem',
-            border: `2px solid ${metrica.status.color}20`,
-            position: 'relative',
-            cursor: 'pointer',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between'
-          }}>
-            <div style={{position: 'absolute', top: '6px', right: '6px', fontSize: '1rem', lineHeight: '1'}}>
-              {metrica.status.emoji}
+        <div class="card videoWrap">
+          <div class="videoHeader">Ultimo PAX</div>
+          <div class="video" aria-label="Video placeholder">
+            <div class="play">
+              <button title="Play">▶</button>
             </div>
-            <div style={{fontSize: '1.5rem', marginBottom: '0.35rem', lineHeight: '1'}}>{metrica.icon}</div>
-            <div style={{fontSize: '0.65rem', color: '#64748b', marginBottom: '0.25rem', fontWeight: '600', lineHeight: '1.2'}}>{metrica.nombre}</div>
-            <div style={{fontSize: '1.1rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.25rem', fontFamily: "'Fraunces', serif", lineHeight: '1'}}>{metrica.valor}</div>
-            <div style={{fontSize: '0.6rem', color: metrica.status.color, fontWeight: '600', lineHeight: '1'}}>Meta: {metrica.meta}</div>
-          </div>
-        ))}
-      </div>
-
-      <div style={{
-        background: '#f1f5f9',
-        borderRadius: '10px',
-        padding: '1rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '1rem'
-      }}>
-        <div style={{flex: 1}}>
-          <div style={{fontSize: '0.7rem', color: '#64748b', marginBottom: '0.25rem', fontWeight: '600'}}>
-            Patrimonio Neto
-          </div>
-          <div style={{
-            fontSize: '1.25rem',
-            fontWeight: '800',
-            color: totales.patrimonioNeto >= 0 ? '#10b981' : '#ef4444',
-            fontFamily: "'Fraunces', serif",
-            lineHeight: '1'
-          }}>
-            {formatCurrency(totales.patrimonioNeto, currency)}
           </div>
         </div>
 
-        <button onClick={onOpenMoneyMap} style={{
-          padding: '0.65rem 1.25rem',
-          background: '#3b82f6',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          fontSize: '0.85rem',
-          fontWeight: '700',
-          cursor: 'pointer',
-          fontFamily: "'DM Sans', sans-serif",
-          whiteSpace: 'nowrap'
-        }}>
-          📊 Abrir Money Map
-        </button>
-      </div>
-    </div>
-  );
-}
+      </section>
 
-function App() {
-  const [showModal, setShowModal] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [moneyMapData, setMoneyMapData] = useState({
-    totales: { activosTotales: 0, pasivosTotales: 0, patrimonioNeto: 0 },
-    userProfile: { nombre: '', edad: '30', impuestos: 0, seguros: 0 },
-    currency: 'USD',
-    ingresoBruto: 0,
-    ahorro: 0,
-    deudas: 0,
-    gastosEsenciales: 0,
-    reservaEmergencia: 0,
-    modoCalculo: 'mensual'
-  });
+    </main>
+  </div>
 
-  useEffect(() => {
-    const handleMessage = (event) => {
-      if (event.data && event.data.type === 'MONEY_MAP_DATA') {
-        setMoneyMapData(event.data.data);
-      }
-    };
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, []);
+  <script>
+    // Sidebar active
+    const nav = document.getElementById('nav');
+    nav.addEventListener('click', (e) => {
+      const a = e.target.closest('a');
+      if(!a) return;
+      [...nav.querySelectorAll('a')].forEach(x => x.classList.remove('active'));
+      a.classList.add('active');
+    });
 
-  const handleOpenMoneyMap = () => { setShowModal(true); setIsLoading(true); };
-  const handleCloseModal = () => { setShowModal(false); setIsLoading(false); };
-  const handleIframeLoad = () => { setIsLoading(false); };
-
-  return (
-    <div className="container">
-      <MoneyMapCard {...moneyMapData} onOpenMoneyMap={handleOpenMoneyMap} />
-
-      {showModal && (
-        <div className="modal-overlay" onClick={handleCloseModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={handleCloseModal}
-              style={{
-                position: 'absolute',
-                top: '20px',
-                right: '20px',
-                zIndex: 10000,
-                background: 'rgba(0, 0, 0, 0.7)',
-                border: 'none',
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                fontSize: '24px',
-                cursor: 'pointer',
-                color: 'white',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#ef4444';
-                e.currentTarget.style.transform = 'scale(1.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(0, 0, 0, 0.7)';
-                e.currentTarget.style.transform = 'scale(1)';
-              }}
-            >
-              ×
-            </button>
-
-            {isLoading && (<div className="loading-spinner">🔄</div>)}
-
-            <iframe
-              src="https://xserbia.github.io/xs-member-site/money-map.html"
-              className="modal-iframe"
-              title="Money Map"
-              allow="fullscreen"
-              onLoad={handleIframeLoad}
-            />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* React 18: createRoot */
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App />);
-</script>
+    // Etapas active
+    const etapasWrap = document.getElementById('etapasWrap');
+    etapasWrap.addEventListener('click', (e) => {
+      const tab = e.target.closest('.pillTab');
+      if(!tab) return;
+      [...etapasWrap.querySelectorAll('.pillTab')].forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+    });
+  </script>
 </body>
 </html>
