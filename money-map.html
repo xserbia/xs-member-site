@@ -2866,7 +2866,44 @@ function RatiosFinancieros({ totales, userProfile, currency, ingresoBruto, ahorr
     </div>
   );
 }
+// ============= ENVIAR DATOS AL PARENT (CARD) =============
+function DataSync({ totales, userProfile, currency, ingresoBruto, ahorro, deudas, gastosEsenciales, reservaEmergencia, pagoMensualDeudas, modoCalculo, impuestos, seguros }) {
+  useEffect(() => {
+    // Solo enviar si estamos en un iframe
+    if (window.parent !== window) {
+      const dataToSend = {
+        type: 'MONEY_MAP_DATA',
+        data: {
+          totales: {
+            activosTotales: totales.activosTotales,
+            pasivosTotales: totales.pasivosTotales,
+            patrimonioNeto: totales.patrimonioNeto
+          },
+          userProfile: {
+            nombre: userProfile.nombre,
+            apellido: userProfile.apellido,
+            edad: userProfile.edad,
+            impuestos: parseNumber(impuestos),
+            seguros: parseNumber(seguros)
+          },
+          currency,
+          ingresoBruto: parseNumber(ingresoBruto),
+          ahorro: parseNumber(ahorro),
+          deudas: parseNumber(deudas),
+          gastosEsenciales: parseNumber(gastosEsenciales),
+          reservaEmergencia: parseNumber(reservaEmergencia),
+          pagoMensualDeudas: parseNumber(pagoMensualDeudas),
+          modoCalculo
+        }
+      };
+      
+      // Enviar mensaje al parent
+      window.parent.postMessage(dataToSend, '*');
+    }
+  }, [totales, userProfile, currency, ingresoBruto, ahorro, deudas, gastosEsenciales, reservaEmergencia, pagoMensualDeudas, modoCalculo, impuestos, seguros]);
 
+  return null;
+}
 ReactDOM.render(<App />, document.getElementById('root'));
 </script>
 </body>
