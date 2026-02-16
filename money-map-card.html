@@ -472,61 +472,12 @@ function App() {
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  const handleOpenMoneyMap = () => { setShowModal(true); setIsLoading(true); };
-  const handleCloseModal = () => { setShowModal(false); setIsLoading(false); };
-  const handleIframeLoad = () => { setIsLoading(false); };
-
-  return (
-    <div className="container">
-      <MoneyMapCard {...moneyMapData} onOpenMoneyMap={handleOpenMoneyMap} />
-
-      {showModal && (
-        <div className="modal-overlay" onClick={handleCloseModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={handleCloseModal}
-              style={{
-                position: 'absolute',
-                top: '20px',
-                right: '20px',
-                zIndex: 10000,
-                background: 'rgba(0, 0, 0, 0.7)',
-                border: 'none',
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                fontSize: '24px',
-                cursor: 'pointer',
-                color: 'white',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#ef4444';
-                e.currentTarget.style.transform = 'scale(1.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(0, 0, 0, 0.7)';
-                e.currentTarget.style.transform = 'scale(1)';
-              }}
-            >
-              ×
-            </button>
-
-            {isLoading && (<div className="loading-spinner">🔄</div>)}
-
-            <iframe
-              src="https://xserbia.github.io/xs-member-site/money-map.html"
-              className="modal-iframe"
-              title="Money Map"
-              allow="fullscreen"
-              onLoad={handleIframeLoad}
-            />
-          </div>
-        </div>
-      )}
+  const handleOpenMoneyMap = () => {
+  // Enviar evento al dashboard (parent)
+  if (window.parent) {
+    window.parent.postMessage({ type: 'OPEN_MONEY_MAP' }, '*');
+  }
+};
     </div>
   );
 }
