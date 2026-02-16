@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Coaching Personalizado — Registro</title>
+
+  <!-- Tipografía (puedes cambiar a tu fuente de marca) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#f6f8ff;
+      --card:#ffffff;
+      --ink:#0b1220;
+      --muted:#64748b;
+      --primary:#3956E8;
+      --secondary:#7459D9;
+      --stroke:#e6eaf2;
+      --radius:22px;
+      --shadow: 0 18px 60px rgba(15, 23, 42, .10);
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family:"DM Sans", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(1200px 600px at 18% 10%, rgba(57,86,232,.18), transparent 55%),
+        radial-gradient(900px 500px at 80% 30%, rgba(116,89,217,.16), transparent 55%),
+        var(--bg);
+    }
+
+    .wrap{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:28px 16px;
+    }
+
+    .hero{
+      width:min(1120px, 100%);
+      background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.78));
+      border:1px solid rgba(230,234,242,.9);
+      box-shadow:var(--shadow);
+      border-radius:28px;
+      overflow:hidden;
+    }
+
+    /* Top bar */
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:18px 22px;
+      background:linear-gradient(90deg, rgba(57,86,232,.10), rgba(116,89,217,.08));
+      border-bottom:1px solid rgba(230,234,242,.9);
+      gap:12px;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-weight:800;
+      letter-spacing:-.2px;
+    }
+    .logo{
+      width:38px; height:38px;
+      border-radius:12px;
+      background:linear-gradient(135deg, var(--primary), var(--secondary));
+      box-shadow:0 12px 30px rgba(57,86,232,.25);
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      font-weight:700;
+      font-size:.9rem;
+      padding:8px 12px;
+      border-radius:999px;
+      color:#0b1220;
+      background:rgba(255,255,255,.65);
+      border:1px solid rgba(230,234,242,.9);
+    }
+    .pill svg{ width:16px; height:16px; }
+
+    /* Main grid */
+    .grid{
+      display:grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap:18px;
+      padding:22px;
+    }
+
+    /* Left: Coach card */
+    .coachCard{
+      background:var(--card);
+      border:1px solid rgba(230,234,242,.9);
+      border-radius:var(--radius);
+      padding:22px;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      position:relative;
+      overflow:hidden;
+    }
+    .coachCard:before{
+      content:"";
+      position:absolute;
+      inset:-2px -2px auto auto;
+      width:220px; height:220px;
+      background:radial-gradient(circle at 30% 30%, rgba(57,86,232,.18), transparent 60%);
+      border-radius:50%;
+      transform:translate(40px,-60px);
+      pointer-events:none;
+    }
+
+    .headline{
+      margin:0;
+      font-size:2.2rem;
+      line-height:1.05;
+      letter-spacing:-.9px;
+    }
+    .sub{
+      margin:0;
+      color:var(--muted);
+      font-size:1.02rem;
+      line-height:1.45;
+      max-width:52ch;
+    }
+
+    .coachRow{
+      display:flex;
+      gap:16px;
+      align-items:center;
+      margin-top:6px;
+    }
+    .coachPhoto{
+      width:112px;
+      height:112px;
+      border-radius:22px;
+      border:1px solid rgba(230,234,242,.9);
+      background:#eef2ff;
+      overflow:hidden;
+      flex:0 0 auto;
+    }
+    .coachPhoto img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      object-position:center 18%;
+      display:block;
+    }
+
+    .coachMeta{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width:0;
+    }
+    .coachName{
+      font-size:1.2rem;
+      font-weight:800;
+      margin:0;
+      letter-spacing:-.2px;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      width:fit-content;
+      padding:7px 10px;
+      border-radius:999px;
+      border:1px solid rgba(230,234,242,.9);
+      background:rgba(57,86,232,.08);
+      color:#1f2a44;
+      font-weight:700;
+      font-size:.9rem;
+    }
+    .badge .dot{
+      width:10px; height:10px; border-radius:50%;
+      background:linear-gradient(135deg, var(--primary), var(--secondary));
+    }
+
+    .bullets{
+      margin:10px 0 0;
+      padding:0;
+      list-style:none;
+      display:grid;
+      gap:10px;
+    }
+    .bullets li{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      color:#1f2a44;
+    }
+    .check{
+      flex:0 0 auto;
+      width:20px; height:20px;
+      border-radius:6px;
+      background:rgba(16,185,129,.14);
+      display:grid;
+      place-items:center;
+      margin-top:2px;
+      border:1px solid rgba(16,185,129,.25);
+    }
+    .check svg{ width:14px; height:14px; }
+
+    .priceBar{
+      margin-top:auto;
+      background:linear-gradient(135deg, rgba(57,86,232,.10), rgba(116,89,217,.08));
+      border:1px solid rgba(230,234,242,.9);
+      border-radius:18px;
+      padding:14px 16px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .priceBar b{
+      font-size:1.2rem;
+      letter-spacing:-.3px;
+    }
+    .small{
+      color:var(--muted);
+      font-size:.92rem;
+    }
+
+    /* Right: Form card */
+    .formCard{
+      background:var(--card);
+      border:1px solid rgba(230,234,242,.9);
+      border-radius:var(--radius);
+      padding:22px;
+    }
+    .formTitle{
+      margin:0 0 12px;
+      font-size:1.25rem;
+      font-weight:800;
+      letter-spacing:-.3px;
+    }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      margin-top:12px;
+    }
+    label{
+      font-size:.92rem;
+      font-weight:700;
+      color:#1f2a44;
+    }
+    input{
+      width:100%;
+      padding:14px 14px;
+      border-radius:14px;
+      border:1px solid var(--stroke);
+      outline:none;
+      font-size:1rem;
+      background:#fbfcff;
+      transition:.18s ease;
+    }
+    input:focus{
+      border-color:rgba(57,86,232,.55);
+      box-shadow:0 0 0 4px rgba(57,86,232,.14);
+      background:#fff;
+    }
+
+    .cta{
+      margin-top:16px;
+      width:100%;
+      border:none;
+      border-radius:16px;
+      padding:14px 16px;
+      font-size:1.05rem;
+      font-weight:800;
+      cursor:pointer;
+      color:#fff;
+      background:linear-gradient(135deg, var(--primary), var(--secondary));
+      box-shadow:0 14px 34px rgba(57,86,232,.22);
+      transition: transform .12s ease, filter .12s ease;
+    }
+    .cta:hover{ transform: translateY(-1px); filter:brightness(1.02); }
+    .cta:active{ transform: translateY(0px); }
+
+    .secureRow{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      color:var(--muted);
+      font-size:.92rem;
+      margin-top:12px;
+    }
+    .secureRow svg{ width:18px; height:18px; }
+
+    .legal{
+      margin-top:14px;
+      color:var(--muted);
+      font-size:.85rem;
+      line-height:1.4;
+    }
+    .legal a{
+      color:var(--primary);
+      text-decoration:none;
+      font-weight:700;
+    }
+    .legal a:hover{ text-decoration:underline; }
+
+    /* Responsive */
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+      .headline{ font-size:2rem; }
+      .coachRow{ align-items:flex-start; }
+    }
+    @media (max-width: 520px){
+      .headline{ font-size:1.8rem; }
+      .coachPhoto{ width:92px; height:92px; border-radius:18px; }
+      .topbar{ padding:14px 14px; }
+      .grid{ padding:14px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <main class="hero" role="main">
+      <div class="topbar">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>Coaching Personalizado</div>
+        </div>
+
+        <div class="pill" title="Transacción segura">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M7 10V8a5 5 0 0 1 10 0v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M6 10h12v10H6V10Z" stroke="currentColor" stroke-width="2" />
+            <path d="M12 14v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          Pago seguro
+        </div>
+      </div>
+
+      <section class="grid">
+        <!-- LEFT -->
+        <div class="coachCard">
+          <h1 class="headline">Empieza tu Coaching 1:1</h1>
+          <p class="sub">
+            Tu primera sesión es el punto de partida: clarificamos tu situación, definimos metas y sales con un plan concreto
+            para las próximas semanas.
+          </p>
+
+          <div class="coachRow">
+            <div class="coachPhoto">
+              <!-- Reemplaza src por tu imagen. Ideal: PNG/JPG 600x800 -->
+              <img src="XS-10.jpg" alt="Foto del coach" />
+            </div>
+            <div class="coachMeta">
+              <p class="coachName">Andrés</p>
+              <span class="badge"><span class="dot" aria-hidden="true"></span>Coach Personal</span>
+              <div class="small">Sesiones por videollamada · Agenda flexible</div>
+            </div>
+          </div>
+
+          <ul class="bullets">
+            <li>
+              <span class="check" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M20 6 9 17l-5-5" stroke="#0f766e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <div><b>Plan personalizado</b> basado en tus números y tu realidad.</div>
+            </li>
+            <li>
+              <span class="check" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M20 6 9 17l-5-5" stroke="#0f766e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <div><b>Prioridades claras</b>: deudas, ahorro, metas y próximos pasos.</div>
+            </li>
+            <li>
+              <span class="check" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M20 6 9 17l-5-5" stroke="#0f766e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <div><b>Seguimiento</b> con tareas y enfoque semanal.</div>
+            </li>
+          </ul>
+
+          <div class="priceBar">
+            <div>
+              <div class="small">Desde</div>
+              <b>$199</b> <span class="small">/ sesión</span>
+            </div>
+            <div class="small">Garantía de satisfacción · Cupos limitados</div>
+          </div>
+        </div>
+
+        <!-- RIGHT -->
+        <aside class="formCard">
+          <h2 class="formTitle">Regístrate para continuar</h2>
+
+          <!-- Nota: Esto es un mockup. Conecta action="" a tu backend / Wix / Stripe Checkout -->
+          <form action="#" method="post" autocomplete="on">
+            <div class="field">
+              <label for="name">Nombre completo</label>
+              <input id="name" name="name" type="text" placeholder="Tu nombre" required />
+            </div>
+
+            <div class="field">
+              <label for="email">Correo electrónico</label>
+              <input id="email" name="email" type="email" placeholder="tu@correo.com" required />
+            </div>
+
+            <div class="field">
+              <label for="phone">Teléfono (opcional)</label>
+              <input id="phone" name="phone" type="tel" placeholder="+1 (___) ___-____" />
+            </div>
+
+            <button class="cta" type="submit">Continuar al pago</button>
+
+            <div class="secureRow">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 2 20 6v7c0 5-3.5 9-8 9s-8-4-8-9V6l8-4Z" stroke="currentColor" stroke-width="2"/>
+                <path d="M9.5 12.5 11 14l3.5-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Tus datos están protegidos
+            </div>
+
+            <p class="legal">
+              Al continuar, aceptas nuestros <a href="#" target="_blank" rel="noopener">Términos</a> y la
+              <a href="#" target="_blank" rel="noopener">Política de Privacidad</a>.
+            </p>
+          </form>
+        </aside>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
