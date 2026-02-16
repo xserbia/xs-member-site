@@ -3,11 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Xavier Serbia Money Map</title>
+<title>Xavier Serbia Money Map - Simplificado</title>
 <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -52,11 +51,10 @@ body {
   flex-direction: column;
 }
 
-/* Header */
 .app-header {
   background: linear-gradient(135deg, var(--primary) 0%, #2845d9 100%);
   color: white;
-  padding: 2rem 2rem 0;
+  padding: 1.5rem 2rem 0;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
@@ -66,13 +64,12 @@ body {
 }
 
 .app-subtitle {
-  color: var(--slate-light);
-  font-size: 1rem;
-  margin-bottom: 2rem;
-  font-weight: 400;
+  color: white;
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
 }
 
-/* Tabs */
 .tabs-container {
   display: flex;
   gap: 0.5rem;
@@ -109,7 +106,6 @@ body {
   border-bottom-color: var(--emerald);
 }
 
-/* Main Content */
 .main-content {
   flex: 1;
   padding: 2rem;
@@ -118,7 +114,6 @@ body {
   width: 100%;
 }
 
-/* Cards */
 .card {
   background: var(--card);
   border-radius: 16px;
@@ -150,7 +145,6 @@ body {
   margin-top: 0.25rem;
 }
 
-/* Form Elements */
 .form-group {
   margin-bottom: 1.25rem;
 }
@@ -188,7 +182,6 @@ select.form-input {
   cursor: pointer;
 }
 
-/* Buttons */
 .btn {
   padding: 0.75rem 1.5rem;
   border: none;
@@ -227,35 +220,6 @@ select.form-input {
   transform: translateY(-1px);
 }
 
-/* Stats Grid */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.stat-card {
-  background: linear-gradient(135deg, var(--emerald) 0%, var(--emerald-dark) 100%);
-  padding: 1.5rem;
-  border-radius: 12px;
-  color: white;
-}
-
-.stat-label {
-  font-size: 0.875rem;
-  opacity: 0.9;
-  margin-bottom: 0.5rem;
-}
-
-.stat-value {
-  font-family: 'Fraunces', serif;
-  font-size: 2rem;
-  font-weight: 800;
-  line-height: 1;
-}
-
-/* Grid Layouts */
 .grid-2 {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -268,36 +232,6 @@ select.form-input {
   gap: 1rem;
 }
 
-/* Chart Container */
-.chart-container {
-  position: relative;
-  height: 300px;
-  margin: 1.5rem 0;
-}
-
-/* Export Footer */
-.export-footer {
-  background: var(--card);
-  padding: 1.5rem 2rem;
-  border-top: 1px solid var(--border);
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
-}
-
-.export-footer-content {
-  max-width: 1400px;
-  margin: 0 auto;
-  display: block;
-  text-align: center;
-}
-
-.export-info {
-  color: var(--text-muted);
-  font-size: 0.875rem;
-}
-
-/* Utility Classes */
 .text-success { color: var(--success); }
 .text-warning { color: var(--warning); }
 .text-danger { color: var(--danger); }
@@ -310,10 +244,9 @@ select.form-input {
   font-feature-settings: 'tnum';
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .app-header {
-    padding: 1.5rem 1rem 0;
+    padding: 1rem 1rem 0;
   }
   .main-content {
     padding: 1rem;
@@ -325,7 +258,10 @@ select.form-input {
     padding: 0.75rem 1rem;
     font-size: 0.875rem;
   }
-  .stats-grid {
+  .tabs-container {
+    flex-wrap: wrap;
+  }
+  .grid-2, .grid-3 {
     grid-template-columns: 1fr;
   }
 }
@@ -337,7 +273,6 @@ select.form-input {
 <script type="text/babel">
 const { useState, useEffect, useMemo } = React;
 
-// ============= UTILITY FUNCTIONS =============
 const formatCurrency = (value, currencyCode = 'USD') => {
   if (value === null || value === undefined || value === '') {
     const symbols = {
@@ -382,335 +317,15 @@ const parseNumber = (value) => {
   return isNaN(num) ? 0 : num;
 };
 
-// ============= ONBOARDING MODAL COMPONENT =============
-function OnboardingModal({ isOpen, onClose, onSave, initialProfile }) {
-  const [formData, setFormData] = useState({
-    ...initialProfile,
-    parejaNombre: initialProfile.parejaNombre || '',
-    parejaApellido: initialProfile.parejaApellido || '',
-    parejaAvatar: initialProfile.parejaAvatar || '👤'
-  });
-  
-  const avatarOptions = ['👤', '👨', '👩', '🧑', '👨‍💼', '👩‍💼', '👨‍🎓', '👩‍🎓', '🧔', '👨‍🦰', '👩‍🦰', '👱‍♂️', '👱‍♀️'];
-  
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const isCouple = formData.estadoCivil === 'casado' || formData.estadoCivil === 'pareja';
-    const profileToSave = {
-      ...formData,
-      // Clear partner fields if not a couple
-      parejaNombre: isCouple ? formData.parejaNombre : '',
-      parejaApellido: isCouple ? formData.parejaApellido : '',
-      parejaAvatar: isCouple ? formData.parejaAvatar : '👤'
-    };
-    onSave(profileToSave);
-    onClose();
-  };
-  
-  const updateField = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-  
-  if (!isOpen) return null;
-  
-  return (
-    <div style={{
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(0,0,0,0.7)',
-      zIndex: 2000,
-      display: 'flex',
-      alignItems: 'flex-start',
-      justifyContent: 'center',
-      padding: '20px',
-      paddingTop: '40px',
-      backdropFilter: 'blur(8px)',
-      overflowY: 'auto'
-    }} onClick={onClose}>
-      <div style={{
-        background: '#fff',
-        borderRadius: '20px',
-        maxWidth: '500px',
-        width: '100%',
-        maxHeight: '90vh',
-        overflow: 'auto',
-        boxShadow: '0 25px 70px rgba(0,0,0,0.5)'
-      }} onClick={(e) => e.stopPropagation()}>
-        
-        {/* Header */}
-        <div style={{padding: '2rem 2rem 1rem', borderBottom: '1px solid var(--border)', textAlign: 'center', position: 'relative'}}>
-          <button 
-            onClick={onClose}
-            style={{
-              position: 'absolute',
-              top: '1rem',
-              right: '1rem',
-              background: 'rgba(0,0,0,0.05)',
-              border: 'none',
-              width: '32px',
-              height: '32px',
-              borderRadius: '50%',
-              fontSize: '20px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s',
-              color: '#666'
-            }}
-          >
-            ×
-          </button>
-          <div style={{fontSize: '3rem', marginBottom: '1rem'}}>👋</div>
-          <img 
-            src="https://xserbia.github.io/calculadora-financiera/assets/XAVIER-MONEY-MAP-LOGO-2.png" 
-            alt="Xavier Serbia Money Map"
-            style={{height: '70px', marginBottom: '0.75rem'}}
-          />
-          <div style={{color: 'var(--text-muted)', fontSize: '0.95rem'}}>Tu perfil financiero</div>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} style={{padding: '2rem'}}>
-          
-          {/* Avatar Selection */}
-          <div style={{marginBottom: '1.5rem', textAlign: 'center'}}>
-            <label style={{display: 'block', fontWeight: '600', marginBottom: '1rem', color: '#333'}}>
-              Elige tu avatar
-            </label>
-            <div style={{display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap'}}>
-              {avatarOptions.map(avatar => (
-                <button
-                  key={avatar}
-                  type="button"
-                  onClick={() => updateField('avatar', avatar)}
-                  style={{
-                    fontSize: '2rem',
-                    width: '60px',
-                    height: '60px',
-                    border: formData.avatar === avatar ? '3px solid var(--primary)' : '2px solid var(--border)',
-                    borderRadius: '50%',
-                    background: formData.avatar === avatar ? 'rgba(59, 130, 246, 0.1)' : 'white',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  {avatar}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Name Fields */}
-          <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem'}}>
-            <div>
-              <label style={{display: 'block', fontWeight: '600', marginBottom: '0.5rem', fontSize: '0.9rem'}}>
-                Nombre *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.nombre}
-                onChange={(e) => updateField('nombre', e.target.value)}
-                placeholder="Juan"
-                className="form-input"
-              />
-            </div>
-            <div>
-              <label style={{display: 'block', fontWeight: '600', marginBottom: '0.5rem', fontSize: '0.9rem'}}>
-                Apellido *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.apellido}
-                onChange={(e) => updateField('apellido', e.target.value)}
-                placeholder="Pérez"
-                className="form-input"
-              />
-            </div>
-          </div>
-
-          {/* Edad */}
-          <div style={{marginBottom: '1.5rem'}}>
-            <label style={{display: 'block', fontWeight: '600', marginBottom: '0.5rem', fontSize: '0.9rem'}}>
-              Edad *
-            </label>
-            <input
-              type="number"
-              required
-              min="18"
-              max="100"
-              value={formData.edad}
-              onChange={(e) => updateField('edad', e.target.value)}
-              placeholder="30"
-              className="form-input"
-            />
-          </div>
-
-          {/* Estado Civil */}
-          <div style={{marginBottom: '1.5rem'}}>
-            <label style={{display: 'block', fontWeight: '600', marginBottom: '0.5rem', fontSize: '0.9rem'}}>
-              Estado Civil *
-            </label>
-            <select
-              required
-              value={formData.estadoCivil}
-              onChange={(e) => updateField('estadoCivil', e.target.value)}
-              className="form-input"
-            >
-              <option value="soltero">Soltero/a</option>
-              <option value="casado">Casado/a</option>
-              <option value="pareja">En pareja / Unión libre</option>
-              <option value="divorciado">Divorciado/a</option>
-              <option value="viudo">Viudo/a</option>
-            </select>
-          </div>
-
-          {/* Campos de pareja - solo si está casado o en pareja */}
-          {(formData.estadoCivil === 'casado' || formData.estadoCivil === 'pareja') && (
-            <>
-              <div style={{
-                background: '#eff6ff',
-                border: '2px solid var(--primary)',
-                borderRadius: '12px',
-                padding: '1rem',
-                marginBottom: '1.5rem'
-              }}>
-                <div style={{display: 'flex', gap: '0.75rem', alignItems: 'flex-start'}}>
-                  <span style={{fontSize: '1.5rem'}}>💡</span>
-                  <div>
-                    <div style={{fontWeight: '700', marginBottom: '0.25rem', color: 'var(--primary)'}}>
-                      Análisis Financiero Conjunto
-                    </div>
-                    <div style={{fontSize: '0.875rem', color: '#1e40af', lineHeight: '1.5'}}>
-                      El dashboard analizará las finanzas de ambos como una unidad familiar. 
-                      Ingresa los ingresos, gastos y activos combinados.
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Partner Avatar Selection */}
-              <div style={{marginBottom: '1.5rem', textAlign: 'center', background: '#f8fafc', padding: '1.5rem', borderRadius: '12px'}}>
-                <label style={{display: 'block', fontWeight: '600', marginBottom: '1rem', color: '#333'}}>
-                  Elige el avatar de tu pareja
-                </label>
-                <div style={{display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap'}}>
-                  {avatarOptions.map(avatar => (
-                    <button
-                      key={`partner-${avatar}`}
-                      type="button"
-                      onClick={() => updateField('parejaAvatar', avatar)}
-                      style={{
-                        fontSize: '2rem',
-                        width: '60px',
-                        height: '60px',
-                        border: formData.parejaAvatar === avatar ? '3px solid var(--primary)' : '2px solid var(--border)',
-                        borderRadius: '50%',
-                        background: formData.parejaAvatar === avatar ? 'rgba(59, 130, 246, 0.1)' : 'white',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    >
-                      {avatar}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Partner Name Fields */}
-              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem'}}>
-                <div>
-                  <label style={{display: 'block', fontWeight: '600', marginBottom: '0.5rem', fontSize: '0.9rem'}}>
-                    Nombre de tu pareja *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.parejaNombre}
-                    onChange={(e) => updateField('parejaNombre', e.target.value)}
-                    placeholder="María"
-                    className="form-input"
-                  />
-                </div>
-                <div>
-                  <label style={{display: 'block', fontWeight: '600', marginBottom: '0.5rem', fontSize: '0.9rem'}}>
-                    Apellido de tu pareja *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.parejaApellido}
-                    onChange={(e) => updateField('parejaApellido', e.target.value)}
-                    placeholder="González"
-                    className="form-input"
-                  />
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Dependientes */}
-          <div style={{marginBottom: '2rem'}}>
-            <label style={{display: 'block', fontWeight: '600', marginBottom: '0.5rem', fontSize: '0.9rem'}}>
-              Número de Dependientes
-            </label>
-            <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
-              <input
-                type="number"
-                min="0"
-                max="20"
-                value={formData.dependientes}
-                onChange={(e) => updateField('dependientes', parseInt(e.target.value) || 0)}
-                className="form-input"
-              />
-              <span style={{fontSize: '1.5rem', minWidth: '80px'}}>
-                {formData.dependientes > 0 ? '👶'.repeat(Math.min(formData.dependientes, 5)) : '—'}
-                {formData.dependientes > 5 && ` +${formData.dependientes - 5}`}
-              </span>
-            </div>
-            <div style={{fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem'}}>
-              Hijos, padres u otras personas que dependan económicamente de ti
-            </div>
-          </div>
-
-          {/* Buttons */}
-          <button
-            type="submit"
-            className="btn btn-primary"
-            style={{width: '100%', justifyContent: 'center'}}
-          >
-            Guardar Perfil 🚀
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-// ============= MAIN APP COMPONENT =============
 function App() {
   const [activeTab, setActiveTab] = useState('datos');
   const [currency, setCurrency] = useState('USD');
-  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
-  const [showHelpModal, setShowHelpModal] = useState(false);
   const [showPDFModal, setShowPDFModal] = useState(false);
   
-  // User profile
   const [userProfile, setUserProfile] = useState({
-    nombre: '',
+    nombre: 'Usuario',
     apellido: '',
-    edad: '',
+    edad: '30',
     estadoCivil: 'soltero',
     dependientes: 0,
     avatar: '👤',
@@ -719,309 +334,116 @@ function App() {
     parejaAvatar: '👤'
   });
 
-  // Show profile modal on first load
+  // Scroll to top when PDF modal opens
   useEffect(() => {
-    if (!userProfile.nombre || !userProfile.apellido) {
-      setShowOnboardingModal(true);
-    }
-  }, []);
-
-  // Scroll to top when modals open (para embeds en Wix/iframes)
-  useEffect(() => {
-    if (showOnboardingModal || showHelpModal || showPDFModal) {
+    if (showPDFModal) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      // También intentar scroll del contenedor
-      const container = document.querySelector('.app-container');
-      if (container) {
-        container.scrollTop = 0;
-      }
     }
-  }, [showOnboardingModal, showHelpModal, showPDFModal]);
+  }, [showPDFModal]);
 
-  // Financial data - NO localStorage
   const [modoCalculo, setModoCalculo] = useState('mensual');
   
-  // Flujo de Caja
+  // SOLO 10 variables esenciales
   const [ingresoBruto, setIngresoBruto] = useState('');
   const [ahorro, setAhorro] = useState('');
-  const [deudas, setDeudas] = useState('');
-  const [gastosDiarios, setGastosDiarios] = useState('');
-  const [seguros, setSeguros] = useState('');
   const [impuestos, setImpuestos] = useState('');
-  
-  // Activos
-  const [efectivo, setEfectivo] = useState('');
-  const [inversiones, setInversiones] = useState('');
-  const [retiro, setRetiro] = useState('');
-  const [bienesRaices, setBienesRaices] = useState('');
-  const [bienesPersonales, setBienesPersonales] = useState('');
-  
-  // Pasivos
-  const [tarjetas, setTarjetas] = useState('');
-  const [lineaPersonal, setLineaPersonal] = useState('');
-  const [lineaPropiedad, setLineaPropiedad] = useState('');
-  const [hipoteca, setHipoteca] = useState('');
-  const [prestamoAuto, setPrestamoAuto] = useState('');
-  const [prestamosEducativos, setPrestamosEducativos] = useState('');
-  const [otrosPrestamos, setOtrosPrestamos] = useState('');
-  
-  // Datos adicionales
+  const [seguros, setSeguros] = useState('');
+  const [pagoDeudas, setPagoDeudas] = useState('');
   const [gastosEsenciales, setGastosEsenciales] = useState('');
   const [reservaEmergencia, setReservaEmergencia] = useState('');
-  const [pagoMensualDeudas, setPagoMensualDeudas] = useState('');
+  const [activosTotales, setActivosTotales] = useState('');
+  const [pasivosTotales, setPasivosTotales] = useState('');
 
-  // Clear all data
   const clearAllData = () => {
     if (confirm('⚠️ ¿Estás seguro de que quieres borrar TODOS los datos?\n\nEsta acción no se puede deshacer.')) {
       setIngresoBruto('');
       setAhorro('');
-      setDeudas('');
-      setGastosDiarios('');
-      setSeguros('');
       setImpuestos('');
-      setEfectivo('');
-      setInversiones('');
-      setRetiro('');
-      setBienesRaices('');
-      setBienesPersonales('');
-      setTarjetas('');
-      setLineaPersonal('');
-      setLineaPropiedad('');
-      setHipoteca('');
-      setPrestamoAuto('');
-      setPrestamosEducativos('');
-      setOtrosPrestamos('');
+      setSeguros('');
+      setPagoDeudas('');
       setGastosEsenciales('');
       setReservaEmergencia('');
-      setPagoMensualDeudas('');
+      setActivosTotales('');
+      setPasivosTotales('');
     }
   };
 
-  // ===== COMPUTED VALUES =====
   const totales = useMemo(() => {
     const mult = modoCalculo === 'anual' ? 1 : 12;
     
-    // Activos
-    const totalEfectivo = parseNumber(efectivo);
-    const totalInversiones = parseNumber(inversiones);
-    const totalRetiro = parseNumber(retiro);
-    const totalBienesRaices = parseNumber(bienesRaices);
-    const totalBienesPersonales = parseNumber(bienesPersonales);
-    const activosTotales = totalEfectivo + totalInversiones + totalRetiro + totalBienesRaices + totalBienesPersonales;
+    const ingresoBrutoAnual = parseNumber(ingresoBruto) * mult;
+    const ahorroAnual = parseNumber(ahorro) * mult;
+    const impuestosAnual = parseNumber(impuestos) * mult;
+    const segurosAnual = parseNumber(seguros) * mult;
+    const ingresoNetoAnual = ingresoBrutoAnual - impuestosAnual - segurosAnual;
+    const pagoDeudaMensual = modoCalculo === 'anual' ? parseNumber(pagoDeudas) / 12 : parseNumber(pagoDeudas);
     
-    // Pasivos
-    const totalTarjetas = parseNumber(tarjetas);
-    const totalLineaPersonal = parseNumber(lineaPersonal);
-    const totalLineaPropiedad = parseNumber(lineaPropiedad);
-    const totalHipoteca = parseNumber(hipoteca);
-    const totalPrestamoAuto = parseNumber(prestamoAuto);
-    const totalPrestamosEducativos = parseNumber(prestamosEducativos);
-    const totalOtrosPrestamos = parseNumber(otrosPrestamos);
-    const pasivosTotales = totalTarjetas + totalLineaPersonal + totalLineaPropiedad + totalHipoteca + totalPrestamoAuto + totalPrestamosEducativos + totalOtrosPrestamos;
+    const activos = parseNumber(activosTotales);
+    const pasivos = parseNumber(pasivosTotales);
+    const patrimonioNeto = activos - pasivos;
     
-    // Patrimonio
-    const patrimonioNeto = activosTotales - pasivosTotales;
+    const gastosEsencialesMens = parseNumber(gastosEsenciales);
+    const reserva = parseNumber(reservaEmergencia);
     
-    // Flujo de caja
-    const totalIngresos = parseNumber(ingresoBruto) * mult;
-    const totalAhorro = parseNumber(ahorro) * mult;
-    const totalDeudas = parseNumber(deudas) * mult;
-    const totalGastosDiarios = parseNumber(gastosDiarios) * mult;
-    const totalSeguros = parseNumber(seguros) * mult;
-    const totalImpuestos = parseNumber(impuestos) * mult;
-    const totalGastos = totalDeudas + totalGastosDiarios + totalSeguros + totalImpuestos;
-    const superavit = totalIngresos - totalGastos - totalAhorro;
+    // 5 MÉTRICAS CLAVE
+    const mesesReserva = gastosEsencialesMens > 0 ? reserva / gastosEsencialesMens : 0;
+    const tasaAhorro = ingresoBrutoAnual > 0 ? ahorroAnual / ingresoBrutoAnual : 0;
+    const dtiNeto = (ingresoNetoAnual / 12) > 0 ? pagoDeudaMensual / (ingresoNetoAnual / 12) : 0;
+    const deudaActivos = activos > 0 ? pasivos / activos : 0;
+    const patrimonioActivos = activos > 0 ? patrimonioNeto / activos : 0;
+    const riquezaNeta = ingresoBrutoAnual > 0 ? patrimonioNeto / ingresoBrutoAnual : 0;
 
     return {
-      activosTotales,
-      pasivosTotales,
+      activosTotales: activos,
+      pasivosTotales: pasivos,
       patrimonioNeto,
-      totalIngresos,
-      totalGastos,
-      totalAhorro,
-      superavit,
-      totalEfectivo,
-      totalInversiones,
-      totalRetiro,
-      totalBienesRaices,
-      totalBienesPersonales,
-      activosLiquidos: totalEfectivo,
-      inversiones: totalInversiones + totalRetiro
+      mesesReserva,
+      tasaAhorro,
+      dtiNeto,
+      deudaActivos,
+      patrimonioActivos,
+      riquezaNeta
     };
-  }, [ingresoBruto, ahorro, deudas, gastosDiarios, seguros, impuestos, efectivo, inversiones, retiro, bienesRaices, bienesPersonales, tarjetas, lineaPersonal, lineaPropiedad, hipoteca, prestamoAuto, prestamosEducativos, otrosPrestamos, modoCalculo]);
+  }, [ingresoBruto, ahorro, impuestos, seguros, pagoDeudas, gastosEsenciales, reservaEmergencia, activosTotales, pasivosTotales, modoCalculo]);
 
-return (
-  <div className="app-container" style={{position: 'relative', minHeight: '100vh'}}>
-    {/* Sincronizar datos con Card */}
-    <DataSync
-      totales={totales}
-      userProfile={userProfile}
-      currency={currency}
-      ingresoBruto={ingresoBruto}
-      ahorro={ahorro}
-      deudas={deudas}
-      gastosEsenciales={gastosEsenciales}
-      reservaEmergencia={reservaEmergencia}
-      pagoMensualDeudas={pagoMensualDeudas}
-      modoCalculo={modoCalculo}
-      impuestos={impuestos}
-      seguros={seguros}
-    />
+  const getRiquezaBenchmark = (age) => {
+    const benchmarks = [
+      {age:25, good:2.5, great:5},
+      {age:30, good:3, great:6},
+      {age:35, good:3.5, great:7},
+      {age:40, good:4, great:8},
+      {age:45, good:4.5, great:9},
+      {age:50, good:5, great:10},
+      {age:55, good:5.5, great:11},
+      {age:60, good:6, great:12},
+      {age:65, good:6.5, great:13},
+      {age:70, good:7, great:14}
+    ];
     
-    {/* Onboarding Modal */}
-      <OnboardingModal
-        isOpen={showOnboardingModal}
-        onClose={() => setShowOnboardingModal(false)}
-        onSave={setUserProfile}
-        initialProfile={userProfile}
-      />
+    if(age < 25) return benchmarks[0];
+    if(age >= 70) return benchmarks[benchmarks.length-1];
+    
+    for(let i=0; i<benchmarks.length-1; i++) {
+      if(age >= benchmarks[i].age && age < benchmarks[i+1].age) {
+        const t = (age - benchmarks[i].age) / (benchmarks[i+1].age - benchmarks[i].age);
+        return {
+          good: benchmarks[i].good + t * (benchmarks[i+1].good - benchmarks[i].good),
+          great: benchmarks[i].great + t * (benchmarks[i+1].great - benchmarks[i].great)
+        };
+      }
+    }
+    return benchmarks[benchmarks.length-1];
+  };
+
+  const edad = parseInt(userProfile.edad) || 30;
+  const benchmark = getRiquezaBenchmark(edad);
+
+  return (
+    <div className="app-container" style={{position: 'relative', minHeight: '100vh'}}>
       
       <header className="app-header">
         <div className="header-content">
-          <img 
-            src="https://xserbia.github.io/calculadora-financiera/assets/XAVIER-MONEY-MAP-LOGO.png" 
-            alt="Xavier Serbia Money Map"
-            style={{height: '60px', marginBottom: '0.5rem'}}
-          />
-          <p className="app-subtitle">Tu mapa financiero personal hacia la libertad económica</p>
-          
-          <div style={{display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap'}}>
-            <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
-              <label style={{color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem', fontWeight: '600'}}>Moneda:</label>
-              <select 
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                style={{
-                  padding: '0.5rem 1rem',
-                  borderRadius: '8px',
-                  border: '2px solid rgba(255,255,255,0.2)',
-                  background: 'rgba(255,255,255,0.1)',
-                  color: 'white',
-                  fontWeight: '600',
-                  fontSize: '0.9rem',
-                  cursor: 'pointer',
-                  outline: 'none'
-                }}
-              >
-                <option value="USD" style={{background: '#2845d9', color: 'white'}}>🇺🇸 USD - Dólar</option>
-                <option value="EUR" style={{background: '#2845d9', color: 'white'}}>🇪🇺 EUR - Euro</option>
-                <option value="GBP" style={{background: '#2845d9', color: 'white'}}>🇬🇧 GBP - Libra</option>
-                <option value="CAD" style={{background: '#2845d9', color: 'white'}}>🇨🇦 CAD - Dólar Canadiense</option>
-                <option value="MXN" style={{background: '#2845d9', color: 'white'}}>🇲🇽 MXN - Peso Mexicano</option>
-                <option value="GTQ" style={{background: '#2845d9', color: 'white'}}>🇬🇹 GTQ - Quetzal Guatemalteco</option>
-                <option value="HNL" style={{background: '#2845d9', color: 'white'}}>🇭🇳 HNL - Lempira Hondureño</option>
-                <option value="NIO" style={{background: '#2845d9', color: 'white'}}>🇳🇮 NIO - Córdoba Nicaragüense</option>
-                <option value="CRC" style={{background: '#2845d9', color: 'white'}}>🇨🇷 CRC - Colón Costarricense</option>
-                <option value="PAB" style={{background: '#2845d9', color: 'white'}}>🇵🇦 PAB - Balboa Panameño</option>
-                <option value="COP" style={{background: '#2845d9', color: 'white'}}>🇨🇴 COP - Peso Colombiano</option>
-                <option value="VES" style={{background: '#2845d9', color: 'white'}}>🇻🇪 VES - Bolívar Venezolano</option>
-                <option value="BOB" style={{background: '#2845d9', color: 'white'}}>🇧🇴 BOB - Boliviano</option>
-                <option value="PEN" style={{background: '#2845d9', color: 'white'}}>🇵🇪 PEN - Sol Peruano</option>
-                <option value="BRL" style={{background: '#2845d9', color: 'white'}}>🇧🇷 BRL - Real Brasileño</option>
-                <option value="PYG" style={{background: '#2845d9', color: 'white'}}>🇵🇾 PYG - Guaraní Paraguayo</option>
-                <option value="CLP" style={{background: '#2845d9', color: 'white'}}>🇨🇱 CLP - Peso Chileno</option>
-                <option value="ARS" style={{background: '#2845d9', color: 'white'}}>🇦🇷 ARS - Peso Argentino</option>
-                <option value="UYU" style={{background: '#2845d9', color: 'white'}}>🇺🇾 UYU - Peso Uruguayo</option>
-                <option value="DOP" style={{background: '#2845d9', color: 'white'}}>🇩🇴 DOP - Peso Dominicano</option>
-                <option value="CUP" style={{background: '#2845d9', color: 'white'}}>🇨🇺 CUP - Peso Cubano</option>
-                <option value="HTG" style={{background: '#2845d9', color: 'white'}}>🇭🇹 HTG - Gourde Haitiano</option>
-              </select>
-            </div>
-            
-            <button
-              onClick={() => setShowOnboardingModal(true)}
-              style={{
-                padding: '0.5rem 1.25rem',
-                borderRadius: '8px',
-                border: '2px solid rgba(255,255,255,0.3)',
-                background: 'rgba(255,255,255,0.15)',
-                color: 'white',
-                fontWeight: '600',
-                fontSize: '0.9rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              {(userProfile.estadoCivil === 'casado' || userProfile.estadoCivil === 'pareja') && userProfile.parejaNombre 
-                ? `${userProfile.avatar}❤️${userProfile.parejaAvatar}` 
-                : userProfile.avatar
-              } Mi Perfil
-            </button>
-            
-            <button
-              onClick={() => setShowHelpModal(true)}
-              style={{
-                padding: '0.5rem 1.25rem',
-                borderRadius: '8px',
-                border: '2px solid rgba(255,255,255,0.3)',
-                background: 'rgba(255,255,255,0.15)',
-                color: 'white',
-                fontWeight: '600',
-                fontSize: '0.9rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              ❓ Cómo usar
-            </button>
-            
-            <button
-              onClick={() => setShowPDFModal(true)}
-              style={{
-                padding: '0.5rem 1.25rem',
-                borderRadius: '8px',
-                border: '2px solid rgba(16, 185, 129, 0.5)',
-                background: 'rgba(16, 185, 129, 0.2)',
-                color: 'white',
-                fontWeight: '600',
-                fontSize: '0.9rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              📄 PDF Worksheets
-            </button>
-            
-            <button
-              onClick={clearAllData}
-              className="btn btn-danger"
-              style={{
-                border: '2px solid rgba(239, 68, 68, 0.5)',
-                background: 'rgba(239, 68, 68, 0.15)',
-                color: 'white'
-              }}
-            >
-              🗑️ Limpiar Datos
-            </button>
-          </div>
-
-          {/* Nota sobre datos */}
-          <div style={{
-            background: 'rgba(255, 193, 7, 0.2)',
-            border: '2px solid rgba(255, 193, 7, 0.5)',
-            borderRadius: '12px',
-            padding: '1rem 1.25rem',
-            marginBottom: '1.5rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem'
-          }}>
-            <span style={{fontSize: '1.5rem'}}>⚠️</span>
-            <div style={{flex: 1}}>
-              <div style={{fontWeight: '700', fontSize: '0.95rem', marginBottom: '0.25rem'}}>
-                Tus datos NO se guardan automáticamente
-              </div>
-              <div style={{fontSize: '0.85rem', opacity: 0.9, lineHeight: '1.4'}}>
-                Los datos se borran al cerrar o recargar la página. Usa el PDF Worksheet para guardar tu información de forma permanente y solo ingresa los totales en esta calculadora para análisis rápido.
-              </div>
-            </div>
-          </div>
+          <p className="app-subtitle">5 métricas clave para medir tu salud financiera</p>
           
           <div className="tabs-container">
             <button 
@@ -1031,22 +453,61 @@ return (
               ✏️ Ingresar Datos
             </button>
             <button 
-              className={`tab-button ${activeTab === 'vistaGeneral' ? 'active' : ''}`}
-              onClick={() => setActiveTab('vistaGeneral')}
-            >
-              📊 Vista General
-            </button>
-            <button 
-              className={`tab-button ${activeTab === 'graficos' ? 'active' : ''}`}
-              onClick={() => setActiveTab('graficos')}
-            >
-              📈 Gráficos
-            </button>
-            <button 
               className={`tab-button ${activeTab === 'ratios' ? 'active' : ''}`}
               onClick={() => setActiveTab('ratios')}
             >
-              📊 Ratios Financieros
+              📊 Mis Ratios
+            </button>
+            <button
+              onClick={() => setShowPDFModal(true)}
+              style={{
+                background: 'rgba(16, 185, 129, 0.15)',
+                border: 'none',
+                color: 'rgba(255, 255, 255, 0.9)',
+                padding: '1rem 1.5rem',
+                fontSize: '0.95rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                borderBottom: '3px solid transparent',
+                whiteSpace: 'nowrap',
+                fontFamily: 'DM Sans, sans-serif'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(16, 185, 129, 0.25)';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(16, 185, 129, 0.15)';
+                e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)';
+              }}
+            >
+              📄 PDF Worksheets
+            </button>
+            <button
+              onClick={clearAllData}
+              style={{
+                background: 'rgba(239, 68, 68, 0.15)',
+                border: 'none',
+                color: 'rgba(255, 255, 255, 0.9)',
+                padding: '1rem 1.5rem',
+                fontSize: '0.95rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                borderBottom: '3px solid transparent',
+                whiteSpace: 'nowrap',
+                fontFamily: 'DM Sans, sans-serif',
+                marginLeft: 'auto'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
+              }}
+            >
+              🗑️ Limpiar Datos
             </button>
           </div>
         </div>
@@ -1059,201 +520,39 @@ return (
             setModoCalculo={setModoCalculo}
             ingresoBruto={ingresoBruto}
             setIngresoBruto={setIngresoBruto}
-            ahorro={ahorro}
+            ahorro={setAhorro}
             setAhorro={setAhorro}
-            deudas={deudas}
-            setDeudas={setDeudas}
-            gastosDiarios={gastosDiarios}
-            setGastosDiarios={setGastosDiarios}
-            seguros={seguros}
-            setSeguros={setSeguros}
             impuestos={impuestos}
             setImpuestos={setImpuestos}
-            efectivo={efectivo}
-            setEfectivo={setEfectivo}
-            inversiones={inversiones}
-            setInversiones={setInversiones}
-            retiro={retiro}
-            setRetiro={setRetiro}
-            bienesRaices={bienesRaices}
-            setBienesRaices={setBienesRaices}
-            bienesPersonales={bienesPersonales}
-            setBienesPersonales={setBienesPersonales}
-            tarjetas={tarjetas}
-            setTarjetas={setTarjetas}
-            lineaPersonal={lineaPersonal}
-            setLineaPersonal={setLineaPersonal}
-            lineaPropiedad={lineaPropiedad}
-            setLineaPropiedad={setLineaPropiedad}
-            hipoteca={hipoteca}
-            setHipoteca={setHipoteca}
-            prestamoAuto={prestamoAuto}
-            setPrestamoAuto={setPrestamoAuto}
-            prestamosEducativos={prestamosEducativos}
-            setPrestamosEducativos={setPrestamosEducativos}
-            otrosPrestamos={otrosPrestamos}
-            setOtrosPrestamos={setOtrosPrestamos}
+            seguros={seguros}
+            setSeguros={setSeguros}
+            pagoDeudas={pagoDeudas}
+            setPagoDeudas={setPagoDeudas}
             gastosEsenciales={gastosEsenciales}
             setGastosEsenciales={setGastosEsenciales}
             reservaEmergencia={reservaEmergencia}
             setReservaEmergencia={setReservaEmergencia}
-            pagoMensualDeudas={pagoMensualDeudas}
-            setPagoMensualDeudas={setPagoMensualDeudas}
+            activosTotales={activosTotales}
+            setActivosTotales={setActivosTotales}
+            pasivosTotales={pasivosTotales}
+            setPasivosTotales={setPasivosTotales}
             currency={currency}
-          />
-        )}
-        {activeTab === 'vistaGeneral' && (
-          <VistaGeneral 
-            totales={totales}
-            userProfile={userProfile}
-            currency={currency}
-            setActiveTab={setActiveTab}
-          />
-        )}
-        {activeTab === 'graficos' && (
-          <GraficosTab 
-            totales={totales}
-            currency={currency}
-            ingresoBruto={parseNumber(ingresoBruto)}
-            ahorro={parseNumber(ahorro)}
-            deudas={parseNumber(deudas)}
-            gastosDiarios={parseNumber(gastosDiarios)}
-            seguros={parseNumber(seguros)}
-            impuestos={parseNumber(impuestos)}
-            modoCalculo={modoCalculo}
-            tarjetas={parseNumber(tarjetas)}
-            lineaPersonal={parseNumber(lineaPersonal)}
-            lineaPropiedad={parseNumber(lineaPropiedad)}
-            hipoteca={parseNumber(hipoteca)}
-            prestamoAuto={parseNumber(prestamoAuto)}
-            prestamosEducativos={parseNumber(prestamosEducativos)}
-            otrosPrestamos={parseNumber(otrosPrestamos)}
           />
         )}
         {activeTab === 'ratios' && (
-          <RatiosFinancieros 
+          <RatiosTab 
             totales={totales}
             userProfile={userProfile}
             currency={currency}
-            ingresoBruto={parseNumber(ingresoBruto)}
-            ahorro={parseNumber(ahorro)}
-            deudas={parseNumber(deudas)}
-            seguros={parseNumber(seguros)}
-            impuestos={parseNumber(impuestos)}
-            gastosEsenciales={parseNumber(gastosEsenciales)}
-            reservaEmergencia={parseNumber(reservaEmergencia)}
-            pagoMensualDeudas={parseNumber(pagoMensualDeudas)}
-            modoCalculo={modoCalculo}
+            benchmark={benchmark}
           />
         )}
       </main>
 
-      {/* Help Modal */}
-      {showHelpModal && (
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.7)',
-          zIndex: 2000,
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'center',
-          padding: '20px',
-          paddingTop: '40px',
-          backdropFilter: 'blur(8px)',
-          overflowY: 'auto'
-        }} onClick={() => setShowHelpModal(false)}>
-          <div style={{
-            background: '#fff',
-            borderRadius: '20px',
-            maxWidth: '800px',
-            width: '100%',
-            maxHeight: '90vh',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
-            boxShadow: '0 25px 70px rgba(0,0,0,0.5)'
-          }} onClick={(e) => e.stopPropagation()}>
-            <div style={{padding: '24px 28px', background: 'var(--primary)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
-              <div style={{fontSize: '24px', fontWeight: '800', color: 'white'}}>🗺️ Cómo usar Money Map</div>
-              <button onClick={() => setShowHelpModal(false)} style={{background: 'rgba(255,255,255,0.2)', border: 'none', width: '36px', height: '36px', borderRadius: '50%', fontSize: '22px', cursor: 'pointer', color: 'white'}}>×</button>
-            </div>
-            <div style={{padding: '32px', overflowY: 'auto', lineHeight: '1.7'}}>
-              <h3 style={{margin: '0 0 16px', fontSize: '20px', fontWeight: '700', color: 'var(--primary)'}}>
-                🎯 ¿Para qué sirve esta calculadora?
-              </h3>
-              <p style={{marginBottom: '24px', fontSize: '15px', color: 'var(--text)'}}>
-                Esta calculadora te ayuda a <strong>obtener una foto completa de tu salud financiera</strong> calculando ratios clave que te indican si estás en buen camino hacia tus metas financieras. Podrás ver:
-              </p>
-              <ul style={{marginBottom: '32px', paddingLeft: '24px', fontSize: '15px', color: 'var(--text)'}}>
-                <li style={{marginBottom: '12px'}}><strong>Tu patrimonio neto</strong> (lo que realmente tienes vs. lo que debes)</li>
-                <li style={{marginBottom: '12px'}}><strong>Tu capacidad de ahorro</strong> (cuánto guardas del dinero que ganas)</li>
-                <li style={{marginBottom: '12px'}}><strong>Tu nivel de deuda</strong> (si tus deudas están bajo control)</li>
-                <li style={{marginBottom: '12px'}}><strong>Tu nivel de riqueza</strong> (si estás acumulando patrimonio según tu edad)</li>
-                <li style={{marginBottom: '12px'}}><strong>Tu preparación financiera</strong> (si tienes reserva de emergencia adecuada)</li>
-              </ul>
-
-              <h3 style={{margin: '32px 0 16px', fontSize: '20px', fontWeight: '700', color: 'var(--primary)'}}>
-                📝 ¿Cómo funciona?
-              </h3>
-              
-              <div style={{background: '#f0f9ff', padding: '20px', borderRadius: '12px', marginBottom: '20px', borderLeft: '4px solid var(--primary)'}}>
-                <h4 style={{margin: '0 0 12px', fontSize: '16px', fontWeight: '700', color: 'var(--text)'}}>Paso 1: Usa el PDF Worksheet</h4>
-                <p style={{margin: 0, fontSize: '14px', color: 'var(--text-muted)'}}>
-                  Descarga el PDF Worksheet y llena todos los detalles de tus ingresos, gastos, activos y pasivos. El worksheet tiene categorías detalladas para que no se te escape nada. Calcula los <strong>TOTALES</strong> de cada categoría.
-                </p>
-              </div>
-
-              <div style={{background: '#fef3f2', padding: '20px', borderRadius: '12px', marginBottom: '20px', borderLeft: '4px solid var(--danger)'}}>
-                <h4 style={{margin: '0 0 12px', fontSize: '16px', fontWeight: '700', color: 'var(--text)'}}>Paso 2: Ingresa solo los TOTALES</h4>
-                <p style={{margin: 0, fontSize: '14px', color: 'var(--text-muted)'}}>
-                  En la pestaña <strong>"Ingresar Datos"</strong> de esta calculadora, copia únicamente los totales que calculaste en el worksheet. No necesitas ingresar cada detalle, solo las sumas finales de cada categoría.
-                </p>
-              </div>
-
-              <div style={{background: '#f0fdf4', padding: '20px', borderRadius: '12px', marginBottom: '20px', borderLeft: '4px solid var(--success)'}}>
-                <h4 style={{margin: '0 0 12px', fontSize: '16px', fontWeight: '700', color: 'var(--text)'}}>Paso 3: Revisa tus resultados</h4>
-                <p style={{margin: 0, fontSize: '14px', color: 'var(--text-muted)'}}>
-                  Ve a las pestañas de <strong>"Vista General"</strong>, <strong>"Gráficos"</strong> y <strong>"Ratios Financieros"</strong> para ver análisis visuales y comparar tus números con benchmarks financieros reconocidos.
-                </p>
-              </div>
-
-              <div style={{background: '#fffbeb', padding: '20px', borderRadius: '12px', marginBottom: '24px', borderLeft: '4px solid var(--amber)'}}>
-                <h4 style={{margin: '0 0 12px', fontSize: '16px', fontWeight: '700', color: 'var(--text)'}}>Paso 4: Toma decisiones informadas</h4>
-                <p style={{margin: 0, fontSize: '14px', color: 'var(--text-muted)'}}>
-                  Usa los insights de los ratios para identificar áreas de mejora. ¿Tu tasa de ahorro está baja? ¿Tus deudas están muy altas? ¿Tu reserva de emergencia es suficiente? Esta herramienta te da las respuestas.
-                </p>
-              </div>
-
-              <h3 style={{margin: '32px 0 16px', fontSize: '20px', fontWeight: '700', color: 'var(--primary)'}}>
-                🔒 Privacidad y Seguridad
-              </h3>
-              <div style={{background: '#fff7ed', padding: '20px', borderRadius: '12px', borderLeft: '4px solid #ea580c'}}>
-                <p style={{margin: 0, fontSize: '14px', lineHeight: '1.6', color: 'var(--text)'}}>
-                  <strong>⚠️ IMPORTANTE:</strong> Esta calculadora <strong>NO guarda tus datos automáticamente</strong>. Todos los números que ingreses se borrarán al cerrar o recargar la página. Por eso recomendamos usar el PDF Worksheet como tu registro permanente. Solo usa esta calculadora web para análisis rápido y visualización de resultados.
-                </p>
-              </div>
-
-              <h3 style={{margin: '32px 0 16px', fontSize: '20px', fontWeight: '700', color: 'var(--primary)'}}>
-                💡 Consejo Pro
-              </h3>
-              <div style={{background: '#f8fafc', padding: '20px', borderRadius: '12px', borderLeft: '4px solid var(--slate)'}}>
-                <p style={{margin: 0, fontSize: '14px', lineHeight: '1.6', color: 'var(--text)'}}>
-                  <strong>Sé honesto y completo.</strong> Los datos más precisos te darán el análisis más útil. Esta herramienta es educativa y no constituye asesoramiento financiero profesional. Para decisiones importantes, consulta con un asesor financiero certificado.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* PDF Modal */}
       {showPDFModal && (
         <div style={{
-          position: 'absolute',
+          position: 'fixed',
           top: 0,
           left: 0,
           right: 0,
@@ -1431,69 +730,30 @@ return (
           </div>
         </div>
       )}
-
-
-
-      <footer className="export-footer">
-        <div className="export-footer-content">
-          <div className="export-info">
-            <div className="font-bold">
-              {userProfile.nombre && userProfile.apellido 
-                ? `Money Map de ${userProfile.nombre} ${userProfile.apellido}`
-                : userProfile.nombre
-                ? `Money Map de ${userProfile.nombre}`
-                : 'Xavier Serbia Money Map'}
-            </div>
-            <div className="text-muted" style={{fontSize: '0.85rem', marginTop: '0.25rem'}}>
-              Patrimonio Neto: <span className="currency font-bold" style={{color: totales.patrimonioNeto >= 0 ? 'var(--success)' : 'var(--danger)'}}>
-                {formatCurrency(totales.patrimonioNeto, currency)}
-              </span>
-            </div>
-            <div style={{fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem'}}>
-              Esta herramienta proporciona análisis financiero educativo. No constituye asesoramiento financiero, legal o fiscal profesional. 
-              Consulta con profesionales calificados para decisiones financieras importantes.
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
 
-// ============= DATOS TAB =============
 function DatosTab({ 
   modoCalculo, setModoCalculo,
   ingresoBruto, setIngresoBruto,
   ahorro, setAhorro,
-  deudas, setDeudas,
-  gastosDiarios, setGastosDiarios,
-  seguros, setSeguros,
   impuestos, setImpuestos,
-  efectivo, setEfectivo,
-  inversiones, setInversiones,
-  retiro, setRetiro,
-  bienesRaices, setBienesRaices,
-  bienesPersonales, setBienesPersonales,
-  tarjetas, setTarjetas,
-  lineaPersonal, setLineaPersonal,
-  lineaPropiedad, setLineaPropiedad,
-  hipoteca, setHipoteca,
-  prestamoAuto, setPrestamoAuto,
-  prestamosEducativos, setPrestamosEducativos,
-  otrosPrestamos, setOtrosPrestamos,
+  seguros, setSeguros,
+  pagoDeudas, setPagoDeudas,
   gastosEsenciales, setGastosEsenciales,
   reservaEmergencia, setReservaEmergencia,
-  pagoMensualDeudas, setPagoMensualDeudas,
+  activosTotales, setActivosTotales,
+  pasivosTotales, setPasivosTotales,
   currency
 }) {
   return (
     <div>
-      {/* Modo de cálculo */}
       <div className="card">
         <div className="card-header">
           <div>
             <h2 className="card-title">Modo de Cálculo</h2>
-            <p className="card-subtitle">Elige si prefieres ingresar datos mensuales o anuales</p>
+            <p className="card-subtitle">Elige si tus datos son mensuales o anuales</p>
           </div>
           <select 
             className="form-input" 
@@ -1512,13 +772,13 @@ function DatosTab({
         <div className="card-header">
           <div>
             <h2 className="card-title">💵 Flujo de Caja ({modoCalculo === 'mensual' ? 'Mensual' : 'Anual'})</h2>
-            <p className="card-subtitle">Usa el PDF Worksheet para calcular estos totales</p>
+            <p className="card-subtitle">Datos de ingresos y gastos</p>
           </div>
         </div>
 
         <div className="grid-3">
           <div className="form-group">
-            <label className="form-label">Ingreso Bruto Total</label>
+            <label className="form-label">Ingreso Bruto</label>
             <input
               type="number"
               className="form-input"
@@ -1526,10 +786,13 @@ function DatosTab({
               value={ingresoBruto}
               onChange={(e) => setIngresoBruto(e.target.value)}
             />
+            <div style={{fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem'}}>
+              Total de ingresos antes de impuestos
+            </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Ahorro Total</label>
+            <label className="form-label">Ahorro</label>
             <input
               type="number"
               className="form-input"
@@ -1537,46 +800,13 @@ function DatosTab({
               value={ahorro}
               onChange={(e) => setAhorro(e.target.value)}
             />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Deudas Total (pago)</label>
-            <input
-              type="number"
-              className="form-input"
-              placeholder={`${formatCurrency(0, currency)} ${modoCalculo === 'mensual' ? '/mes' : '/año'}`}
-              value={deudas}
-              onChange={(e) => setDeudas(e.target.value)}
-            />
             <div style={{fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem'}}>
-              Total de pagos mensuales/anuales de todas tus deudas (se usa para calcular DTI)
+              Dinero que ahorras regularmente
             </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Gastos Diarios Total</label>
-            <input
-              type="number"
-              className="form-input"
-              placeholder={`${formatCurrency(0, currency)} ${modoCalculo === 'mensual' ? '/mes' : '/año'}`}
-              value={gastosDiarios}
-              onChange={(e) => setGastosDiarios(e.target.value)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Seguros Total</label>
-            <input
-              type="number"
-              className="form-input"
-              placeholder={`${formatCurrency(0, currency)} ${modoCalculo === 'mensual' ? '/mes' : '/año'}`}
-              value={seguros}
-              onChange={(e) => setSeguros(e.target.value)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Impuestos Total</label>
+            <label className="form-label">Impuestos</label>
             <input
               type="number"
               className="form-input"
@@ -1584,176 +814,39 @@ function DatosTab({
               value={impuestos}
               onChange={(e) => setImpuestos(e.target.value)}
             />
-          </div>
-        </div>
-      </div>
-
-      {/* Activos */}
-      <div className="card">
-        <div className="card-header">
-          <div>
-            <h2 className="card-title">💰 Activos (Valor Total)</h2>
-            <p className="card-subtitle">Usa el PDF Worksheet para calcular estos totales</p>
-          </div>
-        </div>
-
-        <div className="grid-3">
-          <div className="form-group">
-            <label className="form-label">Efectivo y Equivalentes</label>
-            <input
-              type="number"
-              className="form-input"
-              placeholder={formatCurrency(0, currency)}
-              value={efectivo}
-              onChange={(e) => setEfectivo(e.target.value)}
-            />
+            <div style={{fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem'}}>
+              Total de impuestos que pagas
+            </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Inversiones</label>
+            <label className="form-label">Seguros</label>
             <input
               type="number"
               className="form-input"
-              placeholder={formatCurrency(0, currency)}
-              value={inversiones}
-              onChange={(e) => setInversiones(e.target.value)}
+              placeholder={`${formatCurrency(0, currency)} ${modoCalculo === 'mensual' ? '/mes' : '/año'}`}
+              value={seguros}
+              onChange={(e) => setSeguros(e.target.value)}
             />
+            <div style={{fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem'}}>
+              Total de seguros (vida, auto, salud, etc.)
+            </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Cuentas de Retiro</label>
+            <label className="form-label">Pago Mensual de Deudas</label>
             <input
               type="number"
               className="form-input"
-              placeholder={formatCurrency(0, currency)}
-              value={retiro}
-              onChange={(e) => setRetiro(e.target.value)}
+              placeholder={`${formatCurrency(0, currency)}/mes`}
+              value={pagoDeudas}
+              onChange={(e) => setPagoDeudas(e.target.value)}
             />
+            <div style={{fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem'}}>
+              Suma de todos los pagos mensuales de deudas
+            </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Bienes Raíces</label>
-            <input
-              type="number"
-              className="form-input"
-              placeholder={formatCurrency(0, currency)}
-              value={bienesRaices}
-              onChange={(e) => setBienesRaices(e.target.value)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Bienes Personales</label>
-            <input
-              type="number"
-              className="form-input"
-              placeholder={formatCurrency(0, currency)}
-              value={bienesPersonales}
-              onChange={(e) => setBienesPersonales(e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Pasivos */}
-      <div className="card">
-        <div className="card-header">
-          <div>
-            <h2 className="card-title">💳 Pasivos (Balance Total)</h2>
-            <p className="card-subtitle">Usa el PDF Worksheet para calcular estos totales</p>
-          </div>
-        </div>
-
-        <div className="grid-3">
-          <div className="form-group">
-            <label className="form-label">Tarjetas de Crédito</label>
-            <input
-              type="number"
-              className="form-input"
-              placeholder={formatCurrency(0, currency)}
-              value={tarjetas}
-              onChange={(e) => setTarjetas(e.target.value)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Línea de Crédito Personal</label>
-            <input
-              type="number"
-              className="form-input"
-              placeholder={formatCurrency(0, currency)}
-              value={lineaPersonal}
-              onChange={(e) => setLineaPersonal(e.target.value)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Línea de Crédito de Propiedad</label>
-            <input
-              type="number"
-              className="form-input"
-              placeholder={formatCurrency(0, currency)}
-              value={lineaPropiedad}
-              onChange={(e) => setLineaPropiedad(e.target.value)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Hipoteca/Casa</label>
-            <input
-              type="number"
-              className="form-input"
-              placeholder={formatCurrency(0, currency)}
-              value={hipoteca}
-              onChange={(e) => setHipoteca(e.target.value)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Préstamo de Auto</label>
-            <input
-              type="number"
-              className="form-input"
-              placeholder={formatCurrency(0, currency)}
-              value={prestamoAuto}
-              onChange={(e) => setPrestamoAuto(e.target.value)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Préstamos Educativos</label>
-            <input
-              type="number"
-              className="form-input"
-              placeholder={formatCurrency(0, currency)}
-              value={prestamosEducativos}
-              onChange={(e) => setPrestamosEducativos(e.target.value)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Otros Préstamos</label>
-            <input
-              type="number"
-              className="form-input"
-              placeholder={formatCurrency(0, currency)}
-              value={otrosPrestamos}
-              onChange={(e) => setOtrosPrestamos(e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Datos adicionales para ratios */}
-      <div className="card">
-        <div className="card-header">
-          <div>
-            <h2 className="card-title">📊 Datos Adicionales para Ratios</h2>
-            <p className="card-subtitle">Estos datos ayudan a calcular tus ratios financieros</p>
-          </div>
-        </div>
-
-        <div className="grid-2">
           <div className="form-group">
             <label className="form-label">Gastos Esenciales Mensuales</label>
             <input
@@ -1764,7 +857,47 @@ function DatosTab({
               onChange={(e) => setGastosEsenciales(e.target.value)}
             />
             <div style={{fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem'}}>
-              Para calcular meses de reserva
+              Comida, vivienda, transporte, servicios básicos
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Balance */}
+      <div className="card">
+        <div className="card-header">
+          <div>
+            <h2 className="card-title">💰 Balance General</h2>
+            <p className="card-subtitle">Tus activos, pasivos y reserva</p>
+          </div>
+        </div>
+
+        <div className="grid-3">
+          <div className="form-group">
+            <label className="form-label">Activos Totales</label>
+            <input
+              type="number"
+              className="form-input"
+              placeholder={formatCurrency(0, currency)}
+              value={activosTotales}
+              onChange={(e) => setActivosTotales(e.target.value)}
+            />
+            <div style={{fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem'}}>
+              Todo lo que posees: efectivo, inversiones, propiedades, etc.
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Pasivos Totales</label>
+            <input
+              type="number"
+              className="form-input"
+              placeholder={formatCurrency(0, currency)}
+              value={pasivosTotales}
+              onChange={(e) => setPasivosTotales(e.target.value)}
+            />
+            <div style={{fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem'}}>
+              Todo lo que debes: tarjetas, préstamos, hipotecas, etc.
             </div>
           </div>
 
@@ -1778,881 +911,211 @@ function DatosTab({
               onChange={(e) => setReservaEmergencia(e.target.value)}
             />
             <div style={{fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem'}}>
-              Efectivo disponible para emergencias
+              Efectivo líquido disponible para emergencias
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
 
-// ============= VISTA GENERAL =============
-function VistaGeneral({ totales, userProfile, currency, setActiveTab }) {
-  const mult = 1; // Always annual in calculations
-  
-  const ingresoBruto = totales.totalIngresos;
-  const ingresoNeto = totales.totalIngresos - totales.totalGastos - totales.totalAhorro;
-  const mesesReserva = totales.totalEfectivo > 0 && totales.totalGastos > 0 ? (totales.totalEfectivo / (totales.totalGastos / 12)) : 0;
-  const tasaAhorro = ingresoBruto > 0 ? totales.totalAhorro / ingresoBruto : 0;
-  const deudaActivos = totales.activosTotales > 0 ? totales.pasivosTotales / totales.activosTotales : 0;
-  const patrimonioActivos = totales.activosTotales > 0 ? totales.patrimonioNeto / totales.activosTotales : 0;
-
-  return (
-    <div style={{padding: '2rem', maxWidth: '1600px', margin: '0 auto'}}>
-      <div style={{display: 'flex', gap: '2rem', alignItems: 'flex-start', flexWrap: 'wrap'}}>
-        
-        {/* Left: Data Summary */}
-        <div style={{flex: '0 0 340px', display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: '300px'}}>
-          <h2 style={{fontSize: '1.5rem', fontWeight: '800', color: '#333', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
-            📊 Resumen Financiero
-          </h2>
-          
-          {/* Flujo de Caja */}
-          <div style={{background: 'white', borderRadius: '16px', padding: '1.5rem', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}>
-            <h3 style={{fontWeight: '700', marginBottom: '1rem', color: '#3b82f6', fontSize: '1rem'}}>Flujo de Caja (Anual)</h3>
-            <div style={{display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
-              <div style={{display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: '#f0fdf4', borderRadius: '8px', cursor: 'pointer'}} onClick={() => setActiveTab('datos')}>
-                <span style={{color: '#666', fontSize: '0.9rem'}}>Ingresos</span>
-                <span style={{fontWeight: '700', color: '#10b981'}}>{formatCurrency(totales.totalIngresos, currency)}</span>
-              </div>
-              <div style={{display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: '#fef2f2', borderRadius: '8px', cursor: 'pointer'}} onClick={() => setActiveTab('datos')}>
-                <span style={{color: '#666', fontSize: '0.9rem'}}>Gastos</span>
-                <span style={{fontWeight: '700', color: '#ef4444'}}>{formatCurrency(totales.totalGastos, currency)}</span>
-              </div>
-              <div style={{display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: '#f0fdf4', borderRadius: '8px', cursor: 'pointer'}} onClick={() => setActiveTab('datos')}>
-                <span style={{color: '#666', fontSize: '0.9rem'}}>Ahorro</span>
-                <span style={{fontWeight: '700', color: '#10b981'}}>{formatCurrency(totales.totalAhorro, currency)}</span>
-              </div>
-              <div style={{display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: totales.superavit >= 0 ? '#f0fdf4' : '#fef2f2', borderRadius: '8px', border: `2px solid ${totales.superavit >= 0 ? '#10b981' : '#ef4444'}`}}>
-                <span style={{color: '#666', fontWeight: '600', fontSize: '0.9rem'}}>{totales.superavit >= 0 ? 'Superávit' : 'Déficit'}</span>
-                <span style={{fontWeight: '700', color: totales.superavit >= 0 ? '#10b981' : '#ef4444', fontSize: '1.1rem'}}>{formatCurrency(Math.abs(totales.superavit), currency)}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Balance General */}
-          <div style={{background: 'white', borderRadius: '16px', padding: '1.5rem', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}>
-            <h3 style={{fontWeight: '700', marginBottom: '1rem', color: '#3b82f6', fontSize: '1rem'}}>Balance General</h3>
-            <div style={{display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
-              <div style={{display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: '#f0fdf4', borderRadius: '8px', cursor: 'pointer'}} onClick={() => setActiveTab('datos')}>
-                <span style={{color: '#666', fontSize: '0.9rem'}}>Activos</span>
-                <span style={{fontWeight: '700', color: '#10b981'}}>{formatCurrency(totales.activosTotales, currency)}</span>
-              </div>
-              <div style={{display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: '#fef2f2', borderRadius: '8px', cursor: 'pointer'}} onClick={() => setActiveTab('datos')}>
-                <span style={{color: '#666', fontSize: '0.9rem'}}>Pasivos</span>
-                <span style={{fontWeight: '700', color: '#ef4444'}}>{formatCurrency(totales.pasivosTotales, currency)}</span>
-              </div>
-              <div style={{display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: totales.patrimonioNeto >= 0 ? '#f0fdf4' : '#fef2f2', borderRadius: '8px', border: `3px solid ${totales.patrimonioNeto >= 0 ? '#10b981' : '#ef4444'}`, cursor: 'pointer'}} onClick={() => setActiveTab('datos')}>
-                <span style={{color: '#666', fontWeight: '600', fontSize: '0.9rem'}}>Patrimonio Neto</span>
-                <span style={{fontWeight: '700', color: totales.patrimonioNeto >= 0 ? '#10b981' : '#ef4444', fontSize: '1.25rem'}}>{formatCurrency(totales.patrimonioNeto, currency)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Center: Person Icon */}
-        <div style={{flex: '0 0 280px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px', minWidth: '200px'}}>
-          <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem'}}>
-            
-            {/* Avatar(s) */}
-            {(userProfile.estadoCivil === 'casado' || userProfile.estadoCivil === 'pareja') && userProfile.parejaNombre ? (
-              // Couple avatars
-              <div style={{display: 'flex', gap: '1rem', alignItems: 'center'}}>
-                <div style={{
-                  width: '100px', 
-                  height: '100px', 
-                  background: 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)', 
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '3rem',
-                  boxShadow: '0 8px 24px rgba(59, 130, 246, 0.3)',
-                  border: '4px solid white'
-                }}>
-                  {userProfile.avatar}
-                </div>
-                <div style={{fontSize: '2rem', color: 'var(--primary)'}}>❤️</div>
-                <div style={{
-                  width: '100px', 
-                  height: '100px', 
-                  background: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)', 
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '3rem',
-                  boxShadow: '0 8px 24px rgba(236, 72, 153, 0.3)',
-                  border: '4px solid white'
-                }}>
-                  {userProfile.parejaAvatar || '👤'}
-                </div>
-              </div>
-            ) : (
-              // Single avatar
-              <div style={{
-                width: '120px', 
-                height: '120px', 
-                background: 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)', 
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '4rem',
-                boxShadow: '0 8px 24px rgba(59, 130, 246, 0.3)',
-                border: '4px solid white'
-              }}>
-                {userProfile.avatar}
-              </div>
-            )}
-            
-            {/* Names and Info */}
-            <div style={{textAlign: 'center'}}>
-              {(userProfile.estadoCivil === 'casado' || userProfile.estadoCivil === 'pareja') && userProfile.parejaNombre ? (
-                // Couple names
-                <div>
-                  <div style={{fontWeight: '800', color: '#333', fontSize: '1.1rem', marginBottom: '0.25rem'}}>
-                    {userProfile.nombre && userProfile.apellido 
-                      ? `${userProfile.nombre} ${userProfile.apellido}` 
-                      : 'Usuario 1'}
-                  </div>
-                  <div style={{color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem'}}>y</div>
-                  <div style={{fontWeight: '800', color: '#333', fontSize: '1.1rem', marginBottom: '0.25rem'}}>
-                    {userProfile.parejaNombre && userProfile.parejaApellido 
-                      ? `${userProfile.parejaNombre} ${userProfile.parejaApellido}` 
-                      : 'Usuario 2'}
-                  </div>
-                </div>
-              ) : (
-                // Single name
-                <div style={{fontWeight: '800', color: '#333', fontSize: '1.25rem', marginBottom: '0.25rem'}}>
-                  {userProfile.nombre && userProfile.apellido 
-                    ? `${userProfile.nombre} ${userProfile.apellido}` 
-                    : 'Usuario'}
-                </div>
-              )}
-              
-              {userProfile.edad && (
-                <div style={{color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.5rem'}}>
-                  {userProfile.edad} años
-                  {userProfile.dependientes > 0 && (
-                    <div style={{marginTop: '0.5rem', fontSize: '1.5rem'}}>
-                      {'👶'.repeat(Math.min(userProfile.dependientes, 5))}
-                      {userProfile.dependientes > 5 && ` +${userProfile.dependientes - 5}`}
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              {(userProfile.estadoCivil === 'casado' || userProfile.estadoCivil === 'pareja') && userProfile.parejaNombre && (
-                <div style={{
-                  background: '#eff6ff',
-                  color: 'var(--primary)',
-                  padding: '0.4rem 0.75rem',
-                  borderRadius: '999px',
-                  fontSize: '0.75rem',
-                  fontWeight: '700',
-                  marginTop: '0.5rem',
-                  display: 'inline-block'
-                }}>
-                  💑 Análisis Conjunto
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Right: Ratio Analysis */}
-        <div style={{flex: '1', display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: '380px'}}>
-          <h2 style={{fontSize: '1.5rem', fontWeight: '800', color: '#333', marginBottom: '0.5rem'}}>🎯 Análisis de Ratios</h2>
-          
-          {/* Liquidez */}
-          <div style={{background: 'white', borderRadius: '16px', padding: '1.5rem', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', cursor: 'pointer'}} onClick={() => setActiveTab('ratios')}>
-            <div style={{background: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: '700', fontSize: '0.875rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.5px'}}>
-              💧 Liquidez
-            </div>
-            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem'}}>
-              <div style={{textAlign: 'center'}}>
-                <div style={{fontSize: '0.75rem', color: '#666', marginBottom: '0.5rem'}}>Meses de reserva</div>
-                <div style={{fontSize: '1.5rem', fontWeight: '800', color: '#333'}}>{isFinite(mesesReserva) ? mesesReserva.toFixed(1) + 'm' : '—'}</div>
-                <div style={{fontSize: '1.25rem', marginTop: '0.25rem'}}>{mesesReserva >= 6 ? '✅' : mesesReserva >= 3 ? '⚠️' : '🚨'}</div>
-              </div>
-              <div style={{textAlign: 'center'}}>
-                <div style={{fontSize: '0.75rem', color: '#666', marginBottom: '0.5rem'}}>Ver detalles →</div>
-                <div style={{fontSize: '1rem', fontWeight: '700', color: '#3b82f6', marginTop: '1rem'}}>Más ratios</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Ahorro */}
-          <div style={{background: 'white', borderRadius: '16px', padding: '1.5rem', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', cursor: 'pointer'}} onClick={() => setActiveTab('ratios')}>
-            <div style={{background: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: '700', fontSize: '0.875rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.5px'}}>
-              🐷 Ahorro
-            </div>
-            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem'}}>
-              <div style={{textAlign: 'center'}}>
-                <div style={{fontSize: '0.75rem', color: '#666', marginBottom: '0.5rem'}}>Tasa de ahorro</div>
-                <div style={{fontSize: '1.5rem', fontWeight: '800', color: '#333'}}>{isFinite(tasaAhorro) ? (tasaAhorro * 100).toFixed(1) + '%' : '—'}</div>
-                <div style={{fontSize: '1.25rem', marginTop: '0.25rem'}}>{tasaAhorro >= 0.30 ? '✅' : tasaAhorro >= 0.15 ? '⚠️' : '🚨'}</div>
-              </div>
-              <div style={{textAlign: 'center'}}>
-                <div style={{fontSize: '0.75rem', color: '#666', marginBottom: '0.5rem'}}>Ver detalles →</div>
-                <div style={{fontSize: '1rem', fontWeight: '700', color: '#3b82f6', marginTop: '1rem'}}>Más ratios</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Deuda */}
-          <div style={{background: 'white', borderRadius: '16px', padding: '1.5rem', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', cursor: 'pointer'}} onClick={() => setActiveTab('ratios')}>
-            <div style={{background: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: '700', fontSize: '0.875rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.5px'}}>
-              🏦 Deuda
-            </div>
-            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem'}}>
-              <div style={{textAlign: 'center'}}>
-                <div style={{fontSize: '0.75rem', color: '#666', marginBottom: '0.5rem'}}>Pasivos / Activos</div>
-                <div style={{fontSize: '1.5rem', fontWeight: '800', color: '#333'}}>{isFinite(deudaActivos) ? (deudaActivos * 100).toFixed(1) + '%' : '—'}</div>
-                <div style={{fontSize: '1.25rem', marginTop: '0.25rem'}}>{deudaActivos > 0.50 ? '🚨' : deudaActivos >= 0.30 ? '⚠️' : '✅'}</div>
-              </div>
-              <div style={{textAlign: 'center'}}>
-                <div style={{fontSize: '0.75rem', color: '#666', marginBottom: '0.5rem'}}>Ver detalles →</div>
-                <div style={{fontSize: '1rem', fontWeight: '700', color: '#3b82f6', marginTop: '1rem'}}>Más ratios</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Patrimonio */}
-          <div style={{background: 'white', borderRadius: '16px', padding: '1.5rem', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', cursor: 'pointer'}} onClick={() => setActiveTab('ratios')}>
-            <div style={{background: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: '700', fontSize: '0.875rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.5px'}}>
-              💎 Patrimonio
-            </div>
-            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem'}}>
-              <div style={{textAlign: 'center'}}>
-                <div style={{fontSize: '0.75rem', color: '#666', marginBottom: '0.5rem'}}>Patrimonio / Activos</div>
-                <div style={{fontSize: '1.5rem', fontWeight: '800', color: '#333'}}>{isFinite(patrimonioActivos) ? (patrimonioActivos * 100).toFixed(1) + '%' : '—'}</div>
-                <div style={{fontSize: '1.25rem', marginTop: '0.25rem'}}>{patrimonioActivos >= 0.70 ? '✅' : patrimonioActivos >= 0.50 ? '⚠️' : '🚨'}</div>
-              </div>
-              <div style={{textAlign: 'center'}}>
-                <div style={{fontSize: '0.75rem', color: '#666', marginBottom: '0.5rem'}}>Ver todos los ratios →</div>
-                <div style={{fontSize: '1rem', fontWeight: '700', color: '#3b82f6', marginTop: '1rem'}}>Más detalles</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ============= GRÁFICOS TAB =============
-function GraficosTab({ totales, currency, ingresoBruto, ahorro, deudas, gastosDiarios, seguros, impuestos, modoCalculo, tarjetas, lineaPersonal, lineaPropiedad, hipoteca, prestamoAuto, prestamosEducativos, otrosPrestamos }) {
-  const [retornoAnual, setRetornoAnual] = useState(7);
-  
-  useEffect(() => {
-    // Destroy existing charts
-    const chartIds = ['pieActivos', 'pieGastos', 'barIngresosGastos', 'donutAssetAllocation', 'lineProyeccion'];
-    chartIds.forEach(id => {
-      const existingChart = Chart.getChart(id);
-      if (existingChart) {
-        existingChart.destroy();
-      }
-    });
-
-    const mult = modoCalculo === 'anual' ? 1 : 12;
-    const totalIngresos = ingresoBruto * mult;
-    const totalAhorro = ahorro * mult;
-    const totalDeudas = deudas * mult;
-    const totalGastosDiarios = gastosDiarios * mult;
-    const totalSeguros = seguros * mult;
-    const totalImpuestos = impuestos * mult;
-    const totalGastos = totalDeudas + totalGastosDiarios + totalSeguros + totalImpuestos;
-
-    // 1. PIE CHART - Distribución de Activos
-    if (totales.activosTotales > 0) {
-      const ctxActivos = document.getElementById('pieActivos');
-      if (ctxActivos) {
-        // Filtrar solo categorías con valores > 0
-        const categorias = [
-          { label: 'Efectivo', value: totales.totalEfectivo, color: '#10b981' },
-          { label: 'Inversiones', value: totales.totalInversiones, color: '#3b82f6' },
-          { label: 'Retiro', value: totales.totalRetiro, color: '#8b5cf6' },
-          { label: 'Bienes Raíces', value: totales.totalBienesRaices, color: '#f59e0b' },
-          { label: 'Bienes Personales', value: totales.totalBienesPersonales, color: '#ec4899' }
-        ].filter(cat => cat.value > 0);
-        
-        new Chart(ctxActivos, {
-          type: 'pie',
-          data: {
-            labels: categorias.map(c => c.label),
-            datasets: [{
-              data: categorias.map(c => c.value),
-              backgroundColor: categorias.map(c => c.color),
-              borderWidth: 2,
-              borderColor: '#fff'
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-              legend: { position: 'bottom', labels: { padding: 15, font: { size: 12 } } },
-              title: { display: true, text: 'Distribución de Activos', font: { size: 16, weight: 'bold' } },
-              tooltip: {
-                callbacks: {
-                  label: function(context) {
-                    const label = context.label || '';
-                    const value = context.parsed || 0;
-                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                    const percentage = ((value / total) * 100).toFixed(1);
-                    return `${label}: ${formatCurrency(value, currency)} (${percentage}%)`;
-                  }
-                }
-              }
-            }
-          }
-        });
-      }
-    }
-
-    // 2. PIE CHART - Distribución de Gastos
-    if (totalGastos > 0) {
-      const ctxGastos = document.getElementById('pieGastos');
-      if (ctxGastos) {
-        // Filtrar solo categorías con valores > 0
-        const categorias = [
-          { label: 'Gastos Diarios', value: totalGastosDiarios, color: '#ef4444' },
-          { label: 'Pagos de Deuda', value: totalDeudas, color: '#f59e0b' },
-          { label: 'Impuestos', value: totalImpuestos, color: '#eab308' },
-          { label: 'Seguros', value: totalSeguros, color: '#06b6d4' }
-        ].filter(cat => cat.value > 0);
-        
-        new Chart(ctxGastos, {
-          type: 'pie',
-          data: {
-            labels: categorias.map(c => c.label),
-            datasets: [{
-              data: categorias.map(c => c.value),
-              backgroundColor: categorias.map(c => c.color),
-              borderWidth: 2,
-              borderColor: '#fff'
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-              legend: { position: 'bottom', labels: { padding: 15, font: { size: 12 } } },
-              title: { display: true, text: 'Distribución de Gastos Anuales', font: { size: 16, weight: 'bold' } },
-              tooltip: {
-                callbacks: {
-                  label: function(context) {
-                    const label = context.label || '';
-                    const value = context.parsed || 0;
-                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                    const percentage = ((value / total) * 100).toFixed(1);
-                    return `${label}: ${formatCurrency(value, currency)} (${percentage}%)`;
-                  }
-                }
-              }
-            }
-          }
-        });
-      }
-    }
-
-    // 3. BAR CHART - Activos vs Pasivos vs Patrimonio
-    const ctxBar = document.getElementById('barIngresosGastos');
-    if (ctxBar) {
-      new Chart(ctxBar, {
-        type: 'bar',
-        data: {
-          labels: ['Activos', 'Pasivos', 'Patrimonio Neto'],
-          datasets: [{
-            label: 'Balance General',
-            data: [totales.activosTotales, totales.pasivosTotales, totales.patrimonioNeto],
-            backgroundColor: ['rgba(16, 185, 129, 0.8)', 'rgba(239, 68, 68, 0.8)', 'rgba(59, 130, 246, 0.8)'],
-            borderColor: ['rgb(16, 185, 129)', 'rgb(239, 68, 68)', 'rgb(59, 130, 246)'],
-            borderWidth: 2
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          plugins: {
-            legend: { display: false },
-            title: { display: true, text: 'Balance General: Activos vs Pasivos vs Patrimonio', font: { size: 16, weight: 'bold' } },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  return formatCurrency(context.parsed.y, currency);
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                callback: function(value) {
-                  return formatCurrency(value, currency);
-                }
-              }
-            }
-          }
-        }
-      });
-    }
-
-    // 4. PIE CHART - Distribución de Pasivos
-    if (totales.pasivosTotales > 0) {
-      const ctxPasivos = document.getElementById('donutAssetAllocation');
-      if (ctxPasivos) {
-        // Filtrar solo categorías con valores > 0
-        const categorias = [
-          { label: 'Tarjetas', value: tarjetas, color: '#ef4444' },
-          { label: 'Línea Personal', value: lineaPersonal, color: '#f59e0b' },
-          { label: 'Línea Propiedad', value: lineaPropiedad, color: '#eab308' },
-          { label: 'Hipoteca', value: hipoteca, color: '#f97316' },
-          { label: 'Préstamo Auto', value: prestamoAuto, color: '#ec4899' },
-          { label: 'Préstamos Educativos', value: prestamosEducativos, color: '#8b5cf6' },
-          { label: 'Otros', value: otrosPrestamos, color: '#6366f1' }
-        ].filter(cat => cat.value > 0);
-        
-        new Chart(ctxPasivos, {
-          type: 'pie',
-          data: {
-            labels: categorias.map(c => c.label),
-            datasets: [{
-              data: categorias.map(c => c.value),
-              backgroundColor: categorias.map(c => c.color),
-              borderWidth: 2,
-              borderColor: '#fff'
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-              legend: { position: 'bottom', labels: { padding: 15, font: { size: 12 } } },
-              title: { display: true, text: 'Distribución de Pasivos', font: { size: 16, weight: 'bold' } },
-              tooltip: {
-                callbacks: {
-                  label: function(context) {
-                    const label = context.label || '';
-                    const value = context.parsed || 0;
-                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                    const percentage = ((value / total) * 100).toFixed(1);
-                    return `${label}: ${formatCurrency(value, currency)} (${percentage}%)`;
-                  }
-                }
-              }
-            }
-          }
-        });
-      }
-    }
-
-    // 5. LINE CHART - Proyección de Patrimonio
-    if (totales.patrimonioNeto !== 0) {
-      const patrimonioActual = totales.patrimonioNeto;
-      const ahorroAnual = totalAhorro;
-      const retornoDecimal = retornoAnual / 100;
-      
-      const years = [0, 5, 10, 15, 20, 25, 30];
-      const proyeccion = years.map(year => {
-        if (ahorroAnual > 0) {
-          // Con ahorro: Valor futuro con aportes
-          const fv = patrimonioActual * Math.pow(1 + retornoDecimal, year) + 
-                     ahorroAnual * ((Math.pow(1 + retornoDecimal, year) - 1) / retornoDecimal);
-          return fv;
-        } else {
-          // Sin ahorro: Solo crecimiento del patrimonio actual
-          return patrimonioActual * Math.pow(1 + retornoDecimal, year);
-        }
-      });
-      
-      const ctxLine = document.getElementById('lineProyeccion');
-      if (ctxLine) {
-        new Chart(ctxLine, {
-          type: 'line',
-          data: {
-            labels: years.map(y => `Año ${y}`),
-            datasets: [{
-              label: 'Patrimonio Proyectado',
-              data: proyeccion,
-              borderColor: 'rgb(59, 130, 246)',
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              borderWidth: 3,
-              fill: true,
-              tension: 0.4,
-              pointRadius: 5,
-              pointBackgroundColor: 'rgb(59, 130, 246)',
-              pointBorderColor: '#fff',
-              pointBorderWidth: 2
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-              legend: { display: false },
-              title: { 
-                display: true, 
-                text: ahorroAnual > 0 
-                  ? `Proyección de Patrimonio (${formatCurrency(ahorroAnual, currency)}/año, ${retornoAnual}% retorno)` 
-                  : `Proyección de Patrimonio (sin ahorro adicional, ${retornoAnual}% retorno)`,
-                font: { size: 16, weight: 'bold' } 
-              },
-              tooltip: {
-                callbacks: {
-                  label: function(context) {
-                    return formatCurrency(context.parsed.y, currency);
-                  }
-                }
-              }
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                ticks: {
-                  callback: function(value) {
-                    return formatCurrency(value, currency);
-                  }
-                }
-              }
-            }
-          }
-        });
-      }
-    }
-
-  }, [totales, currency, retornoAnual, ingresoBruto, ahorro, deudas, gastosDiarios, seguros, impuestos, modoCalculo, tarjetas, lineaPersonal, lineaPropiedad, hipoteca, prestamoAuto, prestamosEducativos, otrosPrestamos]);
-
-  return (
-    <div style={{ padding: '2rem' }}>
-      <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '1.5rem', color: '#1e293b' }}>
-        📈 Análisis Gráfico
-      </h2>
-      
-      {/* Control de Retorno Anual */}
-      <div style={{ 
-        background: 'white', 
-        padding: '1.5rem', 
-        borderRadius: '12px', 
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-        marginBottom: '2rem'
+      <div style={{
+        background: '#eff6ff',
+        border: '2px solid var(--primary)',
+        borderRadius: '12px',
+        padding: '1.25rem',
+        marginTop: '1.5rem'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
-          <div style={{ flex: '1', minWidth: '200px' }}>
-            <label style={{ 
-              display: 'block', 
-              fontSize: '0.875rem', 
-              fontWeight: '600', 
-              color: '#64748b',
-              marginBottom: '0.5rem'
-            }}>
-              Retorno Anual Esperado para Proyección
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="20"
-              step="0.5"
-              value={retornoAnual}
-              onChange={(e) => setRetornoAnual(parseFloat(e.target.value))}
-              style={{
-                width: '100%',
-                height: '8px',
-                borderRadius: '4px',
-                outline: 'none',
-                cursor: 'pointer'
-              }}
-            />
-          </div>
-          <div style={{
-            background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-            color: 'white',
-            padding: '1rem 2rem',
-            borderRadius: '12px',
-            textAlign: 'center',
-            minWidth: '120px'
-          }}>
-            <div style={{ fontSize: '0.875rem', opacity: 0.9, marginBottom: '0.25rem' }}>
-              Retorno
+        <div style={{display: 'flex', gap: '0.75rem', alignItems: 'flex-start'}}>
+          <span style={{fontSize: '2rem'}}>💡</span>
+          <div>
+            <div style={{fontWeight: '700', marginBottom: '0.5rem', color: 'var(--primary)', fontSize: '1.1rem'}}>
+              ¿Por qué tan simple?
             </div>
-            <div style={{ fontSize: '2.5rem', fontWeight: '800' }}>
-              {retornoAnual}%
+            <div style={{fontSize: '0.95rem', color: '#1e40af', lineHeight: '1.6'}}>
+              Estas 10 variables son todo lo que necesitas para calcular las 5 métricas más importantes de tu salud financiera. No necesitas detalles granulares - solo los totales. Ve a la pestaña "Mis Ratios" para ver tu análisis completo.
             </div>
           </div>
-        </div>
-      </div>
-      
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', 
-        gap: '2rem',
-        marginBottom: '2rem'
-      }}>
-        {/* Line Chart - Proyección */}
-        <div style={{ 
-          background: 'white', 
-          padding: '1.5rem', 
-          borderRadius: '12px', 
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-          gridColumn: 'span 2'
-        }}>
-          <canvas id="lineProyeccion" style={{ maxHeight: '400px' }}></canvas>
-        </div>
-        
-        {/* Pie Chart - Activos */}
-        <div style={{ 
-          background: 'white', 
-          padding: '1.5rem', 
-          borderRadius: '12px', 
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)' 
-        }}>
-          <canvas id="pieActivos" style={{ maxHeight: '350px' }}></canvas>
-        </div>
-
-        {/* Pie Chart - Gastos */}
-        <div style={{ 
-          background: 'white', 
-          padding: '1.5rem', 
-          borderRadius: '12px', 
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)' 
-        }}>
-          <canvas id="pieGastos" style={{ maxHeight: '350px' }}></canvas>
-        </div>
-
-        {/* Bar Chart - Ingresos vs Gastos */}
-        <div style={{ 
-          background: 'white', 
-          padding: '1.5rem', 
-          borderRadius: '12px', 
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)' 
-        }}>
-          <canvas id="barIngresosGastos" style={{ maxHeight: '350px' }}></canvas>
-        </div>
-
-        {/* Donut Chart - Asset Allocation */}
-        <div style={{ 
-          background: 'white', 
-          padding: '1.5rem', 
-          borderRadius: '12px', 
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)' 
-        }}>
-          <canvas id="donutAssetAllocation" style={{ maxHeight: '350px' }}></canvas>
         </div>
       </div>
     </div>
   );
 }
 
-// ============= RATIOS FINANCIEROS =============
-function RatiosFinancieros({ totales, userProfile, currency, ingresoBruto, ahorro, deudas, seguros, impuestos, gastosEsenciales, reservaEmergencia, pagoMensualDeudas, modoCalculo }) {
+function RatiosTab({ totales, userProfile, currency, benchmark }) {
   const [showReservaModal, setShowReservaModal] = useState(false);
   const [showBenchmarkModal, setShowBenchmarkModal] = useState(false);
   
-  // Scroll to top when modals open (para embeds en Wix/iframes)
-  useEffect(() => {
-    if (showReservaModal || showBenchmarkModal) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      // También intentar scroll del contenedor
-      const container = document.querySelector('.app-container');
-      if (container) {
-        container.scrollTop = 0;
-      }
-    }
-  }, [showReservaModal, showBenchmarkModal]);
-  
-  const mult = modoCalculo === 'anual' ? 1 : 12;
-  
-  const ingresoBrutoAnual = ingresoBruto * mult;
-  const ingresoNetoAnual = ingresoBrutoAnual - (impuestos * mult) - (seguros * mult);
-  const ahorroAnual = ahorro * mult;
-  const pagoMensualDeuda = modoCalculo === 'anual' ? deudas / 12 : deudas;
-  
-  // Ratios
-  const mesesReserva = gastosEsenciales > 0 ? reservaEmergencia / gastosEsenciales : 0;
-  const tasaAhorro = ingresoBrutoAnual > 0 ? ahorroAnual / ingresoBrutoAnual : 0;
-  const dtiNeto = (ingresoNetoAnual / 12) > 0 ? pagoMensualDeuda / (ingresoNetoAnual / 12) : 0;
-  const deudaActivos = totales.activosTotales > 0 ? totales.pasivosTotales / totales.activosTotales : 0;
-  const patrimonioActivos = totales.activosTotales > 0 ? totales.patrimonioNeto / totales.activosTotales : 0;
-  const riquezaNeta = ingresoBrutoAnual > 0 ? totales.patrimonioNeto / ingresoBrutoAnual : 0;
-  
-  // Benchmark function
-  const getRiquezaBenchmark = (age) => {
-    const benchmarks = [
-      {age:25, good:2.5, great:5},
-      {age:30, good:3, great:6},
-      {age:35, good:3.5, great:7},
-      {age:40, good:4, great:8},
-      {age:45, good:4.5, great:9},
-      {age:50, good:5, great:10},
-      {age:55, good:5.5, great:11},
-      {age:60, good:6, great:12},
-      {age:65, good:6.5, great:13},
-      {age:70, good:7, great:14}
-    ];
-    
-    if(age < 25) return benchmarks[0];
-    if(age >= 70) return benchmarks[benchmarks.length-1];
-    
-    for(let i=0; i<benchmarks.length-1; i++) {
-      if(age >= benchmarks[i].age && age < benchmarks[i+1].age) {
-        const t = (age - benchmarks[i].age) / (benchmarks[i+1].age - benchmarks[i].age);
-        return {
-          good: benchmarks[i].good + t * (benchmarks[i+1].good - benchmarks[i].good),
-          great: benchmarks[i].great + t * (benchmarks[i+1].great - benchmarks[i].great)
-        };
-      }
-    }
-    return benchmarks[benchmarks.length-1];
-  };
-  
-  const edad = parseInt(userProfile.edad) || 30;
-  const benchmark = getRiquezaBenchmark(edad);
-
   return (
-    <div className="card">
-      <div className="card-header">
-        <div>
-          <h2 className="card-title">📊 Ratios Financieros</h2>
-          <p className="card-subtitle">Análisis de tu salud financiera</p>
-        </div>
-      </div>
-
-      <div style={{padding: '0 16px'}}>
-        {/* LIQUIDEZ */}
-        <div style={{margin: '24px 0 12px', padding: '8px 12px', background: 'var(--primary)', borderRadius: '10px', color: '#fff', fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '.5px'}}>
-          💧 LIQUIDEZ
-        </div>
-        <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '24px'}}>
-          <div style={{background: 'white', borderRadius: '14px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,.08)'}}>
-            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px'}}>
-              <div style={{fontSize: '15px', fontWeight: '600'}}>Meses de reserva</div>
-              <button 
-                onClick={() => setShowReservaModal(true)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: 'var(--primary)',
-                  color: 'white',
-                  padding: '4px 10px',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  textTransform: 'uppercase',
-                  cursor: 'pointer',
-                  border: 'none'
-                }}
-              >
-                💡 Sugerencia
-              </button>
-            </div>
-            <div style={{fontSize: '28px', fontWeight: '800', marginBottom: '8px'}}>
-              {isFinite(mesesReserva) ? mesesReserva.toFixed(1) + ' m' : '—'}
-            </div>
-            <div style={{fontSize: '15px', fontWeight: '600', marginBottom: '8px', color: mesesReserva >= 6 ? 'var(--success)' : mesesReserva >= 3 ? 'var(--warning)' : 'var(--danger)'}}>
-              {mesesReserva >= 6 ? '✅' : mesesReserva >= 3 ? '⚠️' : '🚨'}
-            </div>
-            <div style={{fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.4'}}>Meta: &gt;6 meses ✅</div>
+    <div>
+      <div className="card">
+        <div className="card-header">
+          <div>
+            <h2 className="card-title">📊 Tus 5 Métricas Clave</h2>
+            <p className="card-subtitle">Análisis completo de tu salud financiera</p>
           </div>
         </div>
 
-        {/* AHORRO */}
-        <div style={{margin: '24px 0 12px', padding: '8px 12px', background: 'var(--primary)', borderRadius: '10px', color: '#fff', fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '.5px'}}>
-          🐷 AHORRO
-        </div>
-        <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '24px'}}>
-          <div style={{background: 'white', borderRadius: '14px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,.08)'}}>
-            <div style={{fontSize: '15px', fontWeight: '600', marginBottom: '10px'}}>Tasa de ahorro</div>
-            <div style={{fontSize: '28px', fontWeight: '800', marginBottom: '8px'}}>
-              {isFinite(tasaAhorro) ? (tasaAhorro * 100).toFixed(1) + '%' : '—'}
-            </div>
-            <div style={{fontSize: '15px', fontWeight: '600', marginBottom: '8px', color: tasaAhorro >= 0.30 ? 'var(--success)' : tasaAhorro >= 0.15 ? 'var(--warning)' : 'var(--danger)'}}>
-              {tasaAhorro >= 0.30 ? '✅' : tasaAhorro >= 0.15 ? '⚠️' : '🚨'}
-            </div>
-            <div style={{fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.4'}}>Meta: ≥30% ✅ · 15-29% ⚠️ · &lt;15% 🚨</div>
+        {/* Patrimonio Neto */}
+        <div style={{
+          background: 'linear-gradient(135deg, var(--emerald) 0%, var(--emerald-dark) 100%)',
+          borderRadius: '16px',
+          padding: '2rem',
+          marginBottom: '2rem',
+          color: 'white'
+        }}>
+          <div style={{fontSize: '0.9rem', opacity: 0.9, marginBottom: '0.5rem'}}>TU PATRIMONIO NETO</div>
+          <div style={{fontSize: '3rem', fontWeight: '800', fontFamily: 'Fraunces, serif'}}>
+            {formatCurrency(totales.patrimonioNeto, currency)}
+          </div>
+          <div style={{fontSize: '0.95rem', opacity: 0.9, marginTop: '0.5rem'}}>
+            Activos: {formatCurrency(totales.activosTotales, currency)} − Pasivos: {formatCurrency(totales.pasivosTotales, currency)}
           </div>
         </div>
 
-        {/* DEUDA */}
-        <div style={{margin: '24px 0 12px', padding: '8px 12px', background: 'var(--primary)', borderRadius: '10px', color: '#fff', fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '.5px'}}>
-          🏦 DEUDA
-        </div>
-        <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '24px'}}>
-          <div style={{background: 'white', borderRadius: '14px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,.08)'}}>
-            <div style={{fontSize: '15px', fontWeight: '600', marginBottom: '10px'}}>DTI neto</div>
-            <div style={{fontSize: '28px', fontWeight: '800', marginBottom: '8px'}}>
-              {isFinite(dtiNeto) ? (dtiNeto * 100).toFixed(1) + '%' : '—'}
+        <div style={{padding: '0 16px'}}>
+          {/* LIQUIDEZ */}
+          <div style={{margin: '24px 0 12px', padding: '8px 12px', background: 'var(--primary)', borderRadius: '10px', color: '#fff', fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '.5px'}}>
+            💧 LIQUIDEZ
+          </div>
+          <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '24px'}}>
+            <div style={{background: 'white', borderRadius: '14px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,.08)'}}>
+              <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px'}}>
+                <div style={{fontSize: '15px', fontWeight: '600'}}>Meses de reserva de emergencia</div>
+                <button 
+                  onClick={() => setShowReservaModal(true)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: 'var(--primary)',
+                    color: 'white',
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    border: 'none'
+                  }}
+                >
+                  💡 Sugerencia
+                </button>
+              </div>
+              <div style={{fontSize: '28px', fontWeight: '800', marginBottom: '8px'}}>
+                {isFinite(totales.mesesReserva) ? totales.mesesReserva.toFixed(1) + ' meses' : '—'}
+              </div>
+              <div style={{fontSize: '15px', fontWeight: '600', marginBottom: '8px', color: totales.mesesReserva >= 6 ? 'var(--success)' : totales.mesesReserva >= 3 ? 'var(--warning)' : 'var(--danger)'}}>
+                {totales.mesesReserva >= 6 ? '✅ Excelente' : totales.mesesReserva >= 3 ? '⚠️ Aceptable' : '🚨 Insuficiente'}
+              </div>
+              <div style={{fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.4'}}>Meta: ≥6 meses de gastos esenciales</div>
             </div>
-            <div style={{fontSize: '15px', fontWeight: '600', marginBottom: '8px', color: dtiNeto <= 0.36 ? 'var(--success)' : 'var(--danger)'}}>
-              {dtiNeto <= 0.36 ? '✅' : '🚨'}
-            </div>
-            <div style={{fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.4'}}>Meta: ≤36% ✅</div>
           </div>
 
-          <div style={{background: 'white', borderRadius: '14px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,.08)'}}>
-            <div style={{fontSize: '15px', fontWeight: '600', marginBottom: '10px'}}>Pasivos / Activos</div>
-            <div style={{fontSize: '28px', fontWeight: '800', marginBottom: '8px'}}>
-              {isFinite(deudaActivos) ? (deudaActivos * 100).toFixed(1) + '%' : '—'}
-            </div>
-            <div style={{fontSize: '15px', fontWeight: '600', marginBottom: '8px', color: deudaActivos > 0.50 ? 'var(--danger)' : deudaActivos >= 0.30 ? 'var(--warning)' : 'var(--success)'}}>
-              {deudaActivos > 0.50 ? '🚨' : deudaActivos >= 0.30 ? '⚠️' : '✅'}
-            </div>
-            <div style={{fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.4'}}>Meta: ≤30% ✅ · 30-50% ⚠️ · &gt;50% 🚨</div>
+          {/* AHORRO */}
+          <div style={{margin: '24px 0 12px', padding: '8px 12px', background: 'var(--primary)', borderRadius: '10px', color: '#fff', fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '.5px'}}>
+            🐷 AHORRO
           </div>
-        </div>
-
-        {/* PATRIMONIO */}
-        <div style={{margin: '24px 0 12px', padding: '8px 12px', background: 'var(--primary)', borderRadius: '10px', color: '#fff', fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '.5px'}}>
-          💎 PATRIMONIO
-        </div>
-        <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '24px'}}>
-          <div style={{background: 'white', borderRadius: '14px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,.08)'}}>
-            <div style={{fontSize: '15px', fontWeight: '600', marginBottom: '10px'}}>Patrimonio / Activos</div>
-            <div style={{fontSize: '28px', fontWeight: '800', marginBottom: '8px'}}>
-              {isFinite(patrimonioActivos) ? (patrimonioActivos * 100).toFixed(1) + '%' : '—'}
+          <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '24px'}}>
+            <div style={{background: 'white', borderRadius: '14px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,.08)'}}>
+              <div style={{fontSize: '15px', fontWeight: '600', marginBottom: '10px'}}>Tasa de ahorro</div>
+              <div style={{fontSize: '28px', fontWeight: '800', marginBottom: '8px'}}>
+                {isFinite(totales.tasaAhorro) ? (totales.tasaAhorro * 100).toFixed(1) + '%' : '—'}
+              </div>
+              <div style={{fontSize: '15px', fontWeight: '600', marginBottom: '8px', color: totales.tasaAhorro >= 0.30 ? 'var(--success)' : totales.tasaAhorro >= 0.15 ? 'var(--warning)' : 'var(--danger)'}}>
+                {totales.tasaAhorro >= 0.30 ? '✅ Excelente' : totales.tasaAhorro >= 0.15 ? '⚠️ Aceptable' : '🚨 Bajo'}
+              </div>
+              <div style={{fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.4'}}>
+                Meta: ≥30% excelente · 15-29% aceptable · &lt;15% bajo
+              </div>
             </div>
-            <div style={{fontSize: '15px', fontWeight: '600', marginBottom: '8px', color: patrimonioActivos >= 0.70 ? 'var(--success)' : patrimonioActivos >= 0.50 ? 'var(--warning)' : 'var(--danger)'}}>
-              {patrimonioActivos >= 0.70 ? '✅' : patrimonioActivos >= 0.50 ? '⚠️' : '🚨'}
-            </div>
-            <div style={{fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.4'}}>Meta: ≥70% ✅ · 50-69% ⚠️ · &lt;50% 🚨</div>
           </div>
 
-          <div style={{background: 'white', borderRadius: '14px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,.08)'}}>
-            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px'}}>
-              <div style={{fontSize: '15px', fontWeight: '600'}}>Nivel de riqueza neta</div>
-              <button 
-                onClick={() => setShowBenchmarkModal(true)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: 'var(--primary)',
-                  color: 'white',
-                  padding: '4px 10px',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  textTransform: 'uppercase',
-                  cursor: 'pointer',
-                  border: 'none'
-                }}
-              >
-                📊 Ver benchmark
-              </button>
+          {/* DEUDA */}
+          <div style={{margin: '24px 0 12px', padding: '8px 12px', background: 'var(--primary)', borderRadius: '10px', color: '#fff', fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '.5px'}}>
+            🏦 DEUDA
+          </div>
+          <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '24px'}}>
+            <div style={{background: 'white', borderRadius: '14px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,.08)'}}>
+              <div style={{fontSize: '15px', fontWeight: '600', marginBottom: '10px'}}>DTI (Debt-to-Income) Neto</div>
+              <div style={{fontSize: '28px', fontWeight: '800', marginBottom: '8px'}}>
+                {isFinite(totales.dtiNeto) ? (totales.dtiNeto * 100).toFixed(1) + '%' : '—'}
+              </div>
+              <div style={{fontSize: '15px', fontWeight: '600', marginBottom: '8px', color: totales.dtiNeto <= 0.36 ? 'var(--success)' : 'var(--danger)'}}>
+                {totales.dtiNeto <= 0.36 ? '✅ Saludable' : '🚨 Alto'}
+              </div>
+              <div style={{fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.4'}}>
+                Meta: ≤36% de ingreso neto mensual
+              </div>
             </div>
-            <div style={{fontSize: '28px', fontWeight: '800', marginBottom: '8px'}}>
-              {isFinite(riquezaNeta) ? riquezaNeta.toFixed(2) + 'x' : '—'}
+
+            <div style={{background: 'white', borderRadius: '14px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,.08)'}}>
+              <div style={{fontSize: '15px', fontWeight: '600', marginBottom: '10px'}}>Ratio Pasivos / Activos</div>
+              <div style={{fontSize: '28px', fontWeight: '800', marginBottom: '8px'}}>
+                {isFinite(totales.deudaActivos) ? (totales.deudaActivos * 100).toFixed(1) + '%' : '—'}
+              </div>
+              <div style={{fontSize: '15px', fontWeight: '600', marginBottom: '8px', color: totales.deudaActivos > 0.50 ? 'var(--danger)' : totales.deudaActivos >= 0.30 ? 'var(--warning)' : 'var(--success)'}}>
+                {totales.deudaActivos > 0.50 ? '🚨 Muy alto' : totales.deudaActivos >= 0.30 ? '⚠️ Moderado' : '✅ Bajo'}
+              </div>
+              <div style={{fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.4'}}>
+                Meta: ≤30% excelente · 30-50% aceptable · &gt;50% peligroso
+              </div>
             </div>
-            <div style={{fontSize: '15px', fontWeight: '600', marginBottom: '8px', color: edad >= 18 && riquezaNeta >= benchmark.great ? 'var(--success)' : edad >= 18 && riquezaNeta >= benchmark.good ? 'var(--warning)' : 'var(--danger)'}}>
-              {edad >= 18 && riquezaNeta >= benchmark.great ? '✅ Great' : edad >= 18 && riquezaNeta >= benchmark.good ? '⚠️ Good' : '🚨 Por debajo'}
+          </div>
+
+          {/* PATRIMONIO */}
+          <div style={{margin: '24px 0 12px', padding: '8px 12px', background: 'var(--primary)', borderRadius: '10px', color: '#fff', fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '.5px'}}>
+            💎 ACUMULACIÓN DE RIQUEZA
+          </div>
+          <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '24px'}}>
+            <div style={{background: 'white', borderRadius: '14px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,.08)'}}>
+              <div style={{fontSize: '15px', fontWeight: '600', marginBottom: '10px'}}>Ratio Patrimonio / Activos</div>
+              <div style={{fontSize: '28px', fontWeight: '800', marginBottom: '8px'}}>
+                {isFinite(totales.patrimonioActivos) ? (totales.patrimonioActivos * 100).toFixed(1) + '%' : '—'}
+              </div>
+              <div style={{fontSize: '15px', fontWeight: '600', marginBottom: '8px', color: totales.patrimonioActivos >= 0.70 ? 'var(--success)' : totales.patrimonioActivos >= 0.50 ? 'var(--warning)' : 'var(--danger)'}}>
+                {totales.patrimonioActivos >= 0.70 ? '✅ Excelente' : totales.patrimonioActivos >= 0.50 ? '⚠️ Aceptable' : '🚨 Bajo'}
+              </div>
+              <div style={{fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.4'}}>
+                Meta: ≥70% excelente · 50-69% aceptable · &lt;50% mejorar
+              </div>
             </div>
-            <div style={{fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.4'}}>
-              Tu edad: {edad} años · Good: {benchmark.good.toFixed(1)}x · Great: {benchmark.great.toFixed(1)}x
+
+            <div style={{background: 'white', borderRadius: '14px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,.08)'}}>
+              <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px'}}>
+                <div style={{fontSize: '15px', fontWeight: '600'}}>
+                  Nivel de riqueza neta
+                  <span style={{fontSize: '12px', fontWeight: '400', color: 'var(--text-muted)', marginLeft: '8px'}}>
+                    (edad {userProfile.edad})
+                  </span>
+                </div>
+                <button 
+                  onClick={() => setShowBenchmarkModal(true)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: 'var(--primary)',
+                    color: 'white',
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    border: 'none'
+                  }}
+                >
+                  📊 Ver benchmark
+                </button>
+              </div>
+              <div style={{fontSize: '28px', fontWeight: '800', marginBottom: '8px'}}>
+                {isFinite(totales.riquezaNeta) ? totales.riquezaNeta.toFixed(2) + 'x' : '—'}
+              </div>
+              <div style={{fontSize: '15px', fontWeight: '600', marginBottom: '8px', color: totales.riquezaNeta >= benchmark.great ? 'var(--success)' : totales.riquezaNeta >= benchmark.good ? 'var(--warning)' : 'var(--danger)'}}>
+                {totales.riquezaNeta >= benchmark.great ? '✅ Great' : totales.riquezaNeta >= benchmark.good ? '⚠️ Good' : '🚨 Por debajo'}
+              </div>
+              <div style={{fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.4'}}>
+                Benchmark: Good {benchmark.good.toFixed(1)}x · Great {benchmark.great.toFixed(1)}x
+              </div>
             </div>
           </div>
         </div>
@@ -2661,13 +1124,13 @@ function RatiosFinancieros({ totales, userProfile, currency, ingresoBruto, ahorr
       {/* Modal de Sugerencias de Reserva */}
       {showReservaModal && (
         <div style={{
-          position: 'absolute',
+          position: 'fixed',
           top: 0,
           left: 0,
           right: 0,
           bottom: 0,
           background: 'rgba(0,0,0,0.7)',
-          zIndex: 1001,
+          zIndex: 2000,
           display: 'flex',
           alignItems: 'flex-start',
           justifyContent: 'center',
@@ -2762,13 +1225,13 @@ function RatiosFinancieros({ totales, userProfile, currency, ingresoBruto, ahorr
       {/* Modal de Benchmarks */}
       {showBenchmarkModal && (
         <div style={{
-          position: 'absolute',
+          position: 'fixed',
           top: 0,
           left: 0,
           right: 0,
           bottom: 0,
           background: 'rgba(0,0,0,0.7)',
-          zIndex: 1001,
+          zIndex: 2000,
           display: 'flex',
           alignItems: 'flex-start',
           justifyContent: 'center',
@@ -2807,61 +1270,61 @@ function RatiosFinancieros({ totales, userProfile, currency, ingresoBruto, ahorr
                   </tr>
                 </thead>
                 <tbody>
-                  <tr style={{background: edad === 25 ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
+                  <tr style={{background: userProfile.edad === '25' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
                     <td style={{padding: '12px 16px'}}>25</td>
                     <td style={{padding: '12px 16px'}}>2.5x</td>
                     <td style={{padding: '12px 16px'}}>5.0x</td>
                     <td style={{padding: '12px 16px'}}>{formatCurrency(250000, currency)}</td>
                   </tr>
-                  <tr style={{background: edad === 30 ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
+                  <tr style={{background: userProfile.edad === '30' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
                     <td style={{padding: '12px 16px'}}>30</td>
                     <td style={{padding: '12px 16px'}}>3.0x</td>
                     <td style={{padding: '12px 16px'}}>6.0x</td>
                     <td style={{padding: '12px 16px'}}>{formatCurrency(300000, currency)}</td>
                   </tr>
-                  <tr style={{background: edad === 35 ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
+                  <tr style={{background: userProfile.edad === '35' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
                     <td style={{padding: '12px 16px'}}>35</td>
                     <td style={{padding: '12px 16px'}}>3.5x</td>
                     <td style={{padding: '12px 16px'}}>7.0x</td>
                     <td style={{padding: '12px 16px'}}>{formatCurrency(350000, currency)}</td>
                   </tr>
-                  <tr style={{background: edad === 40 ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
+                  <tr style={{background: userProfile.edad === '40' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
                     <td style={{padding: '12px 16px'}}>40</td>
                     <td style={{padding: '12px 16px'}}>4.0x</td>
                     <td style={{padding: '12px 16px'}}>8.0x</td>
                     <td style={{padding: '12px 16px'}}>{formatCurrency(400000, currency)}</td>
                   </tr>
-                  <tr style={{background: edad === 45 ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
+                  <tr style={{background: userProfile.edad === '45' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
                     <td style={{padding: '12px 16px'}}>45</td>
                     <td style={{padding: '12px 16px'}}>4.5x</td>
                     <td style={{padding: '12px 16px'}}>9.0x</td>
                     <td style={{padding: '12px 16px'}}>{formatCurrency(450000, currency)}</td>
                   </tr>
-                  <tr style={{background: edad === 50 ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
+                  <tr style={{background: userProfile.edad === '50' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
                     <td style={{padding: '12px 16px'}}>50</td>
                     <td style={{padding: '12px 16px'}}>5.0x</td>
                     <td style={{padding: '12px 16px'}}>10.0x</td>
                     <td style={{padding: '12px 16px'}}>{formatCurrency(500000, currency)}</td>
                   </tr>
-                  <tr style={{background: edad === 55 ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
+                  <tr style={{background: userProfile.edad === '55' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
                     <td style={{padding: '12px 16px'}}>55</td>
                     <td style={{padding: '12px 16px'}}>5.5x</td>
                     <td style={{padding: '12px 16px'}}>11.0x</td>
                     <td style={{padding: '12px 16px'}}>{formatCurrency(550000, currency)}</td>
                   </tr>
-                  <tr style={{background: edad === 60 ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
+                  <tr style={{background: userProfile.edad === '60' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
                     <td style={{padding: '12px 16px'}}>60</td>
                     <td style={{padding: '12px 16px'}}>6.0x</td>
                     <td style={{padding: '12px 16px'}}>12.0x</td>
                     <td style={{padding: '12px 16px'}}>{formatCurrency(600000, currency)}</td>
                   </tr>
-                  <tr style={{background: edad === 65 ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
+                  <tr style={{background: userProfile.edad === '65' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
                     <td style={{padding: '12px 16px'}}>65</td>
                     <td style={{padding: '12px 16px'}}>6.5x</td>
                     <td style={{padding: '12px 16px'}}>13.0x</td>
                     <td style={{padding: '12px 16px'}}>{formatCurrency(650000, currency)}</td>
                   </tr>
-                  <tr style={{background: edad === 70 ? '#f0f9ff' : 'white'}}>
+                  <tr style={{background: userProfile.edad === '70' ? '#f0f9ff' : 'white'}}>
                     <td style={{padding: '12px 16px'}}>70</td>
                     <td style={{padding: '12px 16px'}}>7.0x</td>
                     <td style={{padding: '12px 16px'}}>14.0x</td>
@@ -2879,47 +1342,35 @@ function RatiosFinancieros({ totales, userProfile, currency, ingresoBruto, ahorr
           </div>
         </div>
       )}
+
+      <div style={{
+        background: '#f0f9ff',
+        border: '2px solid var(--primary)',
+        borderRadius: '12px',
+        padding: '1.25rem',
+        marginTop: '1.5rem'
+      }}>
+        <div style={{display: 'flex', gap: '0.75rem', alignItems: 'flex-start'}}>
+          <span style={{fontSize: '2rem'}}>📚</span>
+          <div>
+            <div style={{fontWeight: '700', marginBottom: '0.5rem', color: 'var(--primary)', fontSize: '1.1rem'}}>
+              ¿Qué significan estos ratios?
+            </div>
+            <ul style={{fontSize: '0.9rem', color: '#1e40af', lineHeight: '1.8', paddingLeft: '1.5rem', margin: 0}}>
+              <li><strong>Meses de reserva:</strong> Cuánto tiempo puedes sobrevivir sin ingresos</li>
+              <li><strong>Tasa de ahorro:</strong> Qué porcentaje de tus ingresos estás guardando</li>
+              <li><strong>DTI Neto:</strong> Qué tan pesadas son tus deudas vs. tu ingreso neto</li>
+              <li><strong>Pasivos/Activos:</strong> Cuánto debes vs. cuánto tienes</li>
+              <li><strong>Patrimonio/Activos:</strong> Qué porcentaje de tus activos realmente te pertenece</li>
+              <li><strong>Nivel de riqueza:</strong> Si estás acumulando patrimonio según tu edad e ingresos</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
-// ============= ENVIAR DATOS AL PARENT (CARD) =============
-function DataSync({ totales, userProfile, currency, ingresoBruto, ahorro, deudas, gastosEsenciales, reservaEmergencia, pagoMensualDeudas, modoCalculo, impuestos, seguros }) {
-  useEffect(() => {
-    // Solo enviar si estamos en un iframe
-    if (window.parent !== window) {
-      const dataToSend = {
-        type: 'MONEY_MAP_DATA',
-        data: {
-          totales: {
-            activosTotales: totales.activosTotales,
-            pasivosTotales: totales.pasivosTotales,
-            patrimonioNeto: totales.patrimonioNeto
-          },
-          userProfile: {
-            nombre: userProfile.nombre,
-            apellido: userProfile.apellido,
-            edad: userProfile.edad,
-            impuestos: parseNumber(impuestos),
-            seguros: parseNumber(seguros)
-          },
-          currency,
-          ingresoBruto: parseNumber(ingresoBruto),
-          ahorro: parseNumber(ahorro),
-          deudas: parseNumber(deudas),
-          gastosEsenciales: parseNumber(gastosEsenciales),
-          reservaEmergencia: parseNumber(reservaEmergencia),
-          pagoMensualDeudas: parseNumber(pagoMensualDeudas),
-          modoCalculo
-        }
-      };
-      
-      // Enviar mensaje al parent
-      window.parent.postMessage(dataToSend, '*');
-    }
-  }, [totales, userProfile, currency, ingresoBruto, ahorro, deudas, gastosEsenciales, reservaEmergencia, pagoMensualDeudas, modoCalculo, impuestos, seguros]);
 
-  return null;
-}
 ReactDOM.render(<App />, document.getElementById('root'));
 </script>
 </body>
