@@ -820,6 +820,65 @@
       [...etapasWrap.querySelectorAll('.pillTab')].forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
     });
+    <script>
+  // Sidebar active
+  const nav = document.getElementById('nav');
+  nav.addEventListener('click', (e) => {
+    const a = e.target.closest('a');
+    if(!a) return;
+    [...nav.querySelectorAll('a')].forEach(x => x.classList.remove('active'));
+    a.classList.add('active');
+  });
+
+  // Etapas active
+  const etapasWrap = document.getElementById('etapasWrap');
+  etapasWrap.addEventListener('click', (e) => {
+    const tab = e.target.closest('.pillTab');
+    if(!tab) return;
+    [...etapasWrap.querySelectorAll('.pillTab')].forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+  });
+
+  // ===== MODAL GLOBAL MONEY MAP =====
+  const mmOverlay = document.getElementById('mmModalOverlay');
+  const mmClose = document.getElementById('mmClose');
+  const mmFrame = document.getElementById('mmModalFrame');
+
+  function openMoneyMapModal(){
+    mmFrame.src = 'https://xserbia.github.io/xs-member-site/money-map.html';
+    mmOverlay.classList.add('show');
+    mmOverlay.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeMoneyMapModal(){
+    mmOverlay.classList.remove('show');
+    mmOverlay.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    mmFrame.src = 'about:blank';
+  }
+
+  // Escuchar evento desde el iframe del card embebido
+  window.addEventListener('message', (event) => {
+    if(event.data && event.data.type === 'OPEN_MONEY_MAP'){
+      openMoneyMapModal();
+    }
+  });
+
+  // cerrar con X
+  mmClose.addEventListener('click', closeMoneyMapModal);
+
+  // cerrar si clic fuera del modal
+  mmOverlay.addEventListener('click', (e) => {
+    if(e.target === mmOverlay) closeMoneyMapModal();
+  });
+
+  // cerrar con ESC
+  window.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape' && mmOverlay.classList.contains('show')) closeMoneyMapModal();
+  });
+</script>
+
   </script>
   <!-- MODAL GLOBAL (fuera del card) -->
 <div class="mmModalOverlay" id="mmModalOverlay" aria-hidden="true">
