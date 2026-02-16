@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Money Map Card Preview</title>
+<script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800;9..144,900&display=swap" rel="stylesheet">
+
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f1f5f9;
+  color: #0f172a;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  padding: 2rem;
+}
+
+.preview-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.controls {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.controls h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: #1e293b;
+}
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.control-btn {
+  padding: 0.75rem 1.5rem;
+  border: 2px solid #e2e8f0;
+  background: white;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+}
+
+.control-btn:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.control-btn.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.card-container {
+  max-width: 680px;
+}
+
+.info-box {
+  background: #eff6ff;
+  border-left: 4px solid #3b82f6;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 2rem;
+}
+
+.info-box p {
+  font-size: 0.9rem;
+  color: #1e40af;
+  margin: 0;
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState } = React;
+
+const formatCurrency = (value, currencyCode = 'USD') => {
+  if (value === null || value === undefined || value === '') {
+    return '$0';
+  }
+  const num = typeof value === 'string' ? parseFloat(value.replace(/,/g, '')) : value;
+  if (isNaN(num)) return '$0';
+  
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currencyCode,
+    maximumFractionDigits: 0
+  }).format(num);
+};
+
+function MoneyMapCard({ totales, userProfile, currency, ingresoBruto, ahorro, deudas, gastosEsenciales, reservaEmergencia, pagoMensualDeudas, modoCalculo, onStartMoneyMap }) {
+  const getMoneyMapStatus = () => {
+    const hasNoData = !ingresoBruto && !totales.activosTotales && !totales.pasivosTotales;
+    if (hasNoData) return 'new';
+    
+    const hasPartialData = !gastosEsenciales || !reservaEmergencia || 
+                          (!ingresoBruto || !ahorro || !deudas) ||
+                          (totales.activosTotales === 0 && totales.pasivosTotales === 0);
+    if (hasPartialData) return 'incomplete';
+    
+    return 'complete';
+  };
+
+  const status = getMoneyMapStatus();
+  
+  const mult = modoCalculo === 'anual' ? 1 : 12;
+  const ingresoBrutoAnual = ingresoBruto * mult;
+  const ingresoNetoAnual = ingresoBrutoAnual - ((userProfile.impuestos || 0) * mult) - ((userProfile.seguros || 0) * mult);
+  const ahorroAnual = ahorro * mult;
+  const pagoMensualDeuda = modoCalculo === 'anual' ? deudas / 12 : deudas;
+  
+  const mesesReserva = gastosEsenciales > 0 ? reservaEmergencia / gastosEsenciales : 0;
+  const tasaAhorro = ingresoBrutoAnual > 0 ? ahorroAnual / ingresoBrutoAnual : 0;
+  const dtiNeto = (ingresoNetoAnual / 12) > 0 ? pagoMensualDeuda / (ingresoNetoAnual / 12) : 0;
+  const deudaActivos = totales.activosTotales > 0 ? totales.pasivosTotales / totales.activosTotales : 0;
+  const patrimonioActivos = totales.activosTotales > 0 ? totales.patrimonioNeto / totales.activosTotales : 0;
+  const riquezaNeta = ingresoBrutoAnual > 0 ? totales.patrimonioNeto / ingresoBrutoAnual : 0;
+  
+  const getRiquezaBenchmark = (age) => {
+    const benchmarks = [
+      {age:25, good:2.5, great:5},
+      {age:30, good:3, great:6},
+      {age:35, good:3.5, great:7},
+      {age:40, good:4, great:8},
+      {age:45, good:4.5, great:9},
+      {age:50, good:5, great:10},
+      {age:55, good:5.5, great:11},
+      {age:60, good:6, great:12},
+      {age:65, good:6.5, great:13},
+      {age:70, good:7, great:14}
+    ];
+    
+    if(age < 25) return benchmarks[0];
+    if(age >= 70) return benchmarks[benchmarks.length-1];
+    
+    for(let i=0; i<benchmarks.length-1; i++) {
+      if(age >= benchmarks[i].age && age < benchmarks[i+1].age) {
+        const t = (age - benchmarks[i].age) / (benchmarks[i+1].age - benchmarks[i].age);
+        return {
+          good: benchmarks[i].good + t * (benchmarks[i+1].good - benchmarks[i].good),
+          great: benchmarks[i].great + t * (benchmarks[i+1].great - benchmarks[i].great)
+        };
+      }
+    }
+    return benchmarks[benchmarks.length-1];
+  };
+  
+  const edad = parseInt(userProfile.edad) || 30;
+  const benchmark = getRiquezaBenchmark(edad);
+
+  const getMetricStatus = (value, goodThreshold, greatThreshold, isInverse = false) => {
+    if (!isFinite(value)) return { level: 'none', emoji: '—', color: '#94a3b8' };
+    
+    if (isInverse) {
+      if (value <= greatThreshold) return { level: 'great', emoji: '✅', color: '#10b981' };
+      if (value <= goodThreshold) return { level: 'good', emoji: '⚠️', color: '#f59e0b' };
+      return { level: 'poor', emoji: '🚨', color: '#ef4444' };
+    } else {
+      if (value >= greatThreshold) return { level: 'great', emoji: '✅', color: '#10b981' };
+      if (value >= goodThreshold) return { level: 'good', emoji: '⚠️', color: '#f59e0b' };
+      return { level: 'poor', emoji: '🚨', color: '#ef4444' };
+    }
+  };
+
+  const metricas = {
+    mesesReserva: {
+      nombre: 'Reserva',
+      valor: mesesReserva.toFixed(1) + 'm',
+      meta: '6m',
+      status: getMetricStatus(mesesReserva, 3, 6),
+      icon: '💧'
+    },
+    tasaAhorro: {
+      nombre: 'Ahorro',
+      valor: (tasaAhorro * 100).toFixed(0) + '%',
+      meta: '30%',
+      status: getMetricStatus(tasaAhorro, 0.15, 0.30),
+      icon: '🐷'
+    },
+    dtiNeto: {
+      nombre: 'DTI',
+      valor: (dtiNeto * 100).toFixed(0) + '%',
+      meta: '≤36%',
+      status: getMetricStatus(dtiNeto, 0.43, 0.36, true),
+      icon: '🏦'
+    },
+    patrimonioActivos: {
+      nombre: 'Patrimonio',
+      valor: (patrimonioActivos * 100).toFixed(0) + '%',
+      meta: '70%',
+      status: getMetricStatus(patrimonioActivos, 0.50, 0.70),
+      icon: '💎'
+    },
+    riquezaNeta: {
+      nombre: 'Riqueza',
+      valor: riquezaNeta.toFixed(1) + 'x',
+      meta: benchmark.great.toFixed(1) + 'x',
+      status: getMetricStatus(riquezaNeta, benchmark.good, benchmark.great),
+      icon: '📈'
+    }
+  };
+
+  const calculateOverallScore = () => {
+    const statusValues = Object.values(metricas).map(m => m.status.level);
+    const greatCount = statusValues.filter(s => s === 'great').length;
+    const goodCount = statusValues.filter(s => s === 'good').length;
+    const total = statusValues.filter(s => s !== 'none').length;
+    
+    if (total === 0) return { level: 'none', color: '#94a3b8', emoji: '—', text: 'Sin datos' };
+    
+    const score = (greatCount * 100 + goodCount * 60) / total;
+    
+    if (score >= 85) return { level: 'great', color: '#10b981', emoji: '🎉', text: 'Excelente' };
+    if (score >= 65) return { level: 'good', color: '#f59e0b', emoji: '👍', text: 'Bien' };
+    return { level: 'needs-work', color: '#ef4444', emoji: '⚡', text: 'Mejorar' };
+  };
+
+  const overallScore = calculateOverallScore();
+
+  if (status === 'new') {
+    return (
+      <div style={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        borderRadius: '16px',
+        padding: '1.75rem',
+        color: 'white',
+        boxShadow: '0 4px 20px rgba(102, 126, 234, 0.25)',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          position: 'absolute',
+          top: '-30px',
+          right: '-30px',
+          width: '150px',
+          height: '150px',
+          background: 'rgba(255,255,255,0.1)',
+          borderRadius: '50%',
+          filter: 'blur(30px)'
+        }}></div>
+        
+        <div style={{position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column'}}>
+          <div style={{marginBottom: '1.25rem'}}>
+            <div style={{fontSize: '2.5rem', marginBottom: '0.5rem'}}>🗺️</div>
+            <h3 style={{
+              fontSize: '1.35rem',
+              fontWeight: '800',
+              marginBottom: '0.5rem',
+              fontFamily: "'Fraunces', serif"
+            }}>
+              Descubre tu Money Map
+            </h3>
+            <p style={{
+              fontSize: '0.875rem',
+              opacity: 0.9,
+              lineHeight: '1.5'
+            }}>
+              Análisis completo de 5 métricas financieras clave
+            </p>
+          </div>
+
+          <div style={{
+            background: 'rgba(255,255,255,0.15)',
+            borderRadius: '10px',
+            padding: '1rem',
+            marginBottom: '1.25rem',
+            backdropFilter: 'blur(10px)',
+            flex: 1
+          }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(5, 1fr)',
+              gap: '0.75rem',
+              height: '100%'
+            }}>
+              <div style={{textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center'}}>
+                <div style={{fontSize: '1.5rem', marginBottom: '0.25rem'}}>💧</div>
+                <div style={{fontSize: '0.7rem', opacity: 0.9}}>Reserva</div>
+              </div>
+              <div style={{textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center'}}>
+                <div style={{fontSize: '1.5rem', marginBottom: '0.25rem'}}>🐷</div>
+                <div style={{fontSize: '0.7rem', opacity: 0.9}}>Ahorro</div>
+              </div>
+              <div style={{textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center'}}>
+                <div style={{fontSize: '1.5rem', marginBottom: '0.25rem'}}>🏦</div>
+                <div style={{fontSize: '0.7rem', opacity: 0.9}}>Deuda</div>
+              </div>
+              <div style={{textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center'}}>
+                <div style={{fontSize: '1.5rem', marginBottom: '0.25rem'}}>💎</div>
+                <div style={{fontSize: '0.7rem', opacity: 0.9}}>Patrimonio</div>
+              </div>
+              <div style={{textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center'}}>
+                <div style={{fontSize: '1.5rem', marginBottom: '0.25rem'}}>📈</div>
+                <div style={{fontSize: '0.7rem', opacity: 0.9}}>Riqueza</div>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={onStartMoneyMap}
+            style={{
+              width: '100%',
+              padding: '0.875rem 1.5rem',
+              background: 'white',
+              color: '#667eea',
+              border: 'none',
+              borderRadius: '10px',
+              fontSize: '0.95rem',
+              fontWeight: '700',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              fontFamily: "'DM Sans', sans-serif"
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.2)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+            }}
+          >
+            🚀 Comenzar Money Map
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'incomplete') {
+    return (
+      <div style={{
+        background: 'white',
+        borderRadius: '16px',
+        padding: '1.75rem',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        border: '2px solid #fbbf24',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        <div style={{marginBottom: '1.25rem'}}>
+          <div style={{fontSize: '2.5rem', marginBottom: '0.5rem'}}>⚠️</div>
+          <h3 style={{
+            fontSize: '1.25rem',
+            fontWeight: '800',
+            marginBottom: '0.35rem',
+            color: '#f59e0b',
+            fontFamily: "'Fraunces', serif"
+          }}>
+            Money Map Incompleto
+          </h3>
+          <p style={{
+            color: '#64748b',
+            fontSize: '0.85rem',
+            lineHeight: '1.4'
+          }}>
+            Completa más datos para tu análisis
+          </p>
+        </div>
+
+        <div style={{
+          background: '#fffbeb',
+          border: '2px solid #fbbf24',
+          borderRadius: '10px',
+          padding: '1rem',
+          marginBottom: '1.25rem',
+          flex: 1
+        }}>
+          <div style={{fontWeight: '700', marginBottom: '0.65rem', color: '#92400e', fontSize: '0.875rem'}}>
+            📋 Datos faltantes:
+          </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '0.5rem',
+            fontSize: '0.8rem',
+            color: '#78350f'
+          }}>
+            {!ingresoBruto && <div>• Ingreso bruto</div>}
+            {!ahorro && <div>• Ahorro</div>}
+            {!deudas && <div>• Pagos deuda</div>}
+            {!gastosEsenciales && <div>• Gastos esenciales</div>}
+            {!reservaEmergencia && <div>• Reserva emergencia</div>}
+            {totales.activosTotales === 0 && <div>• Activos</div>}
+          </div>
+        </div>
+
+        <button
+          onClick={onStartMoneyMap}
+          style={{
+            width: '100%',
+            padding: '0.875rem 1.5rem',
+            background: '#f59e0b',
+            color: 'white',
+            border: 'none',
+            borderRadius: '10px',
+            fontSize: '0.95rem',
+            fontWeight: '700',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            fontFamily: "'DM Sans', sans-serif"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#d97706';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = '#f59e0b';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
+        >
+          ✏️ Completar Money Map
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      background: 'white',
+      borderRadius: '16px',
+      padding: '1.75rem',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+      border: `2px solid ${overallScore.color}`,
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        marginBottom: '1.25rem',
+        paddingBottom: '0.75rem',
+        borderBottom: '2px solid #e2e8f0'
+      }}>
+        <div style={{flex: 1}}>
+          <h3 style={{
+            fontSize: '1.25rem',
+            fontWeight: '800',
+            marginBottom: '0.25rem',
+            fontFamily: "'Fraunces', serif",
+            color: '#1e293b'
+          }}>
+            🗺️ Money Map
+          </h3>
+          <p style={{color: '#64748b', fontSize: '0.8rem', lineHeight: '1.3'}}>
+            Resumen de salud financiera
+          </p>
+        </div>
+        <div style={{
+          background: `linear-gradient(135deg, ${overallScore.color} 0%, ${overallScore.color}dd 100%)`,
+          color: 'white',
+          padding: '0.5rem 0.75rem',
+          borderRadius: '10px',
+          textAlign: 'center',
+          minWidth: '75px'
+        }}>
+          <div style={{fontSize: '1.5rem', lineHeight: '1'}}>{overallScore.emoji}</div>
+          <div style={{fontSize: '0.65rem', marginTop: '0.25rem', opacity: 0.95, fontWeight: '600', letterSpacing: '0.3px'}}>
+            {overallScore.text}
+          </div>
+        </div>
+      </div>
+
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(5, 1fr)',
+        gap: '0.75rem',
+        marginBottom: '1.25rem',
+        flex: 1
+      }}>
+        {Object.entries(metricas).map(([key, metrica]) => (
+          <div
+            key={key}
+            style={{
+              background: '#f8fafc',
+              borderRadius: '10px',
+              padding: '0.75rem',
+              border: `2px solid ${metrica.status.color}20`,
+              position: 'relative',
+              transition: 'all 0.2s ease',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
+            <div style={{
+              position: 'absolute',
+              top: '6px',
+              right: '6px',
+              fontSize: '1rem',
+              lineHeight: '1'
+            }}>
+              {metrica.status.emoji}
+            </div>
+
+            <div style={{fontSize: '1.5rem', marginBottom: '0.35rem', lineHeight: '1'}}>
+              {metrica.icon}
+            </div>
+            
+            <div style={{
+              fontSize: '0.65rem',
+              color: '#64748b',
+              marginBottom: '0.25rem',
+              fontWeight: '600',
+              lineHeight: '1.2'
+            }}>
+              {metrica.nombre}
+            </div>
+            
+            <div style={{
+              fontSize: '1.1rem',
+              fontWeight: '800',
+              color: '#1e293b',
+              marginBottom: '0.25rem',
+              fontFamily: "'Fraunces', serif",
+              lineHeight: '1'
+            }}>
+              {metrica.valor}
+            </div>
+            
+            <div style={{
+              fontSize: '0.6rem',
+              color: metrica.status.color,
+              fontWeight: '600',
+              lineHeight: '1'
+            }}>
+              Meta: {metrica.meta}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{
+        background: '#f1f5f9',
+        borderRadius: '10px',
+        padding: '1rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '1rem'
+      }}>
+        <div style={{flex: 1}}>
+          <div style={{fontSize: '0.7rem', color: '#64748b', marginBottom: '0.25rem', fontWeight: '600'}}>
+            Patrimonio Neto
+          </div>
+          <div style={{
+            fontSize: '1.25rem',
+            fontWeight: '800',
+            color: totales.patrimonioNeto >= 0 ? '#10b981' : '#ef4444',
+            fontFamily: "'Fraunces', serif",
+            lineHeight: '1'
+          }}>
+            {formatCurrency(totales.patrimonioNeto, currency)}
+          </div>
+        </div>
+        
+        <button
+          onClick={onStartMoneyMap}
+          style={{
+            padding: '0.65rem 1.25rem',
+            background: '#3b82f6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            fontSize: '0.85rem',
+            fontWeight: '700',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            fontFamily: "'DM Sans', sans-serif",
+            whiteSpace: 'nowrap'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#2563eb';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = '#3b82f6';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
+        >
+          📊 Ver Detalles
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [estado, setEstado] = useState('complete');
+  
+  const getDataForState = (state) => {
+    const baseUserProfile = {
+      nombre: 'Juan',
+      apellido: 'Pérez',
+      edad: '35',
+      estadoCivil: 'soltero',
+      dependientes: 0,
+      avatar: '👨‍💼',
+      impuestos: 0,
+      seguros: 0
+    };
+
+    if (state === 'new') {
+      return {
+        totales: {
+          activosTotales: 0,
+          pasivosTotales: 0,
+          patrimonioNeto: 0
+        },
+        ingresoBruto: 0,
+        ahorro: 0,
+        deudas: 0,
+        gastosEsenciales: 0,
+        reservaEmergencia: 0,
+        userProfile: baseUserProfile
+      };
+    }
+
+    if (state === 'incomplete') {
+      return {
+        totales: {
+          activosTotales: 50000,
+          pasivosTotales: 20000,
+          patrimonioNeto: 30000
+        },
+        ingresoBruto: 5000,
+        ahorro: 0,
+        deudas: 0,
+        gastosEsenciales: 0,
+        reservaEmergencia: 0,
+        userProfile: baseUserProfile
+      };
+    }
+
+    return {
+      totales: {
+        activosTotales: 350000,
+        pasivosTotales: 150000,
+        patrimonioNeto: 200000
+      },
+      ingresoBruto: 6000,
+      ahorro: 1500,
+      deudas: 800,
+      gastosEsenciales: 3000,
+      reservaEmergencia: 18000,
+      userProfile: baseUserProfile
+    };
+  };
+
+  const data = getDataForState(estado);
+
+  return (
+    <div className="preview-container">
+      <div className="controls">
+        <h2>🎛️ Controles de Preview</h2>
+        <div className="button-group">
+          <button 
+            className={`control-btn ${estado === 'new' ? 'active' : ''}`}
+            onClick={() => setEstado('new')}
+          >
+            Estado 1: Nuevo Usuario
+          </button>
+          <button 
+            className={`control-btn ${estado === 'incomplete' ? 'active' : ''}`}
+            onClick={() => setEstado('incomplete')}
+          >
+            Estado 2: Incompleto
+          </button>
+          <button 
+            className={`control-btn ${estado === 'complete' ? 'active' : ''}`}
+            onClick={() => setEstado('complete')}
+          >
+            Estado 3: Completo
+          </button>
+        </div>
+      </div>
+
+      <div className="card-container">
+        <MoneyMapCard
+          totales={data.totales}
+          userProfile={data.userProfile}
+          currency="USD"
+          ingresoBruto={data.ingresoBruto}
+          ahorro={data.ahorro}
+          deudas={data.deudas}
+          gastosEsenciales={data.gastosEsenciales}
+          reservaEmergencia={data.reservaEmergencia}
+          pagoMensualDeudas={data.deudas}
+          modoCalculo="mensual"
+          onStartMoneyMap={() => alert('🚀 Navegando a Money Map...')}
+        />
+      </div>
+
+      <div className="info-box">
+        <p>
+          <strong>📐 Dimensiones:</strong> Esta card está optimizada para ~660-680px de ancho (1.45fr en grid de 2.4fr total). 
+          Cambia entre los estados usando los botones de arriba para ver los diferentes escenarios.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.render(<App />, document.getElementById('root'));
+</script>
+</body>
+</html>
+
+Puedes cambiar entre los 3 estados usando los botones en la parte superior:
+- **Estado 1: Nuevo Usuario** - Card morado con invitación a comenzar
+- **Estado 2: Incompleto** - Card amarillo con datos faltantes
+- **Estado 3: Completo** - Card blanco con todas las métricas y score general
+
+¿Qué te parece? ¿Algún ajuste que quieras hacer?
