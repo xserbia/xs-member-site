@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Banner Progreso por Etapas</title>
+<title>Banner Progreso Financiero</title>
 <style>
 body{
   margin:40px;
@@ -49,9 +49,9 @@ body{
   font-size:13px;
   color:#6b7280;
   box-shadow:0 2px 8px rgba(15,23,42,.04);
-  cursor:pointer;
   white-space:nowrap;
   transition:.2s ease;
+  cursor:default;
 }
 
 /* ===== ICONO ===== */
@@ -66,13 +66,13 @@ body{
   flex-shrink:0;
 }
 
-/* ===== ESTADO: PENDIENTE (por defecto) ===== */
+/* ===== ESTADO: PENDIENTE ===== */
 .pillTab.pendiente .icono{
   background:#e5e7eb;
   border:2px solid #d1d5db;
 }
 
-/* ===== ESTADO: EN PROCESO ===== */
+/* ===== ESTADO: EN PROCESO (ETAPA ACTUAL) ===== */
 .pillTab.en-proceso{
   border-color:#c7d2fe;
   background:linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
@@ -102,15 +102,6 @@ body{
   color:#fff;
   font-weight:900;
 }
-.pillTab.completada:hover{
-  background:#dcfce7;
-  transform:translateY(-1px);
-}
-
-/* Hover general */
-.pillTab:hover{
-  transform:translateY(-1px);
-}
 
 /* Responsive */
 @media(max-width:600px){
@@ -123,67 +114,91 @@ body{
 
 <div class="etapasCard">
   <div class="etapasWrap" id="etapasWrap">
-    <div class="pillTab completada" data-etapa="supervivencia">
-      <span class="icono">✓</span>Supervivencia
+    <div class="pillTab" data-etapa="supervivencia">
+      <span class="icono"></span>
+      <span>🆘 Supervivencia</span>
     </div>
-    <div class="pillTab completada" data-etapa="seguridad">
-      <span class="icono">✓</span>Seguridad
+    <div class="pillTab" data-etapa="seguridad">
+      <span class="icono"></span>
+      <span>🛡️ Seguridad</span>
     </div>
-    <div class="pillTab en-proceso" data-etapa="acumulacion">
-      <span class="icono"></span>Acumulación
+    <div class="pillTab" data-etapa="acumulacion">
+      <span class="icono"></span>
+      <span>💰 Acumulación</span>
     </div>
-    <div class="pillTab pendiente" data-etapa="independencia">
-      <span class="icono"></span>Independencia
+    <div class="pillTab" data-etapa="independencia">
+      <span class="icono"></span>
+      <span>🟩 Independencia</span>
     </div>
-    <div class="pillTab pendiente" data-etapa="libertad">
-      <span class="icono"></span>Libertad
+    <div class="pillTab" data-etapa="libertad">
+      <span class="icono"></span>
+      <span>🟦 Libertad</span>
     </div>
   </div>
 </div>
 
 <script>
-// Configuración: orden de las etapas
-const etapas = ['supervivencia', 'seguridad', 'acumulacion', 'independencia', 'libertad'];
-let etapaActual = 'acumulacion'; // Etapa actual
+// ===== CONFIGURACIÓN DE ETAPAS =====
+const ETAPAS_CONFIG = {
+  supervivencia: { orden: 1, nombre: 'Supervivencia' },
+  seguridad: { orden: 2, nombre: 'Seguridad' },
+  acumulacion: { orden: 3, nombre: 'Acumulación' },
+  independencia: { orden: 4, nombre: 'Independencia' },
+  libertad: { orden: 5, nombre: 'Libertad' }
+};
 
-function actualizarProgreso(etapaNombre) {
-  etapaActual = etapaNombre;
-  const indexActual = etapas.indexOf(etapaNombre);
+// ===== FUNCIÓN PRINCIPAL =====
+function mostrarProgresoEtapa(etapaActual) {
+  const ordenActual = ETAPAS_CONFIG[etapaActual].orden;
   const pills = document.querySelectorAll('.pillTab');
   
-  pills.forEach((pill, index) => {
-    // Quitar todas las clases de estado
+  pills.forEach((pill) => {
+    const etapaNombre = pill.dataset.etapa;
+    const ordenEtapa = ETAPAS_CONFIG[etapaNombre].orden;
+    
+    // Limpiar estados
     pill.classList.remove('completada', 'en-proceso', 'pendiente');
     
-    // Asignar estado según progreso
-    if (index < indexActual) {
-      // Etapas anteriores = completadas
+    // Asignar estado según el progreso
+    if (ordenEtapa < ordenActual) {
+      // Etapas ya superadas
       pill.classList.add('completada');
       pill.querySelector('.icono').textContent = '✓';
-    } else if (index === indexActual) {
-      // Etapa actual = en proceso
+    } else if (ordenEtapa === ordenActual) {
+      // Etapa actual del usuario
       pill.classList.add('en-proceso');
       pill.querySelector('.icono').textContent = '';
     } else {
-      // Etapas futuras = pendientes
+      // Etapas futuras
       pill.classList.add('pendiente');
       pill.querySelector('.icono').textContent = '';
     }
   });
 }
 
-// Click para cambiar de etapa
-document.getElementById('etapasWrap').addEventListener('click', (e) => {
-  const tab = e.target.closest('.pillTab');
-  if(!tab) return;
-  
-  const etapa = tab.dataset.etapa;
-  actualizarProgreso(etapa);
-  console.log("Etapa actual:", etapa);
-});
+// ===== INTEGRACIÓN CON TU SISTEMA =====
+// Esta función se llama cuando cargas los datos de la radiografía
+function cargarDatosRadiografia(datosUsuario) {
+  // datosUsuario viene de tu backend con la etapa calculada
+  const etapaUsuario = datosUsuario.etapa; // ej: 'acumulacion'
+  mostrarProgresoEtapa(etapaUsuario);
+}
 
-// Inicializar
-actualizarProgreso(etapaActual);
+// ===== SIMULACIÓN (REEMPLAZAR CON TU API) =====
+// Ejemplo de cómo se vería con datos reales:
+setTimeout(() => {
+  const datosSimulados = {
+    etapa: 'acumulacion', // Esto viene de tu cálculo de radiografía
+    patrimonio: 150000,
+    deudas: 30000,
+    // ... otros datos
+  };
+  cargarDatosRadiografia(datosSimulados);
+}, 100);
+
+// ===== ALTERNATIVA: Recibir directamente la etapa =====
+// Si solo necesitas mostrar la etapa sin objeto:
+// mostrarProgresoEtapa('seguridad');
 </script>
 
 </body>
