@@ -28,10 +28,8 @@
       color:var(--text);
     }
 
-    /* ===== Layout ===== */
     .app{ display:flex; min-height:100vh; }
 
-    /* ===== Sidebar ===== */
     .sidebar{
       width:290px;
       background:#fff;
@@ -103,7 +101,6 @@
     .subnav a:hover{ background:#f7f7fb; }
     .subnav a.active{ background:#eef2ff; color:var(--primary); }
 
-    /* ===== Main ===== */
     .main{ flex:1; padding:26px 28px; }
 
     .card{
@@ -138,7 +135,6 @@
       white-space:nowrap;
     }
 
-    /* Tabs Etapas */
     .etapasCard{
       padding:14px 16px;
       display:flex;
@@ -174,23 +170,18 @@
       user-select:none;
       white-space:nowrap;
     }
-    .pillTab .dot{
-      width:10px;height:10px;border-radius:3px;
-      background:#ef4444;
-    }
+    .pillTab .dot{ width:10px;height:10px;border-radius:3px;background:#ef4444; }
     .pillTab[data-etapa="1"] .dot{ background:#ef4444; }
     .pillTab[data-etapa="2"] .dot{ background:#f59e0b; }
     .pillTab[data-etapa="3"] .dot{ background:#eab308; }
     .pillTab[data-etapa="4"] .dot{ background:#22c55e; }
     .pillTab[data-etapa="5"] .dot{ background:#3b82f6; }
-
     .pillTab.active{
       border-color:#c7d2fe;
       box-shadow:0 10px 22px rgba(57,86,232,.12);
       background:#f7f8ff;
     }
 
-    /* Coaching promo */
     .coachCard{
       padding:10px;
       display:grid;
@@ -200,8 +191,7 @@
       min-height:86px;
     }
     .coachImg{
-      width:86px;
-      height:66px;
+      width:86px; height:66px;
       border-radius:14px;
       overflow:hidden;
       border:1px solid var(--stroke);
@@ -209,18 +199,8 @@
       display:grid;
       place-items:center;
     }
-    .coachImg img{
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      display:block;
-    }
-    .coachInfo{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-      min-width:0;
-    }
+    .coachImg img{ width:100%; height:100%; object-fit:cover; display:block; }
+    .coachInfo{ display:flex; flex-direction:column; gap:8px; min-width:0; }
     .coachTitle{
       font-weight:1000;
       font-size:22px;
@@ -253,6 +233,7 @@
       color:#1d4ed8;
     }
     .btn-outline:hover{ transform:translateY(-1px); }
+
     .btn-dark{ background:#0b1220; color:#fff; }
     .btn-dark:hover{ transform:translateY(-1px); }
 
@@ -264,14 +245,8 @@
       align-items:stretch;
     }
     .grid > .card{ height:100%; }
-    .stage, .cadaMenudo{
-      height:100%;
-      display:flex;
-      flex-direction:column;
-      min-height:0;
-    }
+    .stage, .cadaMenudo{ height:100%; display:flex; flex-direction:column; min-height:0; }
 
-    /* ===== Stage Card ===== */
     .stage{ padding:22px; }
     .stage .title{
       font-size:22px;
@@ -304,7 +279,6 @@
     }
     .stageInfo h3{ margin:0; font-size:20px; font-weight:1000; }
     .stageInfo p{ margin:6px 0 0; color:var(--muted); font-weight:700; font-size:14px; }
-
     .progressBox{
       border:1px solid #dbeafe;
       background:#eff6ff;
@@ -325,7 +299,6 @@
       font-weight:1000;
       color:#1d4ed8;
     }
-
     .needs{
       margin-top:14px;
       border:1px solid #fcd34d;
@@ -357,13 +330,7 @@
       border:1px solid rgba(146,64,14,.18);
       margin-left:8px;
     }
-    .bar > i{
-      display:block;
-      height:100%;
-      width:50%;
-      background:#f59e0b;
-      border-radius:999px;
-    }
+    .bar > i{ display:block; height:100%; width:50%; background:#f59e0b; border-radius:999px; }
     .needs ul{
       margin:0;
       padding-left:18px;
@@ -372,22 +339,10 @@
       font-size:12.5px;
       line-height:1.6;
     }
-    .stageActions{
-      display:flex;
-      justify-content:flex-end;
-      margin-top:auto;
-      padding-top:14px;
-    }
+    .stageActions{ display:flex; justify-content:flex-end; margin-top:auto; padding-top:14px; }
 
-    /* ===== Cada Menudo ===== */
     .cadaMenudo{ padding:18px; }
-    .cmTop{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:12px;
-      margin-bottom:12px;
-    }
+    .cmTop{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:12px; }
     .cmBrand{
       font-weight:1000;
       font-size:22px;
@@ -474,12 +429,7 @@
       font-weight:1000;
       flex:0 0 auto;
     }
-    .cmK{
-      font-size:12px;
-      color:var(--muted);
-      font-weight:900;
-      margin-bottom:2px;
-    }
+    .cmK{ font-size:12px; color:var(--muted); font-weight:900; margin-bottom:2px; }
     .cmV{
       font-size:14px;
       font-weight:1000;
@@ -490,33 +440,23 @@
       max-width:100%;
     }
 
-    /* ===== Bottom area: MoneyMap + Video ===== */
+    /* ===== Bottom area ===== */
     .bottom{
       margin-top:22px;
       display:grid;
       grid-template-columns: 1.45fr .95fr;
       gap:22px;
-      align-items:start;
+      align-items:stretch;
     }
 
-    /* ✅ NUEVO: card de Money Map como contenedor del iframe */
+    /* ✅ CARD embed */
     .moneymapEmbed{
-      padding:0;                 /* importante: el contenido lo maneja el iframe */
-      overflow:hidden;           /* para respetar radius */
+      padding:0;
+      overflow:hidden;
       display:flex;
       flex-direction:column;
-      min-height:360px;          /* ajustable */
+      min-height:420px; /* un poco más para que se vea full */
     }
-
-    .mmFrame{
-      width:100%;
-      height:360px;              /* <-- ajusta este número (320–420 suele ser ideal) */
-      border:0;
-      display:block;
-      background:transparent;
-    }
-
-    /* Opcional: header arriba del iframe (si lo quieres) */
     .mmHeader{
       padding:16px 18px 10px;
       display:flex;
@@ -526,25 +466,22 @@
       border-bottom:1px solid var(--stroke);
       background:#fff;
     }
-    .mmTitle{
-      font-weight:1000;
-      font-size:22px;
-      line-height:1.05;
-    }
-    .mmSub{
-      margin-top:6px;
-      color:var(--muted);
-      font-weight:800;
-      font-size:12.5px;
+    .mmTitle{ font-weight:1000; font-size:22px; line-height:1.05; }
+    .mmSub{ margin-top:6px; color:var(--muted); font-weight:800; font-size:12.5px; }
+
+    /* ✅ IMPORTANTE: iframe ocupa el resto del card */
+    .mmFrame{
+      width:100%;
+      flex:1;
+      height:auto;
+      min-height:360px;
+      border:0;
+      display:block;
+      background:#f1f5f9;
     }
 
     .videoWrap{ padding:0; overflow:hidden; }
-    .videoHeader{
-      padding:16px 18px 10px;
-      font-size:22px;
-      font-weight:1000;
-      background:transparent;
-    }
+    .videoHeader{ padding:16px 18px 10px; font-size:22px; font-weight:1000; background:transparent; }
     .video{
       position:relative;
       width:100%;
@@ -552,12 +489,7 @@
       background:linear-gradient(135deg,#0ea5e9,#1d4ed8 60%, #7c3aed);
       border-top:1px solid var(--stroke);
     }
-    .video .play{
-      position:absolute;
-      inset:0;
-      display:grid;
-      place-items:center;
-    }
+    .video .play{ position:absolute; inset:0; display:grid; place-items:center; }
     .video .play button{
       width:72px;height:72px;border-radius:999px;
       border:2px solid rgba(255,255,255,.85);
@@ -571,64 +503,58 @@
     .video .play button:hover{ transform:scale(1.04); }
 
     .muted{ color:var(--muted); font-weight:800; }
-/* ===== MODAL GLOBAL MONEY MAP (FUERA DEL CARD) ===== */
-.mmModalOverlay{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.78);
-  z-index:99999;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  padding:22px;
-}
-.mmModalOverlay.show{ display:flex; }
 
-.mmModal{
-  width:min(1400px, 96vw);
-  height:min(90vh, 900px);
-  background:#fff;
-  border-radius:20px;
-  overflow:hidden;
-  box-shadow:0 25px 70px rgba(0,0,0,.45);
-  position:relative;
-  display:flex;
-  flex-direction:column;
-}
+    /* ===== MODAL GLOBAL (FUERA DEL IFRAME) ===== */
+    .mmModalOverlay{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.78);
+      z-index:99999;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:22px;
+    }
+    .mmModalOverlay.show{ display:flex; }
 
-.mmModal iframe{
-  width:100%;
-  height:100%;
-  border:0;
-}
+    .mmModal{
+      width:min(1400px, 96vw);
+      height:min(90vh, 900px);
+      background:#fff;
+      border-radius:20px;
+      overflow:hidden;
+      box-shadow:0 25px 70px rgba(0,0,0,.45);
+      position:relative;
+      display:flex;
+      flex-direction:column;
+    }
+    .mmModal iframe{ width:100%; height:100%; border:0; }
 
-.mmClose{
-  position:absolute;
-  top:14px;
-  right:14px;
-  z-index:100000;
-  width:42px;
-  height:42px;
-  border-radius:999px;
-  border:0;
-  cursor:pointer;
-  background:rgba(0,0,0,.7);
-  color:#fff;
-  font-size:22px;
-  display:grid;
-  place-items:center;
-  transition:.15s ease;
-}
-.mmClose:hover{
-  background:#ef4444;
-  transform:scale(1.06);
-}
+    .mmClose{
+      position:absolute;
+      top:14px;
+      right:14px;
+      z-index:100000;
+      width:42px;
+      height:42px;
+      border-radius:999px;
+      border:0;
+      cursor:pointer;
+      background:rgba(0,0,0,.7);
+      color:#fff;
+      font-size:22px;
+      display:grid;
+      place-items:center;
+      transition:.15s ease;
+    }
+    .mmClose:hover{ background:#ef4444; transform:scale(1.06); }
 
     @media (max-width: 1100px){
       .topRow{ grid-template-columns: 1fr; }
       .grid, .bottom{ grid-template-columns: 1fr; }
       .sidebar{ width:260px; }
-      .mmFrame{ height:380px; } /* un poquito más alto en 1 columna */
+      .moneymapEmbed{ min-height:520px; }
+      .mmFrame{ min-height:440px; }
     }
   </style>
 </head>
@@ -662,7 +588,6 @@
 
     <main class="main">
 
-      <!-- TOP ROW -->
       <section class="topRow">
         <div class="card welcomeCard">
           <div class="welcomeTitle">Bienvenido, Frank 👋</div>
@@ -689,7 +614,6 @@
         </div>
       </section>
 
-      <!-- FILA 1 -->
       <section class="grid">
         <div class="card stage">
           <h2 class="title">¿En qué etapa financiera estás?</h2>
@@ -767,12 +691,8 @@
         </div>
       </section>
 
-      <!-- FILA 2 (Money Map real + Video) -->
       <section class="bottom">
-
-        <!-- ✅ Money Map: ahora es el card real -->
         <div class="card moneymapEmbed">
-          <!-- Si NO quieres header, borra este bloque -->
           <div class="mmHeader">
             <div>
               <div class="mmTitle">X Money Map</div>
@@ -796,10 +716,22 @@
             </div>
           </div>
         </div>
-
       </section>
 
     </main>
+  </div>
+
+  <!-- MODAL GLOBAL (FUERA DEL CARD) -->
+  <div class="mmModalOverlay" id="mmModalOverlay" aria-hidden="true">
+    <div class="mmModal" role="dialog" aria-modal="true" aria-label="Money Map">
+      <button class="mmClose" id="mmClose" title="Cerrar">×</button>
+      <iframe
+        id="mmModalFrame"
+        src="about:blank"
+        title="Money Map"
+        allow="fullscreen"
+      ></iframe>
+    </div>
   </div>
 
   <script>
@@ -820,78 +752,40 @@
       [...etapasWrap.querySelectorAll('.pillTab')].forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
     });
-    <script>
-  // Sidebar active
-  const nav = document.getElementById('nav');
-  nav.addEventListener('click', (e) => {
-    const a = e.target.closest('a');
-    if(!a) return;
-    [...nav.querySelectorAll('a')].forEach(x => x.classList.remove('active'));
-    a.classList.add('active');
-  });
 
-  // Etapas active
-  const etapasWrap = document.getElementById('etapasWrap');
-  etapasWrap.addEventListener('click', (e) => {
-    const tab = e.target.closest('.pillTab');
-    if(!tab) return;
-    [...etapasWrap.querySelectorAll('.pillTab')].forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-  });
+    // ===== MODAL GLOBAL =====
+    const mmModalOverlay = document.getElementById('mmModalOverlay');
+    const mmClose = document.getElementById('mmClose');
+    const mmModalFrame = document.getElementById('mmModalFrame');
 
-  // ===== MODAL GLOBAL MONEY MAP =====
-  const mmOverlay = document.getElementById('mmModalOverlay');
-  const mmClose = document.getElementById('mmClose');
-  const mmFrame = document.getElementById('mmModalFrame');
-
-  function openMoneyMapModal(){
-    mmFrame.src = 'https://xserbia.github.io/xs-member-site/money-map.html';
-    mmOverlay.classList.add('show');
-    mmOverlay.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden';
-  }
-
-  function closeMoneyMapModal(){
-    mmOverlay.classList.remove('show');
-    mmOverlay.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = '';
-    mmFrame.src = 'about:blank';
-  }
-
-  // Escuchar evento desde el iframe del card embebido
-  window.addEventListener('message', (event) => {
-    if(event.data && event.data.type === 'OPEN_MONEY_MAP'){
-      openMoneyMapModal();
+    function openMoneyMapModal() {
+      mmModalFrame.src = "https://xserbia.github.io/xs-member-site/money-map.html";
+      mmModalOverlay.classList.add('show');
+      mmModalOverlay.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
     }
-  });
 
-  // cerrar con X
-  mmClose.addEventListener('click', closeMoneyMapModal);
+    function closeMoneyMapModal() {
+      mmModalOverlay.classList.remove('show');
+      mmModalOverlay.setAttribute('aria-hidden', 'true');
+      mmModalFrame.src = "about:blank";
+      document.body.style.overflow = '';
+    }
 
-  // cerrar si clic fuera del modal
-  mmOverlay.addEventListener('click', (e) => {
-    if(e.target === mmOverlay) closeMoneyMapModal();
-  });
+    mmClose.addEventListener('click', closeMoneyMapModal);
+    mmModalOverlay.addEventListener('click', (e) => {
+      if (e.target === mmModalOverlay) closeMoneyMapModal();
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeMoneyMapModal();
+    });
 
-  // cerrar con ESC
-  window.addEventListener('keydown', (e) => {
-    if(e.key === 'Escape' && mmOverlay.classList.contains('show')) closeMoneyMapModal();
-  });
-</script>
-
+    // ✅ Escucha mensajes del iframe (money-map-card.html)
+    window.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'OPEN_MONEY_MAP') {
+        openMoneyMapModal();
+      }
+    });
   </script>
-  <!-- MODAL GLOBAL (fuera del card) -->
-<div class="mmModalOverlay" id="mmModalOverlay" aria-hidden="true">
-  <div class="mmModal" role="dialog" aria-modal="true" aria-label="Money Map">
-    <button class="mmClose" id="mmClose" title="Cerrar">×</button>
-    <iframe
-      id="mmModalFrame"
-      src="about:blank"
-      title="Money Map"
-      allow="fullscreen"
-    ></iframe>
-  </div>
-</div>
-
 </body>
 </html>
