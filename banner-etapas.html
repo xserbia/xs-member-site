@@ -3,15 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Banner Etapas</title>
-
+<title>Banner Progreso por Etapas</title>
 <style>
 body{
   margin:40px;
   font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
   background:#f3f5f9;
 }
-
 /* ===== CARD CONTENEDOR ===== */
 .etapasCard{
   background:#ffffff;
@@ -23,9 +21,8 @@ body{
   align-items:center;
   min-height:86px;
   overflow:hidden;
-  max-width:900px;
+  max-width:1000px;
 }
-
 /* ===== WRAP SCROLL ===== */
 .etapasWrap{
   display:flex;
@@ -38,7 +35,7 @@ body{
 }
 .etapasWrap::-webkit-scrollbar{ display:none; }
 
-/* ===== PILLS ===== */
+/* ===== PILLS BASE ===== */
 .pillTab{
   flex:0 0 auto;
   display:inline-flex;
@@ -48,86 +45,145 @@ body{
   border-radius:14px;
   border:1px solid #dbe1f0;
   background:#fff;
-  font-weight:900;
+  font-weight:600;
   font-size:13px;
-  color:#111827;
-  box-shadow:0 6px 16px rgba(15,23,42,.06);
+  color:#6b7280;
+  box-shadow:0 2px 8px rgba(15,23,42,.04);
   cursor:pointer;
   white-space:nowrap;
-  transition:.15s ease;
+  transition:.2s ease;
 }
 
-.pillTab:hover{
-  background:#f7f8ff;
+/* ===== ICONO ===== */
+.pillTab .icono{
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:11px;
+  flex-shrink:0;
+}
+
+/* ===== ESTADO: PENDIENTE (por defecto) ===== */
+.pillTab.pendiente .icono{
+  background:#e5e7eb;
+  border:2px solid #d1d5db;
+}
+
+/* ===== ESTADO: EN PROCESO ===== */
+.pillTab.en-proceso{
+  border-color:#c7d2fe;
+  background:linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  color:#3956E8;
+  font-weight:700;
+  box-shadow:0 8px 20px rgba(57,86,232,.15);
+}
+.pillTab.en-proceso .icono{
+  background:#3b82f6;
+  border:3px solid #60a5fa;
+  animation:pulso 1.5s ease-in-out infinite;
+}
+@keyframes pulso{
+  0%, 100%{ transform:scale(1); opacity:1; }
+  50%{ transform:scale(1.15); opacity:.8; }
+}
+
+/* ===== ESTADO: COMPLETADA ===== */
+.pillTab.completada{
+  border-color:#d1fae5;
+  background:#f0fdf4;
+  color:#059669;
+  font-weight:600;
+}
+.pillTab.completada .icono{
+  background:#10b981;
+  color:#fff;
+  font-weight:900;
+}
+.pillTab.completada:hover{
+  background:#dcfce7;
   transform:translateY(-1px);
 }
 
-/* DOT */
-.pillTab .dot{
-  width:10px;
-  height:10px;
-  border-radius:4px;
-}
-
-/* Colores por etapa */
-.pillTab[data-etapa="1"] .dot{ background:#ef4444; }
-.pillTab[data-etapa="2"] .dot{ background:#f59e0b; }
-.pillTab[data-etapa="3"] .dot{ background:#eab308; }
-.pillTab[data-etapa="4"] .dot{ background:#22c55e; }
-.pillTab[data-etapa="5"] .dot{ background:#3b82f6; }
-
-/* Activa */
-.pillTab.active{
-  border-color:#c7d2fe;
-  box-shadow:0 10px 22px rgba(57,86,232,.12);
-  background:#eef2ff;
-  color:#3956E8;
+/* Hover general */
+.pillTab:hover{
+  transform:translateY(-1px);
 }
 
 /* Responsive */
 @media(max-width:600px){
   body{ margin:20px; }
+  .pillTab{ font-size:12px; padding:8px 12px; }
 }
 </style>
 </head>
-
 <body>
 
 <div class="etapasCard">
   <div class="etapasWrap" id="etapasWrap">
-    <div class="pillTab active" data-etapa="1">
-      <span class="dot"></span>Etapa 1
+    <div class="pillTab completada" data-etapa="supervivencia">
+      <span class="icono">✓</span>Supervivencia
     </div>
-    <div class="pillTab" data-etapa="2">
-      <span class="dot"></span>Etapa 2
+    <div class="pillTab completada" data-etapa="seguridad">
+      <span class="icono">✓</span>Seguridad
     </div>
-    <div class="pillTab" data-etapa="3">
-      <span class="dot"></span>Etapa 3
+    <div class="pillTab en-proceso" data-etapa="acumulacion">
+      <span class="icono"></span>Acumulación
     </div>
-    <div class="pillTab" data-etapa="4">
-      <span class="dot"></span>Etapa 4
+    <div class="pillTab pendiente" data-etapa="independencia">
+      <span class="icono"></span>Independencia
     </div>
-    <div class="pillTab" data-etapa="5">
-      <span class="dot"></span>Etapa 5
+    <div class="pillTab pendiente" data-etapa="libertad">
+      <span class="icono"></span>Libertad
     </div>
   </div>
 </div>
 
 <script>
-const etapasWrap = document.getElementById('etapasWrap');
+// Configuración: orden de las etapas
+const etapas = ['supervivencia', 'seguridad', 'acumulacion', 'independencia', 'libertad'];
+let etapaActual = 'acumulacion'; // Etapa actual
 
-etapasWrap.addEventListener('click', (e) => {
+function actualizarProgreso(etapaNombre) {
+  etapaActual = etapaNombre;
+  const indexActual = etapas.indexOf(etapaNombre);
+  const pills = document.querySelectorAll('.pillTab');
+  
+  pills.forEach((pill, index) => {
+    // Quitar todas las clases de estado
+    pill.classList.remove('completada', 'en-proceso', 'pendiente');
+    
+    // Asignar estado según progreso
+    if (index < indexActual) {
+      // Etapas anteriores = completadas
+      pill.classList.add('completada');
+      pill.querySelector('.icono').textContent = '✓';
+    } else if (index === indexActual) {
+      // Etapa actual = en proceso
+      pill.classList.add('en-proceso');
+      pill.querySelector('.icono').textContent = '';
+    } else {
+      // Etapas futuras = pendientes
+      pill.classList.add('pendiente');
+      pill.querySelector('.icono').textContent = '';
+    }
+  });
+}
+
+// Click para cambiar de etapa
+document.getElementById('etapasWrap').addEventListener('click', (e) => {
   const tab = e.target.closest('.pillTab');
   if(!tab) return;
-
-  document.querySelectorAll('.pillTab')
-    .forEach(t => t.classList.remove('active'));
-
-  tab.classList.add('active');
-
+  
   const etapa = tab.dataset.etapa;
-  console.log("Etapa seleccionada:", etapa);
+  actualizarProgreso(etapa);
+  console.log("Etapa actual:", etapa);
 });
+
+// Inicializar
+actualizarProgreso(etapaActual);
 </script>
 
 </body>
