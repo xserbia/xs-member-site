@@ -106,10 +106,17 @@
     /* ===== Main ===== */
     .main{ flex:1; padding:26px 28px; }
 
-    /* ===== TOP ROW (Bienvenida + Etapa mini + Promo coaching) ===== */
+    .card{
+      background:var(--card);
+      border:1px solid var(--stroke);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+    }
+
+    /* ===== TOP ROW (75/25) ===== */
     .topRow{
       display:grid;
-      grid-template-columns: 1.4fr 1fr 1fr;
+      grid-template-columns: 3fr 1fr; /* 75/25 */
       gap:22px;
       margin:8px 0 22px;
       align-items:stretch;
@@ -135,6 +142,14 @@
       color:var(--muted);
       font-weight:700;
       font-size:14px;
+    }
+
+    /* Columna derecha: Etapa mini + Promo (stack) */
+    .topRight{
+      display:grid;
+      grid-template-rows: 1fr 1fr;
+      gap:22px;
+      align-items:stretch;
     }
 
     .stageMini{
@@ -203,6 +218,19 @@
       flex-direction:column;
       justify-content:space-between;
       min-height:120px;
+      overflow:hidden;
+      position:relative;
+    }
+    .coachingPromo:after{
+      content:"";
+      position:absolute;
+      right:-70px;
+      top:-70px;
+      width:180px;
+      height:180px;
+      border-radius:999px;
+      background:rgba(255,255,255,.12);
+      filter:blur(.2px);
     }
     .promoBadge{
       font-size:11px;
@@ -212,11 +240,15 @@
       border-radius:999px;
       width:max-content;
       letter-spacing:.05em;
+      position:relative;
+      z-index:1;
     }
     .coachingPromo h3{
       margin:12px 0 6px;
       font-size:18px;
       font-weight:1000;
+      position:relative;
+      z-index:1;
     }
     .coachingPromo p{
       margin:0;
@@ -224,7 +256,26 @@
       opacity:.92;
       font-weight:600;
       line-height:1.35;
+      position:relative;
+      z-index:1;
     }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding:12px 16px;
+      border-radius:12px;
+      border:0;
+      cursor:pointer;
+      font-weight:1000;
+      font-family:inherit;
+      transition:.15s ease;
+      user-select:none;
+    }
+    .btn-dark{ background:#0b1220; color:#fff; }
+    .btn-dark:hover{ transform:translateY(-1px); }
     .btn-primary{
       background:#fff;
       color:var(--primary);
@@ -235,6 +286,8 @@
       padding:10px 12px;
       font-size:13px;
       width:max-content;
+      position:relative;
+      z-index:1;
     }
 
     /* ===== Grid (fila 1) ===== */
@@ -242,14 +295,7 @@
       display:grid;
       grid-template-columns: 1.45fr .95fr;
       gap:22px;
-      align-items:stretch; /* mismas alturas */
-    }
-
-    .card{
-      background:var(--card);
-      border:1px solid var(--stroke);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
+      align-items:stretch;
     }
 
     /* ===== Stage Card grande + Cada Menudo grande ===== */
@@ -370,23 +416,6 @@
       font-size:12.5px;
       line-height:1.6;
     }
-
-    .btn{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      padding:12px 16px;
-      border-radius:12px;
-      border:0;
-      cursor:pointer;
-      font-weight:1000;
-      font-family:inherit;
-      transition:.15s ease;
-      user-select:none;
-    }
-    .btn-dark{ background:#0b1220; color:#fff; }
-    .btn-dark:hover{ transform:translateY(-1px); }
 
     .stageActions{
       display:flex;
@@ -657,31 +686,33 @@
 
     <main class="main">
 
-      <!-- TOP ROW -->
+      <!-- TOP ROW (75/25) -->
       <section class="topRow">
         <div class="card welcomeCard">
           <div class="welcomeTitle">Bienvenido, Frank 👋</div>
           <div class="welcomeSub">Aquí tienes tu resumen financiero hoy.</div>
         </div>
 
-        <div class="card stageMini">
-          <div class="stageMiniTop">
-            <div class="stageBadge">ETAPA</div>
-            <div class="stagePercent">64%</div>
+        <div class="topRight">
+          <div class="card stageMini">
+            <div class="stageMiniTop">
+              <div class="stageBadge">ETAPA</div>
+              <div class="stagePercent">64%</div>
+            </div>
+            <h3>Supervivencia</h3>
+            <p>Estás trabajando en cubrir tus gastos básicos.</p>
+            <div class="miniProgress"><div class="miniBar"></div></div>
+            <button class="btn btn-dark miniBtn">Ver detalles</button>
           </div>
-          <h3>Supervivencia</h3>
-          <p>Estás trabajando en cubrir tus gastos básicos.</p>
-          <div class="miniProgress"><div class="miniBar"></div></div>
-          <button class="btn btn-dark miniBtn">Ver detalles</button>
-        </div>
 
-        <div class="card coachingPromo">
-          <div class="promoBadge">XS COACHING</div>
-          <div>
-            <h3>¿Listo para avanzar?</h3>
-            <p>Recibe guía personalizada para salir de esta etapa más rápido.</p>
+          <div class="card coachingPromo">
+            <div class="promoBadge">XS COACHING</div>
+            <div>
+              <h3>¿Listo para avanzar?</h3>
+              <p>Recibe guía personalizada para salir de esta etapa más rápido.</p>
+            </div>
+            <button class="btn btn-primary promoBtn">Reservar Sesión</button>
           </div>
-          <button class="btn btn-primary promoBtn">Reservar Sesión</button>
         </div>
       </section>
 
