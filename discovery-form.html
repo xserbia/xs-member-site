@@ -33,14 +33,50 @@
       padding: 0 16px 28px;
     }
     
-    /* Header mejorado */
+    /* Header mejorado - estilo tablero */
     header{
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:20px;
+      background: white;
+      border-radius: 12px;
+      padding: 20px 30px;
       margin-bottom: 28px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
+    
+    .headerTop{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #e9ecef;
+    }
+    
+    .userInfo{
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .userInfo h1{
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+      color: #0F172A;
+    }
+    
+    .userName{
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #475569;
+    }
+    
+    .userEmail{
+      margin: 0;
+      font-size: 14px;
+      color: #94a3b8;
+    }
+    
     .brand{
       display:flex;
       flex-direction:column;
@@ -1227,16 +1263,23 @@
 <body>
   <div class="wrap">
     <header>
-      <div class="brand">
-        <h1>Discovery · Diagnóstico Financiero</h1>
-        <p>Recopilación rápida para preparar tu diagnóstico. No es asesoría ni recomendación.</p>
+      <div class="headerTop">
+        <div class="userInfo">
+          <h1>Mi Discovery</h1>
+          <p class="userName" id="headerUserName">Juan Pérez</p>
+          <p class="userEmail" id="headerUserEmail">juan.perez@email.com</p>
+        </div>
+        <button 
+          id="resetBtn" 
+          class="btn ghost"
+          title="Reiniciar Discovery"
+          style="padding: 8px 16px; font-size: 13px;"
+        >
+          🔄 Reiniciar
+        </button>
       </div>
 
       <div class="stepCircles" id="stepCircles">
-        <div class="stepCircle clickable" data-step-circle="0" data-goto="0">
-          <div class="stepNumber">🖊️</div>
-          <div class="stepLabel">Firma</div>
-        </div>
         <div class="stepCircle clickable" data-step-circle="1" data-goto="1">
           <div class="stepNumber">1</div>
           <div class="stepLabel">Welcome</div>
@@ -1260,7 +1303,7 @@
       </div>
 
       <div class="progressInline">
-        <span class="progressText" id="progressText">Firma del contrato</span>
+        <span class="progressText" id="progressText">Paso 1 de 5</span>
         <div class="autoSaveIndicator" id="autoSave">Guardado ✓</div>
       </div>
     </header>
@@ -1268,270 +1311,18 @@
     <div class="card">
       <div class="content">
         <!-- STEP 1: Preparación -->
-        <section class="step" data-step="0">
-          <!-- VIEW 1: Signature Form (before signing) -->
-          <div id="signatureForm" class="panel">
-            <h2>Consentimiento y Acuerdo de Servicio</h2>
-            <p class="hint">Por favor lee cuidadosamente y firma para continuar</p>
-            
-            <div class="contractBox">
-              <h3>Acuerdo de Asesoría Financiera</h3>
-              
-              <div class="contractText">
-                <p><b>Fecha:</b> <span id="contractDate"></span></p>
-                
-                <h4>1. Propósito del Discovery</h4>
-                <p>
-                  Este cuestionario de diagnóstico financiero ("Discovery") tiene como propósito 
-                  recopilar información sobre tu situación financiera actual para preparar una 
-                  sesión de asesoría personalizada.
-                </p>
-                
-                <h4>2. Uso de la Información</h4>
-                <p>
-                  La información que proporciones será utilizada exclusivamente para:
-                </p>
-                <ul>
-                  <li>Preparar recomendaciones financieras personalizadas</li>
-                  <li>Facilitar la sesión de diagnóstico</li>
-                  <li>Crear reportes internos para nuestro equipo de asesores</li>
-                </ul>
-                
-                <h4>3. Confidencialidad</h4>
-                <p>
-                  Toda la información proporcionada será tratada de manera estrictamente confidencial. 
-                  No compartiremos tus datos con terceros sin tu consentimiento explícito, excepto 
-                  cuando sea requerido por ley.
-                </p>
-                
-                <h4>4. Exactitud de la Información</h4>
-                <p>
-                  Te comprometes a proporcionar información veraz y actualizada. Entiendes que las 
-                  recomendaciones se basarán en la información que proporciones.
-                </p>
-                
-                <h4>5. No es Asesoría Legal o Fiscal</h4>
-                <p>
-                  Este servicio proporciona asesoría financiera general. No sustituye asesoría legal, 
-                  fiscal o de inversiones profesional. Te recomendamos consultar con profesionales 
-                  especializados para temas específicos.
-                </p>
-                
-                <h4>6. Protección de Datos</h4>
-                <p>
-                  Tus datos serán almacenados de forma segura y protegidos según las mejores prácticas 
-                  de seguridad. Tienes derecho a solicitar acceso, corrección o eliminación de tus 
-                  datos en cualquier momento.
-                </p>
-                
-                <h4>7. Aceptación</h4>
-                <p>
-                  Al firmar este documento, confirmas que:
-                </p>
-                <ul>
-                  <li>Has leído y comprendido este acuerdo</li>
-                  <li>Aceptas los términos y condiciones descritos</li>
-                  <li>Autorizas el uso de tu información según lo indicado</li>
-                  <li>Eres mayor de edad y tienes capacidad legal para firmar</li>
-                </ul>
-              </div>
-              
-              <div class="signatureSection">
-                <div class="field">
-                  <label>Nombre Completo *</label>
-                  <input 
-                    type="text" 
-                    id="signatureName" 
-                    placeholder="Tu nombre completo"
-                    required
-                  />
-                </div>
-                
-                <div class="field">
-                  <label>Firma Digital *</label>
-                  <p class="hint">Firma con tu mouse o dedo en el recuadro:</p>
-                  <div class="signatureCanvas">
-                    <canvas id="signatureCanvas" width="600" height="200"></canvas>
-                    <button class="btn ghost" id="clearSignature" type="button">
-                      Limpiar firma
-                    </button>
-                  </div>
-                </div>
-                
-                <div class="field">
-                  <label class="checkbox">
-                    <input type="checkbox" id="acceptTerms" required />
-                    <span>
-                      Confirmo que he leído y acepto los términos de este acuerdo. 
-                      Entiendo que mi firma digital tiene la misma validez legal que una firma manuscrita.
-                    </span>
-                  </label>
-                </div>
-                
-                <div class="signatureInfo">
-                  <p class="hint">
-                    ℹ️ Al firmar, registramos tu dirección IP (<span id="userIP">obteniendo...</span>) 
-                    y la fecha/hora exacta para validez legal.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- VIEW 2: Locked Contract (after signing) -->
-          <div id="signatureLocked" class="panel" style="display:none;">
-            <div style="text-align:center; padding:20px 0;">
-              <div style="display:inline-block; background:linear-gradient(135deg, #22c55e, #10b981); color:white; padding:12px 24px; border-radius:50px; font-size:18px; font-weight:700; margin-bottom:20px;">
-                ✅ Contrato Firmado y Sellado
-              </div>
-              <p style="color:#6c757d; font-size:14px;">
-                Este contrato está firmado legalmente y no puede ser modificado.
-              </p>
-            </div>
-            
-            <div class="contractBox" style="border-color:#22c55e;">
-              <h2 style="color:#22c55e;">📄 Tu Contrato Firmado</h2>
-              
-              <div style="background:#d4edda; padding:20px; border-radius:8px; border-left:4px solid #22c55e; margin-bottom:20px;">
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
-                  <div>
-                    <p style="margin:0; font-size:12px; color:#155724; font-weight:600;">FIRMANTE</p>
-                    <p style="margin:4px 0 0; font-size:16px; color:#155724; font-weight:700;" id="lockedName">-</p>
-                  </div>
-                  <div>
-                    <p style="margin:0; font-size:12px; color:#155724; font-weight:600;">EMAIL</p>
-                    <p style="margin:4px 0 0; font-size:16px; color:#155724; font-weight:700;" id="lockedEmail">-</p>
-                  </div>
-                  <div>
-                    <p style="margin:0; font-size:12px; color:#155724; font-weight:600;">FECHA Y HORA</p>
-                    <p style="margin:4px 0 0; font-size:14px; color:#155724;" id="lockedTimestamp">-</p>
-                  </div>
-                  <div>
-                    <p style="margin:0; font-size:12px; color:#155724; font-weight:600;">DIRECCIÓN IP</p>
-                    <p style="margin:4px 0 0; font-size:14px; color:#155724;" id="lockedIP">-</p>
-                  </div>
-                </div>
-                
-                <div style="margin-top:20px; padding-top:20px; border-top:1px solid #c3e6cb;">
-                  <p style="margin:0; font-size:12px; color:#155724; font-weight:600;">FIRMA DIGITAL</p>
-                  <div style="background:white; padding:10px; border-radius:6px; margin-top:8px;">
-                    <img id="lockedSignatureImg" src="" alt="Firma" style="max-width:300px; height:auto; display:block; margin:0 auto;" />
-                  </div>
-                </div>
-              </div>
-              
-              <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                <button 
-                  type="button" 
-                  id="downloadContractBtn" 
-                  class="btn" 
-                  style="background:linear-gradient(135deg, #3956E8, #7459D9); color:white; flex:1; min-width:200px;"
-                >
-                  📥 Descargar Contrato Firmado
-                </button>
-                
-                <button 
-                  type="button" 
-                  id="viewContractTextBtn" 
-                  class="btn" 
-                  style="background:white; color:#3956E8; border:2px solid #3956E8; flex:1; min-width:200px;"
-                >
-                  📄 Ver Texto Completo
-                </button>
-              </div>
-              
-              <div id="contractFullText" style="display:none; margin-top:20px;">
-                <div class="contractText">
-                  <p><b>Fecha:</b> <span id="contractDateLocked"></span></p>
-                  
-                  <h4>1. Propósito del Discovery</h4>
-                  <p>
-                    Este cuestionario de diagnóstico financiero ("Discovery") tiene como propósito 
-                    recopilar información sobre tu situación financiera actual para preparar una 
-                    sesión de asesoría personalizada.
-                  </p>
-                  
-                  <h4>2. Uso de la Información</h4>
-                  <p>La información que proporciones será utilizada exclusivamente para:</p>
-                  <ul>
-                    <li>Preparar recomendaciones financieras personalizadas</li>
-                    <li>Facilitar la sesión de diagnóstico</li>
-                    <li>Crear reportes internos para nuestro equipo de asesores</li>
-                  </ul>
-                  
-                  <h4>3. Confidencialidad</h4>
-                  <p>
-                    Toda la información proporcionada será tratada de manera estrictamente confidencial. 
-                    No compartiremos tus datos con terceros sin tu consentimiento explícito, excepto 
-                    cuando sea requerido por ley.
-                  </p>
-                  
-                  <h4>4. Exactitud de la Información</h4>
-                  <p>
-                    Te comprometes a proporcionar información veraz y actualizada. Entiendes que las 
-                    recomendaciones se basarán en la información que proporciones.
-                  </p>
-                  
-                  <h4>5. No es Asesoría Legal o Fiscal</h4>
-                  <p>
-                    Este servicio proporciona asesoría financiera general. No sustituye asesoría legal, 
-                    fiscal o de inversiones profesional. Te recomendamos consultar con profesionales 
-                    especializados para temas específicos.
-                  </p>
-                  
-                  <h4>6. Protección de Datos</h4>
-                  <p>
-                    Tus datos serán almacenados de forma segura y protegidos según las mejores prácticas 
-                    de seguridad. Tienes derecho a solicitar acceso, corrección o eliminación de tus 
-                    datos en cualquier momento.
-                  </p>
-                  
-                  <h4>7. Aceptación</h4>
-                  <p>Al firmar este documento, confirmas que:</p>
-                  <ul>
-                    <li>Has leído y comprendido este acuerdo</li>
-                    <li>Aceptas los términos y condiciones descritos</li>
-                    <li>Autorizas el uso de tu información según lo indicado</li>
-                    <li>Eres mayor de edad y tienes capacidad legal para firmar</li>
-                  </ul>
-                </div>
-              </div>
-              
-              <div style="background:#fff3cd; padding:16px; border-radius:8px; border-left:4px solid #ffc107; margin-top:20px;">
-                <p style="margin:0; font-size:13px; color:#856404;">
-                  🔒 <strong>Seguridad:</strong> Este contrato está protegido y sellado. No puede ser editado 
-                  ni modificado. Guarda una copia para tus registros personales.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="step" data-step="1" hidden>
+        <!-- STEP 1: Welcome -->
+        <section class="step" data-step="1">
           <div class="hero">
             <h2>¡Hola! Preparemos tu sesión de diagnóstico 👋</h2>
             <p>
-              Esto tomará <b>3-10 minutos</b> dependiendo del modo que elijas. 
+              Esto tomará <b>3-10 minutos</b> dependiendo de cuánta información tengas lista. 
               Tu progreso se guarda automáticamente, puedes volver cuando quieras.
             </p>
           </div>
 
           <div class="panel">
             <h2>Antes de empezar</h2>
-            
-            <div class="field" style="margin-bottom:24px;">
-              <label>Tu email *</label>
-              <input 
-                type="email" 
-                id="userEmail" 
-                placeholder="tu@email.com" 
-                required 
-                style="max-width:400px;"
-              />
-              <p class="hint">
-                Para enviarte el resumen de tu diagnóstico y el link para agendar tu sesión.
-              </p>
-            </div>
             
             <div class="checklistPrep">
               <p>💡 Ten a mano (opcional pero útil):</p>
@@ -1886,7 +1677,7 @@
             </div>
 
             <button class="btn primary large full" id="finalSubmit" type="button">
-              Confirmar y enviar →
+              Someter Discovery Form
             </button>
           </div>
 
@@ -1894,28 +1685,27 @@
           <div id="afterSubmit" style="display:none;">
             <div class="confirmationHero">
               <div class="checkIcon">✓</div>
-              <h2>¡Listo! Tu información ha sido enviada</h2>
-              <p>Recibirás un email para coordinar tu sesión de diagnóstico</p>
-            </div>
-
-            <div class="deliverables">
-              <div class="deliverableCard" style="grid-column: 1 / -1; max-width: 600px; margin: 0 auto;">
-                <span class="emoji">📅</span>
-                <div>
-                  <b>Link para agendar tu diagnóstico</b>
-                  <p>Revisa tu email y elige el horario que mejor te funcione para tu sesión personalizada con uno de nuestros asesores</p>
-                </div>
-              </div>
+              <h2>¡Tu formulario ha sido enviado con éxito!</h2>
+              <p>Tu información de Discovery ha sido recibida correctamente</p>
             </div>
 
             <div class="panel">
-              <div style="background: #d4edda; border-left: 4px solid #28a745; padding: 20px; border-radius: 8px;">
-                <h4 style="margin: 0 0 12px; color: #155724;">📧 Emails enviados:</h4>
-                <ul style="margin: 0; padding-left: 24px; color: #155724;">
-                  <li>✅ Contrato firmado (a tu email)</li>
-                  <li>✅ Link de Calendly para agendar (a tu email)</li>
-                  <li>✅ Diagnóstico completo (a nuestro equipo)</li>
-                </ul>
+              <div style="background: #d4edda; border-left: 4px solid #28a745; padding: 20px; border-radius: 8px; text-align: center;">
+                <p style="margin: 0 0 8px; color: #155724; font-size: 16px;">
+                  ✅ <strong>Discovery completado</strong>
+                </p>
+                <p style="margin: 0 0 20px; color: #155724; font-size: 14px;">
+                  <a href="tablero-usuario.html" style="color: #155724; text-decoration: underline;">
+                    Volver a tu tablero
+                  </a>
+                </p>
+                <button 
+                  onclick="window.close()" 
+                  class="btn primary large"
+                  style="display: inline-block;"
+                >
+                  Cerrar
+                </button>
               </div>
             </div>
           </div>
@@ -1956,18 +1746,10 @@
   // ===== State =====
   const state = {
     mode: 'detailed',
-    step: 0,  // Start at 0 for signature
+    step: 1,  // Start at Step 1 (Welcome/Email)
     startTime: Date.now(),
-    userEmail: '',
-    
-    signature: {
-      name: '',
-      signatureData: '',  // base64 image
-      timestamp: '',
-      ip: '',
-      accepted: false,
-      locked: false  // true once signed, prevents editing
-    },
+    userName: 'Juan Pérez',  // Default name
+    userEmail: 'juan.perez@email.com',  // Default email
     
     people: {
       template: '',
@@ -1996,6 +1778,23 @@
     notes: ""
   };
 
+  // Get user info from URL params
+  function getUserInfoFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const name = params.get('name') || params.get('userName') || params.get('client_name') || '';
+    const email = params.get('email') || params.get('userEmail') || params.get('client_email') || '';
+    
+    if (name) state.userName = name;
+    if (email) state.userEmail = email;
+    
+    updateHeaderUserInfo();
+  }
+  
+  function updateHeaderUserInfo() {
+    $('#headerUserName').textContent = state.userName || 'Juan Pérez';
+    $('#headerUserEmail').textContent = state.userEmail || 'juan.perez@email.com';
+  }
+
   // Load from localStorage
   function loadDraft(){
     try{
@@ -2008,13 +1807,6 @@
         const data = JSON.parse(saved);
         Object.assign(state, data);
         showToast('✓ Progreso recuperado');
-        
-        // If contract is already signed, show locked view
-        if(state.signature.locked){
-          $('#signatureForm').style.display = 'none';
-          $('#signatureLocked').style.display = 'block';
-          populateLockedContract();
-        }
       }
     } catch(e){}
   }
@@ -2048,51 +1840,61 @@
   const backBtn = $('#backBtn');
   const nextBtn = $('#nextBtn');
 
+  // Validation functions for each step
+  function isStep1Complete() {
+    // Step 1 (Welcome) has no validation
+    return true;
+  }
+
+  function isStep2Complete() {
+    // Step 2 (Personas) requires at least one person
+    return state.people.members.length > 0;
+  }
+
+  function isStep3Complete() {
+    // Step 3 (Metas) shows checkmark only if goals are selected
+    // But it's still optional for submission validation
+    return state.goals.length > 0;
+  }
+
+  function isStep4Complete() {
+    // Step 4 (Finanzas) requires at least one financial item
+    return state.financials.items.length > 0;
+  }
+
+  function isStepComplete(stepNumber) {
+    switch(stepNumber) {
+      case 1: return isStep1Complete();
+      case 2: return isStep2Complete();
+      case 3: return isStep3Complete();
+      case 4: return isStep4Complete();
+      case 5: return false; // Step 5 is never "complete" until submitted
+      default: return false;
+    }
+  }
+
   function setStep(step){
     state.step = step;
     $$('.step').forEach(sec => sec.hidden = sec.dataset.step !== String(step));
 
-    // If going to step 0 and contract is locked, show locked view
-    if(step === 0 && state.signature.locked){
-      $('#signatureForm').style.display = 'none';
-      $('#signatureLocked').style.display = 'block';
-      populateLockedContract();
-    } else if(step === 0){
-      $('#signatureForm').style.display = 'block';
-      $('#signatureLocked').style.display = 'none';
-    }
-
-    // Update step circles
+    // Update step circles based on ACTUAL completion status
     $$('.stepCircle').forEach((circle, idx) => {
-      const circleStep = idx;  // Now 0-5 instead of 1-5
+      const circleStep = idx + 1;  // Now 1-5 (idx 0 = step 1)
       circle.classList.remove('completed', 'active');
       
-      if(circleStep < step){
-        circle.classList.add('completed');
-        // Change to checkmark for completed (except signature which shows emoji)
-        const numberEl = circle.querySelector('.stepNumber');
-        if(circleStep === 0){
-          numberEl.textContent = '✓';
-        } else {
-          numberEl.textContent = '✓';
-        }
-      } else if(circleStep === step){
+      const numberEl = circle.querySelector('.stepNumber');
+      
+      if(circleStep === step){
+        // Current step - always show as active
         circle.classList.add('active');
-        // Show original content for active
-        const numberEl = circle.querySelector('.stepNumber');
-        if(circleStep === 0){
-          numberEl.textContent = '🖊️';
-        } else {
-          numberEl.textContent = circleStep;
-        }
+        numberEl.textContent = circleStep;
+      } else if(isStepComplete(circleStep)){
+        // Step is actually complete - show checkmark
+        circle.classList.add('completed');
+        numberEl.textContent = '✓';
       } else {
-        // Show original content for future steps
-        const numberEl = circle.querySelector('.stepNumber');
-        if(circleStep === 0){
-          numberEl.textContent = '🖊️';
-        } else {
-          numberEl.textContent = circleStep;
-        }
+        // Step is not complete - show number
+        numberEl.textContent = circleStep;
       }
     });
 
@@ -2100,14 +1902,10 @@
     const elapsed = Math.floor((Date.now() - state.startTime) / 60000);
     const remaining = Math.max(1, 10 - elapsed);
     
-    if(step === 0){
-      $('#progressText').textContent = 'Firma del contrato';
-    } else {
-      $('#progressText').textContent = `Paso ${step} de 5 · ~${remaining} min restantes`;
-    }
+    $('#progressText').textContent = `Paso ${step} de 5 · ~${remaining} min restantes`;
 
     // Buttons
-    backBtn.hidden = step === 0;
+    backBtn.hidden = step === 1;
     nextBtn.hidden = step === 5;
 
     // Step-specific
@@ -2121,152 +1919,18 @@
   }
 
   function updateNavValidity(){
-    // Free navigation - don't block! Just update button state for current step
-    let canNext = true;
-    
-    if(state.step === 0){
-      canNext = validateSignature();
-    }
-    if(state.step === 1){
-      const email = $('#userEmail').value.trim();
-      canNext = email && email.includes('@') && email.includes('.');
-    }
-    // Steps 2-4: Allow navigation even if incomplete
+    // Free navigation - no validation needed at Step 1
     // Only validate at final submission (step 5)
-    
-    nextBtn.disabled = !canNext;
+    nextBtn.disabled = false;
   }
 
   backBtn.addEventListener('click', () => {
-    if(state.step > 0) setStep(state.step - 1);
+    if(state.step > 1) setStep(state.step - 1);
   });
 
   nextBtn.addEventListener('click', async () => {
-    if(state.step === 0 && !validateSignature()){
-      showToast('❌ Por favor completa tu nombre, firma y acepta los términos');
-      return;
-    }
-    if(state.step === 0){
-      // Capture signature and LOCK IT
-      state.signature.name = signatureName.value.trim();
-      state.signature.signatureData = signatureCanvas.toDataURL('image/png');
-      state.signature.timestamp = new Date().toISOString();
-      state.signature.ip = await getUserIP();
-      state.signature.accepted = acceptTerms.checked;
-      state.signature.locked = true; // Mark as locked
-      
-      // Hide form, show locked view
-      $('#signatureForm').style.display = 'none';
-      $('#signatureLocked').style.display = 'block';
-      
-      // Populate locked view
-      populateLockedContract();
-      
-      debouncedSave();
-      showToast('✅ Contrato firmado y sellado correctamente');
-    }
-    if(state.step === 1){
-      const email = $('#userEmail').value.trim();
-      if(!email || !email.includes('@') || !email.includes('.')){
-        showToast('❌ Por favor ingresa un email válido');
-        return;
-      }
-      state.userEmail = email;
-    }
-    // No validation for steps 2-4 - allow free navigation!
+    // No validation for steps 1-4 - allow free navigation!
     if(state.step < 5) setStep(state.step + 1);
-  });
-
-  // Populate locked contract view
-  function populateLockedContract() {
-    $('#lockedName').textContent = state.signature.name;
-    $('#lockedEmail').textContent = state.userEmail || 'Pendiente';
-    $('#lockedIP').textContent = state.signature.ip;
-    
-    // Format timestamp
-    const date = new Date(state.signature.timestamp);
-    $('#lockedTimestamp').textContent = date.toLocaleString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-    
-    $('#contractDateLocked').textContent = date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-    
-    // Show signature image
-    $('#lockedSignatureImg').src = state.signature.signatureData;
-  }
-
-  // Download contract button
-  $('#downloadContractBtn').addEventListener('click', () => {
-    // Create a simple HTML page with the contract
-    const contractHTML = `
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Contrato Firmado - ${state.signature.name}</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; }
-    h1 { color: #3956E8; text-align: center; }
-    h2 { color: #3956E8; margin-top: 30px; }
-    .signature-box { background: #d4edda; padding: 20px; border-radius: 8px; border-left: 4px solid #22c55e; margin: 20px 0; }
-    .signature-box p { margin: 8px 0; }
-    img { max-width: 300px; display: block; margin: 20px auto; border: 2px solid #ccc; padding: 10px; }
-  </style>
-</head>
-<body>
-  <h1>Consentimiento y Acuerdo de Servicio</h1>
-  <h2>Discovery · Diagnóstico Financiero</h2>
-  
-  <div class="signature-box">
-    <p><strong>Firmante:</strong> ${state.signature.name}</p>
-    <p><strong>Fecha:</strong> ${$('#lockedTimestamp').textContent}</p>
-    <p><strong>IP:</strong> ${state.signature.ip}</p>
-    <p><strong>Email:</strong> ${state.userEmail}</p>
-  </div>
-  
-  <h2>Términos del Contrato</h2>
-  ${$('#contractFullText .contractText').innerHTML}
-  
-  <h2>Firma Digital</h2>
-  <img src="${state.signature.signatureData}" alt="Firma" />
-  
-  <p style="text-align: center; color: #666; font-size: 12px; margin-top: 40px;">
-    Este documento ha sido generado electrónicamente y es válido sin firma física adicional.
-  </p>
-</body>
-</html>
-    `;
-    
-    // Download as HTML
-    const blob = new Blob([contractHTML], { type: 'text/html' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `Contrato-Firmado-${state.signature.name.replace(/\s+/g, '-')}-${Date.now()}.html`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    
-    showToast('✅ Contrato descargado exitosamente');
-  });
-
-  // View contract text button
-  $('#viewContractTextBtn').addEventListener('click', () => {
-    const textDiv = $('#contractFullText');
-    if (textDiv.style.display === 'none') {
-      textDiv.style.display = 'block';
-      $('#viewContractTextBtn').textContent = '🔼 Ocultar Texto';
-    } else {
-      textDiv.style.display = 'none';
-      $('#viewContractTextBtn').textContent = '📄 Ver Texto Completo';
-    }
   });
 
   // ===== FREE NAVIGATION: Click on step circles to jump =====
@@ -2274,14 +1938,7 @@
     circle.addEventListener('click', () => {
       const targetStep = parseInt(circle.dataset.goto);
       
-      // Block if trying to skip signature step when not signed
-      if(targetStep > 0 && !state.signature.locked){
-        showToast('⚠️ Por favor firma el contrato primero');
-        return;
-      }
-      
-      // Allow navigation to step 0 to VIEW locked contract
-      // Allow free navigation to any other step
+      // Free navigation - no restrictions
       setStep(targetStep);
     });
   });
@@ -2324,127 +1981,6 @@
       if(items.length === 0) return { ok:false };
     }
     return { ok:true };
-  }
-
-  // ===== STEP 0: Signature =====
-  const signatureCanvas = $('#signatureCanvas');
-  const signatureCtx = signatureCanvas.getContext('2d');
-  const signatureName = $('#signatureName');
-  const acceptTerms = $('#acceptTerms');
-  const clearSignatureBtn = $('#clearSignature');
-  
-  let isDrawing = false;
-  let hasSignature = false;
-
-  // Set canvas size properly for high DPI
-  function initCanvas() {
-    const canvas = signatureCanvas;
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * 2;
-    canvas.height = rect.height * 2;
-    signatureCtx.scale(2, 2);
-    signatureCtx.strokeStyle = '#0F172A';
-    signatureCtx.lineWidth = 2;
-    signatureCtx.lineCap = 'round';
-    signatureCtx.lineJoin = 'round';
-  }
-
-  initCanvas();
-
-  // Drawing functions
-  function startDrawing(e) {
-    isDrawing = true;
-    const rect = signatureCanvas.getBoundingClientRect();
-    const x = (e.clientX || e.touches[0].clientX) - rect.left;
-    const y = (e.clientY || e.touches[0].clientY) - rect.top;
-    signatureCtx.beginPath();
-    signatureCtx.moveTo(x, y);
-  }
-
-  function draw(e) {
-    if (!isDrawing) return;
-    e.preventDefault();
-    const rect = signatureCanvas.getBoundingClientRect();
-    const x = (e.clientX || e.touches[0].clientX) - rect.left;
-    const y = (e.clientY || e.touches[0].clientY) - rect.top;
-    signatureCtx.lineTo(x, y);
-    signatureCtx.stroke();
-    hasSignature = true;
-  }
-
-  function stopDrawing() {
-    isDrawing = false;
-    validateSignature();
-  }
-
-  // Mouse events
-  signatureCanvas.addEventListener('mousedown', startDrawing);
-  signatureCanvas.addEventListener('mousemove', draw);
-  signatureCanvas.addEventListener('mouseup', stopDrawing);
-  signatureCanvas.addEventListener('mouseout', stopDrawing);
-
-  // Touch events
-  signatureCanvas.addEventListener('touchstart', startDrawing);
-  signatureCanvas.addEventListener('touchmove', draw);
-  signatureCanvas.addEventListener('touchend', stopDrawing);
-
-  // Clear signature
-  clearSignatureBtn.addEventListener('click', () => {
-    signatureCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
-    hasSignature = false;
-    validateSignature();
-  });
-
-  // Input listeners
-  signatureName.addEventListener('input', validateSignature);
-  acceptTerms.addEventListener('change', validateSignature);
-
-  function validateSignature() {
-    const nameOk = signatureName.value.trim().length > 2;
-    const termsOk = acceptTerms.checked;
-    const signatureOk = hasSignature;
-    
-    if (state.step === 0) {
-      nextBtn.disabled = !(nameOk && termsOk && signatureOk);
-    }
-    
-    return nameOk && termsOk && signatureOk;
-  }
-
-  // Get user IP
-  async function getUserIP() {
-    try {
-      const response = await fetch('https://api.ipify.org?format=json');
-      const data = await response.json();
-      $('#userIP').textContent = data.ip;
-      return data.ip;
-    } catch (e) {
-      $('#userIP').textContent = 'N/A';
-      return 'N/A';
-    }
-  }
-
-  // Set contract date
-  $('#contractDate').textContent = new Date().toLocaleDateString('es-ES', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-
-  // Get IP on load
-  getUserIP();
-
-  // ===== STEP 1: Email =====
-  const userEmailInput = $('#userEmail');
-  userEmailInput.addEventListener('input', () => {
-    state.userEmail = userEmailInput.value.trim();
-    updateNavValidity();
-    debouncedSave();
-  });
-
-  // Restore email on load
-  if(state.userEmail){
-    userEmailInput.value = state.userEmail;
   }
 
   // ===== STEP 2: People =====
@@ -3354,18 +2890,6 @@
     // Build completion checklist
     const checklist = [
       {
-        step: 0,
-        icon: '🖊️',
-        title: 'Contrato firmado',
-        completed: state.signature.locked && state.signature.name && state.signature.signatureData
-      },
-      {
-        step: 1,
-        icon: '📧',
-        title: 'Email ingresado',
-        completed: state.userEmail && state.userEmail.includes('@')
-      },
-      {
         step: 2,
         icon: '👥',
         title: `Personas agregadas (${state.people.members.length})`,
@@ -3427,7 +2951,7 @@
       
       // Disable submit button
       finalSubmitBtn.disabled = true;
-      finalSubmitBtn.textContent = 'Completar pasos requeridos';
+      finalSubmitBtn.textContent = 'Someter Discovery Form';
       finalSubmitBtn.style.opacity = '0.5';
       
       return;
@@ -3440,7 +2964,7 @@
           <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
           <h3 style="color: #155724; margin: 0 0 8px;">¡Todo Completo!</h3>
           <p style="color: #155724; margin: 0; font-size: 14px;">
-            Has completado todos los pasos requeridos. Presiona "Confirmar y enviar" para finalizar.
+            Has completado todos los pasos requeridos. Presiona "Someter Discovery Form" para finalizar.
           </p>
         </div>
         
@@ -3464,7 +2988,7 @@
     
     // Enable submit button
     finalSubmitBtn.disabled = false;
-    finalSubmitBtn.textContent = 'Confirmar y enviar →';
+    finalSubmitBtn.textContent = 'Someter Discovery Form';
     finalSubmitBtn.style.opacity = '1';
   }
 
@@ -3477,25 +3001,7 @@
   function validateFinalSubmission() {
     const missingItems = [];
     
-    // Check signature (Step 0) - must be locked
-    if (!state.signature.locked || !state.signature.name || !state.signature.signatureData) {
-      missingItems.push({
-        step: 0,
-        icon: '🖊️',
-        title: 'Contrato sin firmar',
-        description: 'Firma el contrato de consentimiento para continuar'
-      });
-    }
-    
-    // Check email (Step 1)
-    if (!state.userEmail || !state.userEmail.includes('@')) {
-      missingItems.push({
-        step: 1,
-        icon: '📧',
-        title: 'Email requerido',
-        description: 'Ingresa tu email para recibir el link de Calendly'
-      });
-    }
+    // Email comes from URL params, no need to validate
     
     // Check people (Step 2) - at least one person
     if (state.people.members.length === 0) {
@@ -3558,10 +3064,54 @@
     finalSubmitBtn.disabled = true;
     
     try {
-      // Send to backend API
-      const API_URL = 'http://localhost:5000/api/submit-discovery';  // Change to your production URL
+      // Get API URL from URL params or use default
+      const params = new URLSearchParams(window.location.search);
+      const apiUrl = params.get('api') || params.get('apiUrl') || '';
       
-      const response = await fetch(API_URL, {
+      // DEMO MODE - If no API URL provided, simulate success
+      if (!apiUrl) {
+        console.log('🎮 DEMO MODE - Simulando envío exitoso...');
+        console.log('   Para usar API real, agrega: ?api=https://tu-api.com/submit');
+        
+        // Simulate delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Simulate success
+        console.log('✓ Discovery simulado exitosamente (DEMO)');
+        
+        // Download JSON backup
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `discovery-backup-${Date.now()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        
+        // Clear localStorage
+        localStorage.removeItem('discovery_draft_v3');
+        
+        // Hide the checklist/form view
+        $('#beforeSubmit').style.display = 'none';
+        
+        // Show the success message view
+        $('#afterSubmit').style.display = 'block';
+        
+        // Hide footer buttons (Atrás/Continuar)
+        $('.btns').style.display = 'none';
+        
+        // Scroll to top to show success message
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        showToast('✓ ¡Discovery enviado con éxito! (DEMO MODE)');
+        
+        return;
+      }
+      
+      // PRODUCTION MODE - Send to actual backend API
+      console.log('🚀 Enviando a API:', apiUrl);
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -3574,9 +3124,8 @@
       if (response.ok && result.success) {
         console.log('✓ Discovery submitted successfully');
         console.log('   📧 Emails enviados:');
-        console.log('   1. Contrato PDF al usuario (firmado)');
-        console.log('   2. Link de Calendly al usuario');
-        console.log('   3. Diagnóstico completo al equipo (PDF)');
+        console.log('   1. Link de Calendly al usuario');
+        console.log('   2. Diagnóstico completo al equipo (PDF)');
         
         // Clear localStorage
         localStorage.removeItem('discovery_draft_v3');
@@ -3587,10 +3136,13 @@
         // Show the success message view
         $('#afterSubmit').style.display = 'block';
         
+        // Hide footer buttons (Atrás/Continuar)
+        $('.btns').style.display = 'none';
+        
         // Scroll to top to show success message
         window.scrollTo({ top: 0, behavior: 'smooth' });
         
-        showToast('✓ ¡Perfecto! Revisa tu email para agendar tu sesión.');
+        showToast('✓ ¡Discovery enviado con éxito!');
         
         // Download JSON backup (optional)
         const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -3602,25 +3154,26 @@
         a.remove();
         
       } else {
-        throw new Error(result.error || 'Error al enviar');
+        throw new Error(result.error || 'Error al enviar al servidor');
       }
       
     } catch (error) {
-      console.error('Error submitting discovery:', error);
+      console.error('❌ Error submitting discovery:', error);
+      console.log('💾 Guardando datos localmente...');
       
       // Download JSON as fallback
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `discovery-${Date.now()}.json`;
+      a.download = `discovery-backup-${Date.now()}.json`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       
-      finalSubmitBtn.textContent = 'Confirmar y enviar →';
+      finalSubmitBtn.textContent = 'Someter Discovery Form';
       finalSubmitBtn.disabled = false;
       
-      showToast('⚠️ Error de conexión. Datos guardados localmente. Por favor contacta al equipo.');
+      showToast('⚠️ No se pudo conectar al servidor. Tu información se descargó como respaldo. Contacta al equipo.');
     }
   });
 
@@ -3636,7 +3189,6 @@
         createdAt: new Date().toISOString(),
         clientId
       },
-      signature: state.signature,
       userEmail: state.userEmail,
       people: state.people,
       goals: state.goals,
@@ -3676,8 +3228,74 @@
     hintTimer = setTimeout(() => hints.classList.remove('show'), 3000);
   });
 
+  // ===== RESET DISCOVERY =====
+  function resetDiscovery() {
+    // Ask for confirmation
+    const confirmed = confirm('¿Estás seguro que quieres reiniciar el Discovery?\n\nSe borrarán todos los datos y volverás al inicio.');
+    
+    if (!confirmed) return;
+    
+    console.log('🔄 Reseteando Discovery...');
+    
+    // Clear localStorage
+    localStorage.removeItem('discovery_draft_v3');
+    
+    // Reset state to defaults
+    state.step = 1;
+    state.startTime = Date.now();
+    state.people.members = [];
+    state.people.template = '';
+    state.people.householdRole = '';
+    state.goals = [];
+    state.financials = {
+      incomeRange: "",
+      hasDebts: null,
+      hasInvestments: null,
+      hasRealEstate: null,
+      hasInsurance: null,
+      hasBusiness: null,
+      hasLegal: null,
+      hasOtherAssets: null,
+      hasSavings: null,
+      categoriesSelected: [],
+      items: []
+    };
+    state.wizardStep = 1;
+    state.wizardComplete = false;
+    state.notes = "";
+    
+    console.log('📊 Estado después de reset:', {
+      step: state.step,
+      people: state.people.members.length,
+      goals: state.goals.length,
+      financials: state.financials.items.length
+    });
+    
+    console.log('✅ Validaciones:', {
+      step1: isStep1Complete(),
+      step2: isStep2Complete(),
+      step3: isStep3Complete(),
+      step4: isStep4Complete()
+    });
+    
+    // Reset views
+    $('#beforeSubmit').style.display = 'block';
+    $('#afterSubmit').style.display = 'none';
+    $('.btns').style.display = 'flex';
+    
+    // Go back to step 1
+    setStep(1);
+    
+    // Show confirmation
+    showToast('🔄 Discovery reiniciado correctamente');
+  }
+  
+  // Attach reset button event
+  $('#resetBtn').addEventListener('click', resetDiscovery);
+
   // ===== Init =====
   loadDraft();
+  getUserInfoFromURL();  // Get user name and email from URL params
   
   // Set mode from state
   setStep(state.step);
