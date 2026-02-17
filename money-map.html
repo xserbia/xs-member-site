@@ -343,7 +343,8 @@ function App() {
 
   const [modoCalculo, setModoCalculo] = useState('mensual');
   
-  // SOLO 10 variables esenciales
+  // SOLO 10 variables esenciales + edad
+  const [edad, setEdad] = useState('30');
   const [ingresoBruto, setIngresoBruto] = useState('');
   const [ahorro, setAhorro] = useState('');
   const [impuestos, setImpuestos] = useState('');
@@ -356,6 +357,7 @@ function App() {
 
   const clearAllData = () => {
     if (confirm('⚠️ ¿Estás seguro de que quieres borrar TODOS los datos?\n\nEsta acción no se puede deshacer.')) {
+      setEdad('30');
       setIngresoBruto('');
       setAhorro('');
       setImpuestos('');
@@ -435,8 +437,8 @@ function App() {
     return benchmarks[benchmarks.length-1];
   };
 
-  const edad = parseInt(userProfile.edad) || 30;
-  const benchmark = getRiquezaBenchmark(edad);
+  const edadNum = parseInt(edad) || 30;
+  const benchmark = getRiquezaBenchmark(edadNum);
 
   return (
     <div className="app-container" style={{position: 'relative', minHeight: '100vh'}}>
@@ -518,9 +520,11 @@ function App() {
           <DatosTab
             modoCalculo={modoCalculo}
             setModoCalculo={setModoCalculo}
+            edad={edad}
+            setEdad={setEdad}
             ingresoBruto={ingresoBruto}
             setIngresoBruto={setIngresoBruto}
-            ahorro={setAhorro}
+            ahorro={ahorro}
             setAhorro={setAhorro}
             impuestos={impuestos}
             setImpuestos={setImpuestos}
@@ -537,12 +541,14 @@ function App() {
             pasivosTotales={pasivosTotales}
             setPasivosTotales={setPasivosTotales}
             currency={currency}
+            setActiveTab={setActiveTab}
           />
         )}
         {activeTab === 'ratios' && (
           <RatiosTab 
             totales={totales}
             userProfile={userProfile}
+            edad={edad}
             currency={currency}
             benchmark={benchmark}
           />
@@ -736,6 +742,7 @@ function App() {
 
 function DatosTab({ 
   modoCalculo, setModoCalculo,
+  edad, setEdad,
   ingresoBruto, setIngresoBruto,
   ahorro, setAhorro,
   impuestos, setImpuestos,
@@ -745,7 +752,8 @@ function DatosTab({
   reservaEmergencia, setReservaEmergencia,
   activosTotales, setActivosTotales,
   pasivosTotales, setPasivosTotales,
-  currency
+  currency,
+  setActiveTab
 }) {
   return (
     <div>
@@ -764,6 +772,33 @@ function DatosTab({
             <option value="mensual">Mensual</option>
             <option value="anual">Anual</option>
           </select>
+        </div>
+      </div>
+
+      {/* Edad */}
+      <div className="card">
+        <div className="card-header">
+          <div>
+            <h2 className="card-title">👤 Tu Edad</h2>
+            <p className="card-subtitle">Para calcular el benchmark de nivel de riqueza</p>
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Edad</label>
+          <input
+            type="number"
+            className="form-input"
+            placeholder="30"
+            min="18"
+            max="100"
+            value={edad}
+            onChange={(e) => setEdad(e.target.value)}
+            style={{maxWidth: '200px'}}
+          />
+          <div style={{fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem'}}>
+            Tu edad determina el benchmark esperado de patrimonio neto
+          </div>
         </div>
       </div>
 
@@ -936,11 +971,26 @@ function DatosTab({
           </div>
         </div>
       </div>
+
+      {/* Botón de Calcular */}
+      <div style={{display: 'flex', justifyContent: 'center', marginTop: '2rem'}}>
+        <button
+          onClick={() => setActiveTab('ratios')}
+          className="btn btn-primary"
+          style={{
+            fontSize: '1.1rem',
+            padding: '1rem 3rem',
+            boxShadow: '0 4px 14px rgba(57, 86, 232, 0.4)'
+          }}
+        >
+          🎯 Calcular Mis Ratios Financieros
+        </button>
+      </div>
     </div>
   );
 }
 
-function RatiosTab({ totales, userProfile, currency, benchmark }) {
+function RatiosTab({ totales, userProfile, edad, currency, benchmark }) {
   const [showReservaModal, setShowReservaModal] = useState(false);
   const [showBenchmarkModal, setShowBenchmarkModal] = useState(false);
   
@@ -1084,7 +1134,7 @@ function RatiosTab({ totales, userProfile, currency, benchmark }) {
                 <div style={{fontSize: '15px', fontWeight: '600'}}>
                   Nivel de riqueza neta
                   <span style={{fontSize: '12px', fontWeight: '400', color: 'var(--text-muted)', marginLeft: '8px'}}>
-                    (edad {userProfile.edad})
+                    (edad {edad})
                   </span>
                 </div>
                 <button 
@@ -1270,61 +1320,61 @@ function RatiosTab({ totales, userProfile, currency, benchmark }) {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr style={{background: userProfile.edad === '25' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
+                  <tr style={{background: edad === '25' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
                     <td style={{padding: '12px 16px'}}>25</td>
                     <td style={{padding: '12px 16px'}}>2.5x</td>
                     <td style={{padding: '12px 16px'}}>5.0x</td>
                     <td style={{padding: '12px 16px'}}>{formatCurrency(250000, currency)}</td>
                   </tr>
-                  <tr style={{background: userProfile.edad === '30' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
+                  <tr style={{background: edad === '30' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
                     <td style={{padding: '12px 16px'}}>30</td>
                     <td style={{padding: '12px 16px'}}>3.0x</td>
                     <td style={{padding: '12px 16px'}}>6.0x</td>
                     <td style={{padding: '12px 16px'}}>{formatCurrency(300000, currency)}</td>
                   </tr>
-                  <tr style={{background: userProfile.edad === '35' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
+                  <tr style={{background: edad === '35' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
                     <td style={{padding: '12px 16px'}}>35</td>
                     <td style={{padding: '12px 16px'}}>3.5x</td>
                     <td style={{padding: '12px 16px'}}>7.0x</td>
                     <td style={{padding: '12px 16px'}}>{formatCurrency(350000, currency)}</td>
                   </tr>
-                  <tr style={{background: userProfile.edad === '40' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
+                  <tr style={{background: edad === '40' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
                     <td style={{padding: '12px 16px'}}>40</td>
                     <td style={{padding: '12px 16px'}}>4.0x</td>
                     <td style={{padding: '12px 16px'}}>8.0x</td>
                     <td style={{padding: '12px 16px'}}>{formatCurrency(400000, currency)}</td>
                   </tr>
-                  <tr style={{background: userProfile.edad === '45' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
+                  <tr style={{background: edad === '45' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
                     <td style={{padding: '12px 16px'}}>45</td>
                     <td style={{padding: '12px 16px'}}>4.5x</td>
                     <td style={{padding: '12px 16px'}}>9.0x</td>
                     <td style={{padding: '12px 16px'}}>{formatCurrency(450000, currency)}</td>
                   </tr>
-                  <tr style={{background: userProfile.edad === '50' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
+                  <tr style={{background: edad === '50' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
                     <td style={{padding: '12px 16px'}}>50</td>
                     <td style={{padding: '12px 16px'}}>5.0x</td>
                     <td style={{padding: '12px 16px'}}>10.0x</td>
                     <td style={{padding: '12px 16px'}}>{formatCurrency(500000, currency)}</td>
                   </tr>
-                  <tr style={{background: userProfile.edad === '55' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
+                  <tr style={{background: edad === '55' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
                     <td style={{padding: '12px 16px'}}>55</td>
                     <td style={{padding: '12px 16px'}}>5.5x</td>
                     <td style={{padding: '12px 16px'}}>11.0x</td>
                     <td style={{padding: '12px 16px'}}>{formatCurrency(550000, currency)}</td>
                   </tr>
-                  <tr style={{background: userProfile.edad === '60' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
+                  <tr style={{background: edad === '60' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
                     <td style={{padding: '12px 16px'}}>60</td>
                     <td style={{padding: '12px 16px'}}>6.0x</td>
                     <td style={{padding: '12px 16px'}}>12.0x</td>
                     <td style={{padding: '12px 16px'}}>{formatCurrency(600000, currency)}</td>
                   </tr>
-                  <tr style={{background: userProfile.edad === '65' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
+                  <tr style={{background: edad === '65' ? '#f0f9ff' : 'white', borderBottom: '1px solid var(--border)'}}>
                     <td style={{padding: '12px 16px'}}>65</td>
                     <td style={{padding: '12px 16px'}}>6.5x</td>
                     <td style={{padding: '12px 16px'}}>13.0x</td>
                     <td style={{padding: '12px 16px'}}>{formatCurrency(650000, currency)}</td>
                   </tr>
-                  <tr style={{background: userProfile.edad === '70' ? '#f0f9ff' : 'white'}}>
+                  <tr style={{background: edad === '70' ? '#f0f9ff' : 'white'}}>
                     <td style={{padding: '12px 16px'}}>70</td>
                     <td style={{padding: '12px 16px'}}>7.0x</td>
                     <td style={{padding: '12px 16px'}}>14.0x</td>
