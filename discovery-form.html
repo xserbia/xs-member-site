@@ -4,6 +4,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Discovery · Diagnóstico Financiero</title>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       PDF GENERATION — jsPDF + AutoTable
+       Estas dos librerías permiten generar el PDF del coach
+       100% en el browser, sin backend ni servidor.
+       ═══════════════════════════════════════════════════════════════════ -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <!-- SheetJS para generar el Excel en el browser -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
   <style>
     :root{
       --primary:#3956E8;
@@ -23,3282 +34,1534 @@
     *{box-sizing:border-box}
     body{
       margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      background: radial-gradient(circle at top, rgba(57,86,232,.12) 0, rgba(245,247,255,1) 40%, rgba(245,247,255,1) 100%);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background: radial-gradient(circle at top, rgba(57,86,232,.12) 0, rgba(245,247,255,1) 40%);
       color:var(--text);
     }
-    .wrap{
-      max-width: 1100px;
-      margin: 28px auto;
-      padding: 0 16px 28px;
-    }
-    
-    /* Header mejorado - estilo tablero */
+    .wrap{ max-width:1100px; margin:28px auto; padding:0 16px 28px; }
+
     header{
-      background: white;
-      border-radius: 12px;
-      padding: 20px 30px;
-      margin-bottom: 28px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      background:#fff; border-radius:12px; padding:20px 30px;
+      margin-bottom:28px; box-shadow:0 2px 8px rgba(0,0,0,0.08);
     }
-    
     .headerTop{
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 20px;
-      padding-bottom: 20px;
-      border-bottom: 1px solid #e9ecef;
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid #e9ecef;
     }
-    
-    .userInfo{
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    
-    .userInfo h1{
-      margin: 0;
-      font-size: 24px;
-      font-weight: 700;
-      color: #0F172A;
-    }
-    
-    .userName{
-      margin: 0;
-      font-size: 16px;
-      font-weight: 600;
-      color: #475569;
-    }
-    
-    .userEmail{
-      margin: 0;
-      font-size: 14px;
-      color: #94a3b8;
-    }
-    
-    .brand{
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:6px;
-      text-align:center;
-    }
-    .brand h1{
-      margin:0;
-      font-size: 28px;
-      letter-spacing:-0.03em;
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .brand p{
-      margin:0;
-      color:var(--muted);
-      font-size: 14px;
-      max-width: 600px;
-    }
+    .userInfo h1{ margin:0; font-size:24px; font-weight:700; color:#0F172A; }
+    .userName{ margin:0; font-size:16px; font-weight:600; color:#475569; }
+    .userEmail{ margin:0; font-size:14px; color:#94a3b8; }
 
-    /* Step circles */
-    .stepCircles{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:24px;
-      margin-top:8px;
-    }
-    .stepCircle{
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:10px;
-      position:relative;
-      cursor:pointer;
-      transition: transform .2s ease;
-    }
-    .stepCircle:hover .stepNumber{
-      transform: scale(1.05);
-      border-color: var(--primary);
-    }
+    .stepCircles{ display:flex; align-items:center; justify-content:center; gap:24px; margin-top:8px; }
+    .stepCircle{ display:flex; flex-direction:column; align-items:center; gap:10px; position:relative; cursor:pointer; }
     .stepNumber{
-      width:70px;
-      height:70px;
-      border-radius:50%;
-      border:3px solid var(--border);
-      background:#fff;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:28px;
-      font-weight:900;
-      color:var(--muted);
-      transition: all .3s ease;
-      position:relative;
-      z-index:2;
+      width:70px; height:70px; border-radius:50%; border:3px solid var(--border);
+      background:#fff; display:flex; align-items:center; justify-content:center;
+      font-size:28px; font-weight:900; color:var(--muted); transition:all .3s ease;
     }
-    .stepCircle.completed .stepNumber{
-      background: linear-gradient(135deg, var(--ok), #10b981);
-      border-color: var(--ok);
-      color:#fff;
-    }
+    .stepCircle.completed .stepNumber{ background:linear-gradient(135deg,var(--ok),#10b981); border-color:var(--ok); color:#fff; }
     .stepCircle.active .stepNumber{
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
-      border-color: var(--primary);
-      color:#fff;
-      transform: scale(1.1);
-      box-shadow: 0 8px 24px rgba(57,86,232,.3);
+      background:linear-gradient(135deg,var(--primary),var(--secondary));
+      border-color:var(--primary); color:#fff; transform:scale(1.1);
+      box-shadow:0 8px 24px rgba(57,86,232,.3);
     }
-    .stepLabel{
-      font-size:13px;
-      font-weight:700;
-      color:var(--muted);
-      transition: color .3s ease;
-    }
-    .stepCircle.active .stepLabel{
-      color:var(--primary);
-    }
-    .stepCircle.completed .stepLabel{
-      color:var(--ok);
-    }
-
-    /* Connector line between circles */
+    .stepLabel{ font-size:13px; font-weight:700; color:var(--muted); }
+    .stepCircle.active .stepLabel{ color:var(--primary); }
+    .stepCircle.completed .stepLabel{ color:var(--ok); }
     .stepCircle:not(:last-child)::after{
-      content:'';
-      position:absolute;
-      top:35px;
-      left:calc(50% + 35px);
-      width:24px;
-      height:3px;
-      background:var(--border);
-      z-index:1;
+      content:''; position:absolute; top:35px; left:calc(50% + 35px);
+      width:24px; height:3px; background:var(--border); z-index:1;
     }
-    .stepCircle.completed:not(:last-child)::after{
-      background:var(--ok);
-    }
+    .stepCircle.completed:not(:last-child)::after{ background:var(--ok); }
 
-    .progressInline{
-      display:flex;
-      align-items:center;
-      gap:12px;
-    }
-    .progressDots{
-      display:none; /* Hidden now, using circles instead */
-    }
-    .progressText{
-      font-size:13px;
-      color:var(--muted);
-    }
+    .progressInline{ display:flex; align-items:center; gap:12px; }
+    .progressText{ font-size:13px; color:var(--muted); }
+    .autoSaveIndicator{ font-size:12px; color:var(--ok); opacity:0; transition:opacity .3s ease; }
+    .autoSaveIndicator.show{ opacity:1; }
 
-    /* Auto-save indicator */
-    .autoSaveIndicator{
-      font-size:12px;
-      color:var(--ok);
-      opacity:0;
-      transition: opacity .3s ease;
-    }
-    .autoSaveIndicator.show{
-      opacity:1;
-    }
+    .card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; animation:fadeIn .4s ease; }
+    @keyframes fadeIn{ from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    .content{ padding:24px 20px; min-height:420px; }
 
-    .card{
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-      animation: fadeIn 0.4s ease;
-    }
+    .panel{ border:1px solid var(--border); border-radius:16px; padding:18px; background:#fff; margin-bottom:16px; }
+    .panel h2{ margin:0 0 8px; font-size:20px; letter-spacing:-.02em; }
+    .panel h3{ margin:16px 0 10px; font-size:16px; }
+    .panel p{ margin:0 0 12px; color:var(--muted); font-size:14px; line-height:1.5; }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    .hero{ text-align:center; padding:28px 20px; border-radius:16px; background:linear-gradient(135deg,rgba(57,86,232,.08),rgba(116,89,217,.08)); border:1px solid rgba(57,86,232,.2); margin-bottom:20px; }
+    .hero h2{ margin:0 0 10px; font-size:26px; letter-spacing:-.03em; }
+    .hero p{ margin:0; font-size:15px; color:var(--muted); line-height:1.6; }
+    .hero b{ color:var(--primary); }
 
-    .content{ 
-      padding: 24px 20px; 
-      min-height: 420px;
-    }
+    .checklistPrep{ background:rgba(22,163,74,.06); border:1px solid rgba(22,163,74,.2); border-radius:14px; padding:16px; margin:14px 0; }
+    .checklistPrep p{ margin:0 0 8px; font-weight:600; color:var(--text); }
+    .checklistPrep ul{ margin:0; padding-left:20px; color:var(--text); }
+    .checklistPrep li{ margin:6px 0; font-size:14px; }
 
-    /* Demo banner */
-    /* Panel styles */
-    .panel{
-      border:1px solid var(--border);
-      border-radius: 16px;
-      padding: 18px;
-      background: #fff;
-      margin-bottom: 16px;
-    }
-    .panel h2{
-      margin:0 0 8px;
-      font-size: 20px;
-      letter-spacing:-0.02em;
-    }
-    .panel h3{
-      margin:16px 0 10px;
-      font-size: 16px;
-      letter-spacing:-0.01em;
-    }
-    .panel p{
-      margin:0 0 12px;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.5;
-    }
+    .quickTemplates{ margin:16px 0; }
+    .templateGrid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+    .templateBtn{ border:2px solid var(--border); background:#fff; border-radius:14px; padding:14px; text-align:left; cursor:pointer; transition:all .2s ease; font-size:14px; font-weight:600; }
+    .templateBtn:hover{ border-color:rgba(57,86,232,.35); background:rgba(57,86,232,.04); }
+    .templateBtn.selected{ border-color:var(--primary); background:rgba(57,86,232,.08); color:var(--primary); }
 
-    /* Hero section */
-    .hero{
-      text-align:center;
-      padding: 28px 20px;
-      border-radius: 16px;
-      background: linear-gradient(135deg, rgba(57,86,232,.08), rgba(116,89,217,.08));
-      border:1px solid rgba(57,86,232,.2);
-      margin-bottom: 20px;
-    }
-    .hero h2{
-      margin:0 0 10px;
-      font-size: 26px;
-      letter-spacing:-0.03em;
-    }
-    .hero p{
-      margin:0;
-      font-size: 15px;
-      color:var(--muted);
-      line-height:1.6;
-    }
-    .hero b{
-      color:var(--primary);
-    }
+    .goalsGrid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px; margin:20px 0; }
+    .goalCard{ border:2px solid var(--border); border-radius:16px; padding:16px; text-align:center; cursor:pointer; transition:all .2s ease; background:#fff; display:flex; flex-direction:column; align-items:center; gap:10px; }
+    .goalCard:hover{ border-color:rgba(57,86,232,.35); transform:translateY(-2px); box-shadow:0 8px 20px rgba(15,23,42,.1); }
+    .goalCard.selected{ border-color:var(--primary); background:linear-gradient(135deg,rgba(57,86,232,.08),rgba(116,89,217,.08)); box-shadow:0 4px 12px rgba(57,86,232,.2); }
+    .goalCard .goalIcon{ font-size:48px; line-height:1; }
+    .goalCard .goalLabel{ font-size:13px; font-weight:700; color:var(--text); }
+    .goalCard.selected .goalLabel{ color:var(--primary); }
 
-    /* Checklist */
-    .checklistPrep{
-      background: rgba(22,163,74,.06);
-      border:1px solid rgba(22,163,74,.2);
-      border-radius: 14px;
-      padding: 16px;
-      margin: 14px 0;
-    }
-    .checklistPrep p{
-      margin:0 0 8px;
-      font-weight:600;
-      color:var(--text);
-    }
-    .checklistPrep ul{
-      margin:0;
-      padding-left:20px;
-      color:var(--text);
-    }
-    .checklistPrep li{
-      margin:6px 0;
-      font-size:14px;
-    }
+    .wizardFlow{ max-width:680px; margin:0 auto; }
+    .wizardStep{ display:none; animation:fadeIn .3s ease; }
+    .wizardStep.active{ display:block; }
+    .wizardQ{ text-align:center; margin-bottom:24px; }
+    .wizardQ b{ display:block; font-size:12px; color:var(--muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:.05em; }
+    .wizardQ h3{ margin:0 0 6px; font-size:22px; letter-spacing:-.02em; }
+    .wizardQ p{ margin:0; color:var(--muted); font-size:14px; }
+    .wizardOptions{ display:grid; gap:10px; }
+    .optionBtn{ border:2px solid var(--border); background:#fff; border-radius:14px; padding:18px 20px; text-align:left; cursor:pointer; transition:all .15s ease; font-size:15px; font-weight:600; display:flex; align-items:center; gap:10px; }
+    .optionBtn:hover{ border-color:rgba(57,86,232,.35); background:rgba(57,86,232,.04); transform:translateY(-2px); box-shadow:0 8px 16px rgba(15,23,42,.08); }
 
-    /* Mode selector */
-    /* Templates */
-    .quickTemplates{
-      margin: 16px 0;
-    }
+    .categoriesInline{ display:grid; gap:12px; margin-top:16px; }
+    .catInlineCard{ border:2px solid transparent; background:linear-gradient(#fff,#fff) padding-box, linear-gradient(135deg,var(--primary),var(--secondary)) border-box; border-radius:14px; overflow:hidden; transition:all .2s ease; margin-bottom:14px; }
+    .catInlineCard.checked{ background:linear-gradient(rgba(57,86,232,.04),rgba(116,89,217,.04)) padding-box, linear-gradient(135deg,var(--primary),var(--secondary)) border-box; }
+    .catHeader{ display:flex; align-items:center; justify-content:space-between; padding:16px 18px; cursor:pointer; user-select:none; background:linear-gradient(135deg,rgba(57,86,232,.03),rgba(116,89,217,.03)); transition:all .3s ease; }
+    .catHeader:hover{ background:linear-gradient(135deg,rgba(57,86,232,.06),rgba(116,89,217,.06)); }
+    .catInlineCard.checked .catHeader{ background:linear-gradient(135deg,var(--primary),var(--secondary)); }
+    .catInlineCard.checked .catHeader .catLabel b, .catInlineCard.checked .catHeader .catLabel span{ -webkit-text-fill-color:#fff; color:#fff; }
+    .catInlineCard.checked .catHeader .catExpand{ background:rgba(255,255,255,.2); color:#fff; }
+    .catInlineCard.open .catHeader{ border-bottom:1px solid var(--border); }
+    .catInlineCard.checked.open .catHeader{ background:linear-gradient(135deg,var(--primary),var(--secondary)); border-bottom-color:transparent; }
+    .catInfo{ display:flex; align-items:center; gap:12px; }
+    .catInfo input[type="checkbox"]{ width:20px; height:20px; cursor:pointer; accent-color:var(--primary); }
+    .catLabel b{ display:block; font-size:15px; font-weight:700; margin-bottom:2px; background:linear-gradient(135deg,var(--primary),var(--secondary)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .catLabel span{ display:block; font-size:12px; color:var(--muted); }
+    .catExpand{ width:32px; height:32px; border-radius:8px; background:rgba(15,23,42,.05); display:flex; align-items:center; justify-content:center; color:var(--muted); font-weight:900; transition:transform .3s ease,background .3s ease; }
+    .catInlineCard.open .catExpand{ transform:rotate(180deg); }
+    .catBody{ padding:0 16px 16px; display:none; padding-top:16px; background:#fff; }
+    .catInlineCard.open .catBody{ display:block; }
 
-    /* Goal cards */
-    .goalsGrid{
-      display:grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap:12px;
-      margin: 20px 0;
-    }
-    .goalCard{
-      border:2px solid var(--border);
-      border-radius: 16px;
-      padding: 16px;
-      text-align:center;
-      cursor:pointer;
-      transition: all .2s ease;
-      background:#fff;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:10px;
-    }
-    .goalCard:hover{
-      border-color: rgba(57,86,232,.35);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(15,23,42,.1);
-    }
-    .goalCard.selected{
-      border-color: var(--primary);
-      background: linear-gradient(135deg, rgba(57,86,232,.08), rgba(116,89,217,.08));
-      box-shadow: 0 4px 12px rgba(57,86,232,.2);
-    }
-    .goalCard .goalIcon{
-      font-size:48px;
-      line-height:1;
-    }
-    .goalCard .goalLabel{
-      font-size:13px;
-      font-weight:700;
-      color:var(--text);
-    }
-    .goalCard.selected .goalLabel{
-      color:var(--primary);
-    }
+    .standardAddRow{ display:grid; grid-template-columns:1.3fr 1.3fr 1fr auto; gap:8px; margin-bottom:12px; }
+    .standardAddRow select, .standardAddRow input{ padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-size:13px; background:#fff; }
+    .standardAddRow button{ padding:10px 14px; border:1px solid var(--primary); background:var(--primary); color:#fff; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer; }
+    .standardAddRowMulti{ display:grid; grid-template-columns:1.2fr 1.2fr .9fr 1.1fr auto; gap:8px; margin-bottom:12px; }
+    .standardAddRowMulti select, .standardAddRowMulti input{ padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-size:13px; background:#fff; }
+    .standardAddRowMulti button{ padding:10px 14px; border:1px solid var(--primary); background:var(--primary); color:#fff; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer; }
+    .expenseAddRow{ display:grid; grid-template-columns:2fr 1fr auto; gap:8px; margin-bottom:12px; }
+    .expenseAddRow select, .expenseAddRow input{ padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-size:13px; background:#fff; }
+    .expenseAddRow button{ padding:10px 16px; border:1px solid var(--primary); background:var(--primary); color:#fff; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer; }
+    .expenseAddRowMulti{ display:grid; grid-template-columns:2fr .9fr 1.1fr auto; gap:8px; margin-bottom:12px; }
+    .expenseAddRowMulti select, .expenseAddRowMulti input{ padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-size:13px; background:#fff; }
+    .expenseAddRowMulti button{ padding:10px 14px; border:1px solid var(--primary); background:var(--primary); color:#fff; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer; }
 
-    /* Contract and Signature */
-    .contractBox{
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
-      margin: 20px 0;
-    }
-    .contractBox h3{
-      color: var(--primary);
-      margin-top: 0;
-      font-size: 20px;
-    }
-    .contractText{
-      max-height: 400px;
-      overflow-y: auto;
-      padding: 20px;
-      background: #f8f9fa;
-      border-radius: 8px;
-      margin: 20px 0;
-      font-size: 14px;
-      line-height: 1.6;
-    }
-    .contractText h4{
-      color: var(--primary);
-      font-size: 15px;
-      margin-top: 20px;
-      margin-bottom: 10px;
-    }
-    .contractText ul{
-      margin: 10px 0;
-      padding-left: 24px;
-    }
-    .contractText li{
-      margin: 6px 0;
-    }
-    .signatureSection{
-      margin-top: 24px;
-    }
-    .signatureCanvas{
-      position: relative;
-      border: 2px solid var(--primary);
-      border-radius: 8px;
-      background: #fff;
-      padding: 10px;
-      margin: 10px 0;
-    }
-    .signatureCanvas canvas{
-      display: block;
-      width: 100%;
-      max-width: 600px;
-      height: 200px;
-      border: 1px dashed #ddd;
-      border-radius: 4px;
-      cursor: crosshair;
-      touch-action: none;
-    }
-    .signatureCanvas #clearSignature{
-      margin-top: 10px;
-      font-size: 13px;
-      padding: 8px 16px;
-    }
-    .signatureInfo{
-      background: #fff3cd;
-      border-left: 4px solid #ffc107;
-      padding: 12px 16px;
-      border-radius: 4px;
-      margin-top: 16px;
-    }
-    .signatureInfo .hint{
-      margin: 0;
-      color: #856404;
-    }
-    label.checkbox{
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      cursor: pointer;
-      padding: 12px;
-      border-radius: 8px;
-      transition: background .2s ease;
-    }
-    label.checkbox:hover{
-      background: rgba(57,86,232,.05);
-    }
-    label.checkbox input[type="checkbox"]{
-      margin-top: 2px;
-      width: 20px;
-      height: 20px;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-    label.checkbox span{
-      flex: 1;
-      line-height: 1.5;
-    }
+    .itemsList{ display:flex; flex-direction:column; gap:8px; }
+    .itemChip{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:rgba(15,23,42,.015); font-size:13px; }
+    .itemChip .chipInfo{ flex:1; min-width:0; }
+    .itemChip .chipName{ font-weight:600; margin-bottom:2px; }
+    .itemChip .chipDetails{ font-size:12px; color:var(--muted); }
+    .itemChip .chipRemove{ width:24px; height:24px; border-radius:6px; border:1px solid var(--border); background:#fff; color:var(--muted); font-weight:900; font-size:12px; cursor:pointer; }
+    .itemChip .chipRemove:hover{ background:rgba(220,38,38,.08); color:#dc2626; border-color:rgba(220,38,38,.35); }
 
-    /* Templates */
-    .quickTemplates{
-      margin: 16px 0;
-    }
-    .quickTemplates b{
-      display:block;
-      margin-bottom:10px;
-      font-size:14px;
-    }
-    .templateGrid{
-      display:grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap:10px;
-    }
-    .templateBtn{
-      border:2px solid var(--border);
-      background:#fff;
-      border-radius: 14px;
-      padding: 14px;
-      text-align:left;
-      cursor:pointer;
-      transition: all .2s ease;
-      font-size:14px;
-      font-weight:600;
-    }
-    .templateBtn:hover{
-      border-color: rgba(57,86,232,.35);
-      background: rgba(57,86,232,.04);
-    }
-    .templateBtn.selected{
-      border-color: var(--primary);
-      background: rgba(57,86,232,.08);
-      color:var(--primary);
-    }
+    .peopleWrap{ display:flex; flex-direction:column; gap:12px; margin-top:14px; }
+    .personCard{ border:1px solid var(--border); border-radius:16px; padding:14px; background:rgba(15,23,42,.015); animation:fadeIn .3s ease; }
+    .personHead{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+    .tag{ font-size:11px; font-weight:800; color:var(--primary); background:rgba(57,86,232,.10); border:1px solid rgba(57,86,232,.18); padding:6px 10px; border-radius:999px; }
+    .xbtn{ border:1px solid var(--border); background:#fff; color:var(--muted); width:32px; height:32px; border-radius:10px; cursor:pointer; font-weight:900; font-size:16px; }
+    .xbtn:hover{ background:rgba(220,38,38,.08); color:#dc2626; border-color:rgba(220,38,38,.35); }
 
-    /* Wizard flow */
-    .wizardFlow{
-      max-width: 680px;
-      margin: 0 auto;
-    }
-    .wizardStep{
-      display:none;
-      animation: fadeIn 0.3s ease;
-    }
-    .wizardStep.active{
-      display:block;
-    }
-    .wizardQ{
-      text-align:center;
-      margin-bottom: 24px;
-    }
-    .wizardQ b{
-      display:block;
-      font-size:12px;
-      color:var(--muted);
-      margin-bottom:8px;
-      text-transform:uppercase;
-      letter-spacing:.05em;
-    }
-    .wizardQ h3{
-      margin:0 0 6px;
-      font-size:22px;
-      letter-spacing:-0.02em;
-    }
-    .wizardQ p{
-      margin:0;
-      color:var(--muted);
-      font-size:14px;
-    }
-    .wizardOptions{
-      display:grid;
-      gap:10px;
-    }
-    .optionBtn{
-      border:2px solid var(--border);
-      background:#fff;
-      border-radius: 14px;
-      padding: 18px 20px;
-      text-align:left;
-      cursor:pointer;
-      transition: all .15s ease;
-      font-size:15px;
-      font-weight:600;
-      display:flex;
-      align-items:center;
-      gap:10px;
-    }
-    .optionBtn:hover{
-      border-color: rgba(57,86,232,.35);
-      background: rgba(57,86,232,.04);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 16px rgba(15,23,42,.08);
-    }
-    .optionBtn:active{
-      transform: translateY(0);
-    }
+    .field{ display:flex; flex-direction:column; gap:6px; margin:10px 0; }
+    .field label{ font-size:13px; font-weight:600; color:var(--text); }
+    .field label .optional{ font-size:11px; font-weight:700; color:var(--muted); background:rgba(100,116,139,.1); border:1px solid rgba(100,116,139,.2); padding:3px 8px; border-radius:999px; margin-left:6px; }
+    input[type="text"], input[type="email"], input[type="tel"], input[type="number"], select, textarea{ width:100%; padding:11px 14px; border:1px solid var(--border); border-radius:12px; outline:none; font-size:14px; background:#fff; transition:border-color .2s ease,box-shadow .2s ease; }
+    textarea{ min-height:100px; resize:vertical; font-family:inherit; }
+    input:focus, select:focus, textarea:focus{ border-color:rgba(57,86,232,.45); box-shadow:0 0 0 4px rgba(57,86,232,.10); }
+    .row{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+    .hint{ font-size:12px; color:var(--muted); margin-top:6px; line-height:1.4; }
+    .hint b{ color:var(--text); }
 
-    /* Category inline cards */
-    .categoriesInline{
-      display:grid;
-      gap:12px;
-      margin-top: 16px;
-    }
-    .catInlineCard{
-      border:2px solid transparent;
-      background: linear-gradient(#fff, #fff) padding-box,
-                  linear-gradient(135deg, var(--primary), var(--secondary)) border-box;
-      border-radius: 14px;
-      overflow:hidden;
-      transition: all .2s ease;
-      margin-bottom: 14px;
-    }
-    .catInlineCard.selected{
-      background: linear-gradient(rgba(57,86,232,.02), rgba(57,86,232,.02)) padding-box,
-                  linear-gradient(135deg, var(--primary), var(--secondary)) border-box;
-    }
-    .catInlineCard.checked{
-      background: linear-gradient(rgba(57,86,232,.04), rgba(116,89,217,.04)) padding-box,
-                  linear-gradient(135deg, var(--primary), var(--secondary)) border-box;
-    }
-    .catHeader{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding: 16px 18px;
-      cursor:pointer;
-      user-select:none;
-      background: linear-gradient(135deg, rgba(57,86,232,.03), rgba(116,89,217,.03));
-      transition: all .3s ease;
-    }
-    .catHeader:hover{
-      background: linear-gradient(135deg, rgba(57,86,232,.06), rgba(116,89,217,.06));
-    }
-    .catInlineCard.checked .catHeader{
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
-      border-bottom: 2px solid transparent;
-    }
-    .catInlineCard.checked .catHeader:hover{
-      background: linear-gradient(135deg, #4a66f0, #8669e0);
-    }
-    .catInlineCard.checked .catHeader .catLabel b,
-    .catInlineCard.checked .catHeader .catLabel span{
-      background: none;
-      -webkit-background-clip: initial;
-      -webkit-text-fill-color: #fff;
-      background-clip: initial;
-      color: #fff;
-    }
-    .catInlineCard.checked .catHeader .catExpand{
-      background: rgba(255,255,255,.2);
-      color: #fff;
-    }
-    .catInlineCard.open .catHeader{
-      border-bottom: 1px solid var(--border);
-    }
-    .catInlineCard.checked.open .catHeader{
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
-      border-bottom-color: transparent;
-    }
-    .catInlineCard.checked.open .catHeader .catLabel b,
-    .catInlineCard.checked.open .catHeader .catLabel span{
-      background: none;
-      -webkit-background-clip: initial;
-      -webkit-text-fill-color: #fff;
-      background-clip: initial;
-      color: #fff;
-    }
-    .catInlineCard.checked.open .catHeader .catExpand{
-      background: rgba(255,255,255,.2);
-      color: #fff;
-    }
-    .catInfo{
-      display:flex;
-      align-items:center;
-      gap:12px;
-    }
-    .catInfo input[type="checkbox"]{
-      width:20px;
-      height:20px;
-      cursor:pointer;
-      accent-color:var(--primary);
-    }
-    .catLabel b{
-      display:block;
-      font-size:15px;
-      font-weight:700;
-      margin-bottom:2px;
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      transition: all .3s ease;
-    }
-    .catInlineCard.open .catHeader .catLabel b{
-      background: #fff;
-      -webkit-background-clip: initial;
-      -webkit-text-fill-color: #fff;
-      background-clip: initial;
-    }
-    .catLabel span{
-      display:block;
-      font-size:12px;
-      color:var(--muted);
-      transition: color .3s ease;
-    }
-    .catExpand{
-      width:32px;
-      height:32px;
-      border-radius:8px;
-      background:rgba(15,23,42,.05);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      color:var(--muted);
-      font-weight:900;
-      transition: transform .3s ease, background .3s ease, color .3s ease;
-    }
-    .catInlineCard.open .catExpand{
-      transform: rotate(180deg);
-    }
+    .btns{ display:flex; gap:10px; justify-content:space-between; padding:16px 20px; border-top:1px solid var(--border); background:#fff; }
+    .btn{ border:1px solid var(--border); background:#fff; color:var(--text); padding:11px 18px; border-radius:12px; font-weight:700; font-size:14px; cursor:pointer; transition:all .15s ease; display:inline-flex; align-items:center; gap:6px; }
+    .btn:hover{ transform:translateY(-1px); box-shadow:0 6px 12px rgba(15,23,42,.1); }
+    .btn.primary{ background:linear-gradient(90deg,var(--primary),var(--secondary)); border-color:transparent; color:#fff; box-shadow:0 8px 16px rgba(57,86,232,.2); }
+    .btn.primary:hover{ box-shadow:0 10px 20px rgba(57,86,232,.25); }
+    .btn.ghost{ background:transparent; color:var(--muted); border-color:transparent; }
+    .btn.ghost:hover{ background:rgba(15,23,42,.04); color:var(--text); }
+    .btn:disabled{ opacity:.5; cursor:not-allowed; transform:none; }
+    .btn.large{ padding:14px 24px; font-size:15px; }
+    .btn.full{ width:100%; justify-content:center; }
 
-    .catBody{
-      padding: 0 16px 16px;
-      display:none;
-      padding-top:16px;
-      background: #fff;
-    }
-    .catInlineCard.open .catBody{
-      display:block;
-    }
+    .summaryGrid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:16px 0; }
 
-    /* Quick add row */
-    .quickAddRow{
-      display:grid;
-      grid-template-columns: 1.5fr 1fr auto;
-      gap:8px;
-      margin-bottom: 12px;
-    }
-    .quickAddRow input,
-    .quickAddRow select{
-      padding: 10px 12px;
-      border:1px solid var(--border);
-      border-radius: 10px;
-      font-size:13px;
-      background:#fff;
-    }
-    .quickAddRow button{
-      padding: 10px 16px;
-      border:1px solid var(--primary);
-      background: var(--primary);
-      color:#fff;
-      border-radius: 10px;
-      font-weight:700;
-      font-size:13px;
-      cursor:pointer;
-      white-space:nowrap;
-    }
-    .quickAddRow button:hover{
-      background: var(--secondary);
-    }
+    .confirmationHero{ text-align:center; padding:32px 20px; }
+    .checkIcon{ width:80px; height:80px; margin:0 auto 16px; border-radius:50%; background:linear-gradient(135deg,var(--ok),#10b981); color:#fff; font-size:48px; display:flex; align-items:center; justify-content:center; animation:scaleIn .4s ease; }
+    @keyframes scaleIn{ from{transform:scale(0)} to{transform:scale(1)} }
+    .confirmationHero h2{ margin:0 0 10px; font-size:24px; }
+    .confirmationHero p{ margin:0; color:var(--muted); font-size:15px; }
 
-    /* Standard add row (type + alias + amount) */
-    .standardAddRow{
-      display:grid;
-      grid-template-columns: 1.3fr 1.3fr 1fr auto;
-      gap:8px;
-      margin-bottom: 12px;
-    }
-    .standardAddRow select,
-    .standardAddRow input{
-      padding: 10px 12px;
-      border:1px solid var(--border);
-      border-radius: 10px;
-      font-size:13px;
-      background:#fff;
-    }
-    .standardAddRow button{
-      padding: 10px 14px;
-      border:1px solid var(--primary);
-      background: var(--primary);
-      color:#fff;
-      border-radius: 10px;
-      font-weight:700;
-      font-size:13px;
-      cursor:pointer;
-      white-space:nowrap;
-    }
-    .standardAddRow button:hover{
-      background: var(--secondary);
-    }
+    .toast{ position:fixed; bottom:24px; right:24px; background:var(--text); color:#fff; padding:12px 20px; border-radius:12px; font-size:13px; font-weight:600; box-shadow:0 10px 30px rgba(15,23,42,.3); opacity:0; transform:translateY(20px); transition:all .3s ease; z-index:1000; }
+    .toast.show{ opacity:1; transform:translateY(0); }
 
-    /* Standard add row MULTI (with owner selector) */
-    .standardAddRowMulti{
-      display:grid;
-      grid-template-columns: 1.2fr 1.2fr 0.9fr 1.1fr auto;
-      gap:8px;
-      margin-bottom: 12px;
+    /* ── PDF GENERATION INDICATOR ─────────────────────────────────────────
+       Indicador visual que aparece mientras se genera el PDF.
+       El developer puede personalizar este loader. */
+    .pdfGenerating{
+      position:fixed; inset:0; background:rgba(15,23,42,.7);
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      z-index:9999; backdrop-filter:blur(4px);
     }
-    .standardAddRowMulti select,
-    .standardAddRowMulti input{
-      padding: 10px 12px;
-      border:1px solid var(--border);
-      border-radius: 10px;
-      font-size:13px;
-      background:#fff;
+    .pdfGenerating .spinner{
+      width:56px; height:56px; border:4px solid rgba(255,255,255,.2);
+      border-top-color:#fff; border-radius:50%; animation:spin .8s linear infinite; margin-bottom:16px;
     }
-    .standardAddRowMulti button{
-      padding: 10px 14px;
-      border:1px solid var(--primary);
-      background: var(--primary);
-      color:#fff;
-      border-radius: 10px;
-      font-weight:700;
-      font-size:13px;
-      cursor:pointer;
-      white-space:nowrap;
-    }
-    .standardAddRowMulti button:hover{
-      background: var(--secondary);
-    }
+    @keyframes spin{ to{transform:rotate(360deg)} }
+    .pdfGenerating p{ color:#fff; font-size:16px; font-weight:600; margin:0 0 6px; }
+    .pdfGenerating small{ color:rgba(255,255,255,.6); font-size:13px; }
+    /* ─────────────────────────────────────────────────────────────────── */
 
-    /* Expense/Savings special row */
-    .expenseAddRow{
-      display:grid;
-      grid-template-columns: 2fr 1fr auto;
-      gap:8px;
-      margin-bottom: 12px;
+    @media(max-width:900px){
+      .templateGrid,.summaryGrid{ grid-template-columns:1fr; }
+      .goalsGrid{ grid-template-columns:repeat(2,1fr); }
+      .row,.standardAddRow,.standardAddRowMulti,.expenseAddRow,.expenseAddRowMulti{ grid-template-columns:1fr; }
+      .stepCircles{ gap:16px; }
+      .stepNumber{ width:55px; height:55px; font-size:22px; }
+      .stepCircle:not(:last-child)::after{ top:27px; left:calc(50% + 27px); width:16px; }
     }
-    .expenseAddRow select,
-    .expenseAddRow input{
-      padding: 10px 12px;
-      border:1px solid var(--border);
-      border-radius: 10px;
-      font-size:13px;
-      background:#fff;
-    }
-    .expenseAddRow button{
-      padding: 10px 16px;
-      border:1px solid var(--primary);
-      background: var(--primary);
-      color:#fff;
-      border-radius: 10px;
-      font-weight:700;
-      font-size:13px;
-      cursor:pointer;
-      white-space:nowrap;
-    }
-    .expenseAddRow button:hover{
-      background: var(--secondary);
-    }
-
-    /* Expense/Savings MULTI (with owner) */
-    .expenseAddRowMulti{
-      display:grid;
-      grid-template-columns: 2fr 0.9fr 1.1fr auto;
-      gap:8px;
-      margin-bottom: 12px;
-    }
-    .expenseAddRowMulti select,
-    .expenseAddRowMulti input{
-      padding: 10px 12px;
-      border:1px solid var(--border);
-      border-radius: 10px;
-      font-size:13px;
-      background:#fff;
-    }
-    .expenseAddRowMulti button{
-      padding: 10px 14px;
-      border:1px solid var(--primary);
-      background: var(--primary);
-      color:#fff;
-      border-radius: 10px;
-      font-weight:700;
-      font-size:13px;
-      cursor:pointer;
-      white-space:nowrap;
-    }
-    .expenseAddRowMulti button:hover{
-      background: var(--secondary);
-    }
-
-    .itemsList{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-    }
-    .itemChip{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      padding: 10px 12px;
-      border:1px solid var(--border);
-      border-radius: 10px;
-      background: rgba(15,23,42,.015);
-      font-size:13px;
-    }
-    .itemChip .chipInfo{
-      flex:1;
-      min-width:0;
-    }
-    .itemChip .chipName{
-      font-weight:600;
-      margin-bottom:2px;
-    }
-    .itemChip .chipDetails{
-      font-size:12px;
-      color:var(--muted);
-    }
-    .itemChip .chipRemove{
-      width:24px;
-      height:24px;
-      border-radius:6px;
-      border:1px solid var(--border);
-      background:#fff;
-      color:var(--muted);
-      font-weight:900;
-      font-size:12px;
-      cursor:pointer;
-      flex-shrink:0;
-    }
-    .itemChip .chipRemove:hover{
-      background:rgba(220,38,38,.08);
-      color:#dc2626;
-      border-color:rgba(220,38,38,.35);
-    }
-
-    /* Person cards */
-    .peopleWrap{
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-      margin-top: 14px;
-    }
-    .personCard{
-      border:1px solid var(--border);
-      border-radius: 16px;
-      padding: 14px;
-      background: rgba(15,23,42,.015);
-      animation: fadeIn 0.3s ease;
-    }
-    .personHead{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      margin-bottom: 10px;
-    }
-    .tag{
-      font-size: 11px;
-      font-weight: 800;
-      color: var(--primary);
-      background: rgba(57,86,232,.10);
-      border:1px solid rgba(57,86,232,.18);
-      padding: 6px 10px;
-      border-radius: 999px;
-    }
-    .xbtn{
-      border:1px solid var(--border);
-      background:#fff;
-      color: var(--muted);
-      width:32px;
-      height:32px;
-      border-radius: 10px;
-      cursor:pointer;
-      font-weight:900;
-      font-size:16px;
-    }
-    .xbtn:hover{
-      background:rgba(220,38,38,.08);
-      color:#dc2626;
-      border-color:rgba(220,38,38,.35);
-    }
-
-    .field{
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      margin: 10px 0;
-    }
-    .field label{
-      font-size: 13px;
-      font-weight:600;
-      color: var(--text);
-    }
-    .field label .optional{
-      font-size:11px;
-      font-weight:700;
-      color:var(--muted);
-      background:rgba(100,116,139,.1);
-      border:1px solid rgba(100,116,139,.2);
-      padding:3px 8px;
-      border-radius:999px;
-      margin-left:6px;
-    }
-    input[type="text"], 
-    input[type="email"], 
-    input[type="tel"], 
-    input[type="number"], 
-    select, 
-    textarea{
-      width:100%;
-      padding: 11px 14px;
-      border:1px solid var(--border);
-      border-radius: 12px;
-      outline:none;
-      font-size: 14px;
-      background:#fff;
-      transition: border-color .2s ease, box-shadow .2s ease;
-    }
-    textarea{
-      min-height: 100px; 
-      resize: vertical;
-      font-family: inherit;
-    }
-    input:focus, select:focus, textarea:focus{
-      border-color: rgba(57,86,232,.45);
-      box-shadow: 0 0 0 4px rgba(57,86,232,.10);
-    }
-
-    .row{
-      display:grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-    }
-
-    .hint{
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 6px;
-      line-height:1.4;
-    }
-    .hint b{
-      color:var(--text);
-    }
-
-    /* Buttons */
-    .btns{
-      display:flex;
-      gap:10px;
-      justify-content:space-between;
-      padding: 16px 20px;
-      border-top: 1px solid var(--border);
-      background:#fff;
-    }
-    .btn{
-      border:1px solid var(--border);
-      background:#fff;
-      color: var(--text);
-      padding: 11px 18px;
-      border-radius: 12px;
-      font-weight: 700;
-      font-size: 14px;
-      cursor:pointer;
-      transition: all .15s ease;
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-    }
-    .btn:hover{
-      transform: translateY(-1px);
-      box-shadow: 0 6px 12px rgba(15,23,42,.1);
-    }
-    .btn:active{
-      transform: translateY(0);
-    }
-    .btn.primary{
-      background: linear-gradient(90deg, var(--primary), var(--secondary));
-      border-color: transparent;
-      color: #fff;
-      box-shadow: 0 8px 16px rgba(57,86,232,.2);
-    }
-    .btn.primary:hover{
-      box-shadow: 0 10px 20px rgba(57,86,232,.25);
-    }
-    .btn.ghost{
-      background: transparent;
-      color: var(--muted);
-      border-color:transparent;
-    }
-    .btn.ghost:hover{
-      background:rgba(15,23,42,.04);
-      color:var(--text);
-    }
-    .btn:disabled{
-      opacity:.5;
-      cursor:not-allowed;
-      transform:none;
-    }
-    .btn.large{
-      padding: 14px 24px;
-      font-size:15px;
-    }
-    .btn.full{
-      width:100%;
-      justify-content:center;
-    }
-
-    /* Confirmation */
-    .confirmationHero{
-      text-align:center;
-      padding: 32px 20px;
-    }
-    .checkIcon{
-      width:80px;
-      height:80px;
-      margin: 0 auto 16px;
-      border-radius:50%;
-      background: linear-gradient(135deg, var(--ok), #10b981);
-      color:#fff;
-      font-size:48px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      animation: scaleIn 0.4s ease;
-    }
-    @keyframes scaleIn {
-      from { transform: scale(0); }
-      to { transform: scale(1); }
-    }
-    .confirmationHero h2{
-      margin:0 0 10px;
-      font-size:24px;
-    }
-    .confirmationHero p{
-      margin:0;
-      color:var(--muted);
-      font-size:15px;
-    }
-
-    .deliverables{
-      display:grid;
-      gap:12px;
-      margin: 24px 0;
-    }
-    .deliverableCard{
-      display:flex;
-      align-items:flex-start;
-      gap:14px;
-      padding: 16px;
-      border:1px solid var(--border);
-      border-radius: 14px;
-      background:#fff;
-    }
-    .deliverableCard .emoji{
-      font-size:28px;
-      flex-shrink:0;
-    }
-    .deliverableCard b{
-      display:block;
-      font-size:15px;
-      margin-bottom:4px;
-    }
-    .deliverableCard p{
-      margin:0;
-      font-size:13px;
-      color:var(--muted);
-    }
-
-    /* Summary section */
-    .summaryGrid{
-      display:grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap:12px;
-      margin: 16px 0;
-    }
-    .summaryCard{
-      border:1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px;
-      background: rgba(15,23,42,.015);
-    }
-    .summaryCard .label{
-      font-size:12px;
-      color:var(--muted);
-      margin-bottom:4px;
-    }
-    .summaryCard .value{
-      font-size:18px;
-      font-weight:700;
-      color:var(--text);
-    }
-
-    /* Toast */
-    .toast{
-      position:fixed;
-      bottom:24px;
-      right:24px;
-      background:var(--text);
-      color:#fff;
-      padding: 12px 20px;
-      border-radius: 12px;
-      font-size:13px;
-      font-weight:600;
-      box-shadow: 0 10px 30px rgba(15,23,42,.3);
-      opacity:0;
-      transform: translateY(20px);
-      transition: all .3s ease;
-      z-index:1000;
-    }
-    .toast.show{
-      opacity:1;
-      transform: translateY(0);
-    }
-
-    @media (max-width: 900px){
-      .templateGrid, .summaryGrid{
-        grid-template-columns: 1fr;
-      }
-      .goalsGrid{
-        grid-template-columns: repeat(2, 1fr);
-      }
-      .row{
-        grid-template-columns:1fr;
-      }
-      .quickAddRow{
-        grid-template-columns: 1fr;
-      }
-      .standardAddRow{
-        grid-template-columns: 1fr;
-      }
-      .standardAddRowMulti{
-        grid-template-columns: 1fr;
-      }
-      .expenseAddRow{
-        grid-template-columns: 1fr;
-      }
-      .expenseAddRowMulti{
-        grid-template-columns: 1fr;
-      }
-      
-      /* Smaller circles on mobile */
-      .stepCircles{
-        gap:16px;
-      }
-      .stepNumber{
-        width:55px;
-        height:55px;
-        font-size:22px;
-      }
-      .stepCircle.active .stepNumber{
-        transform: scale(1.05);
-      }
-      .stepCircle:not(:last-child)::after{
-        top:27px;
-        left:calc(50% + 27px);
-        width:16px;
-      }
-      .stepLabel{
-        font-size:11px;
-      }
-      .brand h1{
-        font-size:22px;
-      }
-      .brand p{
-        font-size:13px;
-      }
-    }
-
-    @media (max-width: 640px){
-      .stepCircles{
-        gap:8px;
-      }
-      .stepNumber{
-        width:45px;
-        height:45px;
-        font-size:18px;
-        border-width:2px;
-      }
-      .stepCircle:not(:last-child)::after{
-        top:22px;
-        left:calc(50% + 22px);
-        width:8px;
-        height:2px;
-      }
-      .stepLabel{
-        font-size:9px;
-      }
-    }
-
-    @media (max-width: 480px){
-      .goalsGrid{
-        gap:8px;
-      }
-      .goalCard{
-        padding:12px 8px;
-      }
-      .goalCard .goalIcon{
-        font-size:36px;
-      }
-      .goalCard .goalLabel{
-        font-size:11px;
-      }
-    }
-
-    /* Keyboard hints */
-    .keyboardHints{
-      position:fixed;
-      bottom:20px;
-      left:20px;
-      font-size:11px;
-      color:var(--muted);
-      background:rgba(255,255,255,.9);
-      padding:8px 12px;
-      border-radius:8px;
-      border:1px solid var(--border);
-      display:none;
-    }
-    .keyboardHints.show{
-      display:block;
-    }
-    .keyboardHints kbd{
-      background:rgba(15,23,42,.08);
-      padding:2px 6px;
-      border-radius:4px;
-      font-family:monospace;
-      font-size:10px;
+    @media(max-width:640px){
+      .stepCircles{ gap:8px; }
+      .stepNumber{ width:45px; height:45px; font-size:18px; border-width:2px; }
+      .stepCircle:not(:last-child)::after{ top:22px; left:calc(50% + 22px); width:8px; height:2px; }
+      .stepLabel{ font-size:9px; }
     }
   </style>
 </head>
 
 <body>
-  <div class="wrap">
-    <header>
-      <div class="headerTop">
-        <div class="userInfo">
-          <h1>Mi Discovery</h1>
-          <p class="userName" id="headerUserName">Juan Pérez</p>
-          <p class="userEmail" id="headerUserEmail">juan.perez@email.com</p>
-        </div>
-        <button 
-          id="resetBtn" 
-          class="btn ghost"
-          title="Reiniciar Discovery"
-          style="padding: 8px 16px; font-size: 13px;"
-        >
-          🔄 Reiniciar
-        </button>
+<div class="wrap">
+  <header>
+    <div class="headerTop">
+      <div class="userInfo">
+        <h1>Mi Discovery</h1>
+        <p class="userName" id="headerUserName">Juan Pérez</p>
+        <p class="userEmail" id="headerUserEmail">juan.perez@email.com</p>
       </div>
-
-      <div class="stepCircles" id="stepCircles">
-        <div class="stepCircle clickable" data-step-circle="1" data-goto="1">
-          <div class="stepNumber">1</div>
-          <div class="stepLabel">Welcome</div>
-        </div>
-        <div class="stepCircle clickable" data-step-circle="2" data-goto="2">
-          <div class="stepNumber">2</div>
-          <div class="stepLabel">Personas</div>
-        </div>
-        <div class="stepCircle clickable" data-step-circle="3" data-goto="3">
-          <div class="stepNumber">3</div>
-          <div class="stepLabel">Metas</div>
-        </div>
-        <div class="stepCircle clickable" data-step-circle="4" data-goto="4">
-          <div class="stepNumber">4</div>
-          <div class="stepLabel">Finanzas</div>
-        </div>
-        <div class="stepCircle clickable" data-step-circle="5" data-goto="5">
-          <div class="stepNumber">5</div>
-          <div class="stepLabel">Final</div>
-        </div>
-      </div>
-
-      <div class="progressInline">
-        <span class="progressText" id="progressText">Paso 1 de 5</span>
-        <div class="autoSaveIndicator" id="autoSave">Guardado ✓</div>
-      </div>
-    </header>
-
-    <div class="card">
-      <div class="content">
-        <!-- STEP 1: Preparación -->
-        <!-- STEP 1: Welcome -->
-        <section class="step" data-step="1">
-          <div class="hero">
-            <h2>¡Hola! Preparemos tu sesión de diagnóstico 👋</h2>
-            <p>
-              Esto tomará <b>3-10 minutos</b> dependiendo de cuánta información tengas lista. 
-              Tu progreso se guarda automáticamente, puedes volver cuando quieras.
-            </p>
-          </div>
-
-          <div class="panel">
-            <h2>Antes de empezar</h2>
-            
-            <div class="checklistPrep">
-              <p>💡 Ten a mano (opcional pero útil):</p>
-              <ul>
-                <li>💰 Idea aproximada de ingresos anuales</li>
-                <li>🏦 Lista mental de cuentas bancarias/inversiones</li>
-                <li>🏠 Si tienes propiedades o préstamos activos</li>
-                <li>👥 Info básica de personas con quienes compartes finanzas</li>
-              </ul>
-              <div class="hint">
-                <b>Tranquilo:</b> No necesitas números exactos ahora. 
-                Podemos refinar todo en la sesión.
-              </div>
-            </div>
-            
-            <div style="background:#e3f2fd; border-left:4px solid #2196f3; padding:16px; border-radius:6px; margin-top:20px;">
-              <p style="margin:0; font-size:14px; color:#1565c0;">
-                ℹ️ <b>Navegación libre:</b> Puedes moverte entre pasos haciendo click en los círculos de arriba. 
-                Si no tienes toda la información a mano, guarda lo que puedas y vuelve después. 
-                Tu progreso se guarda automáticamente.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <!-- STEP 2: Personas -->
-        <section class="step" data-step="2" hidden>
-          <div class="panel">
-            <h2>Estructura familiar/financiera</h2>
-            <p>
-              Esto nos ayuda a <b>personalizar las recomendaciones</b>. 
-              Por ejemplo: si tienes pareja, podemos analizar estrategias conjuntas.
-            </p>
-
-            <div class="quickTemplates">
-              <b>Plantillas rápidas:</b>
-              <div class="templateGrid">
-                <button class="templateBtn" data-template="single" type="button">
-                  👤 Solo yo
-                </button>
-                <button class="templateBtn" data-template="couple" type="button">
-                  👥 Pareja (sin hijos)
-                </button>
-                <button class="templateBtn" data-template="family" type="button">
-                  👨‍👩‍👧‍👦 Familia (pareja + hijos)
-                </button>
-                <button class="templateBtn" data-template="custom" type="button">
-                  ✏️ Personalizado
-                </button>
-              </div>
-            </div>
-
-            <div class="field" id="householdRoleField">
-              <label>¿Eres el principal proveedor económico?</label>
-              <select id="householdRole">
-                <option value="">Selecciona…</option>
-                <option value="primary_provider">Sí, principalmente yo</option>
-                <option value="shared">Compartido</option>
-                <option value="not_primary">No, principalmente otra persona</option>
-              </select>
-            </div>
-
-            <div class="peopleWrap" id="peopleWrap"></div>
-
-            <button class="btn" type="button" id="addPersonBtn">
-              ➕ Agregar otra persona
-            </button>
-          </div>
-        </section>
-
-        <!-- STEP 3: Metas -->
-        <section class="step" data-step="3" hidden>
-          <div class="panel">
-            <h2>¿Cuáles son tus metas financieras?</h2>
-            <p>
-              Selecciona todas las metas que sean importantes para ti. 
-              Esto nos ayuda a <b>priorizar recomendaciones</b> en tu diagnóstico.
-            </p>
-
-            <div class="goalsGrid" id="goalsGrid">
-              <div class="goalCard" data-goal="casa">
-                <div class="goalIcon">🏠</div>
-                <div class="goalLabel">Comprar casa</div>
-              </div>
-              <div class="goalCard" data-goal="retiro">
-                <div class="goalIcon">🏖️</div>
-                <div class="goalLabel">Retiro cómodo</div>
-              </div>
-              <div class="goalCard" data-goal="emergencia">
-                <div class="goalIcon">🛡️</div>
-                <div class="goalLabel">Fondo emergencia</div>
-              </div>
-              <div class="goalCard" data-goal="educacion">
-                <div class="goalIcon">🎓</div>
-                <div class="goalLabel">Educación hijos</div>
-              </div>
-              <div class="goalCard" data-goal="viaje">
-                <div class="goalIcon">✈️</div>
-                <div class="goalLabel">Viaje/Vacaciones</div>
-              </div>
-              <div class="goalCard" data-goal="deudas">
-                <div class="goalIcon">💳</div>
-                <div class="goalLabel">Pagar deudas</div>
-              </div>
-              <div class="goalCard" data-goal="negocio">
-                <div class="goalIcon">💼</div>
-                <div class="goalLabel">Iniciar negocio</div>
-              </div>
-              <div class="goalCard" data-goal="auto">
-                <div class="goalIcon">🚗</div>
-                <div class="goalLabel">Comprar auto</div>
-              </div>
-              <div class="goalCard" data-goal="inversiones">
-                <div class="goalIcon">📈</div>
-                <div class="goalLabel">Hacer crecer dinero</div>
-              </div>
-              <div class="goalCard" data-goal="independencia">
-                <div class="goalIcon">🦅</div>
-                <div class="goalLabel">Independencia financiera</div>
-              </div>
-              <div class="goalCard" data-goal="herencia">
-                <div class="goalIcon">🎁</div>
-                <div class="goalLabel">Dejar herencia</div>
-              </div>
-              <div class="goalCard" data-goal="otro">
-                <div class="goalIcon">🎯</div>
-                <div class="goalLabel">Otra meta</div>
-              </div>
-            </div>
-
-            <div class="hint" style="margin-top:14px;">
-              💡 <b>Tip:</b> No hay límite - selecciona todas las que apliquen. Puedes no seleccionar ninguna si prefieres.
-            </div>
-          </div>
-        </section>
-
-        <!-- STEP 4: Finanzas (Wizard) -->
-        <section class="step" data-step="4" hidden>
-          <div class="panel">
-            <h2>Snapshot financiero</h2>
-            <p>
-              Selecciona las áreas relevantes que aplican. Agrega al menos un ítem en cada una.
-            </p>
-
-            <div class="wizardFlow" id="wizardFlow">
-              <!-- Wizard step 1: Income range -->
-              <div class="wizardStep active" data-wizard="1">
-                <div class="wizardQ">
-                  <b>Pregunta 1 de 5</b>
-                  <h3>¿Cuál es tu ingreso anual aproximado (hogar)?</h3>
-                  <p class="hint">Esto nos ayuda a sugerir áreas relevantes</p>
-                </div>
-                
-                <div class="wizardOptions">
-                  <button class="optionBtn" data-answer="0-50k" type="button">
-                    💵 Menos de $50,000
-                  </button>
-                  <button class="optionBtn" data-answer="50-100k" type="button">
-                    💰 $50,000 - $100,000
-                  </button>
-                  <button class="optionBtn" data-answer="100-200k" type="button">
-                    💎 $100,000 - $200,000
-                  </button>
-                  <button class="optionBtn" data-answer="200k+" type="button">
-                    🏆 Más de $200,000
-                  </button>
-                </div>
-              </div>
-
-              <!-- Wizard step 2: Debts -->
-              <div class="wizardStep" data-wizard="2">
-                <div class="wizardQ">
-                  <b>Pregunta 2 de 5</b>
-                  <h3>¿Tienes deudas activas?</h3>
-                  <p class="hint">Tarjetas, préstamos, hipoteca, etc.</p>
-                </div>
-                
-                <div class="wizardOptions">
-                  <button class="optionBtn" data-answer="yes" type="button">
-                    ✓ Sí, tengo deudas
-                  </button>
-                  <button class="optionBtn" data-answer="no" type="button">
-                    ✗ No, sin deudas actualmente
-                  </button>
-                </div>
-              </div>
-
-              <!-- Wizard step 3: Investments -->
-              <div class="wizardStep" data-wizard="3">
-                <div class="wizardQ">
-                  <b>Pregunta 3 de 5</b>
-                  <h3>¿Tienes inversiones o cuentas de retiro?</h3>
-                  <p class="hint">401k, IRA, acciones, crypto, etc.</p>
-                </div>
-                
-                <div class="wizardOptions">
-                  <button class="optionBtn" data-answer="retirement" type="button">
-                    🏦 Solo retiro (401k/IRA)
-                  </button>
-                  <button class="optionBtn" data-answer="both" type="button">
-                    📈 Retiro + otras inversiones
-                  </button>
-                  <button class="optionBtn" data-answer="none" type="button">
-                    ➖ No tengo inversiones aún
-                  </button>
-                </div>
-              </div>
-
-              <!-- Wizard step 4: Real estate -->
-              <div class="wizardStep" data-wizard="4">
-                <div class="wizardQ">
-                  <b>Pregunta 4 de 5</b>
-                  <h3>¿Tienes propiedades (casa, terrenos, etc.)?</h3>
-                  <p class="hint">Propiedades que posees o estás pagando</p>
-                </div>
-                
-                <div class="wizardOptions">
-                  <button class="optionBtn" data-answer="yes" type="button">
-                    🏠 Sí, tengo propiedad(es)
-                  </button>
-                  <button class="optionBtn" data-answer="no" type="button">
-                    ✗ No, rento/vivo con familia
-                  </button>
-                </div>
-              </div>
-
-              <!-- Wizard step 5: Insurance -->
-              <div class="wizardStep" data-wizard="5">
-                <div class="wizardQ">
-                  <b>Pregunta 5 de 9</b>
-                  <h3>¿Tienes seguros activos?</h3>
-                  <p class="hint">Vida, salud, auto, hogar, etc.</p>
-                </div>
-                
-                <div class="wizardOptions">
-                  <button class="optionBtn" data-answer="yes" type="button">
-                    🛡️ Sí, tengo seguro(s)
-                  </button>
-                  <button class="optionBtn" data-answer="no" type="button">
-                    ✗ No tengo seguros
-                  </button>
-                </div>
-              </div>
-
-              <!-- Wizard step 6: Business/Trust -->
-              <div class="wizardStep" data-wizard="6">
-                <div class="wizardQ">
-                  <b>Pregunta 6 de 9</b>
-                  <h3>¿Tienes un negocio o trust?</h3>
-                  <p class="hint">Negocio propio, LLC, partnership, trusts, etc.</p>
-                </div>
-                
-                <div class="wizardOptions">
-                  <button class="optionBtn" data-answer="yes" type="button">
-                    💼 Sí, tengo negocio/trust
-                  </button>
-                  <button class="optionBtn" data-answer="no" type="button">
-                    ✗ No tengo
-                  </button>
-                </div>
-              </div>
-
-              <!-- Wizard step 7: Legal -->
-              <div class="wizardStep" data-wizard="7">
-                <div class="wizardQ">
-                  <b>Pregunta 7 de 9</b>
-                  <h3>¿Tienes documentos legales importantes?</h3>
-                  <p class="hint">Testamento, poderes, trusts, beneficiarios, etc.</p>
-                </div>
-                
-                <div class="wizardOptions">
-                  <button class="optionBtn" data-answer="yes" type="button">
-                    📄 Sí, tengo documentos
-                  </button>
-                  <button class="optionBtn" data-answer="no" type="button">
-                    ✗ No tengo / No estoy seguro
-                  </button>
-                </div>
-              </div>
-
-              <!-- Wizard step 8: Other Assets -->
-              <div class="wizardStep" data-wizard="8">
-                <div class="wizardQ">
-                  <b>Pregunta 8 de 9</b>
-                  <h3>¿Tienes otros activos importantes?</h3>
-                  <p class="hint">Vehículos, joyas, arte, colecciones, etc.</p>
-                </div>
-                
-                <div class="wizardOptions">
-                  <button class="optionBtn" data-answer="yes" type="button">
-                    🚗 Sí, tengo otros activos
-                  </button>
-                  <button class="optionBtn" data-answer="no" type="button">
-                    ✗ No / Nada significativo
-                  </button>
-                </div>
-              </div>
-
-              <!-- Wizard step 9: Savings -->
-              <div class="wizardStep" data-wizard="9">
-                <div class="wizardQ">
-                  <b>Pregunta 9 de 9</b>
-                  <h3>¿Tienes ahorro activo?</h3>
-                  <p class="hint">Fondo de emergencia, ahorros para retiro, inversiones</p>
-                </div>
-                
-                <div class="wizardOptions">
-                  <button class="optionBtn" data-answer="yes" type="button">
-                    💰 Sí, estoy ahorrando
-                  </button>
-                  <button class="optionBtn" data-answer="no" type="button">
-                    ✗ No ahorro actualmente
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Categories detail (shown after wizard) -->
-            <div id="categoriesDetail" style="display:none; margin-top:24px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <p class="hint" id="categoriesDetailHint" style="margin:0;">
-                  Agrega al menos un ítem en cada área seleccionada.
-                </p>
-                <button class="btn ghost" id="editWizardBtn" type="button" style="padding:8px 14px; font-size:13px;">
-                  ← Editar respuestas
-                </button>
-              </div>
-              <div class="categoriesInline" id="categoriesInline"></div>
-            </div>
-          </div>
-        </section>
-
-        <!-- STEP 5: Confirmación -->
-        <section class="step" data-step="5" hidden>
-          <!-- VIEW 1: Before submission - Validation checklist -->
-          <div id="beforeSubmit">
-            <div class="panel">
-              <h3>Revisión Final</h3>
-              <div class="summaryGrid" id="summaryGrid"></div>
-            </div>
-
-            <div class="panel">
-              <label for="finalNotes">
-                ¿Algo que quieras que sepamos antes de la sesión?
-                <span class="optional">Opcional</span>
-              </label>
-              <textarea id="finalNotes" 
-                placeholder="Ej: Tengo una situación especial con impuestos, me gustaría enfocarnos en eso..."></textarea>
-              <div class="hint">
-                Esto nos ayuda a preparar mejor tu diagnóstico personalizado.
-              </div>
-            </div>
-
-            <button class="btn primary large full" id="finalSubmit" type="button">
-              Someter Discovery Form
-            </button>
-          </div>
-
-          <!-- VIEW 2: After successful submission - Success message -->
-          <div id="afterSubmit" style="display:none;">
-            <div class="confirmationHero">
-              <div class="checkIcon">✓</div>
-              <h2>¡Tu formulario ha sido enviado con éxito!</h2>
-              <p>Tu información de Discovery ha sido recibida correctamente</p>
-            </div>
-
-            <div class="panel">
-              <div style="background: #d4edda; border-left: 4px solid #28a745; padding: 20px; border-radius: 8px; text-align: center;">
-                <p style="margin: 0 0 8px; color: #155724; font-size: 16px;">
-                  ✅ <strong>Discovery completado</strong>
-                </p>
-                <p style="margin: 0 0 20px; color: #155724; font-size: 14px;">
-                  <a href="tablero-usuario.html" style="color: #155724; text-decoration: underline;">
-                    Volver a tu tablero
-                  </a>
-                </p>
-                <button 
-                  onclick="window.close()" 
-                  class="btn primary large"
-                  style="display: inline-block;"
-                >
-                  Cerrar
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <div class="btns">
-        <button class="btn ghost" type="button" id="backBtn">← Atrás</button>
-        <button class="btn primary" type="button" id="nextBtn">Continuar →</button>
-      </div>
+      <button id="resetBtn" class="btn ghost" style="padding:8px 16px;font-size:13px;">🔄 Reiniciar</button>
     </div>
-  </div>
+    <div class="stepCircles" id="stepCircles">
+      <div class="stepCircle" data-goto="1"><div class="stepNumber">1</div><div class="stepLabel">Welcome</div></div>
+      <div class="stepCircle" data-goto="2"><div class="stepNumber">2</div><div class="stepLabel">Personas</div></div>
+      <div class="stepCircle" data-goto="3"><div class="stepNumber">3</div><div class="stepLabel">Metas</div></div>
+      <div class="stepCircle" data-goto="4"><div class="stepNumber">4</div><div class="stepLabel">Finanzas</div></div>
+      <div class="stepCircle" data-goto="5"><div class="stepNumber">5</div><div class="stepLabel">Final</div></div>
+    </div>
+    <div class="progressInline">
+      <span class="progressText" id="progressText">Paso 1 de 5</span>
+      <div class="autoSaveIndicator" id="autoSave">Guardado ✓</div>
+    </div>
+  </header>
 
-  <div class="keyboardHints" id="keyboardHints">
-    <kbd>Alt</kbd> + <kbd>→</kbd> Siguiente · 
-    <kbd>Alt</kbd> + <kbd>←</kbd> Atrás · 
-    <kbd>Ctrl</kbd> + <kbd>S</kbd> Guardar
-  </div>
+  <div class="card">
+    <div class="content">
 
-<script>
-(function(){
-  'use strict';
-
-  // ===== Helpers =====
-  const $ = (sel, root=document) => root.querySelector(sel);
-  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
-  const uid = (prefix="id") => prefix + "_" + Math.random().toString(16).slice(2,10);
-
-  function escapeHtml(str){
-    return String(str ?? "")
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
-
-  // ===== State =====
-  const state = {
-    mode: 'detailed',
-    step: 1,  // Start at Step 1 (Welcome/Email)
-    startTime: Date.now(),
-    userName: 'Juan Pérez',  // Default name
-    userEmail: 'juan.perez@email.com',  // Default email
-    
-    people: {
-      template: '',
-      householdRole: '',
-      members: []
-    },
-
-    goals: [],
-
-    financials: {
-      incomeRange: "",
-      hasDebts: null,
-      hasInvestments: null,
-      hasRealEstate: null,
-      hasInsurance: null,
-      hasBusiness: null,
-      hasLegal: null,
-      hasOtherAssets: null,
-      hasSavings: null,
-      categoriesSelected: [],
-      items: []
-    },
-
-    wizardStep: 1,
-    wizardComplete: false,
-    notes: ""
-  };
-
-  // Get user info from URL params
-  function getUserInfoFromURL() {
-    const params = new URLSearchParams(window.location.search);
-    const name = params.get('name') || params.get('userName') || params.get('client_name') || '';
-    const email = params.get('email') || params.get('userEmail') || params.get('client_email') || '';
-    
-    if (name) state.userName = name;
-    if (email) state.userEmail = email;
-    
-    updateHeaderUserInfo();
-  }
-  
-  function updateHeaderUserInfo() {
-    $('#headerUserName').textContent = state.userName || 'Juan Pérez';
-    $('#headerUserEmail').textContent = state.userEmail || 'juan.perez@email.com';
-  }
-
-  // Load from localStorage
-  function loadDraft(){
-    try{
-      // Clean up old versions
-      localStorage.removeItem('discovery_draft_v2');
-      localStorage.removeItem('discovery_draft');
-      
-      const saved = localStorage.getItem('discovery_draft_v3');
-      if(saved){
-        const data = JSON.parse(saved);
-        Object.assign(state, data);
-        showToast('✓ Progreso recuperado');
-      }
-    } catch(e){}
-  }
-
-  // Auto-save
-  let saveTimer;
-  function debouncedSave(){
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => {
-      localStorage.setItem('discovery_draft_v3', JSON.stringify(state));
-      const indicator = $('#autoSave');
-      indicator.classList.add('show');
-      setTimeout(() => indicator.classList.remove('show'), 1500);
-    }, 2000);
-  }
-
-  // Toast
-  function showToast(msg){
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.textContent = msg;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.classList.add('show'), 10);
-    setTimeout(() => {
-      toast.classList.remove('show');
-      setTimeout(() => toast.remove(), 300);
-    }, 2500);
-  }
-
-  // ===== Navigation =====
-  const backBtn = $('#backBtn');
-  const nextBtn = $('#nextBtn');
-
-  // Validation functions for each step
-  function isStep1Complete() {
-    // Step 1 (Welcome) has no validation
-    return true;
-  }
-
-  function isStep2Complete() {
-    // Step 2 (Personas) requires at least one person
-    return state.people.members.length > 0;
-  }
-
-  function isStep3Complete() {
-    // Step 3 (Metas) shows checkmark only if goals are selected
-    // But it's still optional for submission validation
-    return state.goals.length > 0;
-  }
-
-  function isStep4Complete() {
-    // Step 4 (Finanzas) requires at least one financial item
-    return state.financials.items.length > 0;
-  }
-
-  function isStepComplete(stepNumber) {
-    switch(stepNumber) {
-      case 1: return isStep1Complete();
-      case 2: return isStep2Complete();
-      case 3: return isStep3Complete();
-      case 4: return isStep4Complete();
-      case 5: return false; // Step 5 is never "complete" until submitted
-      default: return false;
-    }
-  }
-
-  function setStep(step){
-    state.step = step;
-    $$('.step').forEach(sec => sec.hidden = sec.dataset.step !== String(step));
-
-    // Update step circles based on ACTUAL completion status
-    $$('.stepCircle').forEach((circle, idx) => {
-      const circleStep = idx + 1;  // Now 1-5 (idx 0 = step 1)
-      circle.classList.remove('completed', 'active');
-      
-      const numberEl = circle.querySelector('.stepNumber');
-      
-      if(circleStep === step){
-        // Current step - always show as active
-        circle.classList.add('active');
-        numberEl.textContent = circleStep;
-      } else if(isStepComplete(circleStep)){
-        // Step is actually complete - show checkmark
-        circle.classList.add('completed');
-        numberEl.textContent = '✓';
-      } else {
-        // Step is not complete - show number
-        numberEl.textContent = circleStep;
-      }
-    });
-
-    // Progress text
-    const elapsed = Math.floor((Date.now() - state.startTime) / 60000);
-    const remaining = Math.max(1, 10 - elapsed);
-    
-    $('#progressText').textContent = `Paso ${step} de 5 · ~${remaining} min restantes`;
-
-    // Buttons
-    backBtn.hidden = step === 1;
-    nextBtn.hidden = step === 5;
-
-    // Step-specific
-    if(step === 2) renderPeople();
-    if(step === 3) renderGoals();
-    if(step === 4) renderWizard();
-    if(step === 5) renderConfirmation();
-
-    updateNavValidity();
-    debouncedSave();
-  }
-
-  function updateNavValidity(){
-    // Free navigation - no validation needed at Step 1
-    // Only validate at final submission (step 5)
-    nextBtn.disabled = false;
-  }
-
-  backBtn.addEventListener('click', () => {
-    if(state.step > 1) setStep(state.step - 1);
-  });
-
-  nextBtn.addEventListener('click', async () => {
-    // No validation for steps 1-4 - allow free navigation!
-    if(state.step < 5) setStep(state.step + 1);
-  });
-
-  // ===== FREE NAVIGATION: Click on step circles to jump =====
-  $$('.stepCircle').forEach(circle => {
-    circle.addEventListener('click', () => {
-      const targetStep = parseInt(circle.dataset.goto);
-      
-      // Free navigation - no restrictions
-      setStep(targetStep);
-    });
-  });
-
-  // ===== Validation =====
-  function validatePeople(){
-    const m = state.people.members;
-    const primary = m[0];
-
-    const baseOk =
-      primary.firstName?.trim() &&
-      primary.lastName?.trim() &&
-      Number.isInteger(primary.age) && primary.age > 0 &&
-      ["male","female","prefer_not_to_say"].includes(primary.gender);
-
-    if(!baseOk) return { ok:false };
-
-    if(m.length > 1){
-      for(let i=1; i<m.length; i++){
-        const p = m[i];
-        const okp =
-          p.firstName?.trim() &&
-          p.lastName?.trim() &&
-          Number.isInteger(p.age) && p.age > 0 &&
-          ["male","female","prefer_not_to_say"].includes(p.gender) &&
-          p.relationshipToPrimary;
-        if(!okp) return { ok:false };
-      }
-    }
-    return { ok:true };
-  }
-
-  function validateFinancials(){
-    if(!state.wizardComplete) return { ok:false };
-    const selected = state.financials.categoriesSelected;
-    if(selected.length === 0) return { ok:false };
-
-    for(const catKey of selected){
-      const items = state.financials.items.filter(it => it.category === catKey);
-      if(items.length === 0) return { ok:false };
-    }
-    return { ok:true };
-  }
-
-  // ===== STEP 2: People =====
-  const TEMPLATES = {
-    single: {
-      members: [
-        { id:"p1", role:"primary", firstName:"", lastName:"", age:null, gender:"" }
-      ],
-      householdRole: "primary_provider"
-    },
-    couple: {
-      members: [
-        { id:"p1", role:"primary", firstName:"", lastName:"", age:null, gender:"" },
-        { id:"p2", role:"additional", firstName:"", lastName:"", age:null, gender:"", relationshipToPrimary:"spouse" }
-      ],
-      householdRole: "shared"
-    },
-    family: {
-      members: [
-        { id:"p1", role:"primary", firstName:"", lastName:"", age:null, gender:"" },
-        { id:"p2", role:"additional", firstName:"", lastName:"", age:null, gender:"", relationshipToPrimary:"spouse" },
-        { id:"p3", role:"additional", firstName:"", lastName:"", age:null, gender:"", relationshipToPrimary:"child" }
-      ],
-      householdRole: "shared"
-    }
-  };
-
-  $$('.templateBtn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const template = btn.dataset.template;
-      
-      $$('.templateBtn').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-
-      if(template !== 'custom'){
-        state.people = JSON.parse(JSON.stringify(TEMPLATES[template]));
-        state.people.template = template;
-      } else {
-        state.people.template = 'custom';
-      }
-      
-      renderPeople();
-      debouncedSave();
-    });
-  });
-
-  const householdRoleEl = $('#householdRole');
-  const peopleWrap = $('#peopleWrap');
-  const addPersonBtn = $('#addPersonBtn');
-
-  function renderPeople(){
-    peopleWrap.innerHTML = '';
-    const members = state.people.members;
-
-    members.forEach((p, idx) => {
-      const isPrimary = idx === 0;
-
-      const card = document.createElement('div');
-      card.className = 'personCard';
-
-      const head = document.createElement('div');
-      head.className = 'personHead';
-      head.innerHTML = `
-        <div class="tag">${isPrimary ? 'Persona principal' : 'Persona adicional'}</div>
-        ${!isPrimary ? `<button class="xbtn" type="button">×</button>` : '<span class="hint">Obligatorio</span>'}
-      `;
-      card.appendChild(head);
-
-      const requiredFields = ['firstName', 'lastName', 'age', 'gender'];
-
-      const row1 = document.createElement('div');
-      row1.className = 'row';
-      
-      if(requiredFields.includes('firstName')){
-        row1.innerHTML += `
-          <div class="field">
-            <label>Nombre *</label>
-            <input type="text" data-k="firstName" value="${escapeHtml(p.firstName||'')}" placeholder="Nombre" />
+      <!-- STEP 1 -->
+      <section class="step" data-step="1">
+        <div class="hero">
+          <h2>¡Hola! Preparemos tu sesión de diagnóstico 👋</h2>
+          <p>Esto tomará <b>3-10 minutos</b>. Tu progreso se guarda automáticamente.</p>
+        </div>
+        <div class="panel">
+          <h2>Antes de empezar</h2>
+          <div class="checklistPrep">
+            <p>💡 Ten a mano (opcional pero útil):</p>
+            <ul>
+              <li>💰 Idea aproximada de ingresos anuales</li>
+              <li>🏦 Lista mental de cuentas bancarias/inversiones</li>
+              <li>🏠 Si tienes propiedades o préstamos activos</li>
+              <li>👥 Info básica de personas con quienes compartes finanzas</li>
+            </ul>
+            <div class="hint"><b>Tranquilo:</b> No necesitas números exactos ahora.</div>
           </div>
-        `;
-      }
-      
-      if(requiredFields.includes('lastName')){
-        row1.innerHTML += `
-          <div class="field">
-            <label>Apellido *</label>
-            <input type="text" data-k="lastName" value="${escapeHtml(p.lastName||'')}" placeholder="Apellido" />
+          <div style="background:#e3f2fd;border-left:4px solid #2196f3;padding:16px;border-radius:6px;margin-top:20px;">
+            <p style="margin:0;font-size:14px;color:#1565c0;">ℹ️ <b>Navegación libre:</b> Puedes moverte entre pasos usando los círculos de arriba.</p>
           </div>
-        `;
-      }
-      
-      card.appendChild(row1);
+        </div>
+      </section>
 
-      const row2 = document.createElement('div');
-      row2.className = 'row';
-      
-      if(requiredFields.includes('age')){
-        row2.innerHTML += `
-          <div class="field">
-            <label>Edad *</label>
-            <input type="number" min="0" step="1" data-k="age" value="${p.age ?? ''}" placeholder="35" />
+      <!-- STEP 2: Personas -->
+      <section class="step" data-step="2" hidden>
+        <div class="panel">
+          <h2>Estructura familiar/financiera</h2>
+          <p>Esto nos ayuda a <b>personalizar las recomendaciones</b>.</p>
+          <div class="quickTemplates">
+            <b>Plantillas rápidas:</b>
+            <div class="templateGrid">
+              <button class="templateBtn" data-template="single" type="button">👤 Solo yo</button>
+              <button class="templateBtn" data-template="couple" type="button">👥 Pareja (sin hijos)</button>
+              <button class="templateBtn" data-template="family" type="button">👨‍👩‍👧‍👦 Familia (pareja + hijos)</button>
+              <button class="templateBtn" data-template="custom" type="button">✏️ Personalizado</button>
+            </div>
           </div>
-        `;
-      }
-      
-      if(requiredFields.includes('gender')){
-        row2.innerHTML += `
           <div class="field">
-            <label>Sexo *</label>
-            <select data-k="gender">
+            <label>¿Eres el principal proveedor económico?</label>
+            <select id="householdRole">
               <option value="">Selecciona…</option>
-              <option value="male" ${p.gender==='male'?'selected':''}>Masculino</option>
-              <option value="female" ${p.gender==='female'?'selected':''}>Femenino</option>
-              <option value="prefer_not_to_say" ${p.gender==='prefer_not_to_say'?'selected':''}>Prefiero no decir</option>
+              <option value="primary_provider">Sí, principalmente yo</option>
+              <option value="shared">Compartido</option>
+              <option value="not_primary">No, principalmente otra persona</option>
             </select>
           </div>
-        `;
-      }
-      
-      card.appendChild(row2);
+          <div class="peopleWrap" id="peopleWrap"></div>
+          <button class="btn" type="button" id="addPersonBtn">➕ Agregar otra persona</button>
+        </div>
+      </section>
 
-      if(!isPrimary){
-        const rel = document.createElement('div');
-        rel.className = 'field';
-        rel.innerHTML = `
-          <label>Relación con persona principal *</label>
-          <select data-k="relationshipToPrimary">
-            <option value="">Selecciona…</option>
-            <option value="spouse" ${p.relationshipToPrimary==='spouse'?'selected':''}>Cónyuge</option>
-            <option value="partner" ${p.relationshipToPrimary==='partner'?'selected':''}>Pareja</option>
-            <option value="child" ${p.relationshipToPrimary==='child'?'selected':''}>Hijo/a</option>
-            <option value="family" ${p.relationshipToPrimary==='family'?'selected':''}>Familiar</option>
-            <option value="other" ${p.relationshipToPrimary==='other'?'selected':''}>Otro</option>
-          </select>
-        `;
-        card.appendChild(rel);
-      }
-
-      // Events
-      card.addEventListener('input', (e) => {
-        const t = e.target;
-        const key = t.getAttribute('data-k');
-        if(!key) return;
-
-        const person = state.people.members.find(x => x.id === p.id);
-        if(!person) return;
-
-        if(key === 'age'){
-          const n = Number(t.value);
-          person.age = Number.isFinite(n) ? Math.trunc(n) : null;
-        } else {
-          person[key] = t.value;
-        }
-
-        updateNavValidity();
-        debouncedSave();
-      });
-
-      if(!isPrimary){
-        const xbtn = $('.xbtn', head);
-        if(xbtn){
-          xbtn.addEventListener('click', () => {
-            state.people.members = state.people.members.filter(x => x.id !== p.id);
-            renderPeople();
-            updateNavValidity();
-            debouncedSave();
-          });
-        }
-      }
-
-      peopleWrap.appendChild(card);
-    });
-
-    householdRoleEl.value = state.people.householdRole || '';
-    
-    // Select template button
-    if(state.people.template){
-      const templateBtn = $(`.templateBtn[data-template="${state.people.template}"]`);
-      if(templateBtn){
-        $$('.templateBtn').forEach(b => b.classList.remove('selected'));
-        templateBtn.classList.add('selected');
-      }
-    }
-    
-    updateNavValidity();
-  }
-
-  householdRoleEl.addEventListener('change', () => {
-    state.people.householdRole = householdRoleEl.value;
-    debouncedSave();
-  });
-
-  addPersonBtn.addEventListener('click', () => {
-    const nextIndex = state.people.members.length + 1;
-    state.people.members.push({
-      id: "p" + nextIndex,
-      role: "additional",
-      firstName:"",
-      lastName:"",
-      age:null,
-      gender:"",
-      relationshipToPrimary:""
-    });
-    renderPeople();
-    debouncedSave();
-  });
-
-  // ===== STEP 3: Goals =====
-  function renderGoals(){
-    const goalCards = $$('.goalCard');
-    
-    // Restore selected state
-    goalCards.forEach(card => {
-      const goal = card.dataset.goal;
-      if(state.goals.includes(goal)){
-        card.classList.add('selected');
-      } else {
-        card.classList.remove('selected');
-      }
-    });
-  }
-  
-  // Handle goal selection (only add listeners once)
-  $$('.goalCard').forEach(card => {
-    // Remove old listeners by cloning
-    const newCard = card.cloneNode(true);
-    card.parentNode.replaceChild(newCard, card);
-    
-    newCard.addEventListener('click', () => {
-      const goal = newCard.dataset.goal;
-      
-      if(newCard.classList.contains('selected')){
-        // Deselect
-        newCard.classList.remove('selected');
-        state.goals = state.goals.filter(g => g !== goal);
-      } else {
-        // Select
-        newCard.classList.add('selected');
-        state.goals.push(goal);
-      }
-      
-      debouncedSave();
-    });
-  });
-
-  // ===== STEP 4: Wizard =====
-  const CATEGORY_SUGGESTIONS = {
-    '0-50k': ['income', 'expenses', 'banking', 'liabilities', 'other_assets'],
-    '50-100k': ['income', 'expenses', 'savings', 'banking', 'liabilities', 'investments_retirement', 'other_assets'],
-    '100-200k': ['income', 'expenses', 'savings', 'banking', 'investments_retirement', 'investments_nonretirement', 'real_estate', 'insurance', 'other_assets'],
-    '200k+': ['income', 'expenses', 'savings', 'banking', 'investments_retirement', 'investments_nonretirement', 'real_estate', 'insurance', 'business_trust', 'legal', 'other_assets']
-  };
-
-  const FIN_CATS = [
-    { key:"income", label:"Ingresos", hint:"Salarios, negocios, rentas" },
-    { key:"expenses", label:"Gastos mensuales", hint:"Desglose de gastos por categoría" },
-    { key:"savings", label:"Ahorro", hint:"Ahorro activo mensual" },
-    { key:"liabilities", label:"Deudas", hint:"Tarjetas, préstamos, hipoteca" },
-    { key:"real_estate", label:"Bienes raíces", hint:"Propiedades que posees" },
-    { key:"investments_retirement", label:"Inversiones de retiro", hint:"401k, IRA, pensión" },
-    { key:"investments_nonretirement", label:"Otras inversiones", hint:"Acciones, crypto, fondos" },
-    { key:"banking", label:"Cuentas bancarias", hint:"Checking, savings, cash" },
-    { key:"insurance", label:"Seguros", hint:"Vida, salud, auto, hogar" },
-    { key:"business_trust", label:"Negocios/Trust", hint:"Empresas, LLC, trusts" },
-    { key:"legal", label:"Legal", hint:"Testamento, poderes" },
-    { key:"other_assets", label:"Otros activos", hint:"Autos, colecciones, etc." }
-  ];
-
-  // Expenses taxonomy
-  const EXPENSES_TAX = {
-    "Alimentación": ["Supermercado", "Comidas fuera", "Pedido a domicilio"],
-    "Casa": ["Alquiler", "Servicios básicos", "Mantenimiento"],
-    "Impuestos": ["Seguro social", "Propiedad", "Venta", "Estatales", "Federales", "Municipales"],
-    "Transportación": ["Gasolina", "Mantenimiento", "Transporte público / Uber"],
-    "Seguros": ["Salud", "Auto", "Vida"],
-    "Regalos y donaciones": ["Familia", "Amigos", "Instituciones"],
-    "Gastos Médicos": ["Consultas", "Medicamentos", "Procedimientos"],
-    "Cuidado Personal": ["Peluquería", "Cosméticos", "Spa / Barbería"],
-    "Dependientes": ["Cuidado de niños", "Cuidado de mayores", "Educación"],
-    "Deuda": ["Tarjetas de crédito", "Préstamos estudiantiles", "Otros préstamos"],
-    "Entretenimiento": ["Cine", "Conciertos", "Streaming"],
-    "Telecomunicaciones": ["Teléfono", "Internet", "TV"]
-  };
-
-  // Savings taxonomy
-  const SAVINGS_TAX = {
-    "Reserva de emergencia": ["Depósito", "Aporte mensual"],
-    "Retiro": ["401(k)", "IRA/Roth", "Otro"],
-    "Inversión": ["Brokerage", "ETF/Fondos", "Cripto", "Otro"],
-    "Otro": ["Otro"]
-  };
-
-  // Income types
-  const INCOME_TYPES = [
-    "Salario",
-    "Pago por hora",
-    "Bono",
-    "Comisión",
-    "Propina",
-    "Negocio propio",
-    "Dividendos e intereses",
-    "Renta inmueble",
-    "Pensión",
-    "Seguro Social",
-    "Anualidad",
-    "Ganancia de capital",
-    "Otro"
-  ];
-
-  // Debt types
-  const DEBT_TYPES = [
-    "Tarjeta de crédito",
-    "Préstamo de auto",
-    "Préstamo estudiantil",
-    "Hipoteca",
-    "HELOC (línea de crédito)",
-    "Préstamo personal",
-    "Préstamo de negocio",
-    "Impuestos adeudados",
-    "Otro"
-  ];
-
-  // Banking types
-  const BANKING_TYPES = [
-    "Checking",
-    "Savings",
-    "Money Market",
-    "CD (Certificate of Deposit)",
-    "Efectivo",
-    "Otro"
-  ];
-
-  // Retirement investment types
-  const RETIREMENT_TYPES = [
-    "401(k)",
-    "403(b)",
-    "457",
-    "IRA Tradicional",
-    "Roth IRA",
-    "SEP IRA",
-    "Pensión",
-    "Anualidad",
-    "Otro"
-  ];
-
-  // Non-retirement investment types
-  const INVESTMENT_TYPES = [
-    "Brokerage account",
-    "Acciones individuales",
-    "ETF/Fondos mutuos",
-    "Bonos",
-    "Criptomonedas",
-    "Commodities",
-    "Otro"
-  ];
-
-  // Real estate types
-  const REAL_ESTATE_TYPES = [
-    "Casa principal",
-    "Casa vacacional",
-    "Propiedad de renta",
-    "Apartamento/Condo",
-    "Terreno",
-    "Propiedad comercial",
-    "Otro"
-  ];
-
-  // Insurance types
-  const INSURANCE_TYPES = [
-    "Vida - Term",
-    "Vida - Whole/Universal",
-    "Salud",
-    "Auto",
-    "Hogar/Renta",
-    "Disability",
-    "Long-term care",
-    "Umbrella",
-    "Otro"
-  ];
-
-  // Business/Trust types
-  const BUSINESS_TYPES = [
-    "Negocio propio (100%)",
-    "Negocio (participación)",
-    "LLC",
-    "S-Corp",
-    "C-Corp",
-    "Partnership",
-    "Trust",
-    "Otro"
-  ];
-
-  // Legal types
-  const LEGAL_TYPES = [
-    "Testamento",
-    "Living Trust",
-    "Revocable Trust",
-    "Irrevocable Trust",
-    "Power of Attorney",
-    "Healthcare Directive",
-    "Beneficiarios designados",
-    "Otro"
-  ];
-
-  // Other assets types
-  const OTHER_ASSETS_TYPES = [
-    "Vehículo",
-    "Bote/Jet ski",
-    "RV/Camper",
-    "Joyas",
-    "Arte",
-    "Coleccionables",
-    "Equipamiento profesional",
-    "Otro"
-  ];
-
-  function renderWizard(){
-    const wizardFlow = $('#wizardFlow');
-    const categoriesDetail = $('#categoriesDetail');
-
-    if(state.wizardComplete){
-      wizardFlow.style.display = 'none';
-      categoriesDetail.style.display = 'block';
-      renderCategoriesDetail();
-    } else {
-      wizardFlow.style.display = 'block';
-      categoriesDetail.style.display = 'none';
-      
-      // Show current wizard step
-      $$('.wizardStep').forEach((step, idx) => {
-        step.classList.toggle('active', idx + 1 === state.wizardStep);
-      });
-    }
-  }
-
-  // Wizard navigation
-  $$('.wizardStep').forEach((step, stepIndex) => {
-    const stepNum = stepIndex + 1;
-    
-    step.querySelectorAll('.optionBtn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const answer = btn.dataset.answer;
-        
-        // Store answer
-        if(stepNum === 1){
-          state.financials.incomeRange = answer;
-          const suggested = CATEGORY_SUGGESTIONS[answer] || [];
-          state.financials.categoriesSelected = [...suggested];
-        }
-        if(stepNum === 2){
-          state.financials.hasDebts = answer === 'yes';
-          if(answer === 'yes' && !state.financials.categoriesSelected.includes('liabilities')){
-            state.financials.categoriesSelected.push('liabilities');
-          }
-        }
-        if(stepNum === 3){
-          state.financials.hasInvestments = answer;
-          if(answer === 'retirement' && !state.financials.categoriesSelected.includes('investments_retirement')){
-            state.financials.categoriesSelected.push('investments_retirement');
-          }
-          if(answer === 'both'){
-            if(!state.financials.categoriesSelected.includes('investments_retirement')){
-              state.financials.categoriesSelected.push('investments_retirement');
-            }
-            if(!state.financials.categoriesSelected.includes('investments_nonretirement')){
-              state.financials.categoriesSelected.push('investments_nonretirement');
-            }
-          }
-        }
-        if(stepNum === 4){
-          state.financials.hasRealEstate = answer === 'yes';
-          if(answer === 'yes' && !state.financials.categoriesSelected.includes('real_estate')){
-            state.financials.categoriesSelected.push('real_estate');
-          }
-        }
-        if(stepNum === 5){
-          state.financials.hasInsurance = answer === 'yes';
-          if(answer === 'yes' && !state.financials.categoriesSelected.includes('insurance')){
-            state.financials.categoriesSelected.push('insurance');
-          }
-        }
-        if(stepNum === 6){
-          state.financials.hasBusiness = answer === 'yes';
-          if(answer === 'yes' && !state.financials.categoriesSelected.includes('business_trust')){
-            state.financials.categoriesSelected.push('business_trust');
-          }
-        }
-        if(stepNum === 7){
-          state.financials.hasLegal = answer === 'yes';
-          if(answer === 'yes' && !state.financials.categoriesSelected.includes('legal')){
-            state.financials.categoriesSelected.push('legal');
-          }
-        }
-        if(stepNum === 8){
-          state.financials.hasOtherAssets = answer === 'yes';
-          if(answer === 'yes' && !state.financials.categoriesSelected.includes('other_assets')){
-            state.financials.categoriesSelected.push('other_assets');
-          }
-        }
-        if(stepNum === 9){
-          state.financials.hasSavings = answer === 'yes';
-          if(answer === 'yes' && !state.financials.categoriesSelected.includes('savings')){
-            state.financials.categoriesSelected.push('savings');
-          }
-        }
-
-        debouncedSave();
-
-        // Next step or finish
-        if(stepNum < 9){
-          state.wizardStep = stepNum + 1;
-          renderWizard();
-        } else {
-          state.wizardComplete = true;
-          state.wizardStep = 1;
-          renderWizard();
-          updateNavValidity();
-        }
-      });
-    });
-  });
-
-  function renderCategoriesDetail(){
-    const container = $('#categoriesInline');
-    const hintEl = $('#categoriesDetailHint');
-    
-    // Update hint based on household size
-    const people = state.people.members || [];
-    if(people.length > 1){
-      hintEl.innerHTML = `
-        Agrega al menos un ítem en cada área seleccionada. 
-        <b>Tip:</b> Puedes agregar el mismo tipo varias veces (ej: Checking de Carlos, Checking de María, Checking conjunta) 
-        seleccionando el dueño correspondiente.
-      `;
-    } else {
-      hintEl.textContent = 'Agrega al menos un ítem en cada área seleccionada.';
-    }
-    
-    container.innerHTML = '';
-
-    state.financials.categoriesSelected.forEach(catKey => {
-      const meta = FIN_CATS.find(c => c.key === catKey);
-      if(!meta) return;
-
-      const card = document.createElement('div');
-      card.className = 'catInlineCard';
-      card.dataset.cat = catKey;
-
-      const items = state.financials.items.filter(it => it.category === catKey);
-      const hasItems = items.length > 0;
-
-      const isExpenseOrSaving = catKey === 'expenses' || catKey === 'savings';
-
-      card.innerHTML = `
-        <div class="catHeader">
-          <div class="catInfo">
-            <input type="checkbox" data-category-checkbox checked />
-            <div class="catLabel">
-              <b>${escapeHtml(meta.label)}</b>
-              <span>${escapeHtml(meta.hint)}</span>
-            </div>
+      <!-- STEP 3: Metas -->
+      <section class="step" data-step="3" hidden>
+        <div class="panel">
+          <h2>¿Cuáles son tus metas financieras?</h2>
+          <p>Selecciona todas las metas que sean importantes para ti.</p>
+          <div class="goalsGrid" id="goalsGrid">
+            <div class="goalCard" data-goal="casa"><div class="goalIcon">🏠</div><div class="goalLabel">Comprar casa</div></div>
+            <div class="goalCard" data-goal="retiro"><div class="goalIcon">🏖️</div><div class="goalLabel">Retiro cómodo</div></div>
+            <div class="goalCard" data-goal="emergencia"><div class="goalIcon">🛡️</div><div class="goalLabel">Fondo emergencia</div></div>
+            <div class="goalCard" data-goal="educacion"><div class="goalIcon">🎓</div><div class="goalLabel">Educación hijos</div></div>
+            <div class="goalCard" data-goal="viaje"><div class="goalIcon">✈️</div><div class="goalLabel">Viaje/Vacaciones</div></div>
+            <div class="goalCard" data-goal="deudas"><div class="goalIcon">💳</div><div class="goalLabel">Pagar deudas</div></div>
+            <div class="goalCard" data-goal="negocio"><div class="goalIcon">💼</div><div class="goalLabel">Iniciar negocio</div></div>
+            <div class="goalCard" data-goal="auto"><div class="goalIcon">🚗</div><div class="goalLabel">Comprar auto</div></div>
+            <div class="goalCard" data-goal="inversiones"><div class="goalIcon">📈</div><div class="goalLabel">Hacer crecer dinero</div></div>
+            <div class="goalCard" data-goal="independencia"><div class="goalIcon">🦅</div><div class="goalLabel">Independencia financiera</div></div>
+            <div class="goalCard" data-goal="herencia"><div class="goalIcon">🎁</div><div class="goalLabel">Dejar herencia</div></div>
+            <div class="goalCard" data-goal="otro"><div class="goalIcon">🎯</div><div class="goalLabel">Otra meta</div></div>
           </div>
-          <div class="catExpand">▾</div>
+          <div class="hint" style="margin-top:14px;">💡 <b>Tip:</b> No hay límite, selecciona todas las que apliquen.</div>
         </div>
-        <div class="catBody">
-          ${isExpenseOrSaving ? renderExpenseSavingsForm(catKey) : renderStandardForm(catKey)}
-          <div class="itemsList" data-items></div>
-        </div>
-      `;
+      </section>
 
-      // Mark card as checked since category was selected
-      card.classList.add('checked');
-
-      // Checkbox handler
-      const checkbox = card.querySelector('[data-category-checkbox]');
-      checkbox.addEventListener('change', (e) => {
-        e.stopPropagation();
-        if(checkbox.checked){
-          card.classList.add('checked');
-        } else {
-          card.classList.remove('checked');
-        }
-      });
-
-      // Toggle expand
-      card.querySelector('.catHeader').addEventListener('click', (e) => {
-        if(e.target.tagName === 'INPUT') return;
-        card.classList.toggle('open');
-      });
-
-      const itemsList = card.querySelector('[data-items]');
-
-      if(isExpenseOrSaving){
-        setupExpenseSavingsHandlers(card, catKey, itemsList);
-      } else {
-        setupStandardHandlers(card, catKey, itemsList);
-      }
-
-      renderItemsList(catKey, itemsList);
-
-      container.appendChild(card);
-
-      // Auto-open if no items
-      if(!hasItems){
-        card.classList.add('open');
-      }
-    });
-  }
-
-  function renderStandardForm(catKey){
-    const typeOptions = getTypeOptionsForCategory(catKey);
-    const people = state.people.members || [];
-    const showOwner = people.length > 1;
-    
-    if(!showOwner){
-      return `
-        <div class="standardAddRow">
-          <select data-type-select>
-            <option value="">Tipo...</option>
-            ${typeOptions.map(type => `<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`).join('')}
-          </select>
-          <input type="text" placeholder="Alias (opcional)" data-alias-input />
-          <input type="number" min="0" step="0.01" placeholder="$ USD" data-add-amount />
-          <button type="button" data-add-btn>+</button>
-        </div>
-      `;
-    }
-    
-    // Multi-person household: show owner selector
-    return `
-      <div class="standardAddRowMulti">
-        <select data-type-select>
-          <option value="">Tipo...</option>
-          ${typeOptions.map(type => `<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`).join('')}
-        </select>
-        <input type="text" placeholder="Alias (opcional)" data-alias-input />
-        <input type="number" min="0" step="0.01" placeholder="$ USD" data-add-amount />
-        <select data-owner-select>
-          ${ownerOptionsHTML('')}
-        </select>
-        <button type="button" data-add-btn>+</button>
-      </div>
-    `;
-  }
-
-  function ownerOptionsHTML(current){
-    const people = state.people.members || [];
-    let html = `<option value="">Dueño...</option>`;
-    for(const p of people){
-      const name = ([p.firstName,p.lastName].filter(Boolean).join(" ").trim() || p.id.toUpperCase());
-      html += `<option value="${p.id}" ${current===p.id?"selected":""}>${escapeHtml(name)}</option>`;
-    }
-    html += `<option value="household" ${current==="household"?"selected":""}>Compartido</option>`;
-    return html;
-  }
-
-  function getTypeOptionsForCategory(catKey){
-    const typeMap = {
-      'income': INCOME_TYPES,
-      'liabilities': DEBT_TYPES,
-      'banking': BANKING_TYPES,
-      'investments_retirement': RETIREMENT_TYPES,
-      'investments_nonretirement': INVESTMENT_TYPES,
-      'real_estate': REAL_ESTATE_TYPES,
-      'insurance': INSURANCE_TYPES,
-      'business_trust': BUSINESS_TYPES,
-      'legal': LEGAL_TYPES,
-      'other_assets': OTHER_ASSETS_TYPES
-    };
-    
-    return typeMap[catKey] || ['Otro'];
-  }
-
-  function renderExpenseSavingsForm(catKey){
-    const taxonomy = catKey === 'expenses' ? EXPENSES_TAX : SAVINGS_TAX;
-    const people = state.people.members || [];
-    const showOwner = people.length > 1;
-    
-    // Flatten taxonomy into single list
-    const options = [];
-    for(const [category, subcategories] of Object.entries(taxonomy)){
-      for(const subcategory of subcategories){
-        options.push({ category, subcategory, label: `${category} - ${subcategory}` });
-      }
-    }
-    
-    if(!showOwner){
-      return `
-        <div class="expenseAddRow">
-          <select data-combined-select>
-            <option value="">Selecciona categoría...</option>
-            ${options.map(opt => {
-              const value = JSON.stringify({ category: opt.category, subcategory: opt.subcategory });
-              return `<option value='${escapeHtml(value)}'>${escapeHtml(opt.label)}</option>`;
-            }).join('')}
-          </select>
-          <input type="number" min="0" step="0.01" placeholder="$/mes" data-add-amount />
-          <button type="button" data-add-btn>+</button>
-        </div>
-      `;
-    }
-    
-    return `
-      <div class="expenseAddRowMulti">
-        <select data-combined-select>
-          <option value="">Selecciona categoría...</option>
-          ${options.map(opt => {
-            const value = JSON.stringify({ category: opt.category, subcategory: opt.subcategory });
-            return `<option value='${escapeHtml(value)}'>${escapeHtml(opt.label)}</option>`;
-          }).join('')}
-        </select>
-        <input type="number" min="0" step="0.01" placeholder="$/mes" data-add-amount />
-        <select data-owner-select>
-          ${ownerOptionsHTML('')}
-        </select>
-        <button type="button" data-add-btn>+</button>
-      </div>
-    `;
-  }
-
-  function setupStandardHandlers(card, catKey, itemsList){
-    const addBtn = card.querySelector('[data-add-btn]');
-    const typeSelect = card.querySelector('[data-type-select]');
-    const aliasInput = card.querySelector('[data-alias-input]');
-    const amountInput = card.querySelector('[data-add-amount]');
-    const ownerSelect = card.querySelector('[data-owner-select]');
-
-    function addItem(){
-      const type = typeSelect.value.trim();
-      const alias = aliasInput.value.trim();
-      const amount = Number(amountInput.value);
-
-      if(!type || !Number.isFinite(amount) || amount < 0) return;
-
-      // Determine owner
-      let owner;
-      if(ownerSelect){
-        owner = ownerSelect.value || 'household';
-      } else {
-        owner = state.people.members.length > 1 ? 'household' : state.people.members[0].id;
-      }
-
-      // Use alias if provided, otherwise use type
-      const displayName = alias || type;
-
-      const item = {
-        id: uid(catKey),
-        category: catKey,
-        type: type,
-        alias: alias || null,
-        name: displayName,
-        value: amount,
-        owner: owner
-      };
-
-      state.financials.items.push(item);
-      typeSelect.value = '';
-      aliasInput.value = '';
-      amountInput.value = '';
-      if(ownerSelect) ownerSelect.value = '';
-      
-      renderItemsList(catKey, itemsList);
-      updateNavValidity();
-      debouncedSave();
-    }
-
-    addBtn.addEventListener('click', addItem);
-    amountInput.addEventListener('keypress', (e) => {
-      if(e.key === 'Enter') addItem();
-    });
-  }
-
-  function setupExpenseSavingsHandlers(card, catKey, itemsList){
-    const combinedSelect = card.querySelector('[data-combined-select]');
-    const amountInput = card.querySelector('[data-add-amount]');
-    const addBtn = card.querySelector('[data-add-btn]');
-    const ownerSelect = card.querySelector('[data-owner-select]');
-
-    function addItem(){
-      const selectedValue = combinedSelect.value;
-      const amount = Number(amountInput.value);
-
-      if(!selectedValue || !Number.isFinite(amount) || amount < 0) return;
-
-      const { category, subcategory } = JSON.parse(selectedValue);
-
-      // Determine owner
-      let owner;
-      if(ownerSelect){
-        owner = ownerSelect.value || 'household';
-      } else {
-        owner = state.people.members.length > 1 ? 'household' : state.people.members[0].id;
-      }
-
-      const item = {
-        id: uid(catKey),
-        category: catKey,
-        expenseCategory: category,
-        subcategory: subcategory,
-        name: `${category} - ${subcategory}`,
-        value: amount,
-        owner: owner
-      };
-
-      state.financials.items.push(item);
-      combinedSelect.value = '';
-      amountInput.value = '';
-      if(ownerSelect) ownerSelect.value = '';
-      
-      renderItemsList(catKey, itemsList);
-      updateNavValidity();
-      debouncedSave();
-    }
-
-    addBtn.addEventListener('click', addItem);
-    amountInput.addEventListener('keypress', (e) => {
-      if(e.key === 'Enter') addItem();
-    });
-  }
-
-  function renderItemsList(catKey, container){
-    const items = state.financials.items.filter(it => it.category === catKey);
-    
-    container.innerHTML = items.map(it => {
-      const owner = state.people.members.find(p => p.id === it.owner);
-      const ownerName = owner ? `${owner.firstName || owner.id}` : 'Hogar';
-      
-      // For expenses/savings show category-subcategory, for others show type
-      let displayName = it.name;
-      let typeInfo = '';
-      
-      if(it.type && it.alias){
-        // Has both type and alias
-        typeInfo = `${it.type}`;
-        displayName = it.alias;
-      } else if(it.type){
-        // Only type
-        displayName = it.type;
-      }
-      
-      return `
-        <div class="itemChip" data-id="${it.id}">
-          <div class="chipInfo">
-            <div class="chipName">${escapeHtml(displayName)}${typeInfo ? ` <span style="color:var(--muted);font-size:11px;">(${escapeHtml(typeInfo)})</span>` : ''}</div>
-            <div class="chipDetails">$${it.value?.toLocaleString() || 0} · ${ownerName}</div>
-          </div>
-          <button class="chipRemove" type="button">×</button>
-        </div>
-      `;
-    }).join('');
-
-    // Remove handlers
-    container.querySelectorAll('.chipRemove').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const chip = e.target.closest('.itemChip');
-        const id = chip.dataset.id;
-        state.financials.items = state.financials.items.filter(it => it.id !== id);
-        renderItemsList(catKey, container);
-        updateNavValidity();
-        debouncedSave();
-      });
-    });
-  }
-
-  // Edit wizard button
-  const editWizardBtn = $('#editWizardBtn');
-  editWizardBtn.addEventListener('click', () => {
-    // Reset wizard to beginning
-    state.wizardStep = 1;
-    state.wizardComplete = false;
-    
-    // Clear selected categories and items
-    state.financials.categoriesSelected = [];
-    state.financials.items = [];
-    
-    // Reset all wizard answers
-    state.financials.incomeRange = "";
-    state.financials.hasDebts = null;
-    state.financials.hasInvestments = null;
-    state.financials.hasRealEstate = null;
-    state.financials.hasInsurance = null;
-    state.financials.hasBusiness = null;
-    state.financials.hasLegal = null;
-    state.financials.hasOtherAssets = null;
-    state.financials.hasSavings = null;
-    
-    renderWizard();
-    debouncedSave();
-    showToast('Wizard reiniciado - puedes editar tus respuestas');
-  });
-
-  // ===== STEP 5: Confirmation =====
-  const finalNotesEl = $('#finalNotes');
-  const finalSubmitBtn = $('#finalSubmit');
-  const summaryGrid = $('#summaryGrid');
-
-  function renderConfirmation(){
-    // Always show the checklist view first (hide success view)
-    $('#beforeSubmit').style.display = 'block';
-    $('#afterSubmit').style.display = 'none';
-    
-    finalNotesEl.value = state.notes || '';
-    
-    // VALIDATE FIRST - check if everything is complete
-    const validation = validateFinalSubmission();
-    
-    // Build completion checklist
-    const checklist = [
-      {
-        step: 2,
-        icon: '👥',
-        title: `Personas agregadas (${state.people.members.length})`,
-        completed: state.people.members.length > 0
-      },
-      {
-        step: 3,
-        icon: '🎯',
-        title: `Metas seleccionadas (${state.goals.length})`,
-        completed: true, // Optional
-        optional: true
-      },
-      {
-        step: 4,
-        icon: '💰',
-        title: `Información financiera (${state.financials.items.length} ${state.financials.items.length === 1 ? 'item' : 'items'})`,
-        completed: state.financials.items.length > 0
-      }
-    ];
-    
-    // IF VALIDATION FAILED - Show what's missing
-    if (!validation.ok) {
-      summaryGrid.innerHTML = `
-        <div style="grid-column: 1/-1;">
-          <div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 12px; padding: 30px; text-align: center;">
-            <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
-            <h3 style="color: #856404; margin: 0 0 16px;">Información Incompleta</h3>
-            <p style="color: #856404; margin: 0 0 24px; font-size: 15px;">
-              Para enviar tu Discovery, completa los siguientes pasos:
-            </p>
-            
-            <div style="background: white; border-radius: 8px; padding: 20px; text-align: left; max-width: 600px; margin: 0 auto;">
-              ${checklist.map(item => `
-                <div style="display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #f0f0f0; ${!item.completed && !item.optional ? 'cursor: pointer;' : ''}" 
-                     ${!item.completed && !item.optional ? `onclick="window.dispatchEvent(new CustomEvent('goToStep', {detail: ${item.step}}));"` : ''}
-                     ${!item.completed && !item.optional ? `onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'"` : ''}>
-                  <span style="font-size: 32px; margin-right: 16px; min-width: 40px; text-align: center;">
-                    ${item.completed ? '✅' : '⬜'}
-                  </span>
-                  <div style="flex: 1;">
-                    <div style="font-weight: 600; color: ${item.completed ? '#28a745' : '#856404'}; font-size: 16px;">
-                      ${item.title}
-                      ${item.optional ? ' <span style="font-size: 12px; color: #6c757d; font-weight: normal;">(opcional)</span>' : ''}
-                    </div>
-                    ${!item.completed && !item.optional ? '<div style="font-size: 13px; color: #6c757d; margin-top: 4px;">Click para completar →</div>' : ''}
-                    ${item.completed && item.optional ? '<div style="font-size: 12px; color: #6c757d; margin-top: 4px;">Este paso es opcional</div>' : ''}
-                  </div>
-                  ${!item.completed && !item.optional ? '<span style="color: #ffc107; font-size: 24px;">!</span>' : ''}
-                </div>
-              `).join('')}
-            </div>
-            
-            <p style="color: #856404; margin: 24px 0 0; font-size: 13px;">
-              💡 Haz click en los items pendientes para ir a completarlos
-            </p>
-          </div>
-        </div>
-      `;
-      
-      // Disable submit button
-      finalSubmitBtn.disabled = true;
-      finalSubmitBtn.textContent = 'Someter Discovery Form';
-      finalSubmitBtn.style.opacity = '0.5';
-      
-      return;
-    }
-    
-    // IF VALIDATION PASSED - Show all complete and allow submit
-    summaryGrid.innerHTML = `
-      <div style="grid-column: 1/-1;">
-        <div style="background: linear-gradient(135deg, #d4edda, #c3e6cb); border: 2px solid #28a745; border-radius: 12px; padding: 30px; text-align: center; margin-bottom: 20px;">
-          <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
-          <h3 style="color: #155724; margin: 0 0 8px;">¡Todo Completo!</h3>
-          <p style="color: #155724; margin: 0; font-size: 14px;">
-            Has completado todos los pasos requeridos. Presiona "Someter Discovery Form" para finalizar.
-          </p>
-        </div>
-        
-        <div style="background: white; border: 2px solid #e9ecef; border-radius: 12px; padding: 24px;">
-          <h4 style="margin: 0 0 16px; color: #495057;">Resumen de Pasos Completados:</h4>
-          ${checklist.map(item => `
-            <div style="display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #f0f0f0;">
-              <span style="font-size: 32px; margin-right: 16px; min-width: 40px; text-align: center;">✅</span>
-              <div style="flex: 1;">
-                <div style="font-weight: 600; color: #28a745; font-size: 16px;">
-                  ${item.title}
-                  ${item.optional ? ' <span style="font-size: 12px; color: #6c757d; font-weight: normal;">(opcional)</span>' : ''}
-                </div>
-                ${item.optional ? '<div style="font-size: 12px; color: #6c757d; margin-top: 4px;">Este paso es opcional</div>' : ''}
+      <!-- STEP 4: Finanzas -->
+      <section class="step" data-step="4" hidden>
+        <div class="panel">
+          <h2>Snapshot financiero</h2>
+          <p>Selecciona las áreas relevantes y agrega al menos un ítem en cada una.</p>
+          <div class="wizardFlow" id="wizardFlow">
+            <div class="wizardStep active" data-wizard="1">
+              <div class="wizardQ"><b>Pregunta 1 de 9</b><h3>¿Cuál es tu ingreso anual aproximado (hogar)?</h3></div>
+              <div class="wizardOptions">
+                <button class="optionBtn" data-answer="0-50k" type="button">💵 Menos de $50,000</button>
+                <button class="optionBtn" data-answer="50-100k" type="button">💰 $50,000 - $100,000</button>
+                <button class="optionBtn" data-answer="100-200k" type="button">💎 $100,000 - $200,000</button>
+                <button class="optionBtn" data-answer="200k+" type="button">🏆 Más de $200,000</button>
               </div>
             </div>
-          `).join('')}
+            <div class="wizardStep" data-wizard="2">
+              <div class="wizardQ"><b>Pregunta 2 de 9</b><h3>¿Tienes deudas activas?</h3></div>
+              <div class="wizardOptions">
+                <button class="optionBtn" data-answer="yes" type="button">✓ Sí, tengo deudas</button>
+                <button class="optionBtn" data-answer="no" type="button">✗ No, sin deudas</button>
+              </div>
+            </div>
+            <div class="wizardStep" data-wizard="3">
+              <div class="wizardQ"><b>Pregunta 3 de 9</b><h3>¿Tienes inversiones o cuentas de retiro?</h3></div>
+              <div class="wizardOptions">
+                <button class="optionBtn" data-answer="retirement" type="button">🏦 Solo retiro (401k/IRA)</button>
+                <button class="optionBtn" data-answer="both" type="button">📈 Retiro + otras inversiones</button>
+                <button class="optionBtn" data-answer="none" type="button">➖ No tengo inversiones</button>
+              </div>
+            </div>
+            <div class="wizardStep" data-wizard="4">
+              <div class="wizardQ"><b>Pregunta 4 de 9</b><h3>¿Tienes propiedades?</h3></div>
+              <div class="wizardOptions">
+                <button class="optionBtn" data-answer="yes" type="button">🏠 Sí, tengo propiedad(es)</button>
+                <button class="optionBtn" data-answer="no" type="button">✗ No, rento/vivo con familia</button>
+              </div>
+            </div>
+            <div class="wizardStep" data-wizard="5">
+              <div class="wizardQ"><b>Pregunta 5 de 9</b><h3>¿Tienes seguros activos?</h3></div>
+              <div class="wizardOptions">
+                <button class="optionBtn" data-answer="yes" type="button">🛡️ Sí, tengo seguro(s)</button>
+                <button class="optionBtn" data-answer="no" type="button">✗ No tengo seguros</button>
+              </div>
+            </div>
+            <div class="wizardStep" data-wizard="6">
+              <div class="wizardQ"><b>Pregunta 6 de 9</b><h3>¿Tienes un negocio o trust?</h3></div>
+              <div class="wizardOptions">
+                <button class="optionBtn" data-answer="yes" type="button">💼 Sí, tengo negocio/trust</button>
+                <button class="optionBtn" data-answer="no" type="button">✗ No tengo</button>
+              </div>
+            </div>
+            <div class="wizardStep" data-wizard="7">
+              <div class="wizardQ"><b>Pregunta 7 de 9</b><h3>¿Tienes documentos legales importantes?</h3></div>
+              <div class="wizardOptions">
+                <button class="optionBtn" data-answer="yes" type="button">📄 Sí, tengo documentos</button>
+                <button class="optionBtn" data-answer="no" type="button">✗ No tengo / No estoy seguro</button>
+              </div>
+            </div>
+            <div class="wizardStep" data-wizard="8">
+              <div class="wizardQ"><b>Pregunta 8 de 9</b><h3>¿Tienes otros activos importantes?</h3></div>
+              <div class="wizardOptions">
+                <button class="optionBtn" data-answer="yes" type="button">🚗 Sí, tengo otros activos</button>
+                <button class="optionBtn" data-answer="no" type="button">✗ No / Nada significativo</button>
+              </div>
+            </div>
+            <div class="wizardStep" data-wizard="9">
+              <div class="wizardQ"><b>Pregunta 9 de 9</b><h3>¿Tienes ahorro activo?</h3></div>
+              <div class="wizardOptions">
+                <button class="optionBtn" data-answer="yes" type="button">💰 Sí, estoy ahorrando</button>
+                <button class="optionBtn" data-answer="no" type="button">✗ No ahorro actualmente</button>
+              </div>
+            </div>
+          </div>
+          <div id="categoriesDetail" style="display:none;margin-top:24px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <p class="hint" id="categoriesDetailHint" style="margin:0;">Agrega al menos un ítem en cada área seleccionada.</p>
+              <button class="btn ghost" id="editWizardBtn" type="button" style="padding:8px 14px;font-size:13px;">← Editar respuestas</button>
+            </div>
+            <div class="categoriesInline" id="categoriesInline"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 5: Confirmación -->
+      <section class="step" data-step="5" hidden>
+        <div id="beforeSubmit">
+          <div class="panel">
+            <h3>Revisión Final</h3>
+            <div class="summaryGrid" id="summaryGrid"></div>
+          </div>
+          <div class="panel">
+            <label for="finalNotes">¿Algo que quieras que sepamos antes de la sesión? <span class="field"><span class="hint">Opcional</span></span></label>
+            <textarea id="finalNotes" placeholder="Ej: Tengo una situación especial con impuestos…"></textarea>
+          </div>
+          <button class="btn primary large full" id="finalSubmit" type="button">Someter Discovery Form</button>
+        </div>
+
+        <!-- ── PANTALLA DE ÉXITO (cliente) ─────────────────────────────────
+             Esta es la pantalla que VE EL CLIENTE tras el submit.
+             El PDF ya fue generado y descargado para el coach
+             en segundo plano antes de mostrar esta pantalla. -->
+        <div id="afterSubmit" style="display:none;">
+          <div class="confirmationHero">
+            <div class="checkIcon">✓</div>
+            <h2>¡Tu formulario ha sido enviado con éxito!</h2>
+            <p>Tu información de Discovery ha sido recibida correctamente</p>
+          </div>
+          <div class="panel">
+            <div style="background:#d4edda;border-left:4px solid #28a745;padding:20px;border-radius:8px;text-align:center;">
+              <p style="margin:0 0 8px;color:#155724;font-size:16px;">✅ <strong>Discovery completado</strong></p>
+              <p style="margin:0 0 20px;color:#155724;font-size:14px;">
+                <a href="tablero-usuario.html" style="color:#155724;text-decoration:underline;">Volver a tu tablero</a>
+              </p>
+              <button onclick="window.close()" class="btn primary large" style="display:inline-block;">Cerrar</button>
+            </div>
+          </div>
+        </div>
+        <!-- ──────────────────────────────────────────────────────────────── -->
+
+      </section>
+    </div>
+
+    <div class="btns">
+      <button class="btn ghost" type="button" id="backBtn">← Atrás</button>
+      <button class="btn primary" type="button" id="nextBtn">Continuar →</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="globalToast"></div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+  PDF GENERATION MODULE
+  ═══════════════════════════════════════════════════════════════════════════
+
+  CÓMO FUNCIONA (para el developer):
+  ────────────────────────────────────
+  1. El cliente llena el formulario y hace click en "Someter Discovery Form"
+  2. Se llama a generateCoachPDF(state) con todo el estado del form
+  3. jsPDF construye el PDF en memoria (sin llamadas a servidor)
+  4. El PDF se descarga automáticamente al computador del coach (o quien tenga el browser)
+
+  INTEGRACIÓN CON BACKEND (cuando esté listo):
+  ─────────────────────────────────────────────
+  Reemplaza la línea:
+    generateCoachPDF(state);
+  por:
+    await fetch('/api/submit-discovery', { method:'POST', body: JSON.stringify(payload) });
+  
+  El backend recibirá el JSON y puede generar el PDF con ReportLab (Python)
+  y enviarlo al email del coach automáticamente.
+
+  PARA ENVIAR POR EMAIL HOY SIN BACKEND:
+  ────────────────────────────────────────
+  Usa EmailJS (emailjs.com) — free tier 200 emails/mes.
+  El PDF se adjunta como base64 en el email directamente desde el browser.
+  Ver comentario en la función generateCoachPDF() más abajo.
+═══════════════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+'use strict';
+
+// ── HELPERS ────────────────────────────────────────────────────────────────
+const $ = (sel,root=document) => root.querySelector(sel);
+const $$ = (sel,root=document) => Array.from(root.querySelectorAll(sel));
+const uid = (p="id") => p+"_"+Math.random().toString(16).slice(2,10);
+function escapeHtml(s){ return String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;"); }
+function fmtUSD(v){ return "$"+Number(v||0).toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0}); }
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+const state = {
+  step:1, startTime:Date.now(),
+  userName:'Juan Pérez', userEmail:'juan.perez@email.com',
+  people:{ template:'', householdRole:'', members:[] },
+  goals:[],
+  financials:{
+    incomeRange:"", hasDebts:null, hasInvestments:null, hasRealEstate:null,
+    hasInsurance:null, hasBusiness:null, hasLegal:null, hasOtherAssets:null, hasSavings:null,
+    categoriesSelected:[], items:[]
+  },
+  wizardStep:1, wizardComplete:false, notes:""
+};
+
+// URL params
+function getUserInfoFromURL(){
+  const p = new URLSearchParams(window.location.search);
+  if(p.get('name'))  state.userName  = p.get('name');
+  if(p.get('email')) state.userEmail = p.get('email');
+  $('#headerUserName').textContent  = state.userName;
+  $('#headerUserEmail').textContent = state.userEmail;
+}
+
+// localStorage
+function loadDraft(){
+  try{
+    const saved = localStorage.getItem('discovery_draft_v3');
+    if(saved){ Object.assign(state, JSON.parse(saved)); showToast('✓ Progreso recuperado'); }
+  }catch(e){}
+}
+let saveTimer;
+function debouncedSave(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{
+    localStorage.setItem('discovery_draft_v3', JSON.stringify(state));
+    const ind = $('#autoSave'); ind.classList.add('show');
+    setTimeout(()=>ind.classList.remove('show'),1500);
+  },2000);
+}
+
+function showToast(msg){
+  const t = document.createElement('div');
+  t.className='toast'; t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.classList.add('show'),10);
+  setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=>t.remove(),300); },2500);
+}
+
+// ── NAVIGATION ─────────────────────────────────────────────────────────────
+const backBtn = $('#backBtn');
+const nextBtn = $('#nextBtn');
+
+function isStep1Complete(){ return true; }
+function isStep2Complete(){ return state.people.members.length>0; }
+function isStep3Complete(){ return state.goals.length>0; }
+function isStep4Complete(){ return state.financials.items.length>0; }
+function isStepComplete(n){ return [null,isStep1Complete,isStep2Complete,isStep3Complete,isStep4Complete][n]?.()??false; }
+
+function setStep(step){
+  state.step=step;
+  $$('.step').forEach(s=>s.hidden=s.dataset.step!==String(step));
+  $$('.stepCircle').forEach((c,i)=>{
+    const n=i+1; c.classList.remove('completed','active');
+    const el=c.querySelector('.stepNumber');
+    if(n===step){ c.classList.add('active'); el.textContent=n; }
+    else if(isStepComplete(n)){ c.classList.add('completed'); el.textContent='✓'; }
+    else{ el.textContent=n; }
+  });
+  const elapsed=Math.floor((Date.now()-state.startTime)/60000);
+  $('#progressText').textContent=`Paso ${step} de 5 · ~${Math.max(1,10-elapsed)} min restantes`;
+  backBtn.hidden=step===1; nextBtn.hidden=step===5;
+  if(step===2) renderPeople();
+  if(step===3) renderGoals();
+  if(step===4) renderWizard();
+  if(step===5) renderConfirmation();
+  nextBtn.disabled=false;
+  debouncedSave();
+}
+
+backBtn.addEventListener('click',()=>{ if(state.step>1) setStep(state.step-1); });
+nextBtn.addEventListener('click',()=>{ if(state.step<5) setStep(state.step+1); });
+$$('.stepCircle').forEach(c=>c.addEventListener('click',()=>setStep(parseInt(c.dataset.goto))));
+
+// ── STEP 2: PEOPLE ─────────────────────────────────────────────────────────
+const TEMPLATES = {
+  single:  { members:[{id:"p1",role:"primary",firstName:"",lastName:"",age:null,gender:""}], householdRole:"primary_provider" },
+  couple:  { members:[{id:"p1",role:"primary",firstName:"",lastName:"",age:null,gender:""},{id:"p2",role:"additional",firstName:"",lastName:"",age:null,gender:"",relationshipToPrimary:"spouse"}], householdRole:"shared" },
+  family:  { members:[{id:"p1",role:"primary",firstName:"",lastName:"",age:null,gender:""},{id:"p2",role:"additional",firstName:"",lastName:"",age:null,gender:"",relationshipToPrimary:"spouse"},{id:"p3",role:"additional",firstName:"",lastName:"",age:null,gender:"",relationshipToPrimary:"child"}], householdRole:"shared" }
+};
+$$('.templateBtn').forEach(btn=>btn.addEventListener('click',()=>{
+  const tpl=btn.dataset.template;
+  $$('.templateBtn').forEach(b=>b.classList.remove('selected')); btn.classList.add('selected');
+  if(tpl!=='custom'){ state.people=JSON.parse(JSON.stringify(TEMPLATES[tpl])); state.people.template=tpl; }
+  else state.people.template='custom';
+  renderPeople(); debouncedSave();
+}));
+const householdRoleEl=$('#householdRole');
+householdRoleEl.addEventListener('change',()=>{ state.people.householdRole=householdRoleEl.value; debouncedSave(); });
+$('#addPersonBtn').addEventListener('click',()=>{
+  const n=state.people.members.length+1;
+  state.people.members.push({id:"p"+n,role:"additional",firstName:"",lastName:"",age:null,gender:"",relationshipToPrimary:""});
+  renderPeople(); debouncedSave();
+});
+
+function renderPeople(){
+  const wrap=$('#peopleWrap'); wrap.innerHTML='';
+  state.people.members.forEach((p,idx)=>{
+    const isPrimary=idx===0;
+    const card=document.createElement('div'); card.className='personCard';
+    card.innerHTML=`
+      <div class="personHead">
+        <div class="tag">${isPrimary?'Persona principal':'Persona adicional'}</div>
+        ${!isPrimary?`<button class="xbtn" type="button">×</button>`:'<span class="hint">Obligatorio</span>'}
+      </div>
+      <div class="row">
+        <div class="field"><label>Nombre *</label><input type="text" data-k="firstName" value="${escapeHtml(p.firstName||'')}" placeholder="Nombre"/></div>
+        <div class="field"><label>Apellido *</label><input type="text" data-k="lastName" value="${escapeHtml(p.lastName||'')}" placeholder="Apellido"/></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Edad *</label><input type="number" min="0" data-k="age" value="${p.age??''}"/></div>
+        <div class="field"><label>Sexo *</label>
+          <select data-k="gender">
+            <option value="">Selecciona…</option>
+            <option value="male" ${p.gender==='male'?'selected':''}>Masculino</option>
+            <option value="female" ${p.gender==='female'?'selected':''}>Femenino</option>
+            <option value="prefer_not_to_say" ${p.gender==='prefer_not_to_say'?'selected':''}>Prefiero no decir</option>
+          </select>
         </div>
       </div>
+      ${!isPrimary?`<div class="field"><label>Relación *</label>
+        <select data-k="relationshipToPrimary">
+          <option value="">Selecciona…</option>
+          <option value="spouse" ${p.relationshipToPrimary==='spouse'?'selected':''}>Cónyuge</option>
+          <option value="partner" ${p.relationshipToPrimary==='partner'?'selected':''}>Pareja</option>
+          <option value="child" ${p.relationshipToPrimary==='child'?'selected':''}>Hijo/a</option>
+          <option value="family" ${p.relationshipToPrimary==='family'?'selected':''}>Familiar</option>
+          <option value="other" ${p.relationshipToPrimary==='other'?'selected':''}>Otro</option>
+        </select></div>`:''}
     `;
-    
-    // Enable submit button
-    finalSubmitBtn.disabled = false;
-    finalSubmitBtn.textContent = 'Someter Discovery Form';
-    finalSubmitBtn.style.opacity = '1';
-  }
+    card.addEventListener('input',e=>{
+      const key=e.target.getAttribute('data-k'); if(!key) return;
+      const person=state.people.members.find(x=>x.id===p.id); if(!person) return;
+      person[key]=key==='age'?(Number.isFinite(Number(e.target.value))?Math.trunc(Number(e.target.value)):null):e.target.value;
+      debouncedSave();
+    });
+    if(!isPrimary){ const xb=card.querySelector('.xbtn'); if(xb) xb.addEventListener('click',()=>{ state.people.members=state.people.members.filter(x=>x.id!==p.id); renderPeople(); debouncedSave(); }); }
+    wrap.appendChild(card);
+  });
+  householdRoleEl.value=state.people.householdRole||'';
+  if(state.people.template){ const tb=$(`.templateBtn[data-template="${state.people.template}"]`); if(tb){ $$('.templateBtn').forEach(b=>b.classList.remove('selected')); tb.classList.add('selected'); } }
+}
 
-  finalNotesEl.addEventListener('input', () => {
-    state.notes = finalNotesEl.value;
+// ── STEP 3: GOALS ──────────────────────────────────────────────────────────
+function renderGoals(){
+  $$('.goalCard').forEach(c=>c.classList.toggle('selected',state.goals.includes(c.dataset.goal)));
+}
+$$('.goalCard').forEach(card=>{
+  const nc=card.cloneNode(true); card.parentNode.replaceChild(nc,card);
+  nc.addEventListener('click',()=>{
+    const g=nc.dataset.goal;
+    if(nc.classList.toggle('selected')) state.goals.push(g);
+    else state.goals=state.goals.filter(x=>x!==g);
     debouncedSave();
   });
+});
 
-  // ===== FINAL VALIDATION =====
-  function validateFinalSubmission() {
-    const missingItems = [];
-    
-    // Email comes from URL params, no need to validate
-    
-    // Check people (Step 2) - at least one person
-    if (state.people.members.length === 0) {
-      missingItems.push({
-        step: 2,
-        icon: '👥',
-        title: 'Personas sin agregar',
-        description: 'Agrega al menos una persona (tú u otros miembros del hogar)'
-      });
-    }
-    
-    // Goals (Step 3) - optional, no validation needed
-    
-    // Check financials (Step 4) - must have at least ONE item with data
-    const hasFinancialData = state.financials.items.length > 0;
-    
-    if (!hasFinancialData) {
-      missingItems.push({
-        step: 4,
-        icon: '💰',
-        title: 'Información financiera incompleta',
-        description: 'Debes ingresar al menos un dato financiero (ingreso, gasto, activo, etc.)'
-      });
-    }
-    
-    if (missingItems.length > 0) {
-      return {
-        ok: false,
-        missingItems: missingItems,
-        message: missingItems.map(item => item.title).join('. ')
+// ── STEP 4: WIZARD + CATEGORIES ────────────────────────────────────────────
+const CAT_SUGGESTIONS = {
+  '0-50k':    ['income','expenses','banking','liabilities','other_assets'],
+  '50-100k':  ['income','expenses','savings','banking','liabilities','investments_retirement','other_assets'],
+  '100-200k': ['income','expenses','savings','banking','investments_retirement','investments_nonretirement','real_estate','insurance','other_assets'],
+  '200k+':    ['income','expenses','savings','banking','investments_retirement','investments_nonretirement','real_estate','insurance','business_trust','legal','other_assets']
+};
+const FIN_CATS=[
+  {key:"income",        label:"Ingresos",                hint:"Salarios, negocios, rentas"},
+  {key:"expenses",      label:"Gastos mensuales",        hint:"Desglose de gastos"},
+  {key:"savings",       label:"Ahorro",                  hint:"Ahorro activo mensual"},
+  {key:"liabilities",   label:"Deudas",                  hint:"Tarjetas, préstamos, hipoteca"},
+  {key:"real_estate",   label:"Bienes raíces",           hint:"Propiedades que posees"},
+  {key:"investments_retirement",   label:"Inversiones de retiro",  hint:"401k, IRA, pensión"},
+  {key:"investments_nonretirement",label:"Otras inversiones",      hint:"Acciones, crypto, fondos"},
+  {key:"banking",       label:"Cuentas bancarias",       hint:"Checking, savings, cash"},
+  {key:"insurance",     label:"Seguros",                 hint:"Vida, salud, auto, hogar"},
+  {key:"business_trust",label:"Negocios/Trust",          hint:"Empresas, LLC, trusts"},
+  {key:"legal",         label:"Legal",                   hint:"Testamento, poderes"},
+  {key:"other_assets",  label:"Otros activos",           hint:"Autos, colecciones, etc."},
+];
+const EXPENSES_TAX={"Alimentación":["Supermercado","Comidas fuera","Pedido a domicilio"],"Casa":["Alquiler","Servicios básicos","Mantenimiento"],"Impuestos":["Seguro social","Propiedad","Federales"],"Transportación":["Gasolina","Mantenimiento","Transporte público"],"Seguros":["Salud","Auto","Vida"],"Dependientes":["Cuidado de niños","Educación"],"Deuda":["Tarjetas","Préstamos"],"Entretenimiento":["Cine","Streaming"],"Telecomunicaciones":["Teléfono","Internet"]};
+const SAVINGS_TAX={"Reserva de emergencia":["Aporte mensual"],"Retiro":["401(k)","IRA/Roth"],"Inversión":["Brokerage","ETF","Cripto"]};
+const INCOME_TYPES=["Salario","Pago por hora","Bono","Comisión","Negocio propio","Dividendos","Renta inmueble","Pensión","Seguro Social","Otro"];
+const DEBT_TYPES=["Tarjeta de crédito","Préstamo de auto","Préstamo estudiantil","Hipoteca","HELOC","Préstamo personal","Otro"];
+const BANKING_TYPES=["Checking","Savings","Money Market","CD","Efectivo","Otro"];
+const RETIREMENT_TYPES=["401(k)","403(b)","IRA Tradicional","Roth IRA","SEP IRA","Pensión","Anualidad","Otro"];
+const INVESTMENT_TYPES=["Brokerage account","Acciones","ETF/Fondos mutuos","Bonos","Criptomonedas","Otro"];
+const REAL_ESTATE_TYPES=["Casa principal","Casa vacacional","Propiedad de renta","Apartamento","Terreno","Otro"];
+const INSURANCE_TYPES=["Vida - Term","Vida - Whole","Salud","Auto","Hogar","Disability","Umbrella","Otro"];
+const BUSINESS_TYPES=["Negocio propio","LLC","S-Corp","C-Corp","Partnership","Trust","Otro"];
+const LEGAL_TYPES=["Testamento","Living Trust","Power of Attorney","Healthcare Directive","Beneficiarios","Otro"];
+const OTHER_ASSETS_TYPES=["Vehículo","Bote","RV","Joyas","Arte","Coleccionables","Otro"];
+
+function getTypeOpts(k){ return({income:INCOME_TYPES,liabilities:DEBT_TYPES,banking:BANKING_TYPES,investments_retirement:RETIREMENT_TYPES,investments_nonretirement:INVESTMENT_TYPES,real_estate:REAL_ESTATE_TYPES,insurance:INSURANCE_TYPES,business_trust:BUSINESS_TYPES,legal:LEGAL_TYPES,other_assets:OTHER_ASSETS_TYPES})[k]||["Otro"]; }
+function ownerOpts(cur){ let h=`<option value="">Dueño...</option>`; for(const p of state.people.members){ const nm=([p.firstName,p.lastName].filter(Boolean).join(" ").trim()||p.id); h+=`<option value="${p.id}" ${cur===p.id?"selected":""}>${escapeHtml(nm)}</option>`; } return h+`<option value="household" ${cur==="household"?"selected":""}>Compartido</option>`; }
+function pName(pid){ if(pid==="household") return "Hogar"; const m=state.people.members.find(p=>p.id===pid); return m?`${m.firstName||""} ${m.lastName||""}`.trim():pid; }
+
+function renderWizard(){
+  const wf=$('#wizardFlow'), cd=$('#categoriesDetail');
+  if(state.wizardComplete){ wf.style.display='none'; cd.style.display='block'; renderCategoriesDetail(); }
+  else{ wf.style.display='block'; cd.style.display='none'; $$('.wizardStep').forEach((s,i)=>s.classList.toggle('active',i+1===state.wizardStep)); }
+}
+
+$$('.wizardStep').forEach((step,si)=>{
+  const sn=si+1;
+  step.querySelectorAll('.optionBtn').forEach(btn=>btn.addEventListener('click',()=>{
+    const a=btn.dataset.answer;
+    const f=state.financials;
+    if(sn===1){ f.incomeRange=a; f.categoriesSelected=[...CAT_SUGGESTIONS[a]||[]]; }
+    if(sn===2){ f.hasDebts=a==='yes'; if(a==='yes'&&!f.categoriesSelected.includes('liabilities')) f.categoriesSelected.push('liabilities'); }
+    if(sn===3){ f.hasInvestments=a; if(a==='retirement'&&!f.categoriesSelected.includes('investments_retirement')) f.categoriesSelected.push('investments_retirement'); if(a==='both'){ ['investments_retirement','investments_nonretirement'].forEach(k=>{if(!f.categoriesSelected.includes(k))f.categoriesSelected.push(k);}); } }
+    if(sn===4){ f.hasRealEstate=a==='yes'; if(a==='yes'&&!f.categoriesSelected.includes('real_estate')) f.categoriesSelected.push('real_estate'); }
+    if(sn===5){ f.hasInsurance=a==='yes'; if(a==='yes'&&!f.categoriesSelected.includes('insurance')) f.categoriesSelected.push('insurance'); }
+    if(sn===6){ f.hasBusiness=a==='yes'; if(a==='yes'&&!f.categoriesSelected.includes('business_trust')) f.categoriesSelected.push('business_trust'); }
+    if(sn===7){ f.hasLegal=a==='yes'; if(a==='yes'&&!f.categoriesSelected.includes('legal')) f.categoriesSelected.push('legal'); }
+    if(sn===8){ f.hasOtherAssets=a==='yes'; if(a==='yes'&&!f.categoriesSelected.includes('other_assets')) f.categoriesSelected.push('other_assets'); }
+    if(sn===9){ f.hasSavings=a==='yes'; if(a==='yes'&&!f.categoriesSelected.includes('savings')) f.categoriesSelected.push('savings'); }
+    debouncedSave();
+    if(sn<9){ state.wizardStep=sn+1; renderWizard(); }
+    else{ state.wizardComplete=true; state.wizardStep=1; renderWizard(); }
+  }));
+});
+
+$('#editWizardBtn').addEventListener('click',()=>{
+  state.wizardStep=1; state.wizardComplete=false;
+  Object.assign(state.financials,{incomeRange:"",hasDebts:null,hasInvestments:null,hasRealEstate:null,hasInsurance:null,hasBusiness:null,hasLegal:null,hasOtherAssets:null,hasSavings:null,categoriesSelected:[],items:[]});
+  renderWizard(); debouncedSave();
+});
+
+function renderCategoriesDetail(){
+  const cont=$('#categoriesInline'); cont.innerHTML='';
+  state.financials.categoriesSelected.forEach(catKey=>{
+    const meta=FIN_CATS.find(c=>c.key===catKey); if(!meta) return;
+    const items=state.financials.items.filter(it=>it.category===catKey);
+    const isES=catKey==='expenses'||catKey==='savings';
+    const multi=state.people.members.length>1;
+    const card=document.createElement('div'); card.className='catInlineCard checked'; card.dataset.cat=catKey;
+    card.innerHTML=`
+      <div class="catHeader">
+        <div class="catInfo">
+          <input type="checkbox" data-cc checked/>
+          <div class="catLabel"><b>${escapeHtml(meta.label)}</b><span>${escapeHtml(meta.hint)}</span></div>
+        </div>
+        <div class="catExpand">▾</div>
+      </div>
+      <div class="catBody">
+        ${isES ? renderExpForm(catKey,multi) : renderStdForm(catKey,multi)}
+        <div class="itemsList" data-items></div>
+      </div>
+    `;
+    card.querySelector('[data-cc]').addEventListener('change',e=>{ e.stopPropagation(); card.classList.toggle('checked',e.target.checked); });
+    card.querySelector('.catHeader').addEventListener('click',e=>{ if(e.target.tagName==='INPUT') return; card.classList.toggle('open'); });
+    const il=card.querySelector('[data-items]');
+    isES ? setupESHandlers(card,catKey,il) : setupStdHandlers(card,catKey,il);
+    renderItemsList(catKey,il);
+    cont.appendChild(card);
+    if(!items.length) card.classList.add('open');
+  });
+}
+
+function renderStdForm(k,multi){
+  const opts=getTypeOpts(k).map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+  if(!multi) return `<div class="standardAddRow"><select data-ts><option value="">Tipo...</option>${opts}</select><input type="text" placeholder="Alias (opcional)" data-ai/><input type="number" min="0" placeholder="$ USD" data-am/><button type="button" data-ab>+</button></div>`;
+  return `<div class="standardAddRowMulti"><select data-ts><option value="">Tipo...</option>${opts}</select><input type="text" placeholder="Alias" data-ai/><input type="number" min="0" placeholder="$ USD" data-am/><select data-os>${ownerOpts('')}</select><button type="button" data-ab>+</button></div>`;
+}
+function renderExpForm(k,multi){
+  const tax=k==='expenses'?EXPENSES_TAX:SAVINGS_TAX;
+  const opts=Object.entries(tax).flatMap(([cat,subs])=>subs.map(sub=>`<option value='${JSON.stringify({category:cat,subcategory:sub})}'>${escapeHtml(cat+' – '+sub)}</option>`)).join('');
+  if(!multi) return `<div class="expenseAddRow"><select data-cs><option value="">Categoría...</option>${opts}</select><input type="number" min="0" placeholder="$/mes" data-am/><button type="button" data-ab>+</button></div>`;
+  return `<div class="expenseAddRowMulti"><select data-cs><option value="">Categoría...</option>${opts}</select><input type="number" min="0" placeholder="$/mes" data-am/><select data-os>${ownerOpts('')}</select><button type="button" data-ab>+</button></div>`;
+}
+
+function setupStdHandlers(card,catKey,il){
+  const ts=card.querySelector('[data-ts]'), ai=card.querySelector('[data-ai]'), am=card.querySelector('[data-am]'), os=card.querySelector('[data-os]'), ab=card.querySelector('[data-ab]');
+  function add(){
+    const type=ts?.value?.trim(), alias=ai?.value?.trim(), amt=Number(am?.value);
+    if(!type||!Number.isFinite(amt)||amt<0) return;
+    const owner=os?os.value||'household':(state.people.members[0]?.id||'household');
+    state.financials.items.push({id:uid(catKey),category:catKey,type,alias:alias||null,name:alias||type,value:amt,owner});
+    ts.value=''; if(ai) ai.value=''; am.value=''; if(os) os.value='';
+    renderItemsList(catKey,il); debouncedSave();
+  }
+  ab.addEventListener('click',add); am.addEventListener('keypress',e=>e.key==='Enter'&&add());
+}
+function setupESHandlers(card,catKey,il){
+  const cs=card.querySelector('[data-cs]'), am=card.querySelector('[data-am]'), os=card.querySelector('[data-os]'), ab=card.querySelector('[data-ab]');
+  function add(){
+    const sv=cs?.value, amt=Number(am?.value);
+    if(!sv||!Number.isFinite(amt)||amt<0) return;
+    const {category,subcategory}=JSON.parse(sv);
+    const owner=os?os.value||'household':(state.people.members[0]?.id||'household');
+    state.financials.items.push({id:uid(catKey),category:catKey,expenseCategory:category,subcategory,name:`${category} – ${subcategory}`,value:amt,owner});
+    cs.value=''; am.value=''; if(os) os.value='';
+    renderItemsList(catKey,il); debouncedSave();
+  }
+  ab.addEventListener('click',add); am.addEventListener('keypress',e=>e.key==='Enter'&&add());
+}
+function renderItemsList(catKey,container){
+  const items=state.financials.items.filter(it=>it.category===catKey);
+  container.innerHTML=items.map(it=>`
+    <div class="itemChip" data-id="${it.id}">
+      <div class="chipInfo">
+        <div class="chipName">${escapeHtml(it.name)}</div>
+        <div class="chipDetails">${fmtUSD(it.value)} · ${escapeHtml(pName(it.owner))}</div>
+      </div>
+      <button class="chipRemove" type="button">×</button>
+    </div>
+  `).join('');
+  container.querySelectorAll('.chipRemove').forEach(btn=>btn.addEventListener('click',e=>{
+    const id=e.target.closest('.itemChip').dataset.id;
+    state.financials.items=state.financials.items.filter(it=>it.id!==id);
+    renderItemsList(catKey,container); debouncedSave();
+  }));
+}
+
+// ── STEP 5: CONFIRMATION ───────────────────────────────────────────────────
+function validateFinal(){
+  const missing=[];
+  if(!state.people.members.length) missing.push({step:2,title:'Personas sin agregar'});
+  if(!state.financials.items.length) missing.push({step:4,title:'Información financiera incompleta'});
+  return missing.length===0 ? {ok:true} : {ok:false,missing};
+}
+
+function renderConfirmation(){
+  $('#beforeSubmit').style.display='block';
+  $('#afterSubmit').style.display='none';
+  $('#finalNotes').value=state.notes||'';
+  const v=validateFinal();
+  const sg=$('#summaryGrid');
+  const checklist=[
+    {step:2,icon:'👥',title:`Personas (${state.people.members.length})`,ok:state.people.members.length>0},
+    {step:3,icon:'🎯',title:`Metas (${state.goals.length})`,ok:true,optional:true},
+    {step:4,icon:'💰',title:`Ítems financieros (${state.financials.items.length})`,ok:state.financials.items.length>0},
+  ];
+  if(!v.ok){
+    sg.innerHTML=`<div style="grid-column:1/-1;background:#fff3cd;border:2px solid #ffc107;border-radius:12px;padding:24px;text-align:center;">
+      <div style="font-size:40px;margin-bottom:12px;">⚠️</div>
+      <h3 style="color:#856404;margin:0 0 12px;">Información Incompleta</h3>
+      ${checklist.map(c=>`<div style="display:flex;align-items:center;gap:12px;padding:10px;background:#fff;border-radius:8px;margin:6px 0;cursor:pointer;" onclick="window.dispatchEvent(new CustomEvent('goToStep',{detail:${c.step}}))">
+        <span style="font-size:24px;">${c.ok?'✅':'⬜'}</span>
+        <span style="font-weight:600;color:${c.ok?'#28a745':'#856404'}">${c.title}${c.optional?' (opcional)':''}</span>
+        ${!c.ok&&!c.optional?'<span style="margin-left:auto;color:#ffc107;font-weight:bold;">→ Completar</span>':''}
+      </div>`).join('')}
+    </div>`;
+    $('#finalSubmit').disabled=true; $('#finalSubmit').style.opacity='.5';
+  } else {
+    sg.innerHTML=`<div style="grid-column:1/-1;background:linear-gradient(135deg,#d4edda,#c3e6cb);border:2px solid #28a745;border-radius:12px;padding:24px;text-align:center;">
+      <div style="font-size:40px;margin-bottom:8px;">✅</div>
+      <h3 style="color:#155724;margin:0 0 6px;">¡Todo Completo!</h3>
+      <p style="color:#155724;margin:0;font-size:14px;">Presiona "Someter" para finalizar. El coach recibirá el reporte PDF automáticamente.</p>
+    </div>
+    ${checklist.map(c=>`<div style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #e9ecef;border-radius:8px;background:#fff;">
+      <span>✅</span><span style="font-weight:600;color:#28a745;">${c.title}${c.optional?' (opcional)':''}</span>
+    </div>`).join('')}`;
+    $('#finalSubmit').disabled=false; $('#finalSubmit').style.opacity='1';
+  }
+}
+$('#finalNotes').addEventListener('input',()=>{ state.notes=$('#finalNotes').value; debouncedSave(); });
+window.addEventListener('goToStep',e=>setStep(e.detail));
+
+// ── SUBMIT → GENERA PDF ────────────────────────────────────────────────────
+$('#finalSubmit').addEventListener('click', async ()=>{
+  const v=validateFinal();
+  if(!v.ok){ showToast('⚠️ Completa la información faltante'); setStep(v.missing[0].step); return; }
+
+  // ── Mostrar loader mientras genera el PDF
+  const loader=document.createElement('div');
+  loader.className='pdfGenerating';
+  loader.innerHTML=`
+    <div class="spinner"></div>
+    <p>Generando archivos del coach...</p>
+    <small id="loaderStatus">Preparando datos...</small>
+  `;
+  document.body.appendChild(loader);
+
+  // Pequeño delay para que el browser pinte el loader
+  await new Promise(r=>setTimeout(r,150));
+
+  try{
+    // ══════════════════════════════════════════════════════════════════════
+    // PASO 1: GENERA EL PDF
+    // ══════════════════════════════════════════════════════════════════════
+    document.getElementById('loaderStatus').textContent = '📄 Generando PDF...';
+    await new Promise(r=>setTimeout(r,80));
+    generateCoachPDF(state);
+
+    // ══════════════════════════════════════════════════════════════════════
+    // PASO 2: GENERA EL EXCEL
+    // ══════════════════════════════════════════════════════════════════════
+    await new Promise(r=>setTimeout(r,400)); // pequeña pausa entre descargas
+    document.getElementById('loaderStatus').textContent = '📊 Generando Excel...';
+    await new Promise(r=>setTimeout(r,80));
+    generateCoachExcel(state);
+
+    // Limpiar localStorage
+    localStorage.removeItem('discovery_draft_v3');
+
+    // Mostrar éxito al cliente
+    loader.remove();
+    $('#beforeSubmit').style.display='none';
+    $('#afterSubmit').style.display='block';
+    $('.btns').style.display='none';
+    window.scrollTo({top:0,behavior:'smooth'});
+    showToast('✅ PDF + Excel generados y descargados');
+
+  } catch(err){
+    loader.remove();
+    console.error('Error generando PDF:', err);
+    showToast('⚠️ Error generando el PDF. Revisa la consola.');
+  }
+});
+
+
+// ════════════════════════════════════════════════════════════════════════════
+//  generateCoachPDF(state)
+//  ─────────────────────────────────────────────────────────────────────────
+//  Genera el reporte interno del coach usando los datos del estado del form.
+//  Se ejecuta 100% en el browser con jsPDF + AutoTable.
+//  El PDF se descarga automáticamente al computador del usuario.
+//
+//  PARA INTEGRAR CON EMAIL (sin backend):
+//    const pdfBase64 = doc.output('datauristring');
+//    emailjs.send('SERVICE_ID','TEMPLATE_ID',{ pdf: pdfBase64, ... });
+//
+//  PARA ENVIAR A BACKEND:
+//    const pdfBlob = doc.output('blob');
+//    const fd = new FormData(); fd.append('pdf', pdfBlob, 'reporte.pdf');
+//    await fetch('/api/coach-report', { method:'POST', body: fd });
+// ════════════════════════════════════════════════════════════════════════════
+function generateCoachPDF(state){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'letter' });
+
+  // ── Color palette
+  const C = {
+    primary:   [57, 86, 232],
+    secondary: [116, 89, 217],
+    dark:      [15, 23, 42],
+    muted:     [100, 116, 139],
+    light:     [246, 247, 255],
+    ok:        [22, 163, 74],
+    warn:      [245, 158, 11],
+    bad:       [220, 38, 38],
+    white:     [255, 255, 255],
+    border:    [229, 231, 235],
+    section:   [238, 241, 253],
+  };
+
+  const W    = 215.9;  // letter width mm
+  const MARG = 14;
+  const CW   = W - MARG * 2;   // content width
+  let   Y    = 0;               // current Y position
+
+  const members  = state.people.members || [];
+  const items    = state.financials.items || [];
+
+  // ── Computed totals
+  const sum = cat => items.filter(i=>i.category===cat).reduce((a,b)=>a+b.value,0);
+  const totalIncome     = sum('income');
+  const totalExpenses   = sum('expenses');
+  const totalSavings    = sum('savings');
+  const totalBanking    = sum('banking');
+  const totalRetInv     = sum('investments_retirement');
+  const totalNonRet     = sum('investments_nonretirement');
+  const totalDebt       = sum('liabilities');
+  const totalAssets     = totalBanking + totalRetInv + totalNonRet;
+  const netWorth        = totalAssets - totalDebt;
+  const savingsRate     = totalIncome ? (totalSavings / (totalIncome/12)) * 100 : 0;
+  const dti             = totalIncome ? (totalDebt / totalIncome) * 100 : 0;
+
+  // Labels
+  const GOAL_LBL = {casa:"Comprar casa",retiro:"Retiro cómodo",emergencia:"Fondo emergencia",educacion:"Educacion hijos",viaje:"Viaje/Vacaciones",deudas:"Pagar deudas",negocio:"Iniciar negocio",auto:"Comprar auto",inversiones:"Crecer dinero",independencia:"Independencia financiera",herencia:"Dejar herencia",otro:"Otra meta"};
+  const CAT_LBL  = {income:"Ingresos",expenses:"Gastos Mensuales",savings:"Ahorro",banking:"Cuentas Bancarias",investments_retirement:"Inv. Retiro",investments_nonretirement:"Otras Inversiones",liabilities:"Deudas",insurance:"Seguros",real_estate:"Bienes Raices",business_trust:"Negocios/Trust",legal:"Legal",other_assets:"Otros Activos"};
+  const REL_LBL  = {spouse:"Conyuge",partner:"Pareja",child:"Hijo/a",family:"Familiar",other:"Otro"};
+  const fUSD = v => "$"+Number(v||0).toLocaleString('en-US');
+  const pn   = pid => { if(pid==='household') return 'Hogar'; const m=members.find(p=>p.id===pid); return m?`${m.firstName||''} ${m.lastName||''}`.trim():pid; };
+
+  // ── Helpers
+  function setFont(bold, size, colorArr){
+    doc.setFont('helvetica', bold ? 'bold' : 'normal');
+    doc.setFontSize(size);
+    doc.setTextColor(...(colorArr||C.dark));
+  }
+  function fillRect(x,y,w,h,color,radius=0){
+    doc.setFillColor(...color);
+    if(radius>0) doc.roundedRect(x,y,w,h,radius,radius,'F');
+    else doc.rect(x,y,w,h,'F');
+  }
+  function needsPage(h=10){ if(Y+h>270){ doc.addPage(); Y=MARG; } }
+
+  // ══════════════════════════════════
+  //  PAGE 1 — HEADER
+  // ══════════════════════════════════
+  // Dark header bar
+  fillRect(0, 0, W, 36, C.dark);
+  setFont(true, 18, C.white);
+  doc.text('REPORTE DE DISCOVERY', MARG, 14);
+  setFont(false, 8, [148,163,184]);
+  doc.text('USO INTERNO · CONFIDENCIAL', W - MARG, 14, {align:'right'});
+
+  // Sub bar
+  fillRect(0, 36, W, 14, [30,41,59]);
+  setFont(false, 9, [148,163,184]);
+  doc.text(`Cliente: `, MARG, 44);
+  setFont(true, 9, C.white);
+  doc.text(state.userName||'—', MARG+14, 44);
+  setFont(false, 9, [148,163,184]);
+  doc.text(`   ${state.userEmail||''}`, MARG+14, 44);
+  const now = new Date().toLocaleDateString('es',{day:'2-digit',month:'2-digit',year:'numeric'});
+  doc.text(`Generado: ${now}`, W - MARG, 44, {align:'right'});
+
+  Y = 58;
+
+  // ══════════════════════════════════
+  //  SECTION BANNER helper
+  // ══════════════════════════════════
+  function sectionBanner(label){
+    needsPage(12);
+    fillRect(MARG, Y, CW, 9, C.primary, 3);
+    setFont(true, 9, C.white);
+    doc.text(label, MARG+4, Y+6);
+    Y += 13;
+  }
+
+  // ══════════════════════════════════
+  //  KPI GRID
+  // ══════════════════════════════════
+  sectionBanner('RESUMEN EJECUTIVO');
+
+  const kpis = [
+    ['Ingreso Anual', fUSD(totalIncome)],
+    ['Gasto Mensual', fUSD(totalExpenses)],
+    ['Ahorro Mensual', fUSD(totalSavings)],
+    ['Liquidez (Banco)', fUSD(totalBanking)],
+    ['Inv. Retiro', fUSD(totalRetInv)],
+    ['Otras Inv.', fUSD(totalNonRet)],
+    ['Deuda Total', fUSD(totalDebt)],
+    ['Patrimonio Neto', fUSD(netWorth)],
+    ['Rango Ingreso', ({
+      '0-50k':'< $50k','50-100k':'$50k-$100k','100-200k':'$100k-$200k','200k+':'> $200k'
+    })[state.financials.incomeRange]||'—'],
+  ];
+
+  const cols = 3;
+  const cellW = CW / cols;
+  const cellH = 16;
+  kpis.forEach(([k,v], i)=>{
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const cx = MARG + col * cellW;
+    const cy = Y + row * cellH;
+    fillRect(cx, cy, cellW, cellH, col%2===0?(row%2===0?C.light:C.white):(row%2===0?C.white:C.light));
+    doc.setDrawColor(...C.border);
+    doc.rect(cx, cy, cellW, cellH, 'S');
+    setFont(false, 7.5, C.muted);
+    doc.text(k, cx+4, cy+5.5);
+    setFont(true, 10, C.dark);
+    doc.text(String(v), cx+4, cy+12);
+  });
+  Y += Math.ceil(kpis.length / cols) * cellH + 4;
+
+  // Ratios row
+  needsPage(16);
+  const ratios = [
+    {label:'Tasa de Ahorro', val:`${savingsRate.toFixed(1)}%`, color: savingsRate>=15?C.ok:C.warn},
+    {label:'Deuda / Ingreso Anual', val:`${dti.toFixed(1)}%`, color: dti<30?C.ok:(dti<50?C.warn:C.bad)},
+    {label:'Patrimonio Neto', val:fUSD(netWorth), color:C.primary},
+  ];
+  const rw = CW / 3;
+  ratios.forEach(({label,val,color},i)=>{
+    const cx=MARG+i*rw;
+    fillRect(cx,Y,rw,16,C.white);
+    doc.setDrawColor(...C.border); doc.rect(cx,Y,rw,16,'S');
+    setFont(false,7.5,C.muted); doc.text(label, cx+4, Y+6);
+    setFont(true,12,color); doc.text(val, cx+4, Y+13);
+  });
+  Y += 20;
+
+  // Flags row
+  needsPage(12);
+  const flags = [
+    {label:'Situacion compleja', val:state.flags?.hasComplexSituation??state.notes?.length>100, warn:true},
+    {label:'Deudas activas', val:state.financials.hasDebts, warn:true},
+    {label:'Tiene inversiones', val:state.financials.hasInvestments!=='none'&&state.financials.hasInvestments!==null},
+    {label:'Bienes raices', val:state.financials.hasRealEstate},
+  ];
+  const fw = CW/4;
+  flags.forEach(({label,val,warn},i)=>{
+    const cx=MARG+i*fw;
+    const color = val?(warn?C.warn:C.ok):C.muted;
+    fillRect(cx,Y,fw,10,C.section);
+    doc.setDrawColor(...C.border); doc.rect(cx,Y,fw,10,'S');
+    setFont(true,7.5,color);
+    doc.text(`${val?'✔':'–'}  ${label}: ${val?'Si':'No'}`, cx+3, Y+6.5);
+  });
+  Y += 14;
+
+  // Client note
+  if(state.notes?.trim()){
+    needsPage(20);
+    sectionBanner('NOTA DEL CLIENTE');
+    fillRect(MARG,Y,CW,18,[238,241,253]);
+    doc.setDrawColor(...C.primary); doc.setLineWidth(1);
+    doc.line(MARG,Y,MARG,Y+18);
+    doc.setLineWidth(0.1);
+    setFont(false,8.5,[30,58,95]);
+    const noteLines = doc.splitTextToSize(`"${state.notes}"`, CW-10);
+    noteLines.slice(0,3).forEach((ln,i)=>doc.text(ln, MARG+5, Y+5+(i*5)));
+    Y += 22;
+  }
+
+  // ══════════════════════════════════
+  //  ESTRUCTURA FAMILIAR
+  // ══════════════════════════════════
+  needsPage(30);
+  sectionBanner('ESTRUCTURA FAMILIAR / FINANCIERA');
+
+  const roleLabel = {primary_provider:'Principal proveedor',shared:'Ingreso compartido',not_primary:'No es proveedor principal'}[state.people.householdRole]||'—';
+  setFont(false,8.5,C.muted); doc.text(`Rol economico del cliente: `, MARG, Y); setFont(true,8.5,C.dark); doc.text(roleLabel, MARG+48, Y); Y+=6;
+
+  doc.autoTable({
+    startY: Y,
+    margin: {left:MARG, right:MARG},
+    head:[['Nombre','Rol','Edad','Genero']],
+    body: members.map(m=>([
+      `${m.firstName||''} ${m.lastName||''}`.trim(),
+      m.role==='primary'?'Principal':(REL_LBL[m.relationshipToPrimary]||m.relationshipToPrimary||'Adicional'),
+      String(m.age||'—'),
+      {male:'Masculino',female:'Femenino',prefer_not_to_say:'No indica'}[m.gender]||'—',
+    ])),
+    styles:{ fontSize:8.5, cellPadding:3 },
+    headStyles:{ fillColor:C.primary, textColor:C.white, fontStyle:'bold' },
+    alternateRowStyles:{ fillColor:C.section },
+    columnStyles:{ 0:{cellWidth:60}, 1:{cellWidth:45}, 2:{cellWidth:20}, 3:{cellWidth:CW-125} },
+  });
+  Y = doc.lastAutoTable.finalY + 6;
+
+  // ══════════════════════════════════
+  //  METAS
+  // ══════════════════════════════════
+  needsPage(20);
+  sectionBanner('METAS FINANCIERAS DECLARADAS');
+  if(state.goals.length){
+    const goalsPerRow=4, gw=CW/goalsPerRow, gh=10;
+    state.goals.forEach((g,i)=>{
+      const col=i%goalsPerRow, row=Math.floor(i/goalsPerRow);
+      const cx=MARG+col*gw, cy=Y+row*gh;
+      needsPage(gh);
+      fillRect(cx,cy,gw,gh,i%2===0?C.section:C.white);
+      doc.setDrawColor(...C.border); doc.rect(cx,cy,gw,gh,'S');
+      setFont(false,8,C.dark); doc.text(`• ${GOAL_LBL[g]||g}`, cx+3, cy+6.5);
+    });
+    Y += (Math.ceil(state.goals.length/goalsPerRow))*gh + 6;
+  } else {
+    setFont(false,8.5,C.muted); doc.text('No se seleccionaron metas.', MARG, Y); Y+=8;
+  }
+
+  // ══════════════════════════════════
+  //  PAGE 2 — SNAPSHOT FINANCIERO
+  // ══════════════════════════════════
+  doc.addPage(); Y=MARG;
+  sectionBanner('SNAPSHOT FINANCIERO DETALLADO');
+
+  const CATS_ORDER=['income','expenses','savings','banking','investments_retirement','investments_nonretirement','liabilities','insurance','real_estate','business_trust','legal','other_assets'];
+  const selected = state.financials.categoriesSelected||[];
+  const isMonthly = k=>k==='expenses'||k==='savings';
+
+  CATS_ORDER.filter(k=>selected.includes(k)).forEach(catKey=>{
+    const catItems=items.filter(i=>i.category===catKey);
+    if(!catItems.length) return;
+    const catTotal=catItems.reduce((a,b)=>a+b.value,0);
+    const period=isMonthly(catKey)?'/mes':'';
+    needsPage(20);
+
+    // Sub-header
+    setFont(true,9,C.primary);
+    doc.text(`${CAT_LBL[catKey]||catKey}`, MARG, Y+4);
+    setFont(true,9,C.primary);
+    doc.text(`Total: ${fUSD(catTotal)}${period}`, W-MARG, Y+4, {align:'right'});
+    doc.setDrawColor(...C.primary); doc.setLineWidth(0.5);
+    doc.line(MARG,Y+6,W-MARG,Y+6); doc.setLineWidth(0.1);
+    Y += 8;
+
+    doc.autoTable({
+      startY: Y,
+      margin: {left:MARG, right:MARG},
+      head:[['Descripcion','Titular','Monto','% Cat.']],
+      body: catItems.map(it=>([
+        it.name||'—',
+        pn(it.owner||'household'),
+        fUSD(it.value)+period,
+        catTotal?`${((it.value/catTotal)*100).toFixed(0)}%`:'—',
+      ])),
+      styles:{ fontSize:8, cellPadding:2.5 },
+      headStyles:{ fillColor:C.primary, textColor:C.white, fontStyle:'bold', fontSize:8 },
+      alternateRowStyles:{ fillColor:C.section },
+      columnStyles:{ 0:{cellWidth:90}, 1:{cellWidth:40}, 2:{cellWidth:32,halign:'right'}, 3:{cellWidth:CW-162,halign:'right'} },
+    });
+    Y = doc.lastAutoTable.finalY + 4;
+  });
+
+  // ── Balance Sheet
+  needsPage(40);
+  sectionBanner('BALANCE SHEET SIMPLIFICADO');
+  doc.autoTable({
+    startY: Y,
+    margin: {left:MARG, right:MARG},
+    head:[['ACTIVOS','Monto','PASIVOS','Monto']],
+    body:[
+      ['Cuentas bancarias', fUSD(totalBanking), 'Deudas totales', fUSD(totalDebt)],
+      ['Inversiones retiro', fUSD(totalRetInv), '', ''],
+      ['Otras inversiones', fUSD(totalNonRet), '', ''],
+      ['TOTAL ACTIVOS', fUSD(totalAssets), 'PATRIMONIO NETO', fUSD(netWorth)],
+    ],
+    styles:{ fontSize:9, cellPadding:3 },
+    headStyles:{ fillColor:C.primary, textColor:C.white, fontStyle:'bold' },
+    alternateRowStyles:{ fillColor:C.section },
+    didParseCell: data=>{
+      if(data.row.index===3){
+        data.cell.styles.fontStyle='bold';
+        data.cell.styles.textColor=data.column.index<2?C.ok:C.primary;
+        data.cell.styles.fillColor=[240,244,255];
+      }
+    },
+    columnStyles:{ 0:{cellWidth:60}, 1:{cellWidth:CW/2-60}, 2:{cellWidth:60}, 3:{cellWidth:CW/2-60} },
+  });
+  Y = doc.lastAutoTable.finalY + 8;
+
+  // ── Areas de oportunidad
+  needsPage(20);
+  sectionBanner('AREAS DE ATENCION PARA EL COACH');
+  const opp=[];
+  if(savingsRate<15) opp.push({icon:'⚠', txt:`Tasa de ahorro baja (${savingsRate.toFixed(1)}%). Meta recomendada: 15-20% del ingreso mensual.`, color:C.warn, bg:[255,251,235]});
+  if(dti>30) opp.push({icon:'!', txt:`Deuda/ingreso elevada (${dti.toFixed(1)}%). Revisar estrategia de amortizacion.`, color:C.bad, bg:[254,242,242]});
+  if(!state.financials.hasLegal) opp.push({icon:'?', txt:`Sin documentos legales (testamento, trust, POA). Area critica.`, color:C.warn, bg:[255,251,235]});
+  if(!state.financials.hasRealEstate && state.goals.includes('casa')) opp.push({icon:'i', txt:`Meta: comprar casa sin propiedad actual. Evaluar capacidad de down payment.`, color:C.primary, bg:[238,241,253]});
+  if(totalBanking<totalExpenses*3) opp.push({icon:'!', txt:`Fondo de emergencia insuficiente. Actual: ${fUSD(totalBanking)} (meta: ${fUSD(totalExpenses*3)}).`, color:C.warn, bg:[255,251,235]});
+  if(!opp.length) opp.push({icon:'✓', txt:'Sin alertas criticas. Perfil financiero equilibrado segun los datos.', color:C.ok, bg:[240,253,244]});
+
+  opp.forEach(({txt,color,bg})=>{
+    needsPage(14);
+    fillRect(MARG,Y,CW,12,bg);
+    doc.setFillColor(...color); doc.rect(MARG,Y,2,12,'F');
+    setFont(false,8.5,C.dark);
+    const lines=doc.splitTextToSize(txt,CW-10);
+    lines.slice(0,2).forEach((ln,i)=>{ setFont(i===0,8.5,C.dark); doc.text(ln,MARG+5,Y+4.5+(i*5)); });
+    Y+=14;
+  });
+
+  // ── Preguntas sugeridas
+  needsPage(20);
+  sectionBanner('PREGUNTAS SUGERIDAS PARA LA SESION');
+  const qs=[
+    '¿Tasa de interes de la deuda estudiantil y tarjeta? ¿Estrategia de pago?',
+    '¿El 401(k) tiene match del empleador? ¿Aprovechan el maximo?',
+    '¿Situacion fiscal multi-estado? ¿Trabajan con contador?',
+    '¿Han hablado con abogado para testamento/trust con hijo menor?',
+    '¿Horizonte de tiempo y objetivo de down payment para casa propia?',
+    '¿La poliza Term cubre a ambos? ¿Tienen cobertura de disability?',
+  ];
+  doc.autoTable({
+    startY: Y,
+    margin: {left:MARG, right:MARG},
+    head:[['#','Pregunta sugerida']],
+    body: qs.map((q,i)=>[String(i+1), q]),
+    styles:{ fontSize:8.5, cellPadding:3 },
+    headStyles:{ fillColor:C.primary, textColor:C.white, fontStyle:'bold' },
+    alternateRowStyles:{ fillColor:C.section },
+    columnStyles:{ 0:{cellWidth:10,halign:'center'}, 1:{cellWidth:CW-10} },
+  });
+  Y = doc.lastAutoTable.finalY + 6;
+
+  // ── Footer en todas las páginas
+  const totalPages = doc.internal.getNumberOfPages();
+  for(let i=1;i<=totalPages;i++){
+    doc.setPage(i);
+    setFont(false,7.5,[148,163,184]);
+    doc.text(`Documento interno · Solo para el coach · No compartir con el cliente`, W/2, 275, {align:'center'});
+    doc.text(`Pag. ${i} de ${totalPages}`, W-MARG, 275, {align:'right'});
+    doc.setDrawColor(...C.border); doc.setLineWidth(0.3);
+    doc.line(MARG, 271, W-MARG, 271);
+  }
+
+  // ── Descargar
+  const safeName = (state.userName||'cliente').replace(/\s+/g,'_');
+  const dateStr  = new Date().toISOString().slice(0,10);
+  doc.save(`Discovery_Coach_${safeName}_${dateStr}.pdf`);
+}
+// ════════════════════════════════════════════════════════════════════════════
+
+
+// ════════════════════════════════════════════════════════════════════════════
+//  generateCoachExcel(state)
+//  ─────────────────────────────────────────────────────────────────────────
+//  Genera el Excel del coach con múltiples hojas usando SheetJS.
+//  Se descarga automáticamente junto con el PDF al hacer submit.
+//
+//  HOJAS INCLUIDAS:
+//    1. Resumen        — KPIs, ratios, flags, metas
+//    2. Personas       — Estructura familiar
+//    3. Snapshot       — Todos los ítems financieros
+//    4. Balance Sheet  — Activos, pasivos, patrimonio neto
+//    5. Por Persona    — Totales agrupados por titular
+// ════════════════════════════════════════════════════════════════════════════
+function generateCoachExcel(state){
+  const WB   = XLSX.utils.book_new();
+  const members = state.people.members || [];
+  const items   = state.financials.items || [];
+
+  // ── Helpers
+  const fUSD = v => Number(v||0);
+  const sum  = cat => items.filter(i=>i.category===cat).reduce((a,b)=>a+b.value,0);
+  const pn   = pid => { if(pid==='household') return 'Hogar'; const m=members.find(p=>p.id===pid); return m?`${m.firstName||''} ${m.lastName||''}`.trim():pid; };
+
+  const GOAL_LBL = {casa:"Comprar casa",retiro:"Retiro cómodo",emergencia:"Fondo emergencia",educacion:"Educación hijos",viaje:"Viaje/Vacaciones",deudas:"Pagar deudas",negocio:"Iniciar negocio",auto:"Comprar auto",inversiones:"Crecer dinero",independencia:"Independencia financiera",herencia:"Dejar herencia",otro:"Otra meta"};
+  const CAT_LBL  = {income:"Ingresos",expenses:"Gastos Mensuales",savings:"Ahorro",banking:"Cuentas Bancarias",investments_retirement:"Inv. Retiro",investments_nonretirement:"Otras Inversiones",liabilities:"Deudas",insurance:"Seguros",real_estate:"Bienes Raices",business_trust:"Negocios/Trust",legal:"Legal",other_assets:"Otros Activos"};
+  const REL_LBL  = {spouse:"Cónyuge",partner:"Pareja",child:"Hijo/a",family:"Familiar",other:"Otro"};
+  const ROLE_LBL = {primary_provider:"Principal proveedor",shared:"Ingreso compartido",not_primary:"No es proveedor principal"};
+  const INCOME_RNG={  '0-50k':'Menos de $50,000','50-100k':'$50,000 – $100,000','100-200k':'$100,000 – $200,000','200k+':'Más de $200,000'};
+
+  // Computed
+  const totalIncome   = sum('income');
+  const totalExpenses = sum('expenses');
+  const totalSavings  = sum('savings');
+  const totalBanking  = sum('banking');
+  const totalRetInv   = sum('investments_retirement');
+  const totalNonRet   = sum('investments_nonretirement');
+  const totalDebt     = sum('liabilities');
+  const totalAssets   = totalBanking + totalRetInv + totalNonRet;
+  const netWorth      = totalAssets - totalDebt;
+  const savingsRate   = totalIncome ? (totalSavings/(totalIncome/12))*100 : 0;
+  const dti           = totalIncome ? (totalDebt/totalIncome)*100 : 0;
+  const now           = new Date().toLocaleDateString('es',{day:'2-digit',month:'2-digit',year:'numeric'});
+
+  // ── Helper: aplica estilos de encabezado a una fila
+  function styleHeader(ws, range){
+    for(let C=range.s.c; C<=range.e.c; C++){
+      const addr=XLSX.utils.encode_cell({r:range.s.r,c:C});
+      if(!ws[addr]) continue;
+      ws[addr].s={
+        fill:{patternType:"solid",fgColor:{rgb:"3956E8"}},
+        font:{bold:true,color:{rgb:"FFFFFF"},sz:11},
+        alignment:{horizontal:"center",vertical:"center"},
+        border:{bottom:{style:"medium",color:{rgb:"FFFFFF"}}}
       };
     }
-    
-    return { ok: true };
   }
-
-  // Listen for goToStep custom event (from missing items clicks)
-  window.addEventListener('goToStep', (e) => {
-    setStep(e.detail);
-  });
-
-  finalSubmitBtn.addEventListener('click', async () => {
-    // Validate before submitting
-    const validation = validateFinalSubmission();
-    if (!validation.ok) {
-      showToast(`⚠️ Por favor completa la información faltante`);
-      // Jump to first incomplete step
-      if (validation.missingItems && validation.missingItems.length > 0) {
-        setStep(validation.missingItems[0].step);
-      }
-      return;
-    }
-    
-    const payload = buildFinalPayload();
-    
-    console.log('[Discovery Payload]', payload);
-    
-    // Show loading state
-    finalSubmitBtn.textContent = 'Enviando...';
-    finalSubmitBtn.disabled = true;
-    
-    try {
-      // Get API URL from URL params or use default
-      const params = new URLSearchParams(window.location.search);
-      const apiUrl = params.get('api') || params.get('apiUrl') || '';
-      
-      // DEMO MODE - If no API URL provided, simulate success
-      if (!apiUrl) {
-        console.log('🎮 DEMO MODE - Simulando envío exitoso...');
-        console.log('   Para usar API real, agrega: ?api=https://tu-api.com/submit');
-        
-        // Simulate delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Simulate success
-        console.log('✓ Discovery simulado exitosamente (DEMO)');
-        
-        // Download JSON backup
-        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `discovery-backup-${Date.now()}.json`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        
-        // Clear localStorage
-        localStorage.removeItem('discovery_draft_v3');
-        
-        // Hide the checklist/form view
-        $('#beforeSubmit').style.display = 'none';
-        
-        // Show the success message view
-        $('#afterSubmit').style.display = 'block';
-        
-        // Hide footer buttons (Atrás/Continuar)
-        $('.btns').style.display = 'none';
-        
-        // Scroll to top to show success message
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        
-        showToast('✓ ¡Discovery enviado con éxito! (DEMO MODE)');
-        
-        return;
-      }
-      
-      // PRODUCTION MODE - Send to actual backend API
-      console.log('🚀 Enviando a API:', apiUrl);
-      
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      });
-      
-      const result = await response.json();
-      
-      if (response.ok && result.success) {
-        console.log('✓ Discovery submitted successfully');
-        console.log('   📧 Emails enviados:');
-        console.log('   1. Link de Calendly al usuario');
-        console.log('   2. Diagnóstico completo al equipo (PDF)');
-        
-        // Clear localStorage
-        localStorage.removeItem('discovery_draft_v3');
-        
-        // Hide the checklist/form view
-        $('#beforeSubmit').style.display = 'none';
-        
-        // Show the success message view
-        $('#afterSubmit').style.display = 'block';
-        
-        // Hide footer buttons (Atrás/Continuar)
-        $('.btns').style.display = 'none';
-        
-        // Scroll to top to show success message
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        
-        showToast('✓ ¡Discovery enviado con éxito!');
-        
-        // Download JSON backup (optional)
-        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `discovery-backup-${Date.now()}.json`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        
-      } else {
-        throw new Error(result.error || 'Error al enviar al servidor');
-      }
-      
-    } catch (error) {
-      console.error('❌ Error submitting discovery:', error);
-      console.log('💾 Guardando datos localmente...');
-      
-      // Download JSON as fallback
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `discovery-backup-${Date.now()}.json`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      
-      finalSubmitBtn.textContent = 'Someter Discovery Form';
-      finalSubmitBtn.disabled = false;
-      
-      showToast('⚠️ No se pudo conectar al servidor. Tu información se descargó como respaldo. Contacta al equipo.');
-    }
-  });
-
-  function buildFinalPayload(){
-    const params = new URLSearchParams(window.location.search);
-    const clientId = params.get('client') || params.get('id') || null;
-
-    return {
-      meta: {
-        source: 'discovery_v2_improved',
-        mode: state.mode,
-        completionTime: Date.now() - state.startTime,
-        createdAt: new Date().toISOString(),
-        clientId
-      },
-      userEmail: state.userEmail,
-      people: state.people,
-      goals: state.goals,
-      financials: state.financials,
-      notes: state.notes || '',
-      flags: {
-        hasComplexSituation: state.notes.length > 100,
-        multipleIncomeSources: state.financials.items.filter(it => it.category === 'income').length > 2,
-        hasRealEstate: state.financials.categoriesSelected.includes('real_estate'),
-        hasDebts: state.financials.hasDebts,
-        hasInvestments: state.financials.hasInvestments !== 'none'
-      }
+  function styleTitle(ws, addr){
+    if(!ws[addr]) return;
+    ws[addr].s={
+      font:{bold:true,sz:13,color:{rgb:"0F172A"}},
+      fill:{patternType:"solid",fgColor:{rgb:"EEF1FD"}},
+      alignment:{horizontal:"left"}
     };
   }
-
-  // ===== Keyboard shortcuts =====
-  document.addEventListener('keydown', (e) => {
-    if(e.altKey && e.key === 'ArrowRight' && !nextBtn.disabled && !nextBtn.hidden){
-      nextBtn.click();
-    }
-    if(e.altKey && e.key === 'ArrowLeft' && !backBtn.disabled){
-      backBtn.click();
-    }
-    if(e.ctrlKey && e.key === 's'){
-      e.preventDefault();
-      debouncedSave();
-      showToast('✓ Progreso guardado');
-    }
-  });
-
-  // Show keyboard hints on hover
-  let hintTimer;
-  document.addEventListener('mousemove', () => {
-    clearTimeout(hintTimer);
-    const hints = $('#keyboardHints');
-    hints.classList.add('show');
-    hintTimer = setTimeout(() => hints.classList.remove('show'), 3000);
-  });
-
-  // ===== RESET DISCOVERY =====
-  function resetDiscovery() {
-    // Ask for confirmation
-    const confirmed = confirm('¿Estás seguro que quieres reiniciar el Discovery?\n\nSe borrarán todos los datos y volverás al inicio.');
-    
-    if (!confirmed) return;
-    
-    console.log('🔄 Reseteando Discovery...');
-    
-    // Clear localStorage
-    localStorage.removeItem('discovery_draft_v3');
-    
-    // Reset state to defaults
-    state.step = 1;
-    state.startTime = Date.now();
-    state.people.members = [];
-    state.people.template = '';
-    state.people.householdRole = '';
-    state.goals = [];
-    state.financials = {
-      incomeRange: "",
-      hasDebts: null,
-      hasInvestments: null,
-      hasRealEstate: null,
-      hasInsurance: null,
-      hasBusiness: null,
-      hasLegal: null,
-      hasOtherAssets: null,
-      hasSavings: null,
-      categoriesSelected: [],
-      items: []
-    };
-    state.wizardStep = 1;
-    state.wizardComplete = false;
-    state.notes = "";
-    
-    console.log('📊 Estado después de reset:', {
-      step: state.step,
-      people: state.people.members.length,
-      goals: state.goals.length,
-      financials: state.financials.items.length
-    });
-    
-    console.log('✅ Validaciones:', {
-      step1: isStep1Complete(),
-      step2: isStep2Complete(),
-      step3: isStep3Complete(),
-      step4: isStep4Complete()
-    });
-    
-    // Reset views
-    $('#beforeSubmit').style.display = 'block';
-    $('#afterSubmit').style.display = 'none';
-    $('.btns').style.display = 'flex';
-    
-    // Go back to step 1
-    setStep(1);
-    
-    // Show confirmation
-    showToast('🔄 Discovery reiniciado correctamente');
+  function styleMeta(ws, addr, color){
+    if(!ws[addr]) return;
+    ws[addr].s={ font:{bold:true,sz:12,color:{rgb:color||"3956E8"}}, alignment:{horizontal:"right"} };
   }
-  
-  // Attach reset button event
-  $('#resetBtn').addEventListener('click', resetDiscovery);
 
-  // ===== Init =====
-  loadDraft();
-  getUserInfoFromURL();  // Get user name and email from URL params
-  
-  // Set mode from state
-  setStep(state.step);
+  // ════════════════════════════════
+  //  HOJA 1: RESUMEN
+  // ════════════════════════════════
+  const ws1Data = [
+    ['REPORTE DISCOVERY – USO INTERNO DEL COACH','','',''],
+    [`Cliente: ${state.userName}`, '', `Email: ${state.userEmail}`, ''],
+    [`Generado: ${now}`, '', `Tiempo completado: ${Math.floor((Date.now()-state.startTime)/60000)} min`, ''],
+    [],
+    ['─── INDICADORES PRINCIPALES ───','','',''],
+    ['Indicador','Valor','',''],
+    ['Ingreso Anual (hogar)',           fUSD(totalIncome),'',''],
+    ['Gasto Mensual Total',             fUSD(totalExpenses),'',''],
+    ['Ahorro Mensual Total',            fUSD(totalSavings),'',''],
+    ['Tasa de Ahorro',                  `${savingsRate.toFixed(1)}%`,'',''],
+    ['Liquidez (cuentas bancarias)',    fUSD(totalBanking),'',''],
+    ['Inversiones de Retiro',           fUSD(totalRetInv),'',''],
+    ['Otras Inversiones',               fUSD(totalNonRet),'',''],
+    ['Total Activos',                   fUSD(totalAssets),'',''],
+    ['Deuda Total',                     fUSD(totalDebt),'',''],
+    ['Relación Deuda / Ingreso Anual',  `${dti.toFixed(1)}%`,'',''],
+    ['Patrimonio Neto (aprox.)',        fUSD(netWorth),'',''],
+    ['Rango Ingreso Declarado',         INCOME_RNG[state.financials.incomeRange]||'—','',''],
+    [],
+    ['─── FLAGS ───','','',''],
+    ['Flag','Estado','',''],
+    ['Situación compleja (notas)',  state.notes?.length>100?'Sí':'No','',''],
+    ['Deudas activas',              state.financials.hasDebts?'Sí':'No','',''],
+    ['Tiene inversiones',           state.financials.hasInvestments!=='none'&&state.financials.hasInvestments?'Sí':'No','',''],
+    ['Bienes raíces',               state.financials.hasRealEstate?'Sí':'No','',''],
+    ['Documentos legales',          state.financials.hasLegal?'Sí':'No','',''],
+    ['Seguros activos',             state.financials.hasInsurance?'Sí':'No','',''],
+    [],
+    ['─── METAS DECLARADAS ───','','',''],
+    ...(state.goals.length ? state.goals.map(g=>['•', GOAL_LBL[g]||g,'','']) : [['(ninguna)','','','']]),
+    [],
+    ['─── NOTA DEL CLIENTE ───','','',''],
+    [state.notes||'(sin notas)','','',''],
+  ];
+  const ws1 = XLSX.utils.aoa_to_sheet(ws1Data);
+  ws1['!cols'] = [{wch:36},{wch:20},{wch:28},{wch:20}];
+  ws1['!merges'] = [
+    {s:{r:0,c:0},e:{r:0,c:3}},
+    {s:{r:ws1Data.length-2,c:0},e:{r:ws1Data.length-2,c:3}},
+    {s:{r:ws1Data.length-1,c:0},e:{r:ws1Data.length-1,c:3}},
+  ];
+  XLSX.utils.book_append_sheet(WB, ws1, 'Resumen');
+
+  // ════════════════════════════════
+  //  HOJA 2: PERSONAS
+  // ════════════════════════════════
+  const ws2Data = [
+    ['ESTRUCTURA FAMILIAR / FINANCIERA','','','',''],
+    [`Rol económico: ${ROLE_LBL[state.people.householdRole]||'—'}`,'','','',''],
+    [],
+    ['Nombre','Rol','Edad','Género','Relación'],
+    ...members.map(m=>([
+      `${m.firstName||''} ${m.lastName||''}`.trim(),
+      m.role==='primary'?'Principal':'Adicional',
+      m.age||'—',
+      {male:'Masculino',female:'Femenino',prefer_not_to_say:'No indica'}[m.gender]||'—',
+      m.role==='primary'?'—':(REL_LBL[m.relationshipToPrimary]||m.relationshipToPrimary||'—'),
+    ])),
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet(ws2Data);
+  ws2['!cols'] = [{wch:30},{wch:14},{wch:8},{wch:14},{wch:14}];
+  ws2['!merges'] = [{s:{r:0,c:0},e:{r:0,c:4}}];
+  styleHeader(ws2,{s:{r:3,c:0},e:{r:3,c:4}});
+  XLSX.utils.book_append_sheet(WB, ws2, 'Personas');
+
+  // ════════════════════════════════
+  //  HOJA 3: SNAPSHOT FINANCIERO
+  // ════════════════════════════════
+  const ws3Rows = [
+    ['SNAPSHOT FINANCIERO – DETALLE COMPLETO','','','','',''],
+    [],
+    ['Categoría','Descripción','Tipo','Titular','Monto (USD)','Periodo'],
+  ];
+  const CATS_ORDER=['income','expenses','savings','banking','investments_retirement','investments_nonretirement','liabilities','insurance','real_estate','business_trust','legal','other_assets'];
+  const selected = state.financials.categoriesSelected||[];
+  CATS_ORDER.filter(k=>selected.includes(k)).forEach(catKey=>{
+    const catItems=items.filter(i=>i.category===catKey);
+    if(!catItems.length) return;
+    const isMonthly=catKey==='expenses'||catKey==='savings';
+    catItems.forEach(it=>ws3Rows.push([
+      CAT_LBL[catKey]||catKey,
+      it.name||'—',
+      it.type||it.expenseCategory||'—',
+      pn(it.owner||'household'),
+      fUSD(it.value),
+      isMonthly?'Mensual':'Total',
+    ]));
+    // Sub-total por categoría
+    const catTotal=catItems.reduce((a,b)=>a+b.value,0);
+    ws3Rows.push(['',`  TOTAL ${(CAT_LBL[catKey]||catKey).toUpperCase()}`,'','',fUSD(catTotal),(isMonthly?'Mensual':'Total')]);
+    ws3Rows.push([]);
+  });
+  const ws3 = XLSX.utils.aoa_to_sheet(ws3Rows);
+  ws3['!cols'] = [{wch:22},{wch:34},{wch:22},{wch:16},{wch:14},{wch:10}];
+  ws3['!merges'] = [{s:{r:0,c:0},e:{r:0,c:5}}];
+  styleHeader(ws3,{s:{r:2,c:0},e:{r:2,c:5}});
+  XLSX.utils.book_append_sheet(WB, ws3, 'Snapshot Financiero');
+
+  // ════════════════════════════════
+  //  HOJA 4: BALANCE SHEET
+  // ════════════════════════════════
+  const ws4Data = [
+    ['BALANCE SHEET SIMPLIFICADO','','',''],
+    [],
+    ['ACTIVOS','Monto (USD)','PASIVOS','Monto (USD)'],
+    ['Cuentas bancarias',   fUSD(totalBanking),  'Deuda total', fUSD(totalDebt)],
+    ['Inversiones retiro',  fUSD(totalRetInv),   '',            ''],
+    ['Otras inversiones',   fUSD(totalNonRet),   '',            ''],
+    [],
+    ['TOTAL ACTIVOS',       fUSD(totalAssets),   'PATRIMONIO NETO', fUSD(netWorth)],
+    [],
+    ['─── MÉTRICAS DERIVADAS ───','','',''],
+    ['Tasa de Ahorro',             `${savingsRate.toFixed(1)}%`,'Meta recomendada','≥ 15%'],
+    ['Deuda / Ingreso Anual',      `${dti.toFixed(1)}%`,       'Saludable',        '< 30%'],
+    ['Meses fondo emergencia',     totalExpenses?`${(totalBanking/totalExpenses).toFixed(1)} meses`:'—','Recomendado','3-6 meses'],
+  ];
+  const ws4 = XLSX.utils.aoa_to_sheet(ws4Data);
+  ws4['!cols'] = [{wch:26},{wch:16},{wch:26},{wch:16}];
+  ws4['!merges'] = [{s:{r:0,c:0},e:{r:0,c:3}}];
+  styleHeader(ws4,{s:{r:2,c:0},e:{r:2,c:3}});
+  XLSX.utils.book_append_sheet(WB, ws4, 'Balance Sheet');
+
+  // ════════════════════════════════
+  //  HOJA 5: POR PERSONA
+  // ════════════════════════════════
+  const ws5Data = [
+    ['TOTALES POR TITULAR','','',''],
+    [],
+    ['Titular','Categoría','Items','Total (USD)'],
+  ];
+  const allOwners=['household',...members.map(m=>m.id)];
+  allOwners.forEach(oid=>{
+    const ownerItems=items.filter(it=>it.owner===oid);
+    if(!ownerItems.length) return;
+    // Group by category
+    const bycat={};
+    ownerItems.forEach(it=>{ if(!bycat[it.category]) bycat[it.category]=[]; bycat[it.category].push(it); });
+    Object.entries(bycat).forEach(([cat,catItems])=>{
+      ws5Data.push([
+        pn(oid),
+        CAT_LBL[cat]||cat,
+        catItems.length,
+        fUSD(catItems.reduce((a,b)=>a+b.value,0)),
+      ]);
+    });
+    ws5Data.push([]);
+  });
+  const ws5 = XLSX.utils.aoa_to_sheet(ws5Data);
+  ws5['!cols'] = [{wch:22},{wch:26},{wch:8},{wch:16}];
+  ws5['!merges'] = [{s:{r:0,c:0},e:{r:0,c:3}}];
+  styleHeader(ws5,{s:{r:2,c:0},e:{r:2,c:3}});
+  XLSX.utils.book_append_sheet(WB, ws5, 'Por Titular');
+
+  // ── Descargar
+  const safeName = (state.userName||'cliente').replace(/\s+/g,'_');
+  const dateStr  = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(WB, `Discovery_Coach_${safeName}_${dateStr}.xlsx`);
+}
+// ════════════════════════════════════════════════════════════════════════════
+
+
+// ── RESET ──────────────────────────────────────────────────────────────────
+$('#resetBtn').addEventListener('click',()=>{
+  if(!confirm('¿Reiniciar Discovery? Se borrarán todos los datos.')) return;
+  localStorage.removeItem('discovery_draft_v3');
+  Object.assign(state,{step:1,startTime:Date.now(),people:{template:'',householdRole:'',members:[]},goals:[],financials:{incomeRange:"",hasDebts:null,hasInvestments:null,hasRealEstate:null,hasInsurance:null,hasBusiness:null,hasLegal:null,hasOtherAssets:null,hasSavings:null,categoriesSelected:[],items:[]},wizardStep:1,wizardComplete:false,notes:""});
+  $('#beforeSubmit').style.display='block';
+  $('#afterSubmit').style.display='none';
+  $('.btns').style.display='flex';
+  setStep(1); showToast('🔄 Discovery reiniciado');
+});
+
+// ── KEYBOARD SHORTCUTS ─────────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.altKey&&e.key==='ArrowRight'&&!nextBtn.disabled&&!nextBtn.hidden) nextBtn.click();
+  if(e.altKey&&e.key==='ArrowLeft') backBtn.click();
+  if(e.ctrlKey&&e.key==='s'){ e.preventDefault(); debouncedSave(); showToast('✓ Guardado'); }
+});
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+loadDraft();
+getUserInfoFromURL();
+setStep(state.step);
 
 })();
 </script>
