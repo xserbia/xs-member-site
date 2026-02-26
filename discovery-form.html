@@ -350,7 +350,7 @@
             </div>
           </div>
           <div class="field">
-            <label>¿Eres el principal proveedor económico?</label>
+            <label for="householdRole">¿Eres el principal proveedor económico?</label>
             <select id="householdRole">
               <option value="">Selecciona…</option>
               <option value="primary_provider">Sí, principalmente yo</option>
@@ -693,13 +693,13 @@ function renderPeople(){
         ${!isPrimary?`<button class="xbtn" type="button">×</button>`:'<span class="hint">Obligatorio</span>'}
       </div>
       <div class="row">
-        <div class="field"><label>Nombre *</label><input type="text" data-k="firstName" value="${escapeHtml(p.firstName||'')}" placeholder="Nombre"/></div>
-        <div class="field"><label>Apellido *</label><input type="text" data-k="lastName" value="${escapeHtml(p.lastName||'')}" placeholder="Apellido"/></div>
+        <div class="field"><label for="fn_${p.id}">Nombre *</label><input id="fn_${p.id}" type="text" data-k="firstName" value="${escapeHtml(p.firstName||'')}" placeholder="Nombre"/></div>
+        <div class="field"><label for="ln_${p.id}">Apellido *</label><input id="ln_${p.id}" type="text" data-k="lastName" value="${escapeHtml(p.lastName||'')}" placeholder="Apellido"/></div>
       </div>
       <div class="row">
-        <div class="field"><label>Edad *</label><input type="number" min="0" data-k="age" value="${p.age??''}"/></div>
-        <div class="field"><label>Sexo *</label>
-          <select data-k="gender">
+        <div class="field"><label for="age_${p.id}">Edad *</label><input id="age_${p.id}" type="number" min="0" data-k="age" value="${p.age??''}"/></div>
+        <div class="field"><label for="gen_${p.id}">Sexo *</label>
+          <select id="gen_${p.id}" data-k="gender">
             <option value="">Selecciona…</option>
             <option value="male" ${p.gender==='male'?'selected':''}>Masculino</option>
             <option value="female" ${p.gender==='female'?'selected':''}>Femenino</option>
@@ -707,8 +707,8 @@ function renderPeople(){
           </select>
         </div>
       </div>
-      ${!isPrimary?`<div class="field"><label>Relación *</label>
-        <select data-k="relationshipToPrimary">
+      ${!isPrimary?`<div class="field"><label for="rel_${p.id}">Relación *</label>
+        <select id="rel_${p.id}" data-k="relationshipToPrimary">
           <option value="">Selecciona…</option>
           <option value="spouse" ${p.relationshipToPrimary==='spouse'?'selected':''}>Cónyuge</option>
           <option value="partner" ${p.relationshipToPrimary==='partner'?'selected':''}>Pareja</option>
@@ -931,15 +931,15 @@ function renderCategoriesDetail(){
 // ══════════════════════════════════════════════════════════
 function buildStandardForm(k, multi){
   const opts=getTypeOpts(k).map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
-  const ownerSel = multi ? `<div class="inputGroup"><label>Titular</label><select id="std_owner_${k}">${ownerOpts('')}</select></div>` : '';
+  const ownerSel = multi ? `<div class="inputGroup"><label for="std_owner_${k}">Titular</label><select id="std_owner_${k}">${ownerOpts('')}</select></div>` : '';
   return `<div class="addRow">
-    <div class="inputGroup"><label>Tipo *</label>
+    <div class="inputGroup"><label for="std_type_${k}">Tipo *</label>
       <select id="std_type_${k}"><option value="">Selecciona...</option>${opts}</select>
     </div>
-    <div class="inputGroup"><label>Alias (opcional)</label>
+    <div class="inputGroup"><label for="std_alias_${k}">Alias (opcional)</label>
       <input type="text" id="std_alias_${k}" placeholder="Ej: Checking BofA"/>
     </div>
-    <div class="inputGroup"><label>Monto USD *</label>
+    <div class="inputGroup"><label for="std_amt_${k}">Monto USD *</label>
       <input type="number" id="std_amt_${k}" min="0" step="0.01" placeholder="0.00"/>
     </div>
     ${ownerSel}
@@ -972,24 +972,24 @@ function wireStandardForm(card, k, listEl, errEl, multi){
 // ══════════════════════════════════════════════════════════
 function buildExpensesForm(multi){
   const catOpts = Object.keys(EXPENSES_TAX).map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-  const ownerSel = multi ? `<div class="inputGroup"><label>Titular</label><select id="exp_owner">${ownerOpts('')}</select></div>` : '';
+  const ownerSel = multi ? `<div class="inputGroup"><label for="exp_owner">Titular</label><select id="exp_owner">${ownerOpts('')}</select></div>` : '';
   return `<div class="addRow">
-    <div class="inputGroup"><label>Categoría *</label>
+    <div class="inputGroup"><label for="exp_cat">Categoría *</label>
       <select id="exp_cat"><option value="">Categoría...</option>${catOpts}</select>
     </div>
-    <div class="inputGroup"><label>Subcategoría *</label>
+    <div class="inputGroup"><label for="exp_sub">Subcategoría *</label>
       <select id="exp_sub" disabled><option value="">Primero selecciona categoría</option></select>
     </div>
-    <div class="inputGroup"><label>Alias (opcional)</label>
+    <div class="inputGroup"><label for="exp_alias">Alias (opcional)</label>
       <input type="text" id="exp_alias" placeholder="Ej: Netflix, Visa BofA"/>
     </div>
-    <div class="inputGroup"><label>Monto /mes *</label>
+    <div class="inputGroup"><label for="exp_amt">Monto /mes *</label>
       <input type="number" id="exp_amt" min="0" step="0.01" placeholder="0.00"/>
     </div>
     ${ownerSel}
     <button type="button" class="addBtn" id="exp_add">+ Añadir</button>
-  </div>`
-;}
+  </div>`;
+}
 function wireExpenseCascade(card){
   const catSel = card.querySelector('#exp_cat');
   const subSel = card.querySelector('#exp_sub');
@@ -1041,15 +1041,15 @@ function wireExpensesForm(card, k, listEl, errEl, multi){
 // ══════════════════════════════════════════════════════════
 function buildSavingsForm(multi){
   const catOpts = Object.keys(SAVINGS_TAX).map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-  const ownerSel = multi ? `<div class="inputGroup"><label>Titular</label><select id="sav_owner">${ownerOpts('')}</select></div>` : '';
+  const ownerSel = multi ? `<div class="inputGroup"><label for="sav_owner">Titular</label><select id="sav_owner">${ownerOpts('')}</select></div>` : '';
   return `<div class="addRow">
-    <div class="inputGroup"><label>Categoría *</label>
+    <div class="inputGroup"><label for="sav_cat">Categoría *</label>
       <select id="sav_cat"><option value="">Categoría...</option>${catOpts}</select>
     </div>
-    <div class="inputGroup"><label>Subcategoría *</label>
+    <div class="inputGroup"><label for="sav_sub">Subcategoría *</label>
       <select id="sav_sub" disabled><option value="">Primero selecciona categoría</option></select>
     </div>
-    <div class="inputGroup"><label>Monto /mes *</label>
+    <div class="inputGroup"><label for="sav_amt">Monto /mes *</label>
       <input type="number" id="sav_amt" min="0" step="0.01" placeholder="0.00"/>
     </div>
     ${ownerSel}
@@ -1094,21 +1094,21 @@ function wireSavingsForm(card, k, listEl, errEl, multi){
 // ══════════════════════════════════════════════════════════
 function buildLiabilitiesForm(multi){
   const opts=DEBT_TYPES.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
-  const ownerSel = multi ? `<div class="inputGroup"><label>Titular</label><select id="liab_owner">${ownerOpts('')}</select></div>` : '';
+  const ownerSel = multi ? `<div class="inputGroup"><label for="liab_owner">Titular</label><select id="liab_owner">${ownerOpts('')}</select></div>` : '';
   return `<div class="addRow">
-    <div class="inputGroup"><label>Tipo de deuda *</label>
+    <div class="inputGroup"><label for="liab_type">Tipo de deuda *</label>
       <select id="liab_type"><option value="">Selecciona...</option>${opts}</select>
     </div>
-    <div class="inputGroup"><label>Descripción</label>
+    <div class="inputGroup"><label for="liab_alias">Descripción</label>
       <input type="text" id="liab_alias" placeholder="Ej: Chase Visa"/>
     </div>
-    <div class="inputGroup"><label>Saldo pendiente *</label>
+    <div class="inputGroup"><label for="liab_amt">Saldo pendiente *</label>
       <input type="number" id="liab_amt" min="0" step="0.01" placeholder="$ USD"/>
     </div>
-    <div class="inputGroup"><label>Tasa interés %</label>
+    <div class="inputGroup"><label for="liab_rate">Tasa interés %</label>
       <input type="number" id="liab_rate" class="short" min="0" max="100" step="0.01" placeholder="6.5"/>
     </div>
-    <div class="inputGroup"><label>Meses restantes</label>
+    <div class="inputGroup"><label for="liab_months">Meses restantes</label>
       <input type="number" id="liab_months" class="short" min="0" step="1" placeholder="48"/>
     </div>
     ${ownerSel}
