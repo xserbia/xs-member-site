@@ -292,6 +292,7 @@
           autocomplete="email"
         />
       </div>
+      <button id="dummyBtn" class="btn" style="padding:8px 16px;font-size:13px;background:linear-gradient(90deg,#f59e0b,#d97706);color:#fff;border-color:transparent;">🧪 Datos de prueba</button>
       <button id="resetBtn" class="btn ghost" style="padding:8px 16px;font-size:13px;">🔄 Reiniciar</button>
     </div>
     <div class="stepCircles" id="stepCircles">
@@ -769,7 +770,7 @@ const EXPENSES_TAX={
   "Casa":               ["Alquiler","Servicios básicos","Mantenimiento"],
   "Impuestos":          ["Seguro social","Propiedad","Federales","Estatales"],
   "Transportación":     ["Gasolina","Mantenimiento","Transporte público / Uber"],
-  "Seguros":            ["Salud","Auto","Vida","Hogar"],
+  "Seguros":            ["Salud","Auto","Vida - Term","Vida - Whole","Hogar","Disability","Umbrella","Otro"],
   "Dependientes":       ["Cuidado de niños","Cuidado de mayores","Educación"],
   "Deuda":              ["Tarjeta de crédito","Préstamo de auto","Préstamo estudiantil","Hipoteca","HELOC","Préstamo personal","Otro"],
   "Entretenimiento":    ["Cine / Conciertos","Streaming","Vacaciones"],
@@ -1150,28 +1151,39 @@ function wireLiabilitiesForm(card, k, listEl, errEl, multi){
 // ══════════════════════════════════════════════════════════
 function renderItemsList(catKey, container){
   if(!container) return;
-  const items=state.financials.items.filter(it=>it.category===catKey);
+  const items    = state.financials.items.filter(it=>it.category===catKey);
+  const isCascade = catKey==='expenses' || catKey==='savings';
+  const isDebt    = catKey==='liabilities';
+  const isMonthly = isCascade;
+
   container.innerHTML = items.length === 0
     ? `<p style="font-size:12px;color:var(--muted);text-align:center;padding:10px 0;">Aún no hay items añadidos.</p>`
     : items.map(it=>{
-        const isDebt = catKey==='liabilities';
-        let detail = `${fmtUSD(it.value)} · ${escapeHtml(pName(it.owner))}`;
-        if(isDebt){
-          if(it.interestRate!=null) detail += ` · ${it.interestRate}% anual`;
-          if(it.monthsRemaining!=null) detail += ` · ${it.monthsRemaining} meses`;
-        }
+        // Línea 1 — siempre: Categoría / Tipo
+        const topLabel = isCascade
+          ? `${it.expenseCategory||''} – ${it.subcategory||''}`
+          : (it.type || '—');
+
+        // Línea 2 — alias · monto · titular (+ extras deuda)
+        const parts = [];
+        if(it.alias) parts.push(it.alias);
+        parts.push(fmtUSD(it.value) + (isMonthly ? '/mes' : ''));
+        parts.push(pName(it.owner));
+        if(isDebt && it.interestRate    != null) parts.push(`${it.interestRate}% anual`);
+        if(isDebt && it.monthsRemaining != null) parts.push(`${it.monthsRemaining} meses`);
+
         return `<div class="itemChip" data-id="${it.id}">
           <div class="chipInfo">
-            <div class="chipName">${escapeHtml(it.name)}</div>
-            <div class="chipDetails">${detail}</div>
+            <div class="chipName">${escapeHtml(topLabel)}</div>
+            <div class="chipDetails">${parts.map(p=>escapeHtml(String(p))).join(' · ')}</div>
           </div>
           <button class="chipRemove" type="button" title="Eliminar">×</button>
         </div>`;
       }).join('');
-  // Event delegation para remove buttons
+
   container.onclick = e => {
     const btn = e.target.closest('.chipRemove'); if(!btn) return;
-    const id = btn.closest('.itemChip').dataset.id;
+    const id  = btn.closest('.itemChip').dataset.id;
     state.financials.items = state.financials.items.filter(it=>it.id!==id);
     renderItemsList(catKey, container); debouncedSave();
   };
@@ -1404,27 +1416,30 @@ function generateCoachPDF(state){
   doc.roundedRect(MARG, Y, CW, 28, 4, 4, 'S');
   doc.setLineWidth(0.1);
 
-  // Columna izquierda
-  setFont(false, 7.5, C.muted);   doc.text('NOMBRE COMPLETO',   MARG+6,  Y+6);
-  setFont(true,  11,  C.dark);    doc.text(primaryName,          MARG+6,  Y+13);
-  setFont(false, 7.5, C.muted);   doc.text('EMAIL',              MARG+6,  Y+19);
-  setFont(false, 9,   C.dark);    doc.text(state.userEmail||'—', MARG+6,  Y+25);
+  // Columna izquierda — Nombre
+  setFont(false, 7.5, C.muted);   doc.text('NOMBRE COMPLETO',  MARG+6,  Y+6);
+  setFont(true,  11,  C.dark);    doc.text(primaryName,         MARG+6,  Y+13);
 
-  // Columna centro
-  const colMid = MARG + CW*0.38;
-  setFont(false, 7.5, C.muted);   doc.text('EDAD',               colMid,  Y+6);
+  // Columna centro-izquierda — Email
+  const colEmail = MARG + CW*0.36;
+  setFont(false, 7.5, C.muted);   doc.text('EMAIL',             colEmail, Y+6);
+  setFont(false, 9,   C.dark);    doc.text(state.userEmail||'—', colEmail, Y+13);
+
+  // Columna centro-derecha — Edad / Género
+  const colMid = MARG + CW*0.64;
+  setFont(false, 7.5, C.muted);   doc.text('EDAD',              colMid,  Y+6);
   setFont(true,  11,  C.dark);    doc.text(String(primary.age||'—'), colMid, Y+13);
-  setFont(false, 7.5, C.muted);   doc.text('GÉNERO',             colMid,  Y+19);
+  setFont(false, 7.5, C.muted);   doc.text('GÉNERO',            colMid,  Y+19);
   setFont(false, 9,   C.dark);    doc.text(({male:'Masculino',female:'Femenino',prefer_not_to_say:'Prefiere no indicar'})[primary.gender]||'—', colMid, Y+25);
 
-  // Columna derecha
-  const colRight = MARG + CW*0.62;
-  setFont(false, 7.5, C.muted);   doc.text('ROL ECONÓMICO',      colRight, Y+6);
+  // Columna derecha — Rol económico
+  const colRight = MARG + CW*0.80;
+  setFont(false, 7.5, C.muted);   doc.text('ROL ECONÓMICO',     colRight, Y+6);
   const roleTxt = ROLE_LBL2[state.people.householdRole]||'—';
-  const roleLines = doc.splitTextToSize(roleTxt, CW*0.35);
+  const roleLines = doc.splitTextToSize(roleTxt, CW*0.18);
   setFont(true, 9, C.primary);
-  roleLines.forEach((ln,i) => doc.text(ln, colRight, Y+13+(i*5)));
-  setFont(false, 7.5, C.muted);   doc.text('PLANTILLA FAMILIAR', colRight, Y+19);
+  roleLines.slice(0,2).forEach((ln,i) => doc.text(ln, colRight, Y+13+(i*5)));
+  setFont(false, 7.5, C.muted);   doc.text('ESTRUCTURA',        colRight, Y+19);
   setFont(false, 9,   C.dark);    doc.text(({single:'Solo',couple:'Pareja',family:'Familia',custom:'Personalizada'})[state.people.template]||'—', colRight, Y+25);
 
   Y += 32;
@@ -1458,22 +1473,20 @@ function generateCoachPDF(state){
   }
 
   // ══════════════════════════════════
-  //  KPI GRID
+  //  KPI GRID  — Resumen Ejecutivo
   // ══════════════════════════════════
-  sectionBanner('RESUMEN EJECUTIVO');
+  sectionBanner('A) RESUMEN EJECUTIVO');
 
   const kpis = [
-    ['Ingreso Anual', fUSD(totalIncome)],
-    ['Gasto Mensual', fUSD(totalExpenses)],
-    ['Ahorro Mensual', fUSD(totalSavings)],
-    ['Liquidez (Banco)', fUSD(totalBanking)],
-    ['Inv. Retiro', fUSD(totalRetInv)],
-    ['Otras Inv.', fUSD(totalNonRet)],
-    ['Deuda Total', fUSD(totalDebt)],
-    ['Patrimonio Neto', fUSD(netWorth)],
-    ['Rango Ingreso', ({
-      '0-50k':'< $50k','50-100k':'$50k-$100k','100-200k':'$100k-$200k','200k+':'> $200k'
-    })[state.financials.incomeRange]||'—'],
+    ['Ingreso Anual (hogar)',  fUSD(totalIncome)],
+    ['Gasto Mensual',         fUSD(totalExpenses)],
+    ['Ahorro Mensual',        fUSD(totalSavings)],
+    ['Liquidez (Banco)',      fUSD(totalBanking)],
+    ['Inv. Retiro',           fUSD(totalRetInv)],
+    ['Otras Inv.',            fUSD(totalNonRet)],
+    ['Deuda Total',           fUSD(totalDebt)],
+    ['Patrimonio Neto',       fUSD(netWorth)],
+    ['Rango Ingreso',         ({'0-50k':'< $50k','50-100k':'$50k–$100k','100-200k':'$100k–$200k','200k+':'> $200k'})[state.financials.incomeRange]||'—'],
   ];
 
   const cols = 3;
@@ -1482,73 +1495,18 @@ function generateCoachPDF(state){
   kpis.forEach(([k,v], i)=>{
     const col = i % cols;
     const row = Math.floor(i / cols);
-    const cx = MARG + col * cellW;
-    const cy = Y + row * cellH;
-    fillRect(cx, cy, cellW, cellH, col%2===0?(row%2===0?C.light:C.white):(row%2===0?C.white:C.light));
-    doc.setDrawColor(...C.border);
-    doc.rect(cx, cy, cellW, cellH, 'S');
-    setFont(false, 7.5, C.muted);
-    doc.text(k, cx+4, cy+5.5);
-    setFont(true, 10, C.dark);
-    doc.text(String(v), cx+4, cy+12);
+    const cx  = MARG + col * cellW;
+    const cy  = Y + row * cellH;
+    fillRect(cx, cy, cellW, cellH, row%2===0 ? C.light : C.white);
+    doc.setDrawColor(...C.border); doc.rect(cx, cy, cellW, cellH, 'S');
+    setFont(false, 7.5, C.muted); doc.text(k,       cx+4, cy+5.5);
+    setFont(true,  10,  C.dark);  doc.text(String(v), cx+4, cy+12);
   });
-  Y += Math.ceil(kpis.length / cols) * cellH + 4;
+  Y += Math.ceil(kpis.length / cols) * cellH + 6;
 
-  // Ratios row
-  needsPage(16);
-  const ratios = [
-    {label:'Tasa de Ahorro', val:`${savingsRate.toFixed(1)}%`, color: savingsRate>=15?C.ok:C.warn},
-    {label:'Deuda / Ingreso Anual', val:`${dti.toFixed(1)}%`, color: dti<30?C.ok:(dti<50?C.warn:C.bad)},
-    {label:'Patrimonio Neto', val:fUSD(netWorth), color:C.primary},
-  ];
-  const rw = CW / 3;
-  ratios.forEach(({label,val,color},i)=>{
-    const cx=MARG+i*rw;
-    fillRect(cx,Y,rw,16,C.white);
-    doc.setDrawColor(...C.border); doc.rect(cx,Y,rw,16,'S');
-    setFont(false,7.5,C.muted); doc.text(label, cx+4, Y+6);
-    setFont(true,12,color); doc.text(val, cx+4, Y+13);
-  });
-  Y += 20;
-
-  // Flags row
-  needsPage(12);
-  const flags = [
-    {label:'Situacion compleja', val:state.flags?.hasComplexSituation??state.notes?.length>100, warn:true},
-    {label:'Deudas activas', val:state.financials.hasDebts, warn:true},
-    {label:'Tiene inversiones', val:state.financials.hasInvestments!=='none'&&state.financials.hasInvestments!==null},
-    {label:'Bienes raices', val:state.financials.hasRealEstate},
-  ];
-  const fw = CW/4;
-  flags.forEach(({label,val,warn},i)=>{
-    const cx=MARG+i*fw;
-    const color = val?(warn?C.warn:C.ok):C.muted;
-    fillRect(cx,Y,fw,10,C.section);
-    doc.setDrawColor(...C.border); doc.rect(cx,Y,fw,10,'S');
-    setFont(true,7.5,color);
-    doc.text(`${val?'✔':'–'}  ${label}: ${val?'Si':'No'}`, cx+3, Y+6.5);
-  });
-  Y += 14;
-
-  // Client note
-  if(state.notes?.trim()){
-    needsPage(20);
-    sectionBanner('NOTA DEL CLIENTE');
-    fillRect(MARG,Y,CW,18,[238,241,253]);
-    doc.setDrawColor(...C.primary); doc.setLineWidth(1);
-    doc.line(MARG,Y,MARG,Y+18);
-    doc.setLineWidth(0.1);
-    setFont(false,8.5,[30,58,95]);
-    const noteLines = doc.splitTextToSize(`"${state.notes}"`, CW-10);
-    noteLines.slice(0,3).forEach((ln,i)=>doc.text(ln, MARG+5, Y+5+(i*5)));
-    Y += 22;
-  }
-
-  // ══════════════════════════════════
-  //  METAS
-  // ══════════════════════════════════
+  // ── Metas
   needsPage(20);
-  sectionBanner('METAS FINANCIERAS DECLARADAS');
+  sectionBanner('METAS FINANCIERAS');
   if(state.goals.length){
     const goalsPerRow=4, gw=CW/goalsPerRow, gh=10;
     state.goals.forEach((g,i)=>{
@@ -1559,16 +1517,232 @@ function generateCoachPDF(state){
       doc.setDrawColor(...C.border); doc.rect(cx,cy,gw,gh,'S');
       setFont(false,8,C.dark); doc.text(`• ${GOAL_LBL[g]||g}`, cx+3, cy+6.5);
     });
-    Y += (Math.ceil(state.goals.length/goalsPerRow))*gh + 6;
+    Y += Math.ceil(state.goals.length/goalsPerRow)*gh + 6;
   } else {
     setFont(false,8.5,C.muted); doc.text('No se seleccionaron metas.', MARG, Y); Y+=8;
   }
 
+  // ── Nota del cliente
+  if(state.notes?.trim()){
+    needsPage(22);
+    sectionBanner('NOTA DEL CLIENTE');
+    const noteLines = doc.splitTextToSize(`"${state.notes}"`, CW-12);
+    const noteH = Math.min(noteLines.length, 5) * 5 + 6;
+    fillRect(MARG, Y, CW, noteH, [238,241,253]);
+    doc.setDrawColor(...C.primary); doc.setLineWidth(1);
+    doc.line(MARG, Y, MARG, Y+noteH);
+    doc.setLineWidth(0.1);
+    setFont(false, 8.5, [30,58,95]);
+    noteLines.slice(0,5).forEach((ln,i)=>doc.text(ln, MARG+5, Y+5+(i*5)));
+    Y += noteH + 6;
+  }
+
   // ══════════════════════════════════
-  //  PAGE 2 — SNAPSHOT FINANCIERO
+  //  PAGE 2 — ESTADO DE INGRESOS Y EGRESOS
   // ══════════════════════════════════
-  doc.addPage(); Y=MARG;
-  sectionBanner('SNAPSHOT FINANCIERO DETALLADO');
+  doc.addPage(); Y = MARG;
+  sectionBanner('B) ESTADO DE INGRESOS Y EGRESOS');
+
+  // Ingresos detallados
+  const incomeItems = items.filter(i=>i.category==='income');
+  if(incomeItems.length){
+    setFont(true, 8.5, C.dark); doc.text('INGRESOS', MARG, Y+4); Y+=7;
+    doc.autoTable({
+      startY: Y, margin:{left:MARG,right:MARG},
+      head:[['Tipo','Titular','Monto Anual']],
+      body: incomeItems.map(it=>[ it.alias||it.type||'—', pn(it.owner), fUSD(it.value) ]),
+      styles:{fontSize:8,cellPadding:2.5},
+      headStyles:{fillColor:C.ok,textColor:C.white,fontStyle:'bold',fontSize:8},
+      alternateRowStyles:{fillColor:[240,253,244]},
+      columnStyles:{0:{cellWidth:90},1:{cellWidth:50},2:{cellWidth:CW-140,halign:'right'}},
+    });
+    Y = doc.lastAutoTable.finalY;
+    // Subtotal ingresos
+    fillRect(MARG, Y, CW, 9, [220,252,231]);
+    doc.setDrawColor(...C.ok); doc.rect(MARG,Y,CW,9,'S');
+    setFont(true,9,C.ok); doc.text('TOTAL INGRESOS', MARG+4, Y+6);
+    doc.text(fUSD(totalIncome), W-MARG, Y+6, {align:'right'});
+    Y += 13;
+  }
+
+  // Impuestos (subcategoria Impuestos de gastos)
+  const taxItems = items.filter(i=>i.category==='expenses' && i.expenseCategory==='Impuestos');
+  const totalTaxes = taxItems.reduce((a,b)=>a+b.value,0)*12;
+  if(taxItems.length){
+    needsPage(16);
+    setFont(true,8.5,C.dark); doc.text('IMPUESTOS', MARG, Y+4); Y+=7;
+    doc.autoTable({
+      startY:Y, margin:{left:MARG,right:MARG},
+      head:[['Tipo','Titular','Monto /mes','Anual']],
+      body: taxItems.map(it=>[ it.alias||it.subcategory||'—', pn(it.owner), fUSD(it.value)+'/mes', fUSD(it.value*12) ]),
+      styles:{fontSize:8,cellPadding:2.5},
+      headStyles:{fillColor:[100,116,139],textColor:C.white,fontStyle:'bold',fontSize:8},
+      alternateRowStyles:{fillColor:C.section},
+      columnStyles:{0:{cellWidth:90},1:{cellWidth:40},2:{cellWidth:30,halign:'right'},3:{cellWidth:CW-160,halign:'right'}},
+    });
+    Y = doc.lastAutoTable.finalY;
+    fillRect(MARG,Y,CW,9,C.section);
+    doc.setDrawColor(...C.border); doc.rect(MARG,Y,CW,9,'S');
+    setFont(true,9,C.muted); doc.text('TOTAL IMPUESTOS (anual)', MARG+4, Y+6);
+    doc.text(fUSD(totalTaxes), W-MARG, Y+6, {align:'right'});
+    Y+=13;
+  }
+
+  // Gastos (sin impuestos)
+  const nonTaxExpenses = items.filter(i=>i.category==='expenses' && i.expenseCategory!=='Impuestos');
+  const totalNonTaxExp = nonTaxExpenses.reduce((a,b)=>a+b.value,0);
+  if(nonTaxExpenses.length){
+    needsPage(16);
+    setFont(true,8.5,C.dark); doc.text('GASTOS MENSUALES', MARG, Y+4); Y+=7;
+    doc.autoTable({
+      startY:Y, margin:{left:MARG,right:MARG},
+      head:[['Categoría – Subcategoría','Alias','Titular','Monto /mes']],
+      body: nonTaxExpenses.map(it=>[
+        `${it.expenseCategory||''} – ${it.subcategory||''}`,
+        it.alias||'—',
+        pn(it.owner),
+        fUSD(it.value)+'/mes',
+      ]),
+      styles:{fontSize:8,cellPadding:2.5},
+      headStyles:{fillColor:C.bad,textColor:C.white,fontStyle:'bold',fontSize:8},
+      alternateRowStyles:{fillColor:[255,245,245]},
+      columnStyles:{0:{cellWidth:70},1:{cellWidth:40},2:{cellWidth:35},3:{cellWidth:CW-145,halign:'right'}},
+    });
+    Y = doc.lastAutoTable.finalY;
+    fillRect(MARG,Y,CW,9,[255,228,230]);
+    doc.setDrawColor(...C.bad); doc.rect(MARG,Y,CW,9,'S');
+    setFont(true,9,C.bad); doc.text('TOTAL GASTOS /mes', MARG+4, Y+6);
+    doc.text(fUSD(totalNonTaxExp)+'/mes', W-MARG, Y+6, {align:'right'});
+    Y+=13;
+  }
+
+  // Ahorro
+  const savingsItems = items.filter(i=>i.category==='savings');
+  if(savingsItems.length){
+    needsPage(16);
+    setFont(true,8.5,C.dark); doc.text('AHORRO', MARG, Y+4); Y+=7;
+    doc.autoTable({
+      startY:Y, margin:{left:MARG,right:MARG},
+      head:[['Categoría – Subcategoría','Alias','Titular','Monto /mes']],
+      body: savingsItems.map(it=>[
+        `${it.expenseCategory||''} – ${it.subcategory||''}`,
+        it.alias||'—',
+        pn(it.owner),
+        fUSD(it.value)+'/mes',
+      ]),
+      styles:{fontSize:8,cellPadding:2.5},
+      headStyles:{fillColor:C.primary,textColor:C.white,fontStyle:'bold',fontSize:8},
+      alternateRowStyles:{fillColor:C.section},
+      columnStyles:{0:{cellWidth:70},1:{cellWidth:40},2:{cellWidth:35},3:{cellWidth:CW-145,halign:'right'}},
+    });
+    Y = doc.lastAutoTable.finalY;
+    fillRect(MARG,Y,CW,9,[238,241,253]);
+    doc.setDrawColor(...C.primary); doc.rect(MARG,Y,CW,9,'S');
+    setFont(true,9,C.primary); doc.text('TOTAL AHORRO /mes', MARG+4, Y+6);
+    doc.text(fUSD(totalSavings)+'/mes', W-MARG, Y+6, {align:'right'});
+    Y+=13;
+  }
+
+  // Waterfall resumen
+  needsPage(48);
+  const incomeMo = totalIncome/12;
+  const taxesMo  = totalTaxes/12;
+  const waterfall = [
+    {label:'(+) Ingresos (mensualizado)',      val:  incomeMo,                         color:C.ok},
+    {label:'(–) Impuestos',                     val: -taxesMo,                          color:C.muted},
+    {label:'    Ingreso Neto',                  val:  incomeMo - taxesMo,               color:C.dark, bold:true},
+    {label:'(–) Gastos mensuales',              val: -totalNonTaxExp,                   color:C.bad},
+    {label:'(–) Ahorro mensual',                val: -totalSavings,                     color:C.primary},
+    {label:'    Flujo disponible estimado',     val:  incomeMo-taxesMo-totalNonTaxExp-totalSavings, color:C.dark, bold:true},
+  ];
+  setFont(true,9,C.dark); doc.text('RESUMEN FLUJO MENSUAL', MARG, Y+4); Y+=7;
+  waterfall.forEach(({label,val,color,bold})=>{
+    needsPage(9);
+    fillRect(MARG,Y,CW,9, bold ? [238,241,253] : C.white);
+    doc.setDrawColor(...C.border); doc.rect(MARG,Y,CW,9,'S');
+    setFont(bold??false, 8.5, color);
+    doc.text(label,      MARG+4,     Y+6);
+    doc.text(fUSD(Math.abs(val))+(val<0?' (egreso)':''), W-MARG, Y+6, {align:'right'});
+    Y+=9;
+  });
+  Y+=6;
+
+  // ══════════════════════════════════
+  //  PAGE 3 — ESTADO DE BALANCE
+  // ══════════════════════════════════
+  doc.addPage(); Y = MARG;
+  sectionBanner('C) ESTADO DE BALANCE');
+
+  // Activos detallados
+  const assetCats = ['banking','investments_retirement','investments_nonretirement','real_estate','other_assets'];
+  assetCats.forEach(catKey=>{
+    const catItems = items.filter(i=>i.category===catKey);
+    if(!catItems.length) return;
+    const catTot = catItems.reduce((a,b)=>a+b.value,0);
+    needsPage(14);
+    setFont(true,8,C.muted); doc.text((CAT_LBL[catKey]||catKey).toUpperCase(), MARG, Y+4);
+    doc.text(fUSD(catTot), W-MARG, Y+4, {align:'right'});
+    doc.setDrawColor(...C.border); doc.line(MARG,Y+6,W-MARG,Y+6); Y+=8;
+    doc.autoTable({
+      startY:Y, margin:{left:MARG,right:MARG},
+      body: catItems.map(it=>[it.alias||it.type||'—', pn(it.owner), fUSD(it.value)]),
+      styles:{fontSize:8,cellPadding:2},
+      alternateRowStyles:{fillColor:C.section},
+      columnStyles:{0:{cellWidth:90},1:{cellWidth:50},2:{cellWidth:CW-140,halign:'right'}},
+    });
+    Y = doc.lastAutoTable.finalY + 4;
+  });
+
+  // Total activos
+  needsPage(10);
+  fillRect(MARG,Y,CW,10,[220,252,231]);
+  doc.setDrawColor(...C.ok); doc.rect(MARG,Y,CW,10,'S');
+  setFont(true,9.5,C.ok); doc.text('TOTAL ACTIVOS', MARG+4, Y+7);
+  doc.text(fUSD(totalAssets), W-MARG, Y+7, {align:'right'});
+  Y+=14;
+
+  // Pasivos detallados
+  const debtItems = items.filter(i=>i.category==='liabilities');
+  if(debtItems.length){
+    needsPage(16);
+    setFont(true,8.5,C.dark); doc.text('PASIVOS', MARG, Y+4); Y+=7;
+    doc.autoTable({
+      startY:Y, margin:{left:MARG,right:MARG},
+      head:[['Tipo','Alias','Titular','Saldo','Tasa %','Meses Rest.']],
+      body: debtItems.map(it=>[
+        it.type||'—',
+        it.alias||'—',
+        pn(it.owner),
+        fUSD(it.value),
+        it.interestRate!=null?`${it.interestRate}%`:'—',
+        it.monthsRemaining!=null?String(it.monthsRemaining):'—',
+      ]),
+      styles:{fontSize:8,cellPadding:2.5},
+      headStyles:{fillColor:C.bad,textColor:C.white,fontStyle:'bold',fontSize:8},
+      alternateRowStyles:{fillColor:[255,245,245]},
+      columnStyles:{0:{cellWidth:50},1:{cellWidth:40},2:{cellWidth:32},3:{cellWidth:28,halign:'right'},4:{cellWidth:20,halign:'right'},5:{cellWidth:CW-170,halign:'right'}},
+    });
+    Y = doc.lastAutoTable.finalY + 2;
+    fillRect(MARG,Y,CW,10,[255,228,230]);
+    doc.setDrawColor(...C.bad); doc.rect(MARG,Y,CW,10,'S');
+    setFont(true,9.5,C.bad); doc.text('TOTAL PASIVOS', MARG+4, Y+7);
+    doc.text(fUSD(totalDebt), W-MARG, Y+7, {align:'right'});
+    Y+=14;
+  }
+
+  // Patrimonio Neto
+  needsPage(12);
+  fillRect(MARG,Y,CW,12,[238,241,253]);
+  doc.setDrawColor(...C.primary); doc.rect(MARG,Y,CW,12,'S');
+  setFont(true,11,C.primary); doc.text('PATRIMONIO NETO (Activos – Pasivos)', MARG+4, Y+8);
+  doc.text(fUSD(netWorth), W-MARG, Y+8, {align:'right'});
+  Y+=16;
+
+  // ══════════════════════════════════
+  //  PAGE 4+ — SNAPSHOT FINANCIERO DETALLADO
+  // ══════════════════════════════════
+  doc.addPage(); Y = MARG;
+  sectionBanner('D) SNAPSHOT FINANCIERO DETALLADO');
 
   const CATS_ORDER=['income','expenses','savings','banking','investments_retirement','investments_nonretirement','liabilities','insurance','real_estate','business_trust','legal','other_assets'];
   const selected = state.financials.categoriesSelected||[];
@@ -1581,105 +1755,35 @@ function generateCoachPDF(state){
     const period=isMonthly(catKey)?'/mes':'';
     needsPage(20);
 
-    // Sub-header
-    setFont(true,9,C.primary);
-    doc.text(`${CAT_LBL[catKey]||catKey}`, MARG, Y+4);
-    setFont(true,9,C.primary);
+    setFont(true,9,C.primary); doc.text(`${CAT_LBL[catKey]||catKey}`, MARG, Y+4);
     doc.text(`Total: ${fUSD(catTotal)}${period}`, W-MARG, Y+4, {align:'right'});
     doc.setDrawColor(...C.primary); doc.setLineWidth(0.5);
     doc.line(MARG,Y+6,W-MARG,Y+6); doc.setLineWidth(0.1);
-    Y += 8;
+    Y+=8;
 
+    const isDebtCat = catKey==='liabilities';
     doc.autoTable({
-      startY: Y,
-      margin: {left:MARG, right:MARG},
-      head:[['Descripcion','Titular','Saldo','Tasa %','Meses Rest.','% Cat.']],
-      body: catItems.map(it=>([
-        it.name||'—',
-        pn(it.owner||'household'),
-        fUSD(it.value)+period,
-        it.interestRate!=null ? `${it.interestRate}%` : '—',
-        it.monthsRemaining!=null ? String(it.monthsRemaining) : '—',
-        catTotal?`${((it.value/catTotal)*100).toFixed(0)}%`:'—',
-      ])),
-      styles:{ fontSize:8, cellPadding:2.5 },
-      headStyles:{ fillColor:C.primary, textColor:C.white, fontStyle:'bold', fontSize:8 },
-      alternateRowStyles:{ fillColor:C.section },
-      columnStyles:{ 0:{cellWidth:70}, 1:{cellWidth:32}, 2:{cellWidth:24,halign:'right'}, 3:{cellWidth:16,halign:'right'}, 4:{cellWidth:18,halign:'right'}, 5:{cellWidth:CW-160,halign:'right'} },
+      startY:Y, margin:{left:MARG,right:MARG},
+      head: isDebtCat
+        ? [['Tipo','Alias','Titular','Saldo','Tasa %','Meses Rest.']]
+        : [['Categoría / Tipo','Alias','Titular','Monto','% Cat.']],
+      body: isDebtCat
+        ? catItems.map(it=>[it.type||'—', it.alias||'—', pn(it.owner), fUSD(it.value)+period, it.interestRate!=null?`${it.interestRate}%`:'—', it.monthsRemaining!=null?String(it.monthsRemaining):'—'])
+        : catItems.map(it=>{
+            const typeLabel = (it.expenseCategory && it.subcategory)
+              ? `${it.expenseCategory} – ${it.subcategory}`
+              : (it.type||'—');
+            return [typeLabel, it.alias||'—', pn(it.owner), fUSD(it.value)+period, catTotal?`${((it.value/catTotal)*100).toFixed(0)}%`:'—'];
+          }),
+      styles:{fontSize:8,cellPadding:2.5},
+      headStyles:{fillColor:C.primary,textColor:C.white,fontStyle:'bold',fontSize:8},
+      alternateRowStyles:{fillColor:C.section},
+      columnStyles: isDebtCat
+        ? {0:{cellWidth:50},1:{cellWidth:40},2:{cellWidth:32},3:{cellWidth:28,halign:'right'},4:{cellWidth:20,halign:'right'},5:{cellWidth:CW-170,halign:'right'}}
+        : {0:{cellWidth:80},1:{cellWidth:38},2:{cellWidth:32},3:{cellWidth:25,halign:'right'},4:{cellWidth:CW-175,halign:'right'}},
     });
     Y = doc.lastAutoTable.finalY + 4;
   });
-
-  // ── Balance Sheet
-  needsPage(40);
-  sectionBanner('BALANCE SHEET SIMPLIFICADO');
-  doc.autoTable({
-    startY: Y,
-    margin: {left:MARG, right:MARG},
-    head:[['ACTIVOS','Monto','PASIVOS','Monto']],
-    body:[
-      ['Cuentas bancarias', fUSD(totalBanking), 'Deudas totales', fUSD(totalDebt)],
-      ['Inversiones retiro', fUSD(totalRetInv), '', ''],
-      ['Otras inversiones', fUSD(totalNonRet), '', ''],
-      ['TOTAL ACTIVOS', fUSD(totalAssets), 'PATRIMONIO NETO', fUSD(netWorth)],
-    ],
-    styles:{ fontSize:9, cellPadding:3 },
-    headStyles:{ fillColor:C.primary, textColor:C.white, fontStyle:'bold' },
-    alternateRowStyles:{ fillColor:C.section },
-    didParseCell: data=>{
-      if(data.row.index===3){
-        data.cell.styles.fontStyle='bold';
-        data.cell.styles.textColor=data.column.index<2?C.ok:C.primary;
-        data.cell.styles.fillColor=[240,244,255];
-      }
-    },
-    columnStyles:{ 0:{cellWidth:60}, 1:{cellWidth:CW/2-60}, 2:{cellWidth:60}, 3:{cellWidth:CW/2-60} },
-  });
-  Y = doc.lastAutoTable.finalY + 8;
-
-  // ── Areas de oportunidad
-  needsPage(20);
-  sectionBanner('AREAS DE ATENCION PARA EL COACH');
-  const opp=[];
-  if(savingsRate<15) opp.push({icon:'⚠', txt:`Tasa de ahorro baja (${savingsRate.toFixed(1)}%). Meta recomendada: 15-20% del ingreso mensual.`, color:C.warn, bg:[255,251,235]});
-  if(dti>30) opp.push({icon:'!', txt:`Deuda/ingreso elevada (${dti.toFixed(1)}%). Revisar estrategia de amortizacion.`, color:C.bad, bg:[254,242,242]});
-  if(!state.financials.hasLegal) opp.push({icon:'?', txt:`Sin documentos legales (testamento, trust, POA). Area critica.`, color:C.warn, bg:[255,251,235]});
-  if(!state.financials.hasRealEstate && state.goals.includes('casa')) opp.push({icon:'i', txt:`Meta: comprar casa sin propiedad actual. Evaluar capacidad de down payment.`, color:C.primary, bg:[238,241,253]});
-  if(totalBanking<totalExpenses*3) opp.push({icon:'!', txt:`Fondo de emergencia insuficiente. Actual: ${fUSD(totalBanking)} (meta: ${fUSD(totalExpenses*3)}).`, color:C.warn, bg:[255,251,235]});
-  if(!opp.length) opp.push({icon:'✓', txt:'Sin alertas criticas. Perfil financiero equilibrado segun los datos.', color:C.ok, bg:[240,253,244]});
-
-  opp.forEach(({txt,color,bg})=>{
-    needsPage(14);
-    fillRect(MARG,Y,CW,12,bg);
-    doc.setFillColor(...color); doc.rect(MARG,Y,2,12,'F');
-    setFont(false,8.5,C.dark);
-    const lines=doc.splitTextToSize(txt,CW-10);
-    lines.slice(0,2).forEach((ln,i)=>{ setFont(i===0,8.5,C.dark); doc.text(ln,MARG+5,Y+4.5+(i*5)); });
-    Y+=14;
-  });
-
-  // ── Preguntas sugeridas
-  needsPage(20);
-  sectionBanner('PREGUNTAS SUGERIDAS PARA LA SESION');
-  const qs=[
-    '¿Tasa de interes de la deuda estudiantil y tarjeta? ¿Estrategia de pago?',
-    '¿El 401(k) tiene match del empleador? ¿Aprovechan el maximo?',
-    '¿Situacion fiscal multi-estado? ¿Trabajan con contador?',
-    '¿Han hablado con abogado para testamento/trust con hijo menor?',
-    '¿Horizonte de tiempo y objetivo de down payment para casa propia?',
-    '¿La poliza Term cubre a ambos? ¿Tienen cobertura de disability?',
-  ];
-  doc.autoTable({
-    startY: Y,
-    margin: {left:MARG, right:MARG},
-    head:[['#','Pregunta sugerida']],
-    body: qs.map((q,i)=>[String(i+1), q]),
-    styles:{ fontSize:8.5, cellPadding:3 },
-    headStyles:{ fillColor:C.primary, textColor:C.white, fontStyle:'bold' },
-    alternateRowStyles:{ fillColor:C.section },
-    columnStyles:{ 0:{cellWidth:10,halign:'center'}, 1:{cellWidth:CW-10} },
-  });
-  Y = doc.lastAutoTable.finalY + 6;
 
   // ── Footer en todas las páginas
   const totalPages = doc.internal.getNumberOfPages();
@@ -1956,6 +2060,134 @@ function generateCoachExcel(state){
 }
 // ════════════════════════════════════════════════════════════════════════════
 
+
+// ════════════════════════════════════════════════════════════════════════════
+//  DUMMY DATA — para revisar el reporte sin llenar el form manualmente
+//  Familia López-Rivera: pareja con hijo, ingresos medios-altos, deudas activas
+// ════════════════════════════════════════════════════════════════════════════
+function loadDummyData(){
+  Object.assign(state, {
+    startTime: Date.now() - 420000,
+    userName:  'Carlos López',
+    userEmail: 'carlos.lopez@email.com',
+
+    people: {
+      template:       'family',
+      householdRole:  'shared',
+      members: [
+        { id:'p1', role:'primary',    firstName:'Carlos',  lastName:'López',   age:42, gender:'male',   relationshipToPrimary:'' },
+        { id:'p2', role:'additional', firstName:'María',   lastName:'Rivera',  age:39, gender:'female', relationshipToPrimary:'spouse' },
+        { id:'p3', role:'additional', firstName:'Sofía',   lastName:'López',   age:14, gender:'female', relationshipToPrimary:'child' },
+      ]
+    },
+
+    goals: ['retiro','emergencia','educacion','inversiones','deudas'],
+
+    financials: {
+      incomeRange:      '100-200k',
+      hasDebts:         true,
+      hasInvestments:   'both',
+      hasRealEstate:    true,
+      hasInsurance:     true,
+      hasBusiness:      false,
+      hasLegal:         false,
+      hasOtherAssets:   true,
+      hasSavings:       true,
+      categoriesSelected: ['income','expenses','savings','banking','investments_retirement','investments_nonretirement','liabilities','insurance','real_estate','other_assets'],
+      items: [
+        // INGRESOS
+        { id:'inc1', category:'income', type:'Salario',          alias:'Salario Carlos',   name:'Salario Carlos',   value:95000, owner:'p1' },
+        { id:'inc2', category:'income', type:'Salario',          alias:'Salario María',    name:'Salario María',    value:62000, owner:'p2' },
+        { id:'inc3', category:'income', type:'Dividendos',       alias:'Dividendos acciones', name:'Dividendos',   value:3200,  owner:'p1' },
+
+        // GASTOS — Alimentación
+        { id:'exp1',  category:'expenses', expenseCategory:'Alimentación',      subcategory:'Supermercado',           alias:'Costco + Publix',    name:'Alimentación – Supermercado',           value:1100, owner:'household' },
+        { id:'exp2',  category:'expenses', expenseCategory:'Alimentación',      subcategory:'Comidas fuera',          alias:'Restaurants',         name:'Alimentación – Comidas fuera',          value:420,  owner:'household' },
+        // Casa
+        { id:'exp3',  category:'expenses', expenseCategory:'Casa',              subcategory:'Servicios básicos',      alias:'FPL + agua + gas',   name:'Casa – Servicios básicos',              value:380,  owner:'household' },
+        { id:'exp4',  category:'expenses', expenseCategory:'Casa',              subcategory:'Mantenimiento',          alias:'HOA + reparaciones', name:'Casa – Mantenimiento',                  value:320,  owner:'household' },
+        // Impuestos
+        { id:'exp5',  category:'expenses', expenseCategory:'Impuestos',         subcategory:'Federales',              alias:'',                   name:'Impuestos – Federales',                 value:1950, owner:'household' },
+        { id:'exp6',  category:'expenses', expenseCategory:'Impuestos',         subcategory:'Seguro social',          alias:'',                   name:'Impuestos – Seguro social',             value:610,  owner:'household' },
+        // Transportación
+        { id:'exp7',  category:'expenses', expenseCategory:'Transportación',    subcategory:'Gasolina',               alias:'',                   name:'Transportación – Gasolina',             value:280,  owner:'household' },
+        { id:'exp8',  category:'expenses', expenseCategory:'Transportación',    subcategory:'Mantenimiento',          alias:'',                   name:'Transportación – Mantenimiento',        value:120,  owner:'household' },
+        // Seguros
+        { id:'exp9',  category:'expenses', expenseCategory:'Seguros',           subcategory:'Salud',                  alias:'BlueCross',          name:'Seguros – Salud',                       value:640,  owner:'household' },
+        { id:'exp10', category:'expenses', expenseCategory:'Seguros',           subcategory:'Auto',                   alias:'GEICO x2 autos',     name:'Seguros – Auto',                        value:210,  owner:'household' },
+        { id:'exp11', category:'expenses', expenseCategory:'Seguros',           subcategory:'Vida - Term',            alias:'Term Carlos',        name:'Seguros – Vida - Term',                 value:95,   owner:'p1' },
+        // Dependientes
+        { id:'exp12', category:'expenses', expenseCategory:'Dependientes',      subcategory:'Educación',              alias:'Colegio Sofía',      name:'Dependientes – Educación',              value:890,  owner:'household' },
+        // Deuda (pagos mensuales)
+        { id:'exp13', category:'expenses', expenseCategory:'Deuda',             subcategory:'Hipoteca',               alias:'Hipoteca casa',      name:'Deuda – Hipoteca',                      value:2240, owner:'household' },
+        { id:'exp14', category:'expenses', expenseCategory:'Deuda',             subcategory:'Préstamo de auto',       alias:'Toyota RAV4',        name:'Deuda – Préstamo de auto',              value:520,  owner:'p2' },
+        { id:'exp15', category:'expenses', expenseCategory:'Deuda',             subcategory:'Tarjeta de crédito',     alias:'Chase Sapphire',     name:'Deuda – Tarjeta de crédito',            value:200,  owner:'p1' },
+        // Entretenimiento
+        { id:'exp16', category:'expenses', expenseCategory:'Entretenimiento',   subcategory:'Streaming',              alias:'Netflix+Spotify+Disney', name:'Entretenimiento – Streaming',       value:58,   owner:'household' },
+        { id:'exp17', category:'expenses', expenseCategory:'Entretenimiento',   subcategory:'Vacaciones',             alias:'Viajes anuales /12', name:'Entretenimiento – Vacaciones',          value:350,  owner:'household' },
+        // Telecomunicaciones
+        { id:'exp18', category:'expenses', expenseCategory:'Telecomunicaciones', subcategory:'Teléfono',              alias:'AT&T familia',       name:'Telecomunicaciones – Teléfono',         value:160,  owner:'household' },
+        { id:'exp19', category:'expenses', expenseCategory:'Telecomunicaciones', subcategory:'Internet',              alias:'Xfinity',            name:'Telecomunicaciones – Internet',         value:80,   owner:'household' },
+        // Gastos médicos
+        { id:'exp20', category:'expenses', expenseCategory:'Gastos Médicos',    subcategory:'Medicamentos',           alias:'',                   name:'Gastos Médicos – Medicamentos',         value:90,   owner:'household' },
+
+        // AHORRO
+        { id:'sav1', category:'savings', expenseCategory:'Retiro',              subcategory:'401(k)',                 alias:'401k Carlos (6%)',   name:'Retiro – 401(k)',                       value:475,  owner:'p1' },
+        { id:'sav2', category:'savings', expenseCategory:'Retiro',              subcategory:'401(k)',                 alias:'401k María (4%)',    name:'Retiro – 401(k)',                       value:207,  owner:'p2' },
+        { id:'sav3', category:'savings', expenseCategory:'Reserva de emergencia', subcategory:'Aporte mensual',      alias:'',                   name:'Reserva de emergencia – Aporte mensual', value:500, owner:'household' },
+        { id:'sav4', category:'savings', expenseCategory:'Inversión',           subcategory:'Brokerage',              alias:'Robinhood',          name:'Inversión – Brokerage',                 value:300,  owner:'p1' },
+
+        // BANKING
+        { id:'ban1', category:'banking', type:'Checking',  alias:'Chase Checking familiar', name:'Chase Checking familiar', value:18500, owner:'household' },
+        { id:'ban2', category:'banking', type:'Savings',   alias:'HYSA Ally 4.8%',          name:'HYSA Ally',               value:24000, owner:'household' },
+        { id:'ban3', category:'banking', type:'Checking',  alias:'Cuenta personal María',   name:'Cuenta personal María',   value:3200,  owner:'p2' },
+
+        // INVERSIONES RETIRO
+        { id:'ret1', category:'investments_retirement', type:'401(k)',        alias:'401k Fidelity Carlos', name:'401k Fidelity Carlos', value:148000, owner:'p1' },
+        { id:'ret2', category:'investments_retirement', type:'401(k)',        alias:'401k Vanguard María',  name:'401k Vanguard María',  value:86000,  owner:'p2' },
+        { id:'ret3', category:'investments_retirement', type:'Roth IRA',      alias:'Roth IRA Carlos',      name:'Roth IRA Carlos',      value:32000,  owner:'p1' },
+
+        // INVERSIONES NO-RETIRO
+        { id:'inv1', category:'investments_nonretirement', type:'Brokerage account', alias:'Schwab taxable',   name:'Schwab taxable',   value:41000, owner:'p1' },
+        { id:'inv2', category:'investments_nonretirement', type:'ETF/Fondos mutuos', alias:'529 Plan Sofía',   name:'529 Plan Sofía',   value:22000, owner:'household' },
+
+        // BIENES RAÍCES
+        { id:'re1', category:'real_estate', type:'Casa principal', alias:'Casa Miami - 4/2', name:'Casa Miami – 4/2', value:520000, owner:'household' },
+
+        // PASIVOS (saldos pendientes)
+        { id:'deb1', category:'liabilities', type:'Hipoteca',            alias:'Hipoteca casa Miami',  name:'Hipoteca casa Miami',  value:310000, owner:'household', interestRate:6.75, monthsRemaining:312 },
+        { id:'deb2', category:'liabilities', type:'Préstamo de auto',    alias:'Toyota RAV4 2022',     name:'Toyota RAV4 2022',     value:22400,  owner:'p2',         interestRate:5.9,  monthsRemaining:42  },
+        { id:'deb3', category:'liabilities', type:'Tarjeta de crédito',  alias:'Chase Sapphire',       name:'Chase Sapphire',       value:8600,   owner:'p1',         interestRate:24.99, monthsRemaining:null },
+        { id:'deb4', category:'liabilities', type:'Préstamo estudiantil', alias:'Student loan María',  name:'Student loan María',   value:14200,  owner:'p2',         interestRate:5.0,  monthsRemaining:60  },
+
+        // SEGUROS
+        { id:'ins1', category:'insurance', type:'Vida - Term',  alias:'Term 20yr Carlos $750k',  name:'Term 20yr Carlos $750k',  value:750000,  owner:'p1' },
+        { id:'ins2', category:'insurance', type:'Salud',        alias:'BlueCross PPO familia',   name:'BlueCross PPO familia',   value:0,       owner:'household' },
+        { id:'ins3', category:'insurance', type:'Auto',         alias:'GEICO 2 autos',           name:'GEICO 2 autos',           value:0,       owner:'household' },
+
+        // OTROS ACTIVOS
+        { id:'oth1', category:'other_assets', type:'Vehículo', alias:'Toyota RAV4 2022', name:'Toyota RAV4 2022', value:28000, owner:'p2' },
+        { id:'oth2', category:'other_assets', type:'Vehículo', alias:'Honda Accord 2020', name:'Honda Accord 2020', value:19000, owner:'p1' },
+      ]
+    },
+
+    notes: 'Estamos pensando en refinanciar la casa en los próximos 6 meses. También queremos empezar a planificar la universidad de Sofía. No tenemos testamento ni trust y queremos saber por dónde empezar.',
+    wizardStep: 1,
+    wizardComplete: true,
+    step: 1,
+  });
+
+  syncHeaderInputs();
+  setStep(5);  // ir directo al paso final para ver el resumen
+  showToast('🧪 Datos de prueba cargados — revisa el resumen y genera los archivos');
+}
+
+$('#dummyBtn').addEventListener('click', ()=>{
+  if(state.financials.items.length > 0){
+    if(!confirm('¿Reemplazar los datos actuales con los datos de prueba?')) return;
+  }
+  loadDummyData();
+});
 
 // ── RESET ──────────────────────────────────────────────────────────────────
 $('#resetBtn').addEventListener('click',()=>{
