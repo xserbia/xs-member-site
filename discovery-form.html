@@ -52,6 +52,38 @@
     .userName{ margin:0; font-size:16px; font-weight:600; color:#475569; }
     .userEmail{ margin:0; font-size:14px; color:#94a3b8; }
 
+    /* ── Inputs editables en el header ── */
+    .headerEditable{
+      border: none;
+      background: transparent;
+      outline: none;
+      padding: 2px 6px;
+      border-radius: 6px;
+      transition: background .2s, box-shadow .2s;
+      width: 100%;
+      max-width: 320px;
+      display: block;
+    }
+    .headerEditable:hover{
+      background: rgba(57,86,232,.06);
+    }
+    .headerEditable:focus{
+      background: rgba(57,86,232,.08);
+      box-shadow: 0 0 0 2px rgba(57,86,232,.25);
+    }
+    .nameEditable{
+      font-size: 16px;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 2px;
+    }
+    .emailEditable{
+      font-size: 14px;
+      color: #94a3b8;
+    }
+    .nameEditable::placeholder{ color: #cbd5e1; font-weight:400; }
+    .emailEditable::placeholder{ color: #cbd5e1; }
+
     .stepCircles{ display:flex; align-items:center; justify-content:center; gap:24px; margin-top:8px; }
     .stepCircle{ display:flex; flex-direction:column; align-items:center; gap:10px; position:relative; cursor:pointer; }
     .stepNumber{
@@ -242,8 +274,23 @@
     <div class="headerTop">
       <div class="userInfo">
         <h1>Mi Discovery</h1>
-        <p class="userName" id="headerUserName">Juan Pérez</p>
-        <p class="userEmail" id="headerUserEmail">juan.perez@email.com</p>
+        <!-- ── Nombre y email editables directamente ── -->
+        <input
+          type="text"
+          id="headerUserName"
+          class="headerEditable nameEditable"
+          value=""
+          placeholder="Tu nombre completo"
+          autocomplete="name"
+        />
+        <input
+          type="email"
+          id="headerUserEmail"
+          class="headerEditable emailEditable"
+          value=""
+          placeholder="tu@email.com"
+          autocomplete="email"
+        />
       </div>
       <button id="resetBtn" class="btn ghost" style="padding:8px 16px;font-size:13px;">🔄 Reiniciar</button>
     </div>
@@ -511,7 +558,7 @@ function fmtUSD(v){ return "$"+Number(v||0).toLocaleString("en-US",{minimumFract
 // ── STATE ──────────────────────────────────────────────────────────────────
 const state = {
   step:1, startTime:Date.now(),
-  userName:'Juan Pérez', userEmail:'juan.perez@email.com',
+  userName:'', userEmail:'',
   people:{ template:'', householdRole:'', members:[] },
   goals:[],
   financials:{
@@ -522,13 +569,35 @@ const state = {
   wizardStep:1, wizardComplete:false, notes:""
 };
 
-// URL params
+// URL params — el coach puede mandar el link con ?name=Ana+López&email=ana@email.com
 function getUserInfoFromURL(){
   const p = new URLSearchParams(window.location.search);
   if(p.get('name'))  state.userName  = p.get('name');
   if(p.get('email')) state.userEmail = p.get('email');
-  $('#headerUserName').textContent  = state.userName;
-  $('#headerUserEmail').textContent = state.userEmail;
+  syncHeaderInputs();
+}
+
+function syncHeaderInputs(){
+  const nameEl  = $('#headerUserName');
+  const emailEl = $('#headerUserEmail');
+  if(nameEl)  nameEl.value  = state.userName  || '';
+  if(emailEl) emailEl.value = state.userEmail || '';
+}
+
+// Wire header inputs → state (live)
+function wireHeaderInputs(){
+  const nameEl  = $('#headerUserName');
+  const emailEl = $('#headerUserEmail');
+  nameEl.addEventListener('input', ()=>{
+    state.userName = nameEl.value.trim();
+    debouncedSave();
+  });
+  emailEl.addEventListener('input', ()=>{
+    state.userEmail = emailEl.value.trim();
+    debouncedSave();
+  });
+  // Tooltip hint on first focus
+  nameEl.addEventListener('focus', ()=>{ nameEl.title=''; }, {once:true});
 }
 
 // localStorage
@@ -1892,7 +1961,8 @@ function generateCoachExcel(state){
 $('#resetBtn').addEventListener('click',()=>{
   if(!confirm('¿Reiniciar Discovery? Se borrarán todos los datos.')) return;
   localStorage.removeItem('discovery_draft_v3');
-  Object.assign(state,{step:1,startTime:Date.now(),people:{template:'',householdRole:'',members:[]},goals:[],financials:{incomeRange:"",hasDebts:null,hasInvestments:null,hasRealEstate:null,hasInsurance:null,hasBusiness:null,hasLegal:null,hasOtherAssets:null,hasSavings:null,categoriesSelected:[],items:[]},wizardStep:1,wizardComplete:false,notes:""});
+  Object.assign(state,{step:1,startTime:Date.now(),userName:'',userEmail:'',people:{template:'',householdRole:'',members:[]},goals:[],financials:{incomeRange:"",hasDebts:null,hasInvestments:null,hasRealEstate:null,hasInsurance:null,hasBusiness:null,hasLegal:null,hasOtherAssets:null,hasSavings:null,categoriesSelected:[],items:[]},wizardStep:1,wizardComplete:false,notes:""});
+  syncHeaderInputs();
   $('#beforeSubmit').style.display='block';
   $('#afterSubmit').style.display='none';
   $('.btns').style.display='flex';
@@ -1909,6 +1979,8 @@ document.addEventListener('keydown',e=>{
 // ── INIT ───────────────────────────────────────────────────────────────────
 loadDraft();
 getUserInfoFromURL();
+wireHeaderInputs();   // conectar inputs del header al state
+syncHeaderInputs();   // mostrar valores guardados (si volvió de localStorage)
 setStep(state.step);
 
 })();
