@@ -1336,7 +1336,9 @@ function generateCoachPDF(state){
   const totalRetInv     = sum('investments_retirement');
   const totalNonRet     = sum('investments_nonretirement');
   const totalDebt       = sum('liabilities');
-  const totalAssets     = totalBanking + totalRetInv + totalNonRet;
+  const totalRealEstate = sum('real_estate');
+  const totalOtherAssets= sum('other_assets');
+  const totalAssets     = totalBanking + totalRetInv + totalNonRet + totalRealEstate + totalOtherAssets;
   const netWorth        = totalAssets - totalDebt;
   const savingsRate     = totalIncome ? (totalSavings / (totalIncome/12)) * 100 : 0;
   const dti             = totalIncome ? (totalDebt / totalIncome) * 100 : 0;
@@ -1838,7 +1840,9 @@ function generateCoachExcel(state){
   const totalRetInv   = sum('investments_retirement');
   const totalNonRet   = sum('investments_nonretirement');
   const totalDebt     = sum('liabilities');
-  const totalAssets   = totalBanking + totalRetInv + totalNonRet;
+  const totalRealEst  = sum('real_estate');
+  const totalOther    = sum('other_assets');
+  const totalAssets   = totalBanking + totalRetInv + totalNonRet + totalRealEst + totalOther;
   const netWorth      = totalAssets - totalDebt;
   const savingsRate   = totalIncome ? (totalSavings/(totalIncome/12))*100 : 0;
   const dti           = totalIncome ? (totalDebt/totalIncome)*100 : 0;
