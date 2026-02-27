@@ -1253,38 +1253,35 @@ $('#finalSubmit').addEventListener('click', async ()=>{
   await new Promise(r=>setTimeout(r,150));
 
   try{
-    // ══════════════════════════════════════════════════════════════════════
-    // PASO 1: GENERA EL PDF
-    // ══════════════════════════════════════════════════════════════════════
     document.getElementById('loaderStatus').textContent = '📄 Generando PDF...';
     await new Promise(r=>setTimeout(r,80));
     generateCoachPDF(state);
+  } catch(err){
+    console.error('Error generando PDF:', err);
+    showToast('⚠️ Error en el PDF — revisa la consola');
+  }
 
-    // ══════════════════════════════════════════════════════════════════════
-    // PASO 2: GENERA EL EXCEL
-    // ══════════════════════════════════════════════════════════════════════
-    await new Promise(r=>setTimeout(r,400)); // pequeña pausa entre descargas
+  await new Promise(r=>setTimeout(r,400));
+
+  try{
     document.getElementById('loaderStatus').textContent = '📊 Generando Excel...';
     await new Promise(r=>setTimeout(r,80));
     generateCoachExcel(state);
-
-    // Limpiar localStorage
-    localStorage.removeItem('discovery_draft_v3');
-
-    // Mostrar éxito al cliente
-    loader.remove();
-    $('#beforeSubmit').style.display='none';
-    $('#afterSubmit').style.display='block';
-    $('.btns').style.display='none';
-    window.scrollTo({top:0,behavior:'smooth'});
-    showToast('✅ PDF + Excel generados y descargados');
-
   } catch(err){
-    loader.remove();
-    console.error('Error generando PDF:', err);
-    showToast('⚠️ Error generando el PDF. Revisa la consola.');
+    console.error('Error generando Excel:', err);
+    showToast('⚠️ Error en el Excel — revisa la consola');
   }
+
+  // Limpiar y mostrar éxito
+  localStorage.removeItem('discovery_draft_v3');
+  loader.remove();
+  $('#beforeSubmit').style.display='none';
+  $('#afterSubmit').style.display='block';
+  $('.btns').style.display='none';
+  window.scrollTo({top:0,behavior:'smooth'});
+  showToast('✅ PDF + Excel generados y descargados');
 });
+
 
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -2053,10 +2050,18 @@ function generateCoachExcel(state){
   styleHeader(ws5,{s:{r:2,c:0},e:{r:2,c:3}});
   XLSX.utils.book_append_sheet(WB, ws5, 'Por Titular');
 
-  // ── Descargar
+  // ── Descargar — usar Blob en vez de XLSX.writeFile (más fiable en browser)
   const safeName = (state.userName||'cliente').replace(/\s+/g,'_');
   const dateStr  = new Date().toISOString().slice(0,10);
-  XLSX.writeFile(WB, `Discovery_Coach_${safeName}_${dateStr}.xlsx`);
+  const wbOut    = XLSX.write(WB, {bookType:'xlsx', type:'array'});
+  const blob     = new Blob([wbOut], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url      = URL.createObjectURL(blob);
+  const a        = document.createElement('a');
+  a.href         = url;
+  a.download     = `Discovery_Coach_${safeName}_${dateStr}.xlsx`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
 }
 // ════════════════════════════════════════════════════════════════════════════
 
