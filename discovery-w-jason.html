@@ -1,0 +1,2432 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Discovery · Diagnóstico Financiero</title>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       PDF GENERATION — jsPDF + AutoTable
+       Estas dos librerías permiten generar el PDF del coach
+       100% en el browser, sin backend ni servidor.
+       ═══════════════════════════════════════════════════════════════════ -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <!-- SheetJS para generar el Excel en el browser -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    :root{
+      --primary:#3956E8;
+      --secondary:#7459D9;
+      --accent:#E8C239;
+      --bg:#f6f7ff;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --border:#e5e7eb;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --ok:#16a34a;
+      --warn:#f59e0b;
+      --bad:#dc2626;
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background: radial-gradient(circle at top, rgba(57,86,232,.12) 0, rgba(245,247,255,1) 40%);
+      color:var(--text);
+    }
+    .wrap{ max-width:1100px; margin:28px auto; padding:0 16px 28px; }
+
+    header{
+      background:#fff; border-radius:12px; padding:20px 30px;
+      margin-bottom:28px; box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    }
+    .headerTop{
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid #e9ecef;
+    }
+    .userInfo h1{ margin:0; font-size:24px; font-weight:700; color:#0F172A; }
+    .userName{ margin:0; font-size:16px; font-weight:600; color:#475569; }
+    .userEmail{ margin:0; font-size:14px; color:#94a3b8; }
+
+    /* ── Inputs editables en el header ── */
+    .headerEditable{
+      border: none;
+      background: transparent;
+      outline: none;
+      padding: 2px 6px;
+      border-radius: 6px;
+      transition: background .2s, box-shadow .2s;
+      width: 100%;
+      max-width: 320px;
+      display: block;
+    }
+    .headerEditable:hover{
+      background: rgba(57,86,232,.06);
+    }
+    .headerEditable:focus{
+      background: rgba(57,86,232,.08);
+      box-shadow: 0 0 0 2px rgba(57,86,232,.25);
+    }
+    .nameEditable{
+      font-size: 16px;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 2px;
+    }
+    .emailEditable{
+      font-size: 14px;
+      color: #94a3b8;
+    }
+    .nameEditable::placeholder{ color: #cbd5e1; font-weight:400; }
+    .emailEditable::placeholder{ color: #cbd5e1; }
+
+    .stepCircles{ display:flex; align-items:center; justify-content:center; gap:24px; margin-top:8px; }
+    .stepCircle{ display:flex; flex-direction:column; align-items:center; gap:10px; position:relative; cursor:pointer; }
+    .stepNumber{
+      width:70px; height:70px; border-radius:50%; border:3px solid var(--border);
+      background:#fff; display:flex; align-items:center; justify-content:center;
+      font-size:28px; font-weight:900; color:var(--muted); transition:all .3s ease;
+    }
+    .stepCircle.completed .stepNumber{ background:linear-gradient(135deg,var(--ok),#10b981); border-color:var(--ok); color:#fff; }
+    .stepCircle.active .stepNumber{
+      background:linear-gradient(135deg,var(--primary),var(--secondary));
+      border-color:var(--primary); color:#fff; transform:scale(1.1);
+      box-shadow:0 8px 24px rgba(57,86,232,.3);
+    }
+    .stepLabel{ font-size:13px; font-weight:700; color:var(--muted); }
+    .stepCircle.active .stepLabel{ color:var(--primary); }
+    .stepCircle.completed .stepLabel{ color:var(--ok); }
+    .stepCircle:not(:last-child)::after{
+      content:''; position:absolute; top:35px; left:calc(50% + 35px);
+      width:24px; height:3px; background:var(--border); z-index:1;
+    }
+    .stepCircle.completed:not(:last-child)::after{ background:var(--ok); }
+
+    .progressInline{ display:flex; align-items:center; gap:12px; }
+    .progressText{ font-size:13px; color:var(--muted); }
+    .autoSaveIndicator{ font-size:12px; color:var(--ok); opacity:0; transition:opacity .3s ease; }
+    .autoSaveIndicator.show{ opacity:1; }
+
+    .card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; animation:fadeIn .4s ease; }
+    @keyframes fadeIn{ from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    .content{ padding:24px 20px; min-height:420px; }
+
+    .panel{ border:1px solid var(--border); border-radius:16px; padding:18px; background:#fff; margin-bottom:16px; }
+    .panel h2{ margin:0 0 8px; font-size:20px; letter-spacing:-.02em; }
+    .panel h3{ margin:16px 0 10px; font-size:16px; }
+    .panel p{ margin:0 0 12px; color:var(--muted); font-size:14px; line-height:1.5; }
+
+    .hero{ text-align:center; padding:28px 20px; border-radius:16px; background:linear-gradient(135deg,rgba(57,86,232,.08),rgba(116,89,217,.08)); border:1px solid rgba(57,86,232,.2); margin-bottom:20px; }
+    .hero h2{ margin:0 0 10px; font-size:26px; letter-spacing:-.03em; }
+    .hero p{ margin:0; font-size:15px; color:var(--muted); line-height:1.6; }
+    .hero b{ color:var(--primary); }
+
+    .checklistPrep{ background:rgba(22,163,74,.06); border:1px solid rgba(22,163,74,.2); border-radius:14px; padding:16px; margin:14px 0; }
+    .checklistPrep p{ margin:0 0 8px; font-weight:600; color:var(--text); }
+    .checklistPrep ul{ margin:0; padding-left:20px; color:var(--text); }
+    .checklistPrep li{ margin:6px 0; font-size:14px; }
+
+    .quickTemplates{ margin:16px 0; }
+    .templateGrid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+    .templateBtn{ border:2px solid var(--border); background:#fff; border-radius:14px; padding:14px; text-align:left; cursor:pointer; transition:all .2s ease; font-size:14px; font-weight:600; }
+    .templateBtn:hover{ border-color:rgba(57,86,232,.35); background:rgba(57,86,232,.04); }
+    .templateBtn.selected{ border-color:var(--primary); background:rgba(57,86,232,.08); color:var(--primary); }
+
+    .goalsGrid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px; margin:20px 0; }
+    .goalCard{ border:2px solid var(--border); border-radius:16px; padding:16px; text-align:center; cursor:pointer; transition:all .2s ease; background:#fff; display:flex; flex-direction:column; align-items:center; gap:10px; }
+    .goalCard:hover{ border-color:rgba(57,86,232,.35); transform:translateY(-2px); box-shadow:0 8px 20px rgba(15,23,42,.1); }
+    .goalCard.selected{ border-color:var(--primary); background:linear-gradient(135deg,rgba(57,86,232,.08),rgba(116,89,217,.08)); box-shadow:0 4px 12px rgba(57,86,232,.2); }
+    .goalCard .goalIcon{ font-size:48px; line-height:1; }
+    .goalCard .goalLabel{ font-size:13px; font-weight:700; color:var(--text); }
+    .goalCard.selected .goalLabel{ color:var(--primary); }
+
+    .wizardFlow{ max-width:680px; margin:0 auto; }
+    .wizardStep{ display:none; animation:fadeIn .3s ease; }
+    .wizardStep.active{ display:block; }
+    .wizardQ{ text-align:center; margin-bottom:24px; }
+    .wizardQ b{ display:block; font-size:12px; color:var(--muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:.05em; }
+    .wizardQ h3{ margin:0 0 6px; font-size:22px; letter-spacing:-.02em; }
+    .wizardQ p{ margin:0; color:var(--muted); font-size:14px; }
+    .wizardOptions{ display:grid; gap:10px; }
+    .optionBtn{ border:2px solid var(--border); background:#fff; border-radius:14px; padding:18px 20px; text-align:left; cursor:pointer; transition:all .15s ease; font-size:15px; font-weight:600; display:flex; align-items:center; gap:10px; }
+    .optionBtn:hover{ border-color:rgba(57,86,232,.35); background:rgba(57,86,232,.04); transform:translateY(-2px); box-shadow:0 8px 16px rgba(15,23,42,.08); }
+
+    .categoriesInline{ display:grid; gap:12px; margin-top:16px; }
+    .catInlineCard{ border:2px solid transparent; background:linear-gradient(#fff,#fff) padding-box, linear-gradient(135deg,var(--primary),var(--secondary)) border-box; border-radius:14px; overflow:hidden; transition:all .2s ease; margin-bottom:14px; }
+    .catInlineCard.checked{ background:linear-gradient(rgba(57,86,232,.04),rgba(116,89,217,.04)) padding-box, linear-gradient(135deg,var(--primary),var(--secondary)) border-box; }
+    .catHeader{ display:flex; align-items:center; justify-content:space-between; padding:16px 18px; cursor:pointer; user-select:none; background:linear-gradient(135deg,rgba(57,86,232,.03),rgba(116,89,217,.03)); transition:all .3s ease; }
+    .catHeader:hover{ background:linear-gradient(135deg,rgba(57,86,232,.06),rgba(116,89,217,.06)); }
+    .catInlineCard.checked .catHeader{ background:linear-gradient(135deg,var(--primary),var(--secondary)); }
+    .catInlineCard.checked .catHeader .catLabel b, .catInlineCard.checked .catHeader .catLabel span{ -webkit-text-fill-color:#fff; color:#fff; }
+    .catInlineCard.checked .catHeader .catExpand{ background:rgba(255,255,255,.2); color:#fff; }
+    .catInlineCard.open .catHeader{ border-bottom:1px solid var(--border); }
+    .catInlineCard.checked.open .catHeader{ background:linear-gradient(135deg,var(--primary),var(--secondary)); border-bottom-color:transparent; }
+    .catInfo{ display:flex; align-items:center; gap:12px; }
+    .catInfo input[type="checkbox"]{ width:20px; height:20px; cursor:pointer; accent-color:var(--primary); }
+    .catLabel b{ display:block; font-size:15px; font-weight:700; margin-bottom:2px; background:linear-gradient(135deg,var(--primary),var(--secondary)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .catLabel span{ display:block; font-size:12px; color:var(--muted); }
+    .catExpand{ width:32px; height:32px; border-radius:8px; background:rgba(15,23,42,.05); display:flex; align-items:center; justify-content:center; color:var(--muted); font-weight:900; transition:transform .3s ease,background .3s ease; }
+    .catInlineCard.open .catExpand{ transform:rotate(180deg); }
+    .catBody{ padding:0 16px 16px; display:none; padding-top:16px; background:#fff; }
+    .catInlineCard.open .catBody{ display:block; }
+
+    .standardAddRow{ display:grid; grid-template-columns:1.3fr 1.3fr 1fr auto; gap:8px; margin-bottom:12px; }
+    .standardAddRow select, .standardAddRow input{ padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-size:13px; background:#fff; }
+    .standardAddRow button{ padding:10px 14px; border:1px solid var(--primary); background:var(--primary); color:#fff; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer; }
+    .standardAddRowMulti{ display:grid; grid-template-columns:1.2fr 1.2fr .9fr 1.1fr auto; gap:8px; margin-bottom:12px; }
+    .standardAddRowMulti select, .standardAddRowMulti input{ padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-size:13px; background:#fff; }
+    .standardAddRowMulti button{ padding:10px 14px; border:1px solid var(--primary); background:var(--primary); color:#fff; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer; }
+    .expenseAddRow{ display:grid; grid-template-columns:2fr 1fr auto; gap:8px; margin-bottom:12px; }
+    .expenseAddRow select, .expenseAddRow input{ padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-size:13px; background:#fff; }
+    .expenseAddRow button{ padding:10px 16px; border:1px solid var(--primary); background:var(--primary); color:#fff; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer; }
+    .expenseAddRowMulti{ display:grid; grid-template-columns:2fr .9fr 1.1fr auto; gap:8px; margin-bottom:12px; }
+    .expenseAddRowMulti select, .expenseAddRowMulti input{ padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-size:13px; background:#fff; }
+    .expenseAddRowMulti button{ padding:10px 14px; border:1px solid var(--primary); background:var(--primary); color:#fff; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer; }
+
+    .itemsList{ display:flex; flex-direction:column; gap:8px; }
+    .itemChip{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:rgba(15,23,42,.015); font-size:13px; }
+    .itemChip .chipInfo{ flex:1; min-width:0; }
+    .itemChip .chipName{ font-weight:600; margin-bottom:2px; }
+    .itemChip .chipDetails{ font-size:12px; color:var(--muted); }
+    .itemChip .chipRemove{ width:24px; height:24px; border-radius:6px; border:1px solid var(--border); background:#fff; color:var(--muted); font-weight:900; font-size:12px; cursor:pointer; }
+    .itemChip .chipRemove:hover{ background:rgba(220,38,38,.08); color:#dc2626; border-color:rgba(220,38,38,.35); }
+
+    .peopleWrap{ display:flex; flex-direction:column; gap:12px; margin-top:14px; }
+    .personCard{ border:1px solid var(--border); border-radius:16px; padding:14px; background:rgba(15,23,42,.015); animation:fadeIn .3s ease; }
+    .personHead{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+    .tag{ font-size:11px; font-weight:800; color:var(--primary); background:rgba(57,86,232,.10); border:1px solid rgba(57,86,232,.18); padding:6px 10px; border-radius:999px; }
+    .xbtn{ border:1px solid var(--border); background:#fff; color:var(--muted); width:32px; height:32px; border-radius:10px; cursor:pointer; font-weight:900; font-size:16px; }
+    .xbtn:hover{ background:rgba(220,38,38,.08); color:#dc2626; border-color:rgba(220,38,38,.35); }
+
+    .field{ display:flex; flex-direction:column; gap:6px; margin:10px 0; }
+    .field label{ font-size:13px; font-weight:600; color:var(--text); }
+    .field label .optional{ font-size:11px; font-weight:700; color:var(--muted); background:rgba(100,116,139,.1); border:1px solid rgba(100,116,139,.2); padding:3px 8px; border-radius:999px; margin-left:6px; }
+    input[type="text"], input[type="email"], input[type="tel"], input[type="number"], select, textarea{ width:100%; padding:11px 14px; border:1px solid var(--border); border-radius:12px; outline:none; font-size:14px; background:#fff; transition:border-color .2s ease,box-shadow .2s ease; }
+    textarea{ min-height:100px; resize:vertical; font-family:inherit; }
+    input:focus, select:focus, textarea:focus{ border-color:rgba(57,86,232,.45); box-shadow:0 0 0 4px rgba(57,86,232,.10); }
+    .row{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+    .hint{ font-size:12px; color:var(--muted); margin-top:6px; line-height:1.4; }
+    .hint b{ color:var(--text); }
+
+    .btns{ display:flex; gap:10px; justify-content:space-between; padding:16px 20px; border-top:1px solid var(--border); background:#fff; }
+    .btn{ border:1px solid var(--border); background:#fff; color:var(--text); padding:11px 18px; border-radius:12px; font-weight:700; font-size:14px; cursor:pointer; transition:all .15s ease; display:inline-flex; align-items:center; gap:6px; }
+    .btn:hover{ transform:translateY(-1px); box-shadow:0 6px 12px rgba(15,23,42,.1); }
+    .btn.primary{ background:linear-gradient(90deg,var(--primary),var(--secondary)); border-color:transparent; color:#fff; box-shadow:0 8px 16px rgba(57,86,232,.2); }
+    .btn.primary:hover{ box-shadow:0 10px 20px rgba(57,86,232,.25); }
+    .btn.ghost{ background:transparent; color:var(--muted); border-color:transparent; }
+    .btn.ghost:hover{ background:rgba(15,23,42,.04); color:var(--text); }
+    .btn:disabled{ opacity:.5; cursor:not-allowed; transform:none; }
+    .btn.large{ padding:14px 24px; font-size:15px; }
+    .btn.full{ width:100%; justify-content:center; }
+
+    .summaryGrid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:16px 0; }
+
+    .confirmationHero{ text-align:center; padding:32px 20px; }
+    .checkIcon{ width:80px; height:80px; margin:0 auto 16px; border-radius:50%; background:linear-gradient(135deg,var(--ok),#10b981); color:#fff; font-size:48px; display:flex; align-items:center; justify-content:center; animation:scaleIn .4s ease; }
+    @keyframes scaleIn{ from{transform:scale(0)} to{transform:scale(1)} }
+    .confirmationHero h2{ margin:0 0 10px; font-size:24px; }
+    .confirmationHero p{ margin:0; color:var(--muted); font-size:15px; }
+
+    .toast{ position:fixed; bottom:24px; right:24px; background:var(--text); color:#fff; padding:12px 20px; border-radius:12px; font-size:13px; font-weight:600; box-shadow:0 10px 30px rgba(15,23,42,.3); opacity:0; transform:translateY(20px); transition:all .3s ease; z-index:1000; }
+    .toast.show{ opacity:1; transform:translateY(0); }
+
+    /* ── PDF GENERATION INDICATOR ─────────────────────────────────────────
+       Indicador visual que aparece mientras se genera el PDF.
+       El developer puede personalizar este loader. */
+    .pdfGenerating{
+      position:fixed; inset:0; background:rgba(15,23,42,.7);
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      z-index:9999; backdrop-filter:blur(4px);
+    }
+    .pdfGenerating .spinner{
+      width:56px; height:56px; border:4px solid rgba(255,255,255,.2);
+      border-top-color:#fff; border-radius:50%; animation:spin .8s linear infinite; margin-bottom:16px;
+    }
+    @keyframes spin{ to{transform:rotate(360deg)} }
+    .pdfGenerating p{ color:#fff; font-size:16px; font-weight:600; margin:0 0 6px; }
+    .pdfGenerating small{ color:rgba(255,255,255,.6); font-size:13px; }
+    /* ─────────────────────────────────────────────────────────────────── */
+
+    @media(max-width:900px){
+      .templateGrid,.summaryGrid{ grid-template-columns:1fr; }
+      .goalsGrid{ grid-template-columns:repeat(2,1fr); }
+      .row,.standardAddRow,.standardAddRowMulti,.expenseAddRow,.expenseAddRowMulti{ grid-template-columns:1fr; }
+      .stepCircles{ gap:16px; }
+      .stepNumber{ width:55px; height:55px; font-size:22px; }
+      .stepCircle:not(:last-child)::after{ top:27px; left:calc(50% + 27px); width:16px; }
+    }
+    @media(max-width:640px){
+      .stepCircles{ gap:8px; }
+      .stepNumber{ width:45px; height:45px; font-size:18px; border-width:2px; }
+      .stepCircle:not(:last-child)::after{ top:22px; left:calc(50% + 22px); width:8px; height:2px; }
+      .stepLabel{ font-size:9px; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="wrap">
+  <header>
+    <div class="headerTop">
+      <div class="userInfo">
+        <h1>Mi Discovery</h1>
+        <!-- ── Nombre y email editables directamente ── -->
+        <input
+          type="text"
+          id="headerUserName"
+          class="headerEditable nameEditable"
+          value=""
+          placeholder="Tu nombre completo"
+          autocomplete="name"
+        />
+        <input
+          type="email"
+          id="headerUserEmail"
+          class="headerEditable emailEditable"
+          value=""
+          placeholder="tu@email.com"
+          autocomplete="email"
+        />
+      </div>
+      <button id="dummyBtn" class="btn" style="padding:8px 16px;font-size:13px;background:linear-gradient(90deg,#f59e0b,#d97706);color:#fff;border-color:transparent;">🧪 Datos de prueba</button>
+      <button id="exportMMBtn" class="btn" style="padding:8px 16px;font-size:13px;background:linear-gradient(90deg,#10b981,#059669);color:#fff;border-color:transparent;">💾 Exportar → Money Map</button>
+      <button id="resetBtn" class="btn ghost" style="padding:8px 16px;font-size:13px;">🔄 Reiniciar</button>
+    </div>
+    <div class="stepCircles" id="stepCircles">
+      <div class="stepCircle" data-goto="1"><div class="stepNumber">1</div><div class="stepLabel">Welcome</div></div>
+      <div class="stepCircle" data-goto="2"><div class="stepNumber">2</div><div class="stepLabel">Personas</div></div>
+      <div class="stepCircle" data-goto="3"><div class="stepNumber">3</div><div class="stepLabel">Metas</div></div>
+      <div class="stepCircle" data-goto="4"><div class="stepNumber">4</div><div class="stepLabel">Finanzas</div></div>
+      <div class="stepCircle" data-goto="5"><div class="stepNumber">5</div><div class="stepLabel">Final</div></div>
+    </div>
+    <div class="progressInline">
+      <span class="progressText" id="progressText">Paso 1 de 5</span>
+      <div class="autoSaveIndicator" id="autoSave">Guardado ✓</div>
+    </div>
+  </header>
+
+  <div class="card">
+    <div class="content">
+
+      <!-- STEP 1 -->
+      <section class="step" data-step="1">
+        <div class="hero">
+          <h2>¡Hola! Preparemos tu sesión de diagnóstico 👋</h2>
+          <p>Esto tomará <b>3-10 minutos</b>. Tu progreso se guarda automáticamente.</p>
+        </div>
+        <div class="panel">
+          <h2>Antes de empezar</h2>
+          <div class="checklistPrep">
+            <p>💡 Ten a mano (opcional pero útil):</p>
+            <ul>
+              <li>💰 Idea aproximada de ingresos anuales</li>
+              <li>🏦 Lista mental de cuentas bancarias/inversiones</li>
+              <li>🏠 Si tienes propiedades o préstamos activos</li>
+              <li>👥 Info básica de personas con quienes compartes finanzas</li>
+            </ul>
+            <div class="hint"><b>Tranquilo:</b> No necesitas números exactos ahora.</div>
+          </div>
+          <div style="background:#e3f2fd;border-left:4px solid #2196f3;padding:16px;border-radius:6px;margin-top:20px;">
+            <p style="margin:0;font-size:14px;color:#1565c0;">ℹ️ <b>Navegación libre:</b> Puedes moverte entre pasos usando los círculos de arriba.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 2: Personas -->
+      <section class="step" data-step="2" hidden>
+        <div class="panel">
+          <h2>Estructura familiar/financiera</h2>
+          <p>Esto nos ayuda a <b>personalizar las recomendaciones</b>.</p>
+          <div class="quickTemplates">
+            <b>Plantillas rápidas:</b>
+            <div class="templateGrid">
+              <button class="templateBtn" data-template="single" type="button">👤 Solo yo</button>
+              <button class="templateBtn" data-template="couple" type="button">👥 Pareja (sin hijos)</button>
+              <button class="templateBtn" data-template="family" type="button">👨‍👩‍👧‍👦 Familia (pareja + hijos)</button>
+              <button class="templateBtn" data-template="custom" type="button">✏️ Personalizado</button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="householdRole">¿Eres el principal proveedor económico?</label>
+            <select id="householdRole">
+              <option value="">Selecciona…</option>
+              <option value="primary_provider">Sí, principalmente yo</option>
+              <option value="shared">Compartido</option>
+              <option value="not_primary">No, principalmente otra persona</option>
+            </select>
+          </div>
+          <div class="peopleWrap" id="peopleWrap"></div>
+          <button class="btn" type="button" id="addPersonBtn">➕ Agregar otra persona</button>
+        </div>
+      </section>
+
+      <!-- STEP 3: Metas -->
+      <section class="step" data-step="3" hidden>
+        <div class="panel">
+          <h2>¿Cuáles son tus metas financieras?</h2>
+          <p>Selecciona todas las metas que sean importantes para ti.</p>
+          <div class="goalsGrid" id="goalsGrid">
+            <div class="goalCard" data-goal="casa"><div class="goalIcon">🏠</div><div class="goalLabel">Comprar casa</div></div>
+            <div class="goalCard" data-goal="retiro"><div class="goalIcon">🏖️</div><div class="goalLabel">Retiro cómodo</div></div>
+            <div class="goalCard" data-goal="emergencia"><div class="goalIcon">🛡️</div><div class="goalLabel">Fondo emergencia</div></div>
+            <div class="goalCard" data-goal="educacion"><div class="goalIcon">🎓</div><div class="goalLabel">Educación hijos</div></div>
+            <div class="goalCard" data-goal="viaje"><div class="goalIcon">✈️</div><div class="goalLabel">Viaje/Vacaciones</div></div>
+            <div class="goalCard" data-goal="deudas"><div class="goalIcon">💳</div><div class="goalLabel">Pagar deudas</div></div>
+            <div class="goalCard" data-goal="negocio"><div class="goalIcon">💼</div><div class="goalLabel">Iniciar negocio</div></div>
+            <div class="goalCard" data-goal="auto"><div class="goalIcon">🚗</div><div class="goalLabel">Comprar auto</div></div>
+            <div class="goalCard" data-goal="inversiones"><div class="goalIcon">📈</div><div class="goalLabel">Hacer crecer dinero</div></div>
+            <div class="goalCard" data-goal="independencia"><div class="goalIcon">🦅</div><div class="goalLabel">Independencia financiera</div></div>
+            <div class="goalCard" data-goal="herencia"><div class="goalIcon">🎁</div><div class="goalLabel">Dejar herencia</div></div>
+            <div class="goalCard" data-goal="otro"><div class="goalIcon">🎯</div><div class="goalLabel">Otra meta</div></div>
+          </div>
+          <div class="hint" style="margin-top:14px;">💡 <b>Tip:</b> No hay límite, selecciona todas las que apliquen.</div>
+        </div>
+      </section>
+
+      <!-- STEP 4: Finanzas -->
+      <section class="step" data-step="4" hidden>
+        <div class="panel">
+          <h2>Snapshot financiero</h2>
+          <p>Selecciona las áreas relevantes y agrega al menos un ítem en cada una.</p>
+          <div class="wizardFlow" id="wizardFlow">
+            <div class="wizardStep active" data-wizard="1">
+              <div class="wizardQ"><b>Pregunta 1 de 9</b><h3>¿Cuál es tu ingreso anual aproximado (hogar)?</h3></div>
+              <div class="wizardOptions">
+                <button class="optionBtn" data-answer="0-50k" type="button">💵 Menos de $50,000</button>
+                <button class="optionBtn" data-answer="50-100k" type="button">💰 $50,000 - $100,000</button>
+                <button class="optionBtn" data-answer="100-200k" type="button">💎 $100,000 - $200,000</button>
+                <button class="optionBtn" data-answer="200k+" type="button">🏆 Más de $200,000</button>
+              </div>
+            </div>
+            <div class="wizardStep" data-wizard="2">
+              <div class="wizardQ"><b>Pregunta 2 de 9</b><h3>¿Tienes deudas activas?</h3></div>
+              <div class="wizardOptions">
+                <button class="optionBtn" data-answer="yes" type="button">✓ Sí, tengo deudas</button>
+                <button class="optionBtn" data-answer="no" type="button">✗ No, sin deudas</button>
+              </div>
+            </div>
+            <div class="wizardStep" data-wizard="3">
+              <div class="wizardQ"><b>Pregunta 3 de 9</b><h3>¿Tienes inversiones o cuentas de retiro?</h3></div>
+              <div class="wizardOptions">
+                <button class="optionBtn" data-answer="retirement" type="button">🏦 Solo retiro (401k/IRA)</button>
+                <button class="optionBtn" data-answer="both" type="button">📈 Retiro + otras inversiones</button>
+                <button class="optionBtn" data-answer="none" type="button">➖ No tengo inversiones</button>
+              </div>
+            </div>
+            <div class="wizardStep" data-wizard="4">
+              <div class="wizardQ"><b>Pregunta 4 de 9</b><h3>¿Tienes propiedades?</h3></div>
+              <div class="wizardOptions">
+                <button class="optionBtn" data-answer="yes" type="button">🏠 Sí, tengo propiedad(es)</button>
+                <button class="optionBtn" data-answer="no" type="button">✗ No, rento/vivo con familia</button>
+              </div>
+            </div>
+            <div class="wizardStep" data-wizard="5">
+              <div class="wizardQ"><b>Pregunta 5 de 9</b><h3>¿Tienes seguros activos?</h3></div>
+              <div class="wizardOptions">
+                <button class="optionBtn" data-answer="yes" type="button">🛡️ Sí, tengo seguro(s)</button>
+                <button class="optionBtn" data-answer="no" type="button">✗ No tengo seguros</button>
+              </div>
+            </div>
+            <div class="wizardStep" data-wizard="6">
+              <div class="wizardQ"><b>Pregunta 6 de 9</b><h3>¿Tienes un negocio o trust?</h3></div>
+              <div class="wizardOptions">
+                <button class="optionBtn" data-answer="yes" type="button">💼 Sí, tengo negocio/trust</button>
+                <button class="optionBtn" data-answer="no" type="button">✗ No tengo</button>
+              </div>
+            </div>
+            <div class="wizardStep" data-wizard="7">
+              <div class="wizardQ"><b>Pregunta 7 de 9</b><h3>¿Tienes documentos legales importantes?</h3></div>
+              <div class="wizardOptions">
+                <button class="optionBtn" data-answer="yes" type="button">📄 Sí, tengo documentos</button>
+                <button class="optionBtn" data-answer="no" type="button">✗ No tengo / No estoy seguro</button>
+              </div>
+            </div>
+            <div class="wizardStep" data-wizard="8">
+              <div class="wizardQ"><b>Pregunta 8 de 9</b><h3>¿Tienes otros activos importantes?</h3></div>
+              <div class="wizardOptions">
+                <button class="optionBtn" data-answer="yes" type="button">🚗 Sí, tengo otros activos</button>
+                <button class="optionBtn" data-answer="no" type="button">✗ No / Nada significativo</button>
+              </div>
+            </div>
+            <div class="wizardStep" data-wizard="9">
+              <div class="wizardQ"><b>Pregunta 9 de 9</b><h3>¿Tienes ahorro activo?</h3></div>
+              <div class="wizardOptions">
+                <button class="optionBtn" data-answer="yes" type="button">💰 Sí, estoy ahorrando</button>
+                <button class="optionBtn" data-answer="no" type="button">✗ No ahorro actualmente</button>
+              </div>
+            </div>
+          </div>
+          <div id="categoriesDetail" style="display:none;margin-top:24px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <p class="hint" id="categoriesDetailHint" style="margin:0;">Agrega al menos un ítem en cada área seleccionada.</p>
+              <button class="btn ghost" id="editWizardBtn" type="button" style="padding:8px 14px;font-size:13px;">← Editar respuestas</button>
+            </div>
+            <div class="categoriesInline" id="categoriesInline"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 5: Confirmación -->
+      <section class="step" data-step="5" hidden>
+        <div id="beforeSubmit">
+          <div class="panel">
+            <h3>Revisión Final</h3>
+            <div class="summaryGrid" id="summaryGrid"></div>
+          </div>
+          <div class="panel">
+            <label for="finalNotes">¿Algo que quieras que sepamos antes de la sesión? <span class="field"><span class="hint">Opcional</span></span></label>
+            <textarea id="finalNotes" placeholder="Ej: Tengo una situación especial con impuestos…"></textarea>
+          </div>
+          <button class="btn primary large full" id="finalSubmit" type="button">Someter Discovery Form</button>
+        </div>
+
+        <!-- ── PANTALLA DE ÉXITO (cliente) ─────────────────────────────────
+             Esta es la pantalla que VE EL CLIENTE tras el submit.
+             El PDF ya fue generado y descargado para el coach
+             en segundo plano antes de mostrar esta pantalla. -->
+        <div id="afterSubmit" style="display:none;">
+          <div class="confirmationHero">
+            <div class="checkIcon">✓</div>
+            <h2>¡Tu formulario ha sido enviado con éxito!</h2>
+            <p>Tu información de Discovery ha sido recibida correctamente</p>
+          </div>
+          <div class="panel">
+            <div style="background:#d4edda;border-left:4px solid #28a745;padding:20px;border-radius:8px;text-align:center;">
+              <p style="margin:0 0 8px;color:#155724;font-size:16px;">✅ <strong>Discovery completado</strong></p>
+              <p style="margin:0 0 20px;color:#155724;font-size:14px;">
+                <a href="tablero-usuario.html" style="color:#155724;text-decoration:underline;">Volver a tu tablero</a>
+              </p>
+              <button onclick="window.close()" class="btn primary large" style="display:inline-block;">Cerrar</button>
+            </div>
+          </div>
+        </div>
+        <!-- ──────────────────────────────────────────────────────────────── -->
+
+      </section>
+    </div>
+
+    <div class="btns">
+      <button class="btn ghost" type="button" id="backBtn">← Atrás</button>
+      <button class="btn primary" type="button" id="nextBtn">Continuar →</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="globalToast"></div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+  PDF GENERATION MODULE
+  ═══════════════════════════════════════════════════════════════════════════
+
+  CÓMO FUNCIONA (para el developer):
+  ────────────────────────────────────
+  1. El cliente llena el formulario y hace click en "Someter Discovery Form"
+  2. Se llama a generateCoachPDF(state) con todo el estado del form
+  3. jsPDF construye el PDF en memoria (sin llamadas a servidor)
+  4. El PDF se descarga automáticamente al computador del coach (o quien tenga el browser)
+
+  INTEGRACIÓN CON BACKEND (cuando esté listo):
+  ─────────────────────────────────────────────
+  Reemplaza la línea:
+    generateCoachPDF(state);
+  por:
+    await fetch('/api/submit-discovery', { method:'POST', body: JSON.stringify(payload) });
+  
+  El backend recibirá el JSON y puede generar el PDF con ReportLab (Python)
+  y enviarlo al email del coach automáticamente.
+
+  PARA ENVIAR POR EMAIL HOY SIN BACKEND:
+  ────────────────────────────────────────
+  Usa EmailJS (emailjs.com) — free tier 200 emails/mes.
+  El PDF se adjunta como base64 en el email directamente desde el browser.
+  Ver comentario en la función generateCoachPDF() más abajo.
+═══════════════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+'use strict';
+
+// ── HELPERS ────────────────────────────────────────────────────────────────
+const $ = (sel,root=document) => root.querySelector(sel);
+const $$ = (sel,root=document) => Array.from(root.querySelectorAll(sel));
+const uid = (p="id") => p+"_"+Math.random().toString(16).slice(2,10);
+function escapeHtml(s){ return String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;"); }
+function fmtUSD(v){ return "$"+Number(v||0).toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0}); }
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+const state = {
+  step:1, startTime:Date.now(),
+  userName:'', userEmail:'',
+  people:{ template:'', householdRole:'', members:[] },
+  goals:[],
+  financials:{
+    incomeRange:"", hasDebts:null, hasInvestments:null, hasRealEstate:null,
+    hasInsurance:null, hasBusiness:null, hasLegal:null, hasOtherAssets:null, hasSavings:null,
+    categoriesSelected:[], items:[]
+  },
+  wizardStep:1, wizardComplete:false, notes:""
+};
+
+// URL params — el coach puede mandar el link con ?name=Ana+López&email=ana@email.com
+function getUserInfoFromURL(){
+  const p = new URLSearchParams(window.location.search);
+  if(p.get('name'))  state.userName  = p.get('name');
+  if(p.get('email')) state.userEmail = p.get('email');
+  syncHeaderInputs();
+}
+
+function syncHeaderInputs(){
+  const nameEl  = $('#headerUserName');
+  const emailEl = $('#headerUserEmail');
+  if(nameEl)  nameEl.value  = state.userName  || '';
+  if(emailEl) emailEl.value = state.userEmail || '';
+}
+
+// Wire header inputs → state (live)
+function wireHeaderInputs(){
+  const nameEl  = $('#headerUserName');
+  const emailEl = $('#headerUserEmail');
+  nameEl.addEventListener('input', ()=>{
+    state.userName = nameEl.value.trim();
+    debouncedSave();
+  });
+  emailEl.addEventListener('input', ()=>{
+    state.userEmail = emailEl.value.trim();
+    debouncedSave();
+  });
+  // Tooltip hint on first focus
+  nameEl.addEventListener('focus', ()=>{ nameEl.title=''; }, {once:true});
+}
+
+// localStorage
+function loadDraft(){
+  try{
+    const saved = localStorage.getItem('discovery_draft_v3');
+    if(saved){ Object.assign(state, JSON.parse(saved)); showToast('✓ Progreso recuperado'); }
+  }catch(e){}
+}
+let saveTimer;
+function debouncedSave(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{
+    localStorage.setItem('discovery_draft_v3', JSON.stringify(state));
+    const ind = $('#autoSave'); ind.classList.add('show');
+    setTimeout(()=>ind.classList.remove('show'),1500);
+  },2000);
+}
+
+function showToast(msg){
+  const t = document.createElement('div');
+  t.className='toast'; t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.classList.add('show'),10);
+  setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=>t.remove(),300); },2500);
+}
+
+// ── NAVIGATION ─────────────────────────────────────────────────────────────
+const backBtn = $('#backBtn');
+const nextBtn = $('#nextBtn');
+
+function isStep1Complete(){ return true; }
+function isStep2Complete(){ return state.people.members.length>0; }
+function isStep3Complete(){ return state.goals.length>0; }
+function isStep4Complete(){ return state.financials.items.length>0; }
+function isStepComplete(n){ return [null,isStep1Complete,isStep2Complete,isStep3Complete,isStep4Complete][n]?.()??false; }
+
+function setStep(step){
+  state.step=step;
+  $$('.step').forEach(s=>s.hidden=s.dataset.step!==String(step));
+  $$('.stepCircle').forEach((c,i)=>{
+    const n=i+1; c.classList.remove('completed','active');
+    const el=c.querySelector('.stepNumber');
+    if(n===step){ c.classList.add('active'); el.textContent=n; }
+    else if(isStepComplete(n)){ c.classList.add('completed'); el.textContent='✓'; }
+    else{ el.textContent=n; }
+  });
+  const elapsed=Math.floor((Date.now()-state.startTime)/60000);
+  $('#progressText').textContent=`Paso ${step} de 5 · ~${Math.max(1,10-elapsed)} min restantes`;
+  backBtn.hidden=step===1; nextBtn.hidden=step===5;
+  if(step===2) renderPeople();
+  if(step===3) renderGoals();
+  if(step===4) renderWizard();
+  if(step===5) renderConfirmation();
+  nextBtn.disabled=false;
+  debouncedSave();
+}
+
+backBtn.addEventListener('click',()=>{ if(state.step>1) setStep(state.step-1); });
+nextBtn.addEventListener('click',()=>{ if(state.step<5) setStep(state.step+1); });
+$$('.stepCircle').forEach(c=>c.addEventListener('click',()=>setStep(parseInt(c.dataset.goto))));
+
+// ── STEP 2: PEOPLE ─────────────────────────────────────────────────────────
+const TEMPLATES = {
+  single:  { members:[{id:"p1",role:"primary",firstName:"",lastName:"",age:null,gender:""}], householdRole:"primary_provider" },
+  couple:  { members:[{id:"p1",role:"primary",firstName:"",lastName:"",age:null,gender:""},{id:"p2",role:"additional",firstName:"",lastName:"",age:null,gender:"",relationshipToPrimary:"spouse"}], householdRole:"shared" },
+  family:  { members:[{id:"p1",role:"primary",firstName:"",lastName:"",age:null,gender:""},{id:"p2",role:"additional",firstName:"",lastName:"",age:null,gender:"",relationshipToPrimary:"spouse"},{id:"p3",role:"additional",firstName:"",lastName:"",age:null,gender:"",relationshipToPrimary:"child"}], householdRole:"shared" }
+};
+$$('.templateBtn').forEach(btn=>btn.addEventListener('click',()=>{
+  const tpl=btn.dataset.template;
+  $$('.templateBtn').forEach(b=>b.classList.remove('selected')); btn.classList.add('selected');
+  if(tpl!=='custom'){ state.people=JSON.parse(JSON.stringify(TEMPLATES[tpl])); state.people.template=tpl; }
+  else state.people.template='custom';
+  renderPeople(); debouncedSave();
+}));
+const householdRoleEl=$('#householdRole');
+householdRoleEl.addEventListener('change',()=>{ state.people.householdRole=householdRoleEl.value; debouncedSave(); });
+$('#addPersonBtn').addEventListener('click',()=>{
+  const n=state.people.members.length+1;
+  state.people.members.push({id:"p"+n,role:"additional",firstName:"",lastName:"",age:null,gender:"",relationshipToPrimary:""});
+  renderPeople(); debouncedSave();
+});
+
+function renderPeople(){
+  const wrap=$('#peopleWrap'); wrap.innerHTML='';
+  state.people.members.forEach((p,idx)=>{
+    const isPrimary=idx===0;
+    const card=document.createElement('div'); card.className='personCard';
+    card.innerHTML=`
+      <div class="personHead">
+        <div class="tag">${isPrimary?'Persona principal':'Persona adicional'}</div>
+        ${!isPrimary?`<button class="xbtn" type="button">×</button>`:'<span class="hint">Obligatorio</span>'}
+      </div>
+      <div class="row">
+        <div class="field"><label for="fn_${p.id}">Nombre *</label><input id="fn_${p.id}" type="text" data-k="firstName" value="${escapeHtml(p.firstName||'')}" placeholder="Nombre"/></div>
+        <div class="field"><label for="ln_${p.id}">Apellido *</label><input id="ln_${p.id}" type="text" data-k="lastName" value="${escapeHtml(p.lastName||'')}" placeholder="Apellido"/></div>
+      </div>
+      <div class="row">
+        <div class="field"><label for="age_${p.id}">Edad *</label><input id="age_${p.id}" type="number" min="0" data-k="age" value="${p.age??''}"/></div>
+        <div class="field"><label for="gen_${p.id}">Sexo *</label>
+          <select id="gen_${p.id}" data-k="gender">
+            <option value="">Selecciona…</option>
+            <option value="male" ${p.gender==='male'?'selected':''}>Masculino</option>
+            <option value="female" ${p.gender==='female'?'selected':''}>Femenino</option>
+            <option value="prefer_not_to_say" ${p.gender==='prefer_not_to_say'?'selected':''}>Prefiero no decir</option>
+          </select>
+        </div>
+      </div>
+      ${!isPrimary?`<div class="field"><label for="rel_${p.id}">Relación *</label>
+        <select id="rel_${p.id}" data-k="relationshipToPrimary">
+          <option value="">Selecciona…</option>
+          <option value="spouse" ${p.relationshipToPrimary==='spouse'?'selected':''}>Cónyuge</option>
+          <option value="partner" ${p.relationshipToPrimary==='partner'?'selected':''}>Pareja</option>
+          <option value="child" ${p.relationshipToPrimary==='child'?'selected':''}>Hijo/a</option>
+          <option value="family" ${p.relationshipToPrimary==='family'?'selected':''}>Familiar</option>
+          <option value="other" ${p.relationshipToPrimary==='other'?'selected':''}>Otro</option>
+        </select></div>`:''}
+    `;
+    card.addEventListener('input',e=>{
+      const key=e.target.getAttribute('data-k'); if(!key) return;
+      const person=state.people.members.find(x=>x.id===p.id); if(!person) return;
+      person[key]=key==='age'?(Number.isFinite(Number(e.target.value))?Math.trunc(Number(e.target.value)):null):e.target.value;
+      debouncedSave();
+    });
+    if(!isPrimary){ const xb=card.querySelector('.xbtn'); if(xb) xb.addEventListener('click',()=>{ state.people.members=state.people.members.filter(x=>x.id!==p.id); renderPeople(); debouncedSave(); }); }
+    wrap.appendChild(card);
+  });
+  householdRoleEl.value=state.people.householdRole||'';
+  if(state.people.template){ const tb=$(`.templateBtn[data-template="${state.people.template}"]`); if(tb){ $$('.templateBtn').forEach(b=>b.classList.remove('selected')); tb.classList.add('selected'); } }
+}
+
+// ── STEP 3: GOALS ──────────────────────────────────────────────────────────
+function renderGoals(){
+  $$('.goalCard').forEach(c=>c.classList.toggle('selected',state.goals.includes(c.dataset.goal)));
+}
+$$('.goalCard').forEach(card=>{
+  const nc=card.cloneNode(true); card.parentNode.replaceChild(nc,card);
+  nc.addEventListener('click',()=>{
+    const g=nc.dataset.goal;
+    if(nc.classList.toggle('selected')) state.goals.push(g);
+    else state.goals=state.goals.filter(x=>x!==g);
+    debouncedSave();
+  });
+});
+
+// ── STEP 4: WIZARD + CATEGORIES ────────────────────────────────────────────
+const CAT_SUGGESTIONS = {
+  '0-50k':    ['income','expenses','banking','liabilities','other_assets'],
+  '50-100k':  ['income','expenses','savings','banking','liabilities','investments_retirement','other_assets'],
+  '100-200k': ['income','expenses','savings','banking','investments_retirement','investments_nonretirement','real_estate','insurance','other_assets'],
+  '200k+':    ['income','expenses','savings','banking','investments_retirement','investments_nonretirement','real_estate','insurance','business_trust','legal','other_assets']
+};
+const FIN_CATS=[
+  {key:"income",        label:"Ingresos",                hint:"Salarios, negocios, rentas"},
+  {key:"expenses",      label:"Gastos mensuales",        hint:"Desglose de gastos"},
+  {key:"savings",       label:"Ahorro",                  hint:"Ahorro activo mensual"},
+  {key:"liabilities",   label:"Deudas",                  hint:"Tarjetas, préstamos, hipoteca"},
+  {key:"real_estate",   label:"Bienes raíces",           hint:"Propiedades que posees"},
+  {key:"investments_retirement",   label:"Inversiones de retiro",  hint:"401k, IRA, pensión"},
+  {key:"investments_nonretirement",label:"Otras inversiones",      hint:"Acciones, crypto, fondos"},
+  {key:"banking",       label:"Cuentas bancarias",       hint:"Checking, savings, cash"},
+  {key:"insurance",     label:"Seguros",                 hint:"Vida, salud, auto, hogar"},
+  {key:"business_trust",label:"Negocios/Trust",          hint:"Empresas, LLC, trusts"},
+  {key:"legal",         label:"Legal",                   hint:"Testamento, poderes"},
+  {key:"other_assets",  label:"Otros activos",           hint:"Autos, colecciones, etc."},
+];
+const EXPENSES_TAX={
+  "Alimentación":       ["Supermercado","Comidas fuera","Pedido a domicilio"],
+  "Casa":               ["Alquiler","Servicios básicos","Mantenimiento"],
+  "Impuestos":          ["Seguro social","Propiedad","Federales","Estatales"],
+  "Transportación":     ["Gasolina","Mantenimiento","Transporte público / Uber"],
+  "Seguros":            ["Salud","Auto","Vida - Term","Vida - Whole","Hogar","Disability","Umbrella","Otro"],
+  "Dependientes":       ["Cuidado de niños","Cuidado de mayores","Educación"],
+  "Deuda":              ["Tarjeta de crédito","Préstamo de auto","Préstamo estudiantil","Hipoteca","HELOC","Préstamo personal","Otro"],
+  "Entretenimiento":    ["Cine / Conciertos","Streaming","Vacaciones"],
+  "Telecomunicaciones": ["Teléfono","Internet","TV / Cable"],
+  "Gastos Médicos":     ["Consultas","Medicamentos","Procedimientos"],
+  "Cuidado Personal":   ["Peluquería / Barbería","Cosméticos","Spa"],
+  "Regalos":            ["Familia","Amigos","Donaciones"],
+};
+const SAVINGS_TAX={"Reserva de emergencia":["Aporte mensual"],"Retiro":["401(k)","IRA/Roth"],"Inversión":["Brokerage","ETF","Cripto"]};
+const INCOME_TYPES=["Salario","Pago por hora","Bono","Comisión","Negocio propio","Dividendos","Renta inmueble","Pensión","Seguro Social","Otro"];
+const DEBT_TYPES=["Tarjeta de crédito","Préstamo de auto","Préstamo estudiantil","Hipoteca","HELOC","Préstamo personal","Otro"];
+const BANKING_TYPES=["Checking","Savings","Money Market","CD","Efectivo","Otro"];
+const RETIREMENT_TYPES=["401(k)","403(b)","IRA Tradicional","Roth IRA","SEP IRA","Pensión","Anualidad","Otro"];
+const INVESTMENT_TYPES=["Brokerage account","Acciones","ETF/Fondos mutuos","Bonos","Criptomonedas","Otro"];
+const REAL_ESTATE_TYPES=["Casa principal","Casa vacacional","Propiedad de renta","Apartamento","Terreno","Otro"];
+const INSURANCE_TYPES=["Vida - Term","Vida - Whole","Salud","Auto","Hogar","Disability","Umbrella","Otro"];
+const BUSINESS_TYPES=["Negocio propio","LLC","S-Corp","C-Corp","Partnership","Trust","Otro"];
+const LEGAL_TYPES=["Testamento","Living Trust","Power of Attorney","Healthcare Directive","Beneficiarios","Otro"];
+const OTHER_ASSETS_TYPES=["Vehículo","Bote","RV","Joyas","Arte","Coleccionables","Otro"];
+
+function getTypeOpts(k){ return({income:INCOME_TYPES,liabilities:DEBT_TYPES,banking:BANKING_TYPES,investments_retirement:RETIREMENT_TYPES,investments_nonretirement:INVESTMENT_TYPES,real_estate:REAL_ESTATE_TYPES,insurance:INSURANCE_TYPES,business_trust:BUSINESS_TYPES,legal:LEGAL_TYPES,other_assets:OTHER_ASSETS_TYPES})[k]||["Otro"]; }
+function ownerOpts(cur){ let h=`<option value="">Dueño...</option>`; for(const p of state.people.members){ const nm=([p.firstName,p.lastName].filter(Boolean).join(" ").trim()||p.id); h+=`<option value="${p.id}" ${cur===p.id?"selected":""}>${escapeHtml(nm)}</option>`; } return h+`<option value="household" ${cur==="household"?"selected":""}>Compartido</option>`; }
+function pName(pid){ if(pid==="household") return "Hogar"; const m=state.people.members.find(p=>p.id===pid); return m?`${m.firstName||""} ${m.lastName||""}`.trim():pid; }
+
+function renderWizard(){
+  const wf=$('#wizardFlow'), cd=$('#categoriesDetail');
+  if(state.wizardComplete){ wf.style.display='none'; cd.style.display='block'; renderCategoriesDetail(); }
+  else{ wf.style.display='block'; cd.style.display='none'; $$('.wizardStep').forEach((s,i)=>s.classList.toggle('active',i+1===state.wizardStep)); }
+}
+
+$$('.wizardStep').forEach((step,si)=>{
+  const sn=si+1;
+  step.querySelectorAll('.optionBtn').forEach(btn=>btn.addEventListener('click',()=>{
+    const a=btn.dataset.answer;
+    const f=state.financials;
+    if(sn===1){ f.incomeRange=a; f.categoriesSelected=[...CAT_SUGGESTIONS[a]||[]]; }
+    if(sn===2){ f.hasDebts=a==='yes'; if(a==='yes'&&!f.categoriesSelected.includes('liabilities')) f.categoriesSelected.push('liabilities'); }
+    if(sn===3){ f.hasInvestments=a; if(a==='retirement'&&!f.categoriesSelected.includes('investments_retirement')) f.categoriesSelected.push('investments_retirement'); if(a==='both'){ ['investments_retirement','investments_nonretirement'].forEach(k=>{if(!f.categoriesSelected.includes(k))f.categoriesSelected.push(k);}); } }
+    if(sn===4){ f.hasRealEstate=a==='yes'; if(a==='yes'&&!f.categoriesSelected.includes('real_estate')) f.categoriesSelected.push('real_estate'); }
+    if(sn===5){ f.hasInsurance=a==='yes'; if(a==='yes'&&!f.categoriesSelected.includes('insurance')) f.categoriesSelected.push('insurance'); }
+    if(sn===6){ f.hasBusiness=a==='yes'; if(a==='yes'&&!f.categoriesSelected.includes('business_trust')) f.categoriesSelected.push('business_trust'); }
+    if(sn===7){ f.hasLegal=a==='yes'; if(a==='yes'&&!f.categoriesSelected.includes('legal')) f.categoriesSelected.push('legal'); }
+    if(sn===8){ f.hasOtherAssets=a==='yes'; if(a==='yes'&&!f.categoriesSelected.includes('other_assets')) f.categoriesSelected.push('other_assets'); }
+    if(sn===9){ f.hasSavings=a==='yes'; if(a==='yes'&&!f.categoriesSelected.includes('savings')) f.categoriesSelected.push('savings'); }
+    debouncedSave();
+    if(sn<9){ state.wizardStep=sn+1; renderWizard(); }
+    else{ state.wizardComplete=true; state.wizardStep=1; renderWizard(); }
+  }));
+});
+
+$('#editWizardBtn').addEventListener('click',()=>{
+  state.wizardStep=1; state.wizardComplete=false;
+  Object.assign(state.financials,{incomeRange:"",hasDebts:null,hasInvestments:null,hasRealEstate:null,hasInsurance:null,hasBusiness:null,hasLegal:null,hasOtherAssets:null,hasSavings:null,categoriesSelected:[],items:[]});
+  renderWizard(); debouncedSave();
+});
+
+// ─── CSS extra para los nuevos forms ─────────────────────────────────────
+(function injectStyles(){
+  const s=document.createElement('style');
+  s.textContent=`
+    /* Fila de añadir — layout flexible */
+    .addRow{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px;align-items:flex-end;}
+    .addRow select,.addRow input{flex:1;min-width:100px;padding:9px 11px;border:1px solid var(--border);border-radius:10px;font-size:13px;background:#fff;}
+    .addRow select{min-width:130px;}
+    .addRow input[type="number"]{min-width:90px;}
+    .addRow input.short{max-width:90px;min-width:70px;}
+    .addRow .addBtn{
+      flex:0 0 auto;padding:9px 18px;background:linear-gradient(90deg,var(--primary),var(--secondary));
+      color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;
+      transition:opacity .15s;
+    }
+    .addRow .addBtn:hover{opacity:.88;}
+    /* Label pequeño sobre inputs */
+    .inputGroup{display:flex;flex-direction:column;gap:3px;flex:1;min-width:80px;}
+    .inputGroup label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+    /* Chips mejorados */
+    .itemChip{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:rgba(57,86,232,.03);font-size:13px;margin-bottom:5px;}
+    .chipInfo{flex:1;min-width:0;}
+    .chipName{font-weight:600;margin-bottom:1px;font-size:13px;}
+    .chipDetails{font-size:11px;color:var(--muted);}
+    .chipRemove{width:22px;height:22px;border-radius:5px;border:1px solid var(--border);background:#fff;color:var(--muted);font-weight:900;font-size:12px;cursor:pointer;flex-shrink:0;line-height:1;}
+    .chipRemove:hover{background:rgba(220,38,38,.08);color:#dc2626;border-color:rgba(220,38,38,.3);}
+    /* Nota de validación inline */
+    .addError{font-size:11px;color:var(--bad);margin-top:-8px;margin-bottom:6px;display:none;}
+    .addError.show{display:block;}
+  `;
+  document.head.appendChild(s);
+})();
+
+function renderCategoriesDetail(){
+  const cont=$('#categoriesInline'); cont.innerHTML='';
+  const isMonthly = k => k==='expenses'||k==='savings';
+  state.financials.categoriesSelected.forEach(catKey=>{
+    const meta=FIN_CATS.find(c=>c.key===catKey); if(!meta) return;
+    const hasItems=state.financials.items.some(it=>it.category===catKey);
+    const multi=state.people.members.length>1;
+
+    // ── Construir card
+    const card=document.createElement('div');
+    card.className='catInlineCard checked';
+    card.dataset.cat=catKey;
+
+    const bodyHTML = catKey==='expenses'  ? buildExpensesForm(multi)
+                   : catKey==='savings'   ? buildSavingsForm(multi)
+                   : catKey==='liabilities'? buildLiabilitiesForm(multi)
+                   : buildStandardForm(catKey, multi);
+
+    card.innerHTML=`
+      <div class="catHeader">
+        <div class="catInfo">
+          <input type="checkbox" id="chk_${catKey}" checked style="width:18px;height:18px;cursor:pointer;accent-color:var(--primary);flex-shrink:0;"/>
+          <div class="catLabel"><b>${escapeHtml(meta.label)}</b><span>${escapeHtml(meta.hint)}</span></div>
+        </div>
+        <div class="catExpand">▾</div>
+      </div>
+      <div class="catBody">
+        ${bodyHTML}
+        <p class="addError" id="err_${catKey}">⚠ Completa todos los campos requeridos.</p>
+        <div class="itemsList" id="list_${catKey}"></div>
+      </div>`;
+
+    // Checkbox toggle
+    card.querySelector(`#chk_${catKey}`).addEventListener('change', e=>{
+      e.stopPropagation();
+      card.classList.toggle('checked', e.target.checked);
+    });
+
+    // Header toggle open/close
+    card.querySelector('.catHeader').addEventListener('click', e=>{
+      if(e.target.tagName==='INPUT') return;
+      card.classList.toggle('open');
+    });
+
+    cont.appendChild(card);
+
+    // ── Renderizar lista actual
+    const listEl = cont.querySelector(`#list_${catKey}`);
+    renderItemsList(catKey, listEl);
+
+    // ── Atar handlers del botón "+" — SIEMPRE después de appendChild
+    const errEl = cont.querySelector(`#err_${catKey}`);
+
+    if(catKey==='expenses') wireExpensesForm(card, catKey, listEl, errEl, multi);
+    else if(catKey==='savings') wireSavingsForm(card, catKey, listEl, errEl, multi);
+    else if(catKey==='liabilities') wireLiabilitiesForm(card, catKey, listEl, errEl, multi);
+    else wireStandardForm(card, catKey, listEl, errEl, multi);
+
+    // Cascada de subcategoría para gastos
+    if(catKey==='expenses') wireExpenseCascade(card);
+
+    // Auto-open si no hay items
+    if(!hasItems) card.classList.add('open');
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+//  FORMULARIO ESTÁNDAR  (income, banking, investments…)
+// ══════════════════════════════════════════════════════════
+function buildStandardForm(k, multi){
+  const opts=getTypeOpts(k).map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+  const ownerSel = multi ? `<div class="inputGroup"><label for="std_owner_${k}">Titular</label><select id="std_owner_${k}">${ownerOpts('')}</select></div>` : '';
+  return `<div class="addRow">
+    <div class="inputGroup"><label for="std_type_${k}">Tipo *</label>
+      <select id="std_type_${k}"><option value="">Selecciona...</option>${opts}</select>
+    </div>
+    <div class="inputGroup"><label for="std_alias_${k}">Alias (opcional)</label>
+      <input type="text" id="std_alias_${k}" placeholder="Ej: Checking BofA"/>
+    </div>
+    <div class="inputGroup"><label for="std_amt_${k}">Monto USD *</label>
+      <input type="number" id="std_amt_${k}" min="0" step="0.01" placeholder="0.00"/>
+    </div>
+    ${ownerSel}
+    <button type="button" class="addBtn" id="std_add_${k}">+ Añadir</button>
+  </div>`;
+}
+function wireStandardForm(card, k, listEl, errEl, multi){
+  const typeEl  = card.querySelector(`#std_type_${k}`);
+  const aliasEl = card.querySelector(`#std_alias_${k}`);
+  const amtEl   = card.querySelector(`#std_amt_${k}`);
+  const ownerEl = multi ? card.querySelector(`#std_owner_${k}`) : null;
+  const addBtn  = card.querySelector(`#std_add_${k}`);
+  function doAdd(){
+    errEl.classList.remove('show');
+    const type = typeEl.value.trim();
+    const alias = aliasEl.value.trim();
+    const amt = parseFloat(amtEl.value);
+    if(!type || isNaN(amt) || amt < 0){ errEl.classList.add('show'); return; }
+    const owner = ownerEl ? (ownerEl.value||'household') : (state.people.members[0]?.id||'household');
+    state.financials.items.push({id:uid(k),category:k,type,alias:alias||null,name:alias||type,value:amt,owner});
+    typeEl.value=''; aliasEl.value=''; amtEl.value=''; if(ownerEl) ownerEl.value='';
+    renderItemsList(k,listEl); debouncedSave();
+  }
+  addBtn.addEventListener('click', doAdd);
+  amtEl.addEventListener('keydown', e=>{ if(e.key==='Enter') doAdd(); });
+}
+
+// ══════════════════════════════════════════════════════════
+//  FORMULARIO GASTOS  — cascada categoría → subcategoría
+// ══════════════════════════════════════════════════════════
+function buildExpensesForm(multi){
+  const catOpts = Object.keys(EXPENSES_TAX).map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  const ownerSel = multi ? `<div class="inputGroup"><label for="exp_owner">Titular</label><select id="exp_owner">${ownerOpts('')}</select></div>` : '';
+  return `<div class="addRow">
+    <div class="inputGroup"><label for="exp_cat">Categoría *</label>
+      <select id="exp_cat"><option value="">Categoría...</option>${catOpts}</select>
+    </div>
+    <div class="inputGroup"><label for="exp_sub">Subcategoría *</label>
+      <select id="exp_sub" disabled><option value="">Primero selecciona categoría</option></select>
+    </div>
+    <div class="inputGroup"><label for="exp_alias">Alias (opcional)</label>
+      <input type="text" id="exp_alias" placeholder="Ej: Netflix, Visa BofA"/>
+    </div>
+    <div class="inputGroup"><label for="exp_amt">Monto /mes *</label>
+      <input type="number" id="exp_amt" min="0" step="0.01" placeholder="0.00"/>
+    </div>
+    ${ownerSel}
+    <button type="button" class="addBtn" id="exp_add">+ Añadir</button>
+  </div>`;
+}
+function wireExpenseCascade(card){
+  const catSel = card.querySelector('#exp_cat');
+  const subSel = card.querySelector('#exp_sub');
+  if(!catSel||!subSel) return;
+  catSel.addEventListener('change', ()=>{
+    const cat = catSel.value;
+    subSel.innerHTML = '';
+    if(!cat){ subSel.disabled=true; subSel.innerHTML='<option value="">Primero selecciona categoría</option>'; return; }
+    const subs = EXPENSES_TAX[cat]||[];
+    subSel.disabled = false;
+    subSel.innerHTML = `<option value="">Subcategoría...</option>`+subs.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+  });
+}
+function wireExpensesForm(card, k, listEl, errEl, multi){
+  const catEl   = card.querySelector('#exp_cat');
+  const subEl   = card.querySelector('#exp_sub');
+  const aliasEl = card.querySelector('#exp_alias');
+  const amtEl   = card.querySelector('#exp_amt');
+  const ownerEl = multi ? card.querySelector('#exp_owner') : null;
+  const addBtn  = card.querySelector('#exp_add');
+  function doAdd(){
+    errEl.classList.remove('show');
+    const cat   = catEl.value.trim();
+    const sub   = subEl.value.trim();
+    const alias = aliasEl.value.trim();
+    const amt   = parseFloat(amtEl.value);
+    if(!cat||!sub||isNaN(amt)||amt<0){ errEl.classList.add('show'); return; }
+    const owner = ownerEl ? (ownerEl.value||'household') : (state.people.members[0]?.id||'household');
+    // Si el usuario puso alias → mostrar como "Alias (Cat – Sub)", sino "Cat – Sub"
+    const displayName = alias ? `${alias} (${cat} – ${sub})` : `${cat} – ${sub}`;
+    state.financials.items.push({
+      id:uid(k), category:k,
+      expenseCategory:cat, subcategory:sub,
+      alias: alias||null,
+      name: displayName,
+      value:amt, owner
+    });
+    catEl.value='';
+    subEl.innerHTML='<option value="">Primero selecciona categoría</option>'; subEl.disabled=true;
+    aliasEl.value=''; amtEl.value=''; if(ownerEl) ownerEl.value='';
+    renderItemsList(k,listEl); debouncedSave();
+  }
+  addBtn.addEventListener('click', doAdd);
+  amtEl.addEventListener('keydown', e=>{ if(e.key==='Enter') doAdd(); });
+}
+
+// ══════════════════════════════════════════════════════════
+//  FORMULARIO AHORRO  — cascada categoría → subcategoría
+// ══════════════════════════════════════════════════════════
+function buildSavingsForm(multi){
+  const catOpts = Object.keys(SAVINGS_TAX).map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  const ownerSel = multi ? `<div class="inputGroup"><label for="sav_owner">Titular</label><select id="sav_owner">${ownerOpts('')}</select></div>` : '';
+  return `<div class="addRow">
+    <div class="inputGroup"><label for="sav_cat">Categoría *</label>
+      <select id="sav_cat"><option value="">Categoría...</option>${catOpts}</select>
+    </div>
+    <div class="inputGroup"><label for="sav_sub">Subcategoría *</label>
+      <select id="sav_sub" disabled><option value="">Primero selecciona categoría</option></select>
+    </div>
+    <div class="inputGroup"><label for="sav_amt">Monto /mes *</label>
+      <input type="number" id="sav_amt" min="0" step="0.01" placeholder="0.00"/>
+    </div>
+    ${ownerSel}
+    <button type="button" class="addBtn" id="sav_add">+ Añadir</button>
+  </div>`;
+}
+function wireExpenseCascadeFor(card, catId, subId, tax){
+  const catSel = card.querySelector(`#${catId}`);
+  const subSel = card.querySelector(`#${subId}`);
+  if(!catSel||!subSel) return;
+  catSel.addEventListener('change', ()=>{
+    const cat=catSel.value; subSel.innerHTML='';
+    if(!cat){ subSel.disabled=true; subSel.innerHTML='<option value="">Primero selecciona categoría</option>'; return; }
+    const subs=tax[cat]||[];
+    subSel.disabled=false;
+    subSel.innerHTML=`<option value="">Subcategoría...</option>`+subs.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+  });
+}
+function wireSavingsForm(card, k, listEl, errEl, multi){
+  wireExpenseCascadeFor(card,'sav_cat','sav_sub',SAVINGS_TAX);
+  const catEl   = card.querySelector('#sav_cat');
+  const subEl   = card.querySelector('#sav_sub');
+  const amtEl   = card.querySelector('#sav_amt');
+  const ownerEl = multi ? card.querySelector('#sav_owner') : null;
+  const addBtn  = card.querySelector('#sav_add');
+  function doAdd(){
+    errEl.classList.remove('show');
+    const cat=catEl.value.trim(), sub=subEl.value.trim(), amt=parseFloat(amtEl.value);
+    if(!cat||!sub||isNaN(amt)||amt<0){ errEl.classList.add('show'); return; }
+    const owner = ownerEl ? (ownerEl.value||'household') : (state.people.members[0]?.id||'household');
+    state.financials.items.push({id:uid(k),category:k,expenseCategory:cat,subcategory:sub,name:`${cat} – ${sub}`,value:amt,owner});
+    catEl.value=''; subEl.innerHTML='<option value="">Primero selecciona categoría</option>'; subEl.disabled=true; amtEl.value=''; if(ownerEl) ownerEl.value='';
+    renderItemsList(k,listEl); debouncedSave();
+  }
+  addBtn.addEventListener('click', doAdd);
+  amtEl.addEventListener('keydown', e=>{ if(e.key==='Enter') doAdd(); });
+}
+
+// ══════════════════════════════════════════════════════════
+//  FORMULARIO PASIVOS / DEUDAS
+//  Campos extra: tasa de interés % y meses restantes
+// ══════════════════════════════════════════════════════════
+function buildLiabilitiesForm(multi){
+  const opts=DEBT_TYPES.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+  const ownerSel = multi ? `<div class="inputGroup"><label for="liab_owner">Titular</label><select id="liab_owner">${ownerOpts('')}</select></div>` : '';
+  return `<div class="addRow">
+    <div class="inputGroup"><label for="liab_type">Tipo de deuda *</label>
+      <select id="liab_type"><option value="">Selecciona...</option>${opts}</select>
+    </div>
+    <div class="inputGroup"><label for="liab_alias">Descripción</label>
+      <input type="text" id="liab_alias" placeholder="Ej: Chase Visa"/>
+    </div>
+    <div class="inputGroup"><label for="liab_amt">Saldo pendiente *</label>
+      <input type="number" id="liab_amt" min="0" step="0.01" placeholder="$ USD"/>
+    </div>
+    <div class="inputGroup"><label for="liab_rate">Tasa interés %</label>
+      <input type="number" id="liab_rate" class="short" min="0" max="100" step="0.01" placeholder="6.5"/>
+    </div>
+    <div class="inputGroup"><label for="liab_months">Meses restantes</label>
+      <input type="number" id="liab_months" class="short" min="0" step="1" placeholder="48"/>
+    </div>
+    ${ownerSel}
+    <button type="button" class="addBtn" id="liab_add">+ Añadir</button>
+  </div>
+  <p class="hint" style="margin-top:0;margin-bottom:10px;">💡 Ingresa la tasa anual y los meses que faltan para liquidar cada deuda.</p>`;
+}
+function wireLiabilitiesForm(card, k, listEl, errEl, multi){
+  const typeEl   = card.querySelector('#liab_type');
+  const aliasEl  = card.querySelector('#liab_alias');
+  const amtEl    = card.querySelector('#liab_amt');
+  const rateEl   = card.querySelector('#liab_rate');
+  const monthsEl = card.querySelector('#liab_months');
+  const ownerEl  = multi ? card.querySelector('#liab_owner') : null;
+  const addBtn   = card.querySelector('#liab_add');
+  function doAdd(){
+    errEl.classList.remove('show');
+    const type  = typeEl.value.trim();
+    const alias = aliasEl.value.trim();
+    const amt   = parseFloat(amtEl.value);
+    const rate  = rateEl.value !== '' ? parseFloat(rateEl.value) : null;
+    const months= monthsEl.value !== '' ? parseInt(monthsEl.value) : null;
+    if(!type || isNaN(amt) || amt < 0){ errEl.classList.add('show'); return; }
+    const owner = ownerEl ? (ownerEl.value||'household') : (state.people.members[0]?.id||'household');
+    state.financials.items.push({
+      id:uid(k), category:k, type, alias:alias||null,
+      name:alias||type, value:amt,
+      interestRate: rate, monthsRemaining: months,
+      owner
+    });
+    typeEl.value=''; aliasEl.value=''; amtEl.value=''; rateEl.value=''; monthsEl.value=''; if(ownerEl) ownerEl.value='';
+    renderItemsList(k,listEl); debouncedSave();
+  }
+  addBtn.addEventListener('click', doAdd);
+  amtEl.addEventListener('keydown', e=>{ if(e.key==='Enter') doAdd(); });
+}
+
+// ══════════════════════════════════════════════════════════
+//  RENDER LISTA DE ITEMS AÑADIDOS
+// ══════════════════════════════════════════════════════════
+function renderItemsList(catKey, container){
+  if(!container) return;
+  const items    = state.financials.items.filter(it=>it.category===catKey);
+  const isCascade = catKey==='expenses' || catKey==='savings';
+  const isDebt    = catKey==='liabilities';
+  const isMonthly = isCascade;
+
+  container.innerHTML = items.length === 0
+    ? `<p style="font-size:12px;color:var(--muted);text-align:center;padding:10px 0;">Aún no hay items añadidos.</p>`
+    : items.map(it=>{
+        // Línea 1 — siempre: Categoría / Tipo
+        const topLabel = isCascade
+          ? `${it.expenseCategory||''} – ${it.subcategory||''}`
+          : (it.type || '—');
+
+        // Línea 2 — alias · monto · titular (+ extras deuda)
+        const parts = [];
+        if(it.alias) parts.push(it.alias);
+        parts.push(fmtUSD(it.value) + (isMonthly ? '/mes' : ''));
+        parts.push(pName(it.owner));
+        if(isDebt && it.interestRate    != null) parts.push(`${it.interestRate}% anual`);
+        if(isDebt && it.monthsRemaining != null) parts.push(`${it.monthsRemaining} meses`);
+
+        return `<div class="itemChip" data-id="${it.id}">
+          <div class="chipInfo">
+            <div class="chipName">${escapeHtml(topLabel)}</div>
+            <div class="chipDetails">${parts.map(p=>escapeHtml(String(p))).join(' · ')}</div>
+          </div>
+          <button class="chipRemove" type="button" title="Eliminar">×</button>
+        </div>`;
+      }).join('');
+
+  container.onclick = e => {
+    const btn = e.target.closest('.chipRemove'); if(!btn) return;
+    const id  = btn.closest('.itemChip').dataset.id;
+    state.financials.items = state.financials.items.filter(it=>it.id!==id);
+    renderItemsList(catKey, container); debouncedSave();
+  };
+}
+
+// ── STEP 5: CONFIRMATION ───────────────────────────────────────────────────
+function validateFinal(){
+  const missing=[];
+  if(!state.people.members.length) missing.push({step:2,title:'Personas sin agregar'});
+  if(!state.financials.items.length) missing.push({step:4,title:'Información financiera incompleta'});
+  return missing.length===0 ? {ok:true} : {ok:false,missing};
+}
+
+function renderConfirmation(){
+  $('#beforeSubmit').style.display='block';
+  $('#afterSubmit').style.display='none';
+  $('#finalNotes').value=state.notes||'';
+  const v=validateFinal();
+  const sg=$('#summaryGrid');
+  const checklist=[
+    {step:2,icon:'👥',title:`Personas (${state.people.members.length})`,ok:state.people.members.length>0},
+    {step:3,icon:'🎯',title:`Metas (${state.goals.length})`,ok:true,optional:true},
+    {step:4,icon:'💰',title:`Ítems financieros (${state.financials.items.length})`,ok:state.financials.items.length>0},
+  ];
+  if(!v.ok){
+    sg.innerHTML=`<div style="grid-column:1/-1;background:#fff3cd;border:2px solid #ffc107;border-radius:12px;padding:24px;text-align:center;">
+      <div style="font-size:40px;margin-bottom:12px;">⚠️</div>
+      <h3 style="color:#856404;margin:0 0 12px;">Información Incompleta</h3>
+      ${checklist.map(c=>`<div style="display:flex;align-items:center;gap:12px;padding:10px;background:#fff;border-radius:8px;margin:6px 0;cursor:pointer;" onclick="window.dispatchEvent(new CustomEvent('goToStep',{detail:${c.step}}))">
+        <span style="font-size:24px;">${c.ok?'✅':'⬜'}</span>
+        <span style="font-weight:600;color:${c.ok?'#28a745':'#856404'}">${c.title}${c.optional?' (opcional)':''}</span>
+        ${!c.ok&&!c.optional?'<span style="margin-left:auto;color:#ffc107;font-weight:bold;">→ Completar</span>':''}
+      </div>`).join('')}
+    </div>`;
+    $('#finalSubmit').disabled=true; $('#finalSubmit').style.opacity='.5';
+  } else {
+    sg.innerHTML=`<div style="grid-column:1/-1;background:linear-gradient(135deg,#d4edda,#c3e6cb);border:2px solid #28a745;border-radius:12px;padding:24px;text-align:center;">
+      <div style="font-size:40px;margin-bottom:8px;">✅</div>
+      <h3 style="color:#155724;margin:0 0 6px;">¡Todo Completo!</h3>
+      <p style="color:#155724;margin:0;font-size:14px;">Presiona "Someter" para finalizar. El coach recibirá el reporte PDF automáticamente.</p>
+    </div>
+    ${checklist.map(c=>`<div style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #e9ecef;border-radius:8px;background:#fff;">
+      <span>✅</span><span style="font-weight:600;color:#28a745;">${c.title}${c.optional?' (opcional)':''}</span>
+    </div>`).join('')}`;
+    $('#finalSubmit').disabled=false; $('#finalSubmit').style.opacity='1';
+  }
+}
+$('#finalNotes').addEventListener('input',()=>{ state.notes=$('#finalNotes').value; debouncedSave(); });
+window.addEventListener('goToStep',e=>setStep(e.detail));
+
+// ── SUBMIT → GENERA PDF ────────────────────────────────────────────────────
+$('#finalSubmit').addEventListener('click', async ()=>{
+  const v=validateFinal();
+  if(!v.ok){ showToast('⚠️ Completa la información faltante'); setStep(v.missing[0].step); return; }
+
+  // ── Mostrar loader mientras genera el PDF
+  const loader=document.createElement('div');
+  loader.className='pdfGenerating';
+  loader.innerHTML=`
+    <div class="spinner"></div>
+    <p>Generando archivos del coach...</p>
+    <small id="loaderStatus">Preparando datos...</small>
+  `;
+  document.body.appendChild(loader);
+
+  // Pequeño delay para que el browser pinte el loader
+  await new Promise(r=>setTimeout(r,150));
+
+  try{
+    document.getElementById('loaderStatus').textContent = '📄 Generando PDF...';
+    await new Promise(r=>setTimeout(r,80));
+    generateCoachPDF(state);
+  } catch(err){
+    console.error('Error generando PDF:', err);
+    showToast('⚠️ Error en el PDF — revisa la consola');
+  }
+
+  await new Promise(r=>setTimeout(r,400));
+
+  try{
+    document.getElementById('loaderStatus').textContent = '📊 Generando Excel...';
+    await new Promise(r=>setTimeout(r,80));
+    generateCoachExcel(state);
+  } catch(err){
+    console.error('Error generando Excel:', err);
+    showToast('⚠️ Error en el Excel — revisa la consola');
+  }
+
+  // Limpiar y mostrar éxito
+  localStorage.removeItem('discovery_draft_v3');
+  loader.remove();
+  $('#beforeSubmit').style.display='none';
+  $('#afterSubmit').style.display='block';
+  $('.btns').style.display='none';
+  window.scrollTo({top:0,behavior:'smooth'});
+  showToast('✅ PDF + Excel generados y descargados');
+});
+
+
+
+// ════════════════════════════════════════════════════════════════════════════
+//  generateCoachPDF(state)
+//  ─────────────────────────────────────────────────────────────────────────
+//  Genera el reporte interno del coach usando los datos del estado del form.
+//  Se ejecuta 100% en el browser con jsPDF + AutoTable.
+//  El PDF se descarga automáticamente al computador del usuario.
+//
+//  PARA INTEGRAR CON EMAIL (sin backend):
+//    const pdfBase64 = doc.output('datauristring');
+//    emailjs.send('SERVICE_ID','TEMPLATE_ID',{ pdf: pdfBase64, ... });
+//
+//  PARA ENVIAR A BACKEND:
+//    const pdfBlob = doc.output('blob');
+//    const fd = new FormData(); fd.append('pdf', pdfBlob, 'reporte.pdf');
+//    await fetch('/api/coach-report', { method:'POST', body: fd });
+// ════════════════════════════════════════════════════════════════════════════
+function generateCoachPDF(state){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'letter' });
+
+  // ── Color palette
+  const C = {
+    primary:   [57, 86, 232],
+    secondary: [116, 89, 217],
+    dark:      [15, 23, 42],
+    muted:     [100, 116, 139],
+    light:     [246, 247, 255],
+    ok:        [22, 163, 74],
+    warn:      [245, 158, 11],
+    bad:       [220, 38, 38],
+    white:     [255, 255, 255],
+    border:    [229, 231, 235],
+    section:   [238, 241, 253],
+  };
+
+  const W    = 215.9;  // letter width mm
+  const MARG = 14;
+  const CW   = W - MARG * 2;   // content width
+  let   Y    = 0;               // current Y position
+
+  const members  = state.people.members || [];
+  const items    = state.financials.items || [];
+
+  // ── Computed totals
+  const sum = cat => items.filter(i=>i.category===cat).reduce((a,b)=>a+b.value,0);
+  const totalIncome     = sum('income');
+  const totalExpenses   = sum('expenses');
+  const totalSavings    = sum('savings');
+  const totalBanking    = sum('banking');
+  const totalRetInv     = sum('investments_retirement');
+  const totalNonRet     = sum('investments_nonretirement');
+  const totalDebt       = sum('liabilities');
+  const totalRealEstate = sum('real_estate');
+  const totalOtherAssets= sum('other_assets');
+  const totalAssets     = totalBanking + totalRetInv + totalNonRet + totalRealEstate + totalOtherAssets;
+  const netWorth        = totalAssets - totalDebt;
+  const savingsRate     = totalIncome ? (totalSavings / (totalIncome/12)) * 100 : 0;
+  const dti             = totalIncome ? (totalDebt / totalIncome) * 100 : 0;
+
+  // Labels
+  const GOAL_LBL = {casa:"Comprar casa",retiro:"Retiro cómodo",emergencia:"Fondo emergencia",educacion:"Educacion hijos",viaje:"Viaje/Vacaciones",deudas:"Pagar deudas",negocio:"Iniciar negocio",auto:"Comprar auto",inversiones:"Crecer dinero",independencia:"Independencia financiera",herencia:"Dejar herencia",otro:"Otra meta"};
+  const CAT_LBL  = {income:"Ingresos",expenses:"Gastos Mensuales",savings:"Ahorro",banking:"Cuentas Bancarias",investments_retirement:"Inv. Retiro",investments_nonretirement:"Otras Inversiones",liabilities:"Deudas",insurance:"Seguros",real_estate:"Bienes Raices",business_trust:"Negocios/Trust",legal:"Legal",other_assets:"Otros Activos"};
+  const REL_LBL  = {spouse:"Conyuge",partner:"Pareja",child:"Hijo/a",family:"Familiar",other:"Otro"};
+  const fUSD = v => "$"+Number(v||0).toLocaleString('en-US');
+  const pn   = pid => { if(pid==='household') return 'Hogar'; const m=members.find(p=>p.id===pid); return m?`${m.firstName||''} ${m.lastName||''}`.trim():pid; };
+
+  // ── Helpers
+  function setFont(bold, size, colorArr){
+    doc.setFont('helvetica', bold ? 'bold' : 'normal');
+    doc.setFontSize(size);
+    doc.setTextColor(...(colorArr||C.dark));
+  }
+  function fillRect(x,y,w,h,color,radius=0){
+    doc.setFillColor(...color);
+    if(radius>0) doc.roundedRect(x,y,w,h,radius,radius,'F');
+    else doc.rect(x,y,w,h,'F');
+  }
+  function needsPage(h=10){ if(Y+h>270){ doc.addPage(); Y=MARG; } }
+
+  // ══════════════════════════════════
+  //  PAGE 1 — HEADER
+  // ══════════════════════════════════
+  // Dark header bar
+  fillRect(0, 0, W, 36, C.dark);
+  setFont(true, 18, C.white);
+  doc.text('REPORTE DE DISCOVERY', MARG, 14);
+  setFont(false, 8, [148,163,184]);
+  doc.text('USO INTERNO · CONFIDENCIAL', W - MARG, 14, {align:'right'});
+
+  // Sub bar
+  fillRect(0, 36, W, 14, [30,41,59]);
+  setFont(false, 9, [148,163,184]);
+  doc.text(`Cliente: `, MARG, 44);
+  setFont(true, 9, C.white);
+  doc.text(state.userName||'—', MARG+14, 44);
+  setFont(false, 9, [148,163,184]);
+  doc.text(`   ${state.userEmail||''}`, MARG+14, 44);
+  const now = new Date().toLocaleDateString('es',{day:'2-digit',month:'2-digit',year:'numeric'});
+  doc.text(`Generado: ${now}`, W - MARG, 44, {align:'right'});
+
+  Y = 58;
+
+  // ══════════════════════════════════
+  //  SECTION BANNER helper
+  // ══════════════════════════════════
+  function sectionBanner(label){
+    needsPage(12);
+    fillRect(MARG, Y, CW, 9, C.primary, 3);
+    setFont(true, 9, C.white);
+    doc.text(label, MARG+4, Y+6);
+    Y += 13;
+  }
+
+  // ══════════════════════════════════
+  //  INFORMACIÓN PERSONAL
+  //  Bloque prominente con todos los datos
+  //  del cliente y su núcleo familiar
+  // ══════════════════════════════════
+  sectionBanner('INFORMACIÓN PERSONAL DEL CLIENTE');
+
+  // Ficha principal — persona #0
+  const primary = members[0] || {};
+  const primaryName = `${primary.firstName||''} ${primary.lastName||''}`.trim() || '—';
+  const ROLE_LBL2 = {primary_provider:'Principal proveedor económico',shared:'Ingreso compartido',not_primary:'No es el proveedor principal'};
+
+  // Tarjeta de datos del cliente principal
+  fillRect(MARG, Y, CW, 28, C.section, 4);
+  doc.setDrawColor(...C.primary); doc.setLineWidth(0.3);
+  doc.roundedRect(MARG, Y, CW, 28, 4, 4, 'S');
+  doc.setLineWidth(0.1);
+
+  // Columna izquierda — Nombre
+  setFont(false, 7.5, C.muted);   doc.text('NOMBRE COMPLETO',  MARG+6,  Y+6);
+  setFont(true,  11,  C.dark);    doc.text(primaryName,         MARG+6,  Y+13);
+
+  // Columna centro-izquierda — Email
+  const colEmail = MARG + CW*0.36;
+  setFont(false, 7.5, C.muted);   doc.text('EMAIL',             colEmail, Y+6);
+  setFont(false, 9,   C.dark);    doc.text(state.userEmail||'—', colEmail, Y+13);
+
+  // Columna centro-derecha — Edad / Género
+  const colMid = MARG + CW*0.64;
+  setFont(false, 7.5, C.muted);   doc.text('EDAD',              colMid,  Y+6);
+  setFont(true,  11,  C.dark);    doc.text(String(primary.age||'—'), colMid, Y+13);
+  setFont(false, 7.5, C.muted);   doc.text('GÉNERO',            colMid,  Y+19);
+  setFont(false, 9,   C.dark);    doc.text(({male:'Masculino',female:'Femenino',prefer_not_to_say:'Prefiere no indicar'})[primary.gender]||'—', colMid, Y+25);
+
+  // Columna derecha — Rol económico
+  const colRight = MARG + CW*0.80;
+  setFont(false, 7.5, C.muted);   doc.text('ROL ECONÓMICO',     colRight, Y+6);
+  const roleTxt = ROLE_LBL2[state.people.householdRole]||'—';
+  const roleLines = doc.splitTextToSize(roleTxt, CW*0.18);
+  setFont(true, 9, C.primary);
+  roleLines.slice(0,2).forEach((ln,i) => doc.text(ln, colRight, Y+13+(i*5)));
+  setFont(false, 7.5, C.muted);   doc.text('ESTRUCTURA',        colRight, Y+19);
+  setFont(false, 9,   C.dark);    doc.text(({single:'Solo',couple:'Pareja',family:'Familia',custom:'Personalizada'})[state.people.template]||'—', colRight, Y+25);
+
+  Y += 32;
+
+  // Tabla de todos los miembros del hogar (si hay más de uno)
+  if(members.length > 1){
+    needsPage(20);
+    setFont(true, 8, C.muted);
+    doc.text('NÚCLEO FAMILIAR', MARG, Y+4);
+    doc.setDrawColor(...C.border); doc.line(MARG, Y+6, W-MARG, Y+6);
+    Y += 8;
+
+    doc.autoTable({
+      startY: Y,
+      margin: {left:MARG, right:MARG},
+      head:[['Nombre','Relación','Edad','Género']],
+      body: members.slice(1).map(m=>([
+        `${m.firstName||''} ${m.lastName||''}`.trim() || '—',
+        ({spouse:'Cónyuge',partner:'Pareja',child:'Hijo/a',family:'Familiar',other:'Otro'})[m.relationshipToPrimary] || '—',
+        String(m.age||'—'),
+        ({male:'Masculino',female:'Femenino',prefer_not_to_say:'No indica'})[m.gender]||'—',
+      ])),
+      styles:{ fontSize:8.5, cellPadding:3 },
+      headStyles:{ fillColor:C.secondary, textColor:C.white, fontStyle:'bold' },
+      alternateRowStyles:{ fillColor:C.section },
+      columnStyles:{ 0:{cellWidth:65}, 1:{cellWidth:45}, 2:{cellWidth:20}, 3:{cellWidth:CW-130} },
+    });
+    Y = doc.lastAutoTable.finalY + 8;
+  } else {
+    Y += 4;
+  }
+
+  // ══════════════════════════════════
+  //  KPI GRID  — Resumen Ejecutivo
+  // ══════════════════════════════════
+  sectionBanner('A) RESUMEN EJECUTIVO');
+
+  const kpis = [
+    ['Ingreso Anual (hogar)',  fUSD(totalIncome)],
+    ['Gasto Mensual',         fUSD(totalExpenses)],
+    ['Ahorro Mensual',        fUSD(totalSavings)],
+    ['Liquidez (Banco)',      fUSD(totalBanking)],
+    ['Inv. Retiro',           fUSD(totalRetInv)],
+    ['Otras Inv.',            fUSD(totalNonRet)],
+    ['Deuda Total',           fUSD(totalDebt)],
+    ['Patrimonio Neto',       fUSD(netWorth)],
+    ['Rango Ingreso',         ({'0-50k':'< $50k','50-100k':'$50k–$100k','100-200k':'$100k–$200k','200k+':'> $200k'})[state.financials.incomeRange]||'—'],
+  ];
+
+  const cols = 3;
+  const cellW = CW / cols;
+  const cellH = 16;
+  kpis.forEach(([k,v], i)=>{
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const cx  = MARG + col * cellW;
+    const cy  = Y + row * cellH;
+    fillRect(cx, cy, cellW, cellH, row%2===0 ? C.light : C.white);
+    doc.setDrawColor(...C.border); doc.rect(cx, cy, cellW, cellH, 'S');
+    setFont(false, 7.5, C.muted); doc.text(k,       cx+4, cy+5.5);
+    setFont(true,  10,  C.dark);  doc.text(String(v), cx+4, cy+12);
+  });
+  Y += Math.ceil(kpis.length / cols) * cellH + 6;
+
+  // ── Metas
+  needsPage(20);
+  sectionBanner('METAS FINANCIERAS');
+  if(state.goals.length){
+    const goalsPerRow=4, gw=CW/goalsPerRow, gh=10;
+    state.goals.forEach((g,i)=>{
+      const col=i%goalsPerRow, row=Math.floor(i/goalsPerRow);
+      const cx=MARG+col*gw, cy=Y+row*gh;
+      needsPage(gh);
+      fillRect(cx,cy,gw,gh,i%2===0?C.section:C.white);
+      doc.setDrawColor(...C.border); doc.rect(cx,cy,gw,gh,'S');
+      setFont(false,8,C.dark); doc.text(`• ${GOAL_LBL[g]||g}`, cx+3, cy+6.5);
+    });
+    Y += Math.ceil(state.goals.length/goalsPerRow)*gh + 6;
+  } else {
+    setFont(false,8.5,C.muted); doc.text('No se seleccionaron metas.', MARG, Y); Y+=8;
+  }
+
+  // ── Nota del cliente
+  if(state.notes?.trim()){
+    needsPage(22);
+    sectionBanner('NOTA DEL CLIENTE');
+    const noteLines = doc.splitTextToSize(`"${state.notes}"`, CW-12);
+    const noteH = Math.min(noteLines.length, 5) * 5 + 6;
+    fillRect(MARG, Y, CW, noteH, [238,241,253]);
+    doc.setDrawColor(...C.primary); doc.setLineWidth(1);
+    doc.line(MARG, Y, MARG, Y+noteH);
+    doc.setLineWidth(0.1);
+    setFont(false, 8.5, [30,58,95]);
+    noteLines.slice(0,5).forEach((ln,i)=>doc.text(ln, MARG+5, Y+5+(i*5)));
+    Y += noteH + 6;
+  }
+
+  // ══════════════════════════════════
+  //  PAGE 2 — ESTADO DE INGRESOS Y EGRESOS
+  // ══════════════════════════════════
+  doc.addPage(); Y = MARG;
+  sectionBanner('B) ESTADO DE INGRESOS Y EGRESOS');
+
+  // Ingresos detallados
+  const incomeItems = items.filter(i=>i.category==='income');
+  if(incomeItems.length){
+    setFont(true, 8.5, C.dark); doc.text('INGRESOS', MARG, Y+4); Y+=7;
+    doc.autoTable({
+      startY: Y, margin:{left:MARG,right:MARG},
+      head:[['Tipo','Titular','Monto Anual']],
+      body: incomeItems.map(it=>[ it.alias||it.type||'—', pn(it.owner), fUSD(it.value) ]),
+      styles:{fontSize:8,cellPadding:2.5},
+      headStyles:{fillColor:C.ok,textColor:C.white,fontStyle:'bold',fontSize:8},
+      alternateRowStyles:{fillColor:[240,253,244]},
+      columnStyles:{0:{cellWidth:90},1:{cellWidth:50},2:{cellWidth:CW-140,halign:'right'}},
+    });
+    Y = doc.lastAutoTable.finalY;
+    // Subtotal ingresos
+    fillRect(MARG, Y, CW, 9, [220,252,231]);
+    doc.setDrawColor(...C.ok); doc.rect(MARG,Y,CW,9,'S');
+    setFont(true,9,C.ok); doc.text('TOTAL INGRESOS', MARG+4, Y+6);
+    doc.text(fUSD(totalIncome), W-MARG, Y+6, {align:'right'});
+    Y += 13;
+  }
+
+  // Impuestos (subcategoria Impuestos de gastos)
+  const taxItems = items.filter(i=>i.category==='expenses' && i.expenseCategory==='Impuestos');
+  const totalTaxes = taxItems.reduce((a,b)=>a+b.value,0)*12;
+  if(taxItems.length){
+    needsPage(16);
+    setFont(true,8.5,C.dark); doc.text('IMPUESTOS', MARG, Y+4); Y+=7;
+    doc.autoTable({
+      startY:Y, margin:{left:MARG,right:MARG},
+      head:[['Tipo','Titular','Monto /mes','Anual']],
+      body: taxItems.map(it=>[ it.alias||it.subcategory||'—', pn(it.owner), fUSD(it.value)+'/mes', fUSD(it.value*12) ]),
+      styles:{fontSize:8,cellPadding:2.5},
+      headStyles:{fillColor:[100,116,139],textColor:C.white,fontStyle:'bold',fontSize:8},
+      alternateRowStyles:{fillColor:C.section},
+      columnStyles:{0:{cellWidth:90},1:{cellWidth:40},2:{cellWidth:30,halign:'right'},3:{cellWidth:CW-160,halign:'right'}},
+    });
+    Y = doc.lastAutoTable.finalY;
+    fillRect(MARG,Y,CW,9,C.section);
+    doc.setDrawColor(...C.border); doc.rect(MARG,Y,CW,9,'S');
+    setFont(true,9,C.muted); doc.text('TOTAL IMPUESTOS (anual)', MARG+4, Y+6);
+    doc.text(fUSD(totalTaxes), W-MARG, Y+6, {align:'right'});
+    Y+=13;
+  }
+
+  // Gastos (sin impuestos)
+  const nonTaxExpenses = items.filter(i=>i.category==='expenses' && i.expenseCategory!=='Impuestos');
+  const totalNonTaxExp = nonTaxExpenses.reduce((a,b)=>a+b.value,0);
+  if(nonTaxExpenses.length){
+    needsPage(16);
+    setFont(true,8.5,C.dark); doc.text('GASTOS MENSUALES', MARG, Y+4); Y+=7;
+    doc.autoTable({
+      startY:Y, margin:{left:MARG,right:MARG},
+      head:[['Categoría – Subcategoría','Alias','Titular','Monto /mes']],
+      body: nonTaxExpenses.map(it=>[
+        `${it.expenseCategory||''} – ${it.subcategory||''}`,
+        it.alias||'—',
+        pn(it.owner),
+        fUSD(it.value)+'/mes',
+      ]),
+      styles:{fontSize:8,cellPadding:2.5},
+      headStyles:{fillColor:C.bad,textColor:C.white,fontStyle:'bold',fontSize:8},
+      alternateRowStyles:{fillColor:[255,245,245]},
+      columnStyles:{0:{cellWidth:70},1:{cellWidth:40},2:{cellWidth:35},3:{cellWidth:CW-145,halign:'right'}},
+    });
+    Y = doc.lastAutoTable.finalY;
+    fillRect(MARG,Y,CW,9,[255,228,230]);
+    doc.setDrawColor(...C.bad); doc.rect(MARG,Y,CW,9,'S');
+    setFont(true,9,C.bad); doc.text('TOTAL GASTOS /mes', MARG+4, Y+6);
+    doc.text(fUSD(totalNonTaxExp)+'/mes', W-MARG, Y+6, {align:'right'});
+    Y+=13;
+  }
+
+  // Ahorro
+  const savingsItems = items.filter(i=>i.category==='savings');
+  if(savingsItems.length){
+    needsPage(16);
+    setFont(true,8.5,C.dark); doc.text('AHORRO', MARG, Y+4); Y+=7;
+    doc.autoTable({
+      startY:Y, margin:{left:MARG,right:MARG},
+      head:[['Categoría – Subcategoría','Alias','Titular','Monto /mes']],
+      body: savingsItems.map(it=>[
+        `${it.expenseCategory||''} – ${it.subcategory||''}`,
+        it.alias||'—',
+        pn(it.owner),
+        fUSD(it.value)+'/mes',
+      ]),
+      styles:{fontSize:8,cellPadding:2.5},
+      headStyles:{fillColor:C.primary,textColor:C.white,fontStyle:'bold',fontSize:8},
+      alternateRowStyles:{fillColor:C.section},
+      columnStyles:{0:{cellWidth:70},1:{cellWidth:40},2:{cellWidth:35},3:{cellWidth:CW-145,halign:'right'}},
+    });
+    Y = doc.lastAutoTable.finalY;
+    fillRect(MARG,Y,CW,9,[238,241,253]);
+    doc.setDrawColor(...C.primary); doc.rect(MARG,Y,CW,9,'S');
+    setFont(true,9,C.primary); doc.text('TOTAL AHORRO /mes', MARG+4, Y+6);
+    doc.text(fUSD(totalSavings)+'/mes', W-MARG, Y+6, {align:'right'});
+    Y+=13;
+  }
+
+  // Waterfall resumen
+  needsPage(48);
+  const incomeMo = totalIncome/12;
+  const taxesMo  = totalTaxes/12;
+  const waterfall = [
+    {label:'(+) Ingresos (mensualizado)',      val:  incomeMo,                         color:C.ok},
+    {label:'(–) Impuestos',                     val: -taxesMo,                          color:C.muted},
+    {label:'    Ingreso Neto',                  val:  incomeMo - taxesMo,               color:C.dark, bold:true},
+    {label:'(–) Gastos mensuales',              val: -totalNonTaxExp,                   color:C.bad},
+    {label:'(–) Ahorro mensual',                val: -totalSavings,                     color:C.primary},
+    {label:'    Flujo disponible estimado',     val:  incomeMo-taxesMo-totalNonTaxExp-totalSavings, color:C.dark, bold:true},
+  ];
+  setFont(true,9,C.dark); doc.text('RESUMEN FLUJO MENSUAL', MARG, Y+4); Y+=7;
+  waterfall.forEach(({label,val,color,bold})=>{
+    needsPage(9);
+    fillRect(MARG,Y,CW,9, bold ? [238,241,253] : C.white);
+    doc.setDrawColor(...C.border); doc.rect(MARG,Y,CW,9,'S');
+    setFont(bold??false, 8.5, color);
+    doc.text(label,      MARG+4,     Y+6);
+    doc.text(fUSD(Math.abs(val))+(val<0?' (egreso)':''), W-MARG, Y+6, {align:'right'});
+    Y+=9;
+  });
+  Y+=6;
+
+  // ══════════════════════════════════
+  //  PAGE 3 — ESTADO DE BALANCE
+  // ══════════════════════════════════
+  doc.addPage(); Y = MARG;
+  sectionBanner('C) ESTADO DE BALANCE');
+
+  // Activos detallados
+  const assetCats = ['banking','investments_retirement','investments_nonretirement','real_estate','other_assets'];
+  assetCats.forEach(catKey=>{
+    const catItems = items.filter(i=>i.category===catKey);
+    if(!catItems.length) return;
+    const catTot = catItems.reduce((a,b)=>a+b.value,0);
+    needsPage(14);
+    setFont(true,8,C.muted); doc.text((CAT_LBL[catKey]||catKey).toUpperCase(), MARG, Y+4);
+    doc.text(fUSD(catTot), W-MARG, Y+4, {align:'right'});
+    doc.setDrawColor(...C.border); doc.line(MARG,Y+6,W-MARG,Y+6); Y+=8;
+    doc.autoTable({
+      startY:Y, margin:{left:MARG,right:MARG},
+      body: catItems.map(it=>[it.alias||it.type||'—', pn(it.owner), fUSD(it.value)]),
+      styles:{fontSize:8,cellPadding:2},
+      alternateRowStyles:{fillColor:C.section},
+      columnStyles:{0:{cellWidth:90},1:{cellWidth:50},2:{cellWidth:CW-140,halign:'right'}},
+    });
+    Y = doc.lastAutoTable.finalY + 4;
+  });
+
+  // Total activos
+  needsPage(10);
+  fillRect(MARG,Y,CW,10,[220,252,231]);
+  doc.setDrawColor(...C.ok); doc.rect(MARG,Y,CW,10,'S');
+  setFont(true,9.5,C.ok); doc.text('TOTAL ACTIVOS', MARG+4, Y+7);
+  doc.text(fUSD(totalAssets), W-MARG, Y+7, {align:'right'});
+  Y+=14;
+
+  // Pasivos detallados
+  const debtItems = items.filter(i=>i.category==='liabilities');
+  if(debtItems.length){
+    needsPage(16);
+    setFont(true,8.5,C.dark); doc.text('PASIVOS', MARG, Y+4); Y+=7;
+    doc.autoTable({
+      startY:Y, margin:{left:MARG,right:MARG},
+      head:[['Tipo','Alias','Titular','Saldo','Tasa %','Meses Rest.']],
+      body: debtItems.map(it=>[
+        it.type||'—',
+        it.alias||'—',
+        pn(it.owner),
+        fUSD(it.value),
+        it.interestRate!=null?`${it.interestRate}%`:'—',
+        it.monthsRemaining!=null?String(it.monthsRemaining):'—',
+      ]),
+      styles:{fontSize:8,cellPadding:2.5},
+      headStyles:{fillColor:C.bad,textColor:C.white,fontStyle:'bold',fontSize:8},
+      alternateRowStyles:{fillColor:[255,245,245]},
+      columnStyles:{0:{cellWidth:50},1:{cellWidth:40},2:{cellWidth:32},3:{cellWidth:28,halign:'right'},4:{cellWidth:20,halign:'right'},5:{cellWidth:CW-170,halign:'right'}},
+    });
+    Y = doc.lastAutoTable.finalY + 2;
+    fillRect(MARG,Y,CW,10,[255,228,230]);
+    doc.setDrawColor(...C.bad); doc.rect(MARG,Y,CW,10,'S');
+    setFont(true,9.5,C.bad); doc.text('TOTAL PASIVOS', MARG+4, Y+7);
+    doc.text(fUSD(totalDebt), W-MARG, Y+7, {align:'right'});
+    Y+=14;
+  }
+
+  // Patrimonio Neto
+  needsPage(12);
+  fillRect(MARG,Y,CW,12,[238,241,253]);
+  doc.setDrawColor(...C.primary); doc.rect(MARG,Y,CW,12,'S');
+  setFont(true,11,C.primary); doc.text('PATRIMONIO NETO (Activos – Pasivos)', MARG+4, Y+8);
+  doc.text(fUSD(netWorth), W-MARG, Y+8, {align:'right'});
+  Y+=16;
+
+  // ══════════════════════════════════
+  //  PAGE 4+ — SNAPSHOT FINANCIERO DETALLADO
+  // ══════════════════════════════════
+  doc.addPage(); Y = MARG;
+  sectionBanner('D) SNAPSHOT FINANCIERO DETALLADO');
+
+  const CATS_ORDER=['income','expenses','savings','banking','investments_retirement','investments_nonretirement','liabilities','insurance','real_estate','business_trust','legal','other_assets'];
+  const selected = state.financials.categoriesSelected||[];
+  const isMonthly = k=>k==='expenses'||k==='savings';
+
+  CATS_ORDER.filter(k=>selected.includes(k)).forEach(catKey=>{
+    const catItems=items.filter(i=>i.category===catKey);
+    if(!catItems.length) return;
+    const catTotal=catItems.reduce((a,b)=>a+b.value,0);
+    const period=isMonthly(catKey)?'/mes':'';
+    needsPage(20);
+
+    setFont(true,9,C.primary); doc.text(`${CAT_LBL[catKey]||catKey}`, MARG, Y+4);
+    doc.text(`Total: ${fUSD(catTotal)}${period}`, W-MARG, Y+4, {align:'right'});
+    doc.setDrawColor(...C.primary); doc.setLineWidth(0.5);
+    doc.line(MARG,Y+6,W-MARG,Y+6); doc.setLineWidth(0.1);
+    Y+=8;
+
+    const isDebtCat = catKey==='liabilities';
+    doc.autoTable({
+      startY:Y, margin:{left:MARG,right:MARG},
+      head: isDebtCat
+        ? [['Tipo','Alias','Titular','Saldo','Tasa %','Meses Rest.']]
+        : [['Categoría / Tipo','Alias','Titular','Monto','% Cat.']],
+      body: isDebtCat
+        ? catItems.map(it=>[it.type||'—', it.alias||'—', pn(it.owner), fUSD(it.value)+period, it.interestRate!=null?`${it.interestRate}%`:'—', it.monthsRemaining!=null?String(it.monthsRemaining):'—'])
+        : catItems.map(it=>{
+            const typeLabel = (it.expenseCategory && it.subcategory)
+              ? `${it.expenseCategory} – ${it.subcategory}`
+              : (it.type||'—');
+            return [typeLabel, it.alias||'—', pn(it.owner), fUSD(it.value)+period, catTotal?`${((it.value/catTotal)*100).toFixed(0)}%`:'—'];
+          }),
+      styles:{fontSize:8,cellPadding:2.5},
+      headStyles:{fillColor:C.primary,textColor:C.white,fontStyle:'bold',fontSize:8},
+      alternateRowStyles:{fillColor:C.section},
+      columnStyles: isDebtCat
+        ? {0:{cellWidth:50},1:{cellWidth:40},2:{cellWidth:32},3:{cellWidth:28,halign:'right'},4:{cellWidth:20,halign:'right'},5:{cellWidth:CW-170,halign:'right'}}
+        : {0:{cellWidth:80},1:{cellWidth:38},2:{cellWidth:32},3:{cellWidth:25,halign:'right'},4:{cellWidth:CW-175,halign:'right'}},
+    });
+    Y = doc.lastAutoTable.finalY + 4;
+  });
+
+  // ── Footer en todas las páginas
+  const totalPages = doc.internal.getNumberOfPages();
+  for(let i=1;i<=totalPages;i++){
+    doc.setPage(i);
+    setFont(false,7.5,[148,163,184]);
+    doc.text(`Documento interno · Solo para el coach · No compartir con el cliente`, W/2, 275, {align:'center'});
+    doc.text(`Pag. ${i} de ${totalPages}`, W-MARG, 275, {align:'right'});
+    doc.setDrawColor(...C.border); doc.setLineWidth(0.3);
+    doc.line(MARG, 271, W-MARG, 271);
+  }
+
+  // ── Descargar
+  const safeName = (state.userName||'cliente').replace(/\s+/g,'_');
+  const dateStr  = new Date().toISOString().slice(0,10);
+  doc.save(`Discovery_Coach_${safeName}_${dateStr}.pdf`);
+}
+// ════════════════════════════════════════════════════════════════════════════
+
+
+// ════════════════════════════════════════════════════════════════════════════
+//  exportForMoneyMap(state)
+//  Genera un archivo .moneymap.json con los datos ya mapeados al formato
+//  que espera el dashboard-money-map.html. El coach lo importa directamente.
+// ════════════════════════════════════════════════════════════════════════════
+function exportForMoneyMap(state){
+  const members = state.people.members || [];
+  const items   = state.financials.items || [];
+  const primary = members[0] || {};
+
+  // ── Debt type → Money Map category
+  const debtCatMap = (type) => {
+    if(!type) return 'otros';
+    const t = type.toLowerCase();
+    if(t.includes('hipoteca') || t.includes('mortgage')) return 'casa';
+    if(t.includes('heloc'))                               return 'lineaPropiedad';
+    if(t.includes('auto'))                                return 'auto';
+    if(t.includes('tarjeta') || t.includes('credit'))    return 'tarjetas';
+    if(t.includes('estudiantil') || t.includes('student')) return 'educacion';
+    if(t.includes('personal'))                            return 'lineaPersonal';
+    return 'otros';
+  };
+
+  // ── Income type → Money Map category
+  const incomeCatMap = (type) => {
+    if(!type) return 'Otros';
+    const t = type.toLowerCase();
+    if(t.includes('salario') || t.includes('hora') || t.includes('bono') || t.includes('comisi')) return 'Salario';
+    if(t.includes('negocio'))  return 'Negocio/Side Hustle';
+    if(t.includes('dividendo') || t.includes('inter')) return 'Intereses';
+    if(t.includes('renta'))    return 'Renta';
+    return 'Otros';
+  };
+
+  // ── Savings subcategory → Money Map ahorro category
+  const ahorroCatMap = (cat, sub) => {
+    if(!cat) return 'Otros';
+    const c = cat.toLowerCase();
+    if(c.includes('reserva') || c.includes('emergencia')) return 'Cuenta de ahorro';
+    if(c.includes('retiro')) {
+      const s = (sub||'').toLowerCase();
+      if(s.includes('401')) return '401(k)';
+      if(s.includes('ira')) return 'IRA';
+      return '401(k)';
+    }
+    return 'Inversiones';
+  };
+
+  // ── Expense subcategory → Money Map debt category
+  const deudaGastoCatMap = (sub) => {
+    if(!sub) return 'Otros';
+    const s = sub.toLowerCase();
+    if(s.includes('hipoteca') || s.includes('alquiler') || s.includes('renta')) return 'Hipoteca/Renta';
+    if(s.includes('auto'))    return 'Auto';
+    if(s.includes('estudiantil') || s.includes('student')) return 'Préstamos estudiantiles';
+    if(s.includes('tarjeta') || s.includes('credit')) return 'Tarjetas de crédito';
+    return 'Otros';
+  };
+
+  // ── Seguros subcategory → Money Map seguros category
+  const segurosCatMap = (sub) => {
+    if(!sub) return 'Otros';
+    const s = sub.toLowerCase();
+    if(s.includes('vida') || s.includes('term') || s.includes('whole')) return 'Vida';
+    if(s.includes('salud') || s.includes('médico') || s.includes('health')) return 'Médico';
+    if(s.includes('auto')) return 'Auto';
+    if(s.includes('hogar') || s.includes('propiedad') || s.includes('home')) return 'Propiedad';
+    return 'Otros';
+  };
+
+  // ── Impuestos subcategory → Money Map impuestos category
+  const impuestosCatMap = (sub) => {
+    if(!sub) return 'Otros';
+    const s = sub.toLowerCase();
+    if(s.includes('federal'))   return 'Federal';
+    if(s.includes('estatal'))   return 'Estatal';
+    if(s.includes('social'))    return 'Seguro Social';
+    if(s.includes('medicare'))  return 'Medicare';
+    if(s.includes('propiedad')) return 'Propiedad';
+    return 'Otros';
+  };
+
+  // ── Build activos
+  const activos = {
+    efectivo:        items.filter(i=>i.category==='banking')
+                         .map(i=>({tipo:i.type||'Otro', ubicacion:i.alias||'', valor:i.value||0})),
+    inversiones:     items.filter(i=>i.category==='investments_nonretirement')
+                         .map(i=>({tipo:i.type||'Otro', ubicacion:i.alias||'', valor:i.value||0})),
+    retiro:          items.filter(i=>i.category==='investments_retirement')
+                         .map(i=>({tipo:i.type||'Otro', ubicacion:i.alias||'', valor:i.value||0})),
+    bienesRaices:    items.filter(i=>i.category==='real_estate')
+                         .map(i=>({tipo:i.type||'Otro', ubicacion:i.alias||'', valor:i.value||0})),
+    bienesPersonales:items.filter(i=>i.category==='other_assets')
+                         .map(i=>({tipo:i.type||'Otro', ubicacion:i.alias||'', valor:i.value||0})),
+  };
+
+  // ── Build deudas (grouped by category)
+  const deudas = {tarjetas:[],lineaPersonal:[],lineaPropiedad:[],casa:[],auto:[],educacion:[],otros:[]};
+  items.filter(i=>i.category==='liabilities').forEach(i=>{
+    const cat = debtCatMap(i.type);
+    deudas[cat].push({
+      compania: i.alias || i.type || '',
+      apr:      i.interestRate != null ? String(i.interestRate) : '',
+      meses:    i.monthsRemaining != null ? String(i.monthsRemaining) : '',
+      mensual:  '',   // el coach puede completar esto en el Money Map
+      balance:  String(i.value||0)
+    });
+  });
+
+  // ── Build ingresos (income is annual → /12 for monthly)
+  const ingresos = items.filter(i=>i.category==='income').map(i=>({
+    categoria: incomeCatMap(i.type),
+    nombre:    i.alias || i.type || '',
+    monto:     String(Math.round((i.value||0)/12))
+  }));
+
+  // ── Build gastos
+  const gastos = { diarios:[], deuda:[], ahorro:[], impuestos:[], seguros:[] };
+
+  items.filter(i=>i.category==='expenses').forEach(i=>{
+    const cat = (i.expenseCategory||'').toLowerCase();
+    const item = {
+      categoria: '',
+      nombre: i.alias || `${i.expenseCategory||''} – ${i.subcategory||''}`,
+      monto: String(i.value||0)
+    };
+    if(cat === 'impuestos'){
+      item.categoria = impuestosCatMap(i.subcategory);
+      gastos.impuestos.push(item);
+    } else if(cat === 'seguros'){
+      item.categoria = segurosCatMap(i.subcategory);
+      gastos.seguros.push(item);
+    } else if(cat === 'deuda'){
+      item.categoria = deudaGastoCatMap(i.subcategory);
+      gastos.deuda.push(item);
+    } else {
+      item.categoria = 'Otros';
+      gastos.diarios.push(item);
+    }
+  });
+
+  items.filter(i=>i.category==='savings').forEach(i=>{
+    gastos.ahorro.push({
+      categoria: ahorroCatMap(i.expenseCategory, i.subcategory),
+      nombre:    i.alias || `${i.expenseCategory||''} – ${i.subcategory||''}`,
+      monto:     String(i.value||0)
+    });
+  });
+
+  // ── Build user profile
+  const spouse = members.find(m=>m.relationshipToPrimary==='spouse'||m.relationshipToPrimary==='partner');
+  const kids   = members.filter(m=>m.relationshipToPrimary==='child').length;
+  const isCouple = !!spouse;
+
+  const userProfile = {
+    nombre:        primary.firstName || '',
+    apellido:      primary.lastName  || '',
+    edad:          primary.age       || '',
+    estadoCivil:   isCouple ? (spouse.relationshipToPrimary==='spouse'?'casado':'pareja') : 'soltero',
+    dependientes:  kids,
+    avatar:        '👤',
+    analisisConjunto: isCouple,
+    parejaNombre:  spouse ? (spouse.firstName||'') : '',
+    parejaApellido:spouse ? (spouse.lastName||'')  : '',
+    parejaAvatar:  '👤'
+  };
+
+  // ── Final payload
+  const payload = {
+    _version:    '1.0',
+    _exportDate: new Date().toISOString().slice(0,10),
+    _clientName: state.userName || `${primary.firstName||''} ${primary.lastName||''}`.trim(),
+    userProfile,
+    activos,
+    deudas,
+    ingresos,
+    gastos
+  };
+
+  // ── Download
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  const safeName = (state.userName||'cliente').replace(/\s+/g,'_');
+  a.download = `MoneyMap_${safeName}_${new Date().toISOString().slice(0,10)}.moneymap.json`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+  showToast('✅ Archivo Money Map exportado');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  generateCoachExcel(state)
+//  ─────────────────────────────────────────────────────────────────────────
+//  Genera el Excel del coach con múltiples hojas usando SheetJS.
+//  Se descarga automáticamente junto con el PDF al hacer submit.
+//
+//  HOJAS INCLUIDAS:
+//    1. Resumen        — KPIs, ratios, flags, metas
+//    2. Personas       — Estructura familiar
+//    3. Snapshot       — Todos los ítems financieros
+//    4. Balance Sheet  — Activos, pasivos, patrimonio neto
+//    5. Por Persona    — Totales agrupados por titular
+// ════════════════════════════════════════════════════════════════════════════
+function generateCoachExcel(state){
+  const WB   = XLSX.utils.book_new();
+  const members = state.people.members || [];
+  const items   = state.financials.items || [];
+
+  // ── Helpers
+  const fUSD = v => Number(v||0);
+  const sum  = cat => items.filter(i=>i.category===cat).reduce((a,b)=>a+b.value,0);
+  const pn   = pid => { if(pid==='household') return 'Hogar'; const m=members.find(p=>p.id===pid); return m?`${m.firstName||''} ${m.lastName||''}`.trim():pid; };
+
+  const GOAL_LBL = {casa:"Comprar casa",retiro:"Retiro cómodo",emergencia:"Fondo emergencia",educacion:"Educación hijos",viaje:"Viaje/Vacaciones",deudas:"Pagar deudas",negocio:"Iniciar negocio",auto:"Comprar auto",inversiones:"Crecer dinero",independencia:"Independencia financiera",herencia:"Dejar herencia",otro:"Otra meta"};
+  const CAT_LBL  = {income:"Ingresos",expenses:"Gastos Mensuales",savings:"Ahorro",banking:"Cuentas Bancarias",investments_retirement:"Inv. Retiro",investments_nonretirement:"Otras Inversiones",liabilities:"Deudas",insurance:"Seguros",real_estate:"Bienes Raices",business_trust:"Negocios/Trust",legal:"Legal",other_assets:"Otros Activos"};
+  const REL_LBL  = {spouse:"Cónyuge",partner:"Pareja",child:"Hijo/a",family:"Familiar",other:"Otro"};
+  const ROLE_LBL = {primary_provider:"Principal proveedor",shared:"Ingreso compartido",not_primary:"No es proveedor principal"};
+  const INCOME_RNG={  '0-50k':'Menos de $50,000','50-100k':'$50,000 – $100,000','100-200k':'$100,000 – $200,000','200k+':'Más de $200,000'};
+
+  // Computed
+  const totalIncome   = sum('income');
+  const totalExpenses = sum('expenses');
+  const totalSavings  = sum('savings');
+  const totalBanking  = sum('banking');
+  const totalRetInv   = sum('investments_retirement');
+  const totalNonRet   = sum('investments_nonretirement');
+  const totalDebt     = sum('liabilities');
+  const totalRealEst  = sum('real_estate');
+  const totalOther    = sum('other_assets');
+  const totalAssets   = totalBanking + totalRetInv + totalNonRet + totalRealEst + totalOther;
+  const netWorth      = totalAssets - totalDebt;
+  const savingsRate   = totalIncome ? (totalSavings/(totalIncome/12))*100 : 0;
+  const dti           = totalIncome ? (totalDebt/totalIncome)*100 : 0;
+  const now           = new Date().toLocaleDateString('es',{day:'2-digit',month:'2-digit',year:'numeric'});
+
+  // ── Helper: aplica estilos de encabezado a una fila
+  function styleHeader(ws, range){
+    for(let C=range.s.c; C<=range.e.c; C++){
+      const addr=XLSX.utils.encode_cell({r:range.s.r,c:C});
+      if(!ws[addr]) continue;
+      ws[addr].s={
+        fill:{patternType:"solid",fgColor:{rgb:"3956E8"}},
+        font:{bold:true,color:{rgb:"FFFFFF"},sz:11},
+        alignment:{horizontal:"center",vertical:"center"},
+        border:{bottom:{style:"medium",color:{rgb:"FFFFFF"}}}
+      };
+    }
+  }
+  function styleTitle(ws, addr){
+    if(!ws[addr]) return;
+    ws[addr].s={
+      font:{bold:true,sz:13,color:{rgb:"0F172A"}},
+      fill:{patternType:"solid",fgColor:{rgb:"EEF1FD"}},
+      alignment:{horizontal:"left"}
+    };
+  }
+  function styleMeta(ws, addr, color){
+    if(!ws[addr]) return;
+    ws[addr].s={ font:{bold:true,sz:12,color:{rgb:color||"3956E8"}}, alignment:{horizontal:"right"} };
+  }
+
+  // ════════════════════════════════
+  //  HOJA 1: RESUMEN
+  // ════════════════════════════════
+  const primaryMember = members[0]||{};
+  const primaryName2  = `${primaryMember.firstName||''} ${primaryMember.lastName||''}`.trim()||'—';
+  const genderLbl     = {male:'Masculino',female:'Femenino',prefer_not_to_say:'Prefiere no indicar'}[primaryMember.gender]||'—';
+  const roleLbl2      = {primary_provider:'Principal proveedor',shared:'Ingreso compartido',not_primary:'No es proveedor principal'}[state.people.householdRole]||'—';
+  const templateLbl   = {single:'Solo',couple:'Pareja',family:'Familia',custom:'Personalizada'}[state.people.template]||'—';
+
+  const ws1Data = [
+    ['REPORTE DISCOVERY – USO INTERNO DEL COACH','','',''],
+    [],
+    ['─── INFORMACIÓN PERSONAL ───','','',''],
+    ['Nombre completo',     primaryName2,       'Email',            state.userEmail||'—'],
+    ['Edad',                primaryMember.age||'—', 'Género',       genderLbl],
+    ['Rol económico',       roleLbl2,           'Estructura',       templateLbl],
+    ['Miembros del hogar',  String(members.length), 'Fecha formulario', now],
+    [],
+    ...(members.length>1 ? [
+      ['─── NÚCLEO FAMILIAR ───','','',''],
+      ['Nombre','Relación','Edad','Género'],
+      ...members.slice(1).map(m=>[
+        `${m.firstName||''} ${m.lastName||''}`.trim()||'—',
+        ({spouse:'Cónyuge',partner:'Pareja',child:'Hijo/a',family:'Familiar',other:'Otro'})[m.relationshipToPrimary]||'—',
+        m.age||'—',
+        ({male:'Masculino',female:'Femenino',prefer_not_to_say:'No indica'})[m.gender]||'—',
+      ]),
+      [],
+    ] : []),
+    ['─── INDICADORES PRINCIPALES ───','','',''],
+    ['Indicador','Valor','',''],
+    ['Ingreso Anual (hogar)',           fUSD(totalIncome),'',''],
+    ['Gasto Mensual Total',             fUSD(totalExpenses),'',''],
+    ['Ahorro Mensual Total',            fUSD(totalSavings),'',''],
+    ['Tasa de Ahorro',                  `${savingsRate.toFixed(1)}%`,'',''],
+    ['Liquidez (cuentas bancarias)',    fUSD(totalBanking),'',''],
+    ['Inversiones de Retiro',           fUSD(totalRetInv),'',''],
+    ['Otras Inversiones',               fUSD(totalNonRet),'',''],
+    ['Total Activos',                   fUSD(totalAssets),'',''],
+    ['Deuda Total',                     fUSD(totalDebt),'',''],
+    ['Relación Deuda / Ingreso Anual',  `${dti.toFixed(1)}%`,'',''],
+    ['Patrimonio Neto (aprox.)',        fUSD(netWorth),'',''],
+    ['Rango Ingreso Declarado',         INCOME_RNG[state.financials.incomeRange]||'—','',''],
+    [],
+    ['─── FLAGS ───','','',''],
+    ['Flag','Estado','',''],
+    ['Situación compleja (notas)',  state.notes?.length>100?'Sí':'No','',''],
+    ['Deudas activas',              state.financials.hasDebts?'Sí':'No','',''],
+    ['Tiene inversiones',           state.financials.hasInvestments!=='none'&&state.financials.hasInvestments?'Sí':'No','',''],
+    ['Bienes raíces',               state.financials.hasRealEstate?'Sí':'No','',''],
+    ['Documentos legales',          state.financials.hasLegal?'Sí':'No','',''],
+    ['Seguros activos',             state.financials.hasInsurance?'Sí':'No','',''],
+    [],
+    ['─── METAS DECLARADAS ───','','',''],
+    ...(state.goals.length ? state.goals.map(g=>['•', GOAL_LBL[g]||g,'','']) : [['(ninguna)','','','']]),
+    [],
+    ['─── NOTA DEL CLIENTE ───','','',''],
+    [state.notes||'(sin notas)','','',''],
+  ];
+  const ws1 = XLSX.utils.aoa_to_sheet(ws1Data);
+  ws1['!cols'] = [{wch:36},{wch:20},{wch:28},{wch:20}];
+  ws1['!merges'] = [
+    {s:{r:0,c:0},e:{r:0,c:3}},
+    {s:{r:ws1Data.length-2,c:0},e:{r:ws1Data.length-2,c:3}},
+    {s:{r:ws1Data.length-1,c:0},e:{r:ws1Data.length-1,c:3}},
+  ];
+  XLSX.utils.book_append_sheet(WB, ws1, 'Resumen');
+
+  // ════════════════════════════════
+  //  HOJA 2: PERSONAS
+  // ════════════════════════════════
+  const ws2Data = [
+    ['ESTRUCTURA FAMILIAR / FINANCIERA','','','',''],
+    [`Rol económico: ${ROLE_LBL[state.people.householdRole]||'—'}`,'','','',''],
+    [],
+    ['Nombre','Rol','Edad','Género','Relación'],
+    ...members.map(m=>([
+      `${m.firstName||''} ${m.lastName||''}`.trim(),
+      m.role==='primary'?'Principal':'Adicional',
+      m.age||'—',
+      {male:'Masculino',female:'Femenino',prefer_not_to_say:'No indica'}[m.gender]||'—',
+      m.role==='primary'?'—':(REL_LBL[m.relationshipToPrimary]||m.relationshipToPrimary||'—'),
+    ])),
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet(ws2Data);
+  ws2['!cols'] = [{wch:30},{wch:14},{wch:8},{wch:14},{wch:14}];
+  ws2['!merges'] = [{s:{r:0,c:0},e:{r:0,c:4}}];
+  styleHeader(ws2,{s:{r:3,c:0},e:{r:3,c:4}});
+  XLSX.utils.book_append_sheet(WB, ws2, 'Personas');
+
+  // ════════════════════════════════
+  //  HOJA 3: SNAPSHOT FINANCIERO
+  // ════════════════════════════════
+  const ws3Rows = [
+    ['SNAPSHOT FINANCIERO – DETALLE COMPLETO','','','','',''],
+    [],
+    ['Categoría','Descripción','Tipo','Titular','Monto (USD)','Periodo','Tasa % (deudas)','Meses rest. (deudas)'],
+  ];
+  const CATS_ORDER=['income','expenses','savings','banking','investments_retirement','investments_nonretirement','liabilities','insurance','real_estate','business_trust','legal','other_assets'];
+  const selected = state.financials.categoriesSelected||[];
+  CATS_ORDER.filter(k=>selected.includes(k)).forEach(catKey=>{
+    const catItems=items.filter(i=>i.category===catKey);
+    if(!catItems.length) return;
+    const isMonthly=catKey==='expenses'||catKey==='savings';
+    const isDebt=catKey==='liabilities';
+    catItems.forEach(it=>ws3Rows.push([
+      CAT_LBL[catKey]||catKey,
+      it.name||'—',
+      it.type||it.expenseCategory||'—',
+      pn(it.owner||'household'),
+      fUSD(it.value),
+      isMonthly?'Mensual':'Total',
+      isDebt && it.interestRate!=null ? it.interestRate : '',
+      isDebt && it.monthsRemaining!=null ? it.monthsRemaining : '',
+    ]));
+    const catTotal=catItems.reduce((a,b)=>a+b.value,0);
+    ws3Rows.push(['',`  TOTAL ${(CAT_LBL[catKey]||catKey).toUpperCase()}`,'','',fUSD(catTotal),(isMonthly?'Mensual':'Total'),'','']);
+    ws3Rows.push([]);
+  });
+  const ws3 = XLSX.utils.aoa_to_sheet(ws3Rows);
+  ws3['!cols'] = [{wch:22},{wch:30},{wch:20},{wch:16},{wch:14},{wch:10},{wch:16},{wch:18}];
+  ws3['!merges'] = [{s:{r:0,c:0},e:{r:0,c:5}}];
+  styleHeader(ws3,{s:{r:2,c:0},e:{r:2,c:5}});
+  XLSX.utils.book_append_sheet(WB, ws3, 'Snapshot Financiero');
+
+  // ════════════════════════════════
+  //  HOJA 4: BALANCE SHEET
+  // ════════════════════════════════
+  const ws4Data = [
+    ['BALANCE SHEET SIMPLIFICADO','','',''],
+    [],
+    ['ACTIVOS','Monto (USD)','PASIVOS','Monto (USD)'],
+    ['Cuentas bancarias',   fUSD(totalBanking),  'Deuda total', fUSD(totalDebt)],
+    ['Inversiones retiro',  fUSD(totalRetInv),   '',            ''],
+    ['Otras inversiones',   fUSD(totalNonRet),   '',            ''],
+    [],
+    ['TOTAL ACTIVOS',       fUSD(totalAssets),   'PATRIMONIO NETO', fUSD(netWorth)],
+    [],
+    ['─── MÉTRICAS DERIVADAS ───','','',''],
+    ['Tasa de Ahorro',             `${savingsRate.toFixed(1)}%`,'Meta recomendada','≥ 15%'],
+    ['Deuda / Ingreso Anual',      `${dti.toFixed(1)}%`,       'Saludable',        '< 30%'],
+    ['Meses fondo emergencia',     totalExpenses?`${(totalBanking/totalExpenses).toFixed(1)} meses`:'—','Recomendado','3-6 meses'],
+  ];
+  const ws4 = XLSX.utils.aoa_to_sheet(ws4Data);
+  ws4['!cols'] = [{wch:26},{wch:16},{wch:26},{wch:16}];
+  ws4['!merges'] = [{s:{r:0,c:0},e:{r:0,c:3}}];
+  styleHeader(ws4,{s:{r:2,c:0},e:{r:2,c:3}});
+  XLSX.utils.book_append_sheet(WB, ws4, 'Balance Sheet');
+
+  // ════════════════════════════════
+  //  HOJA 5: POR PERSONA
+  // ════════════════════════════════
+  const ws5Data = [
+    ['TOTALES POR TITULAR','','',''],
+    [],
+    ['Titular','Categoría','Items','Total (USD)'],
+  ];
+  const allOwners=['household',...members.map(m=>m.id)];
+  allOwners.forEach(oid=>{
+    const ownerItems=items.filter(it=>it.owner===oid);
+    if(!ownerItems.length) return;
+    // Group by category
+    const bycat={};
+    ownerItems.forEach(it=>{ if(!bycat[it.category]) bycat[it.category]=[]; bycat[it.category].push(it); });
+    Object.entries(bycat).forEach(([cat,catItems])=>{
+      ws5Data.push([
+        pn(oid),
+        CAT_LBL[cat]||cat,
+        catItems.length,
+        fUSD(catItems.reduce((a,b)=>a+b.value,0)),
+      ]);
+    });
+    ws5Data.push([]);
+  });
+  const ws5 = XLSX.utils.aoa_to_sheet(ws5Data);
+  ws5['!cols'] = [{wch:22},{wch:26},{wch:8},{wch:16}];
+  ws5['!merges'] = [{s:{r:0,c:0},e:{r:0,c:3}}];
+  styleHeader(ws5,{s:{r:2,c:0},e:{r:2,c:3}});
+  XLSX.utils.book_append_sheet(WB, ws5, 'Por Titular');
+
+  // ── Descargar — usar Blob en vez de XLSX.writeFile (más fiable en browser)
+  const safeName = (state.userName||'cliente').replace(/\s+/g,'_');
+  const dateStr  = new Date().toISOString().slice(0,10);
+  const wbOut    = XLSX.write(WB, {bookType:'xlsx', type:'array'});
+  const blob     = new Blob([wbOut], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url      = URL.createObjectURL(blob);
+  const a        = document.createElement('a');
+  a.href         = url;
+  a.download     = `Discovery_Coach_${safeName}_${dateStr}.xlsx`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+}
+// ════════════════════════════════════════════════════════════════════════════
+
+
+// ════════════════════════════════════════════════════════════════════════════
+//  DUMMY DATA — para revisar el reporte sin llenar el form manualmente
+//  Familia López-Rivera: pareja con hijo, ingresos medios-altos, deudas activas
+// ════════════════════════════════════════════════════════════════════════════
+function loadDummyData(){
+  Object.assign(state, {
+    startTime: Date.now() - 420000,
+    userName:  'Carlos López',
+    userEmail: 'carlos.lopez@email.com',
+
+    people: {
+      template:       'family',
+      householdRole:  'shared',
+      members: [
+        { id:'p1', role:'primary',    firstName:'Carlos',  lastName:'López',   age:42, gender:'male',   relationshipToPrimary:'' },
+        { id:'p2', role:'additional', firstName:'María',   lastName:'Rivera',  age:39, gender:'female', relationshipToPrimary:'spouse' },
+        { id:'p3', role:'additional', firstName:'Sofía',   lastName:'López',   age:14, gender:'female', relationshipToPrimary:'child' },
+      ]
+    },
+
+    goals: ['retiro','emergencia','educacion','inversiones','deudas'],
+
+    financials: {
+      incomeRange:      '100-200k',
+      hasDebts:         true,
+      hasInvestments:   'both',
+      hasRealEstate:    true,
+      hasInsurance:     true,
+      hasBusiness:      false,
+      hasLegal:         false,
+      hasOtherAssets:   true,
+      hasSavings:       true,
+      categoriesSelected: ['income','expenses','savings','banking','investments_retirement','investments_nonretirement','liabilities','insurance','real_estate','other_assets'],
+      items: [
+        // INGRESOS
+        { id:'inc1', category:'income', type:'Salario',          alias:'Salario Carlos',   name:'Salario Carlos',   value:95000, owner:'p1' },
+        { id:'inc2', category:'income', type:'Salario',          alias:'Salario María',    name:'Salario María',    value:62000, owner:'p2' },
+        { id:'inc3', category:'income', type:'Dividendos',       alias:'Dividendos acciones', name:'Dividendos',   value:3200,  owner:'p1' },
+
+        // GASTOS — Alimentación
+        { id:'exp1',  category:'expenses', expenseCategory:'Alimentación',      subcategory:'Supermercado',           alias:'Costco + Publix',    name:'Alimentación – Supermercado',           value:1100, owner:'household' },
+        { id:'exp2',  category:'expenses', expenseCategory:'Alimentación',      subcategory:'Comidas fuera',          alias:'Restaurants',         name:'Alimentación – Comidas fuera',          value:420,  owner:'household' },
+        // Casa
+        { id:'exp3',  category:'expenses', expenseCategory:'Casa',              subcategory:'Servicios básicos',      alias:'FPL + agua + gas',   name:'Casa – Servicios básicos',              value:380,  owner:'household' },
+        { id:'exp4',  category:'expenses', expenseCategory:'Casa',              subcategory:'Mantenimiento',          alias:'HOA + reparaciones', name:'Casa – Mantenimiento',                  value:320,  owner:'household' },
+        // Impuestos
+        { id:'exp5',  category:'expenses', expenseCategory:'Impuestos',         subcategory:'Federales',              alias:'',                   name:'Impuestos – Federales',                 value:1950, owner:'household' },
+        { id:'exp6',  category:'expenses', expenseCategory:'Impuestos',         subcategory:'Seguro social',          alias:'',                   name:'Impuestos – Seguro social',             value:610,  owner:'household' },
+        // Transportación
+        { id:'exp7',  category:'expenses', expenseCategory:'Transportación',    subcategory:'Gasolina',               alias:'',                   name:'Transportación – Gasolina',             value:280,  owner:'household' },
+        { id:'exp8',  category:'expenses', expenseCategory:'Transportación',    subcategory:'Mantenimiento',          alias:'',                   name:'Transportación – Mantenimiento',        value:120,  owner:'household' },
+        // Seguros
+        { id:'exp9',  category:'expenses', expenseCategory:'Seguros',           subcategory:'Salud',                  alias:'BlueCross',          name:'Seguros – Salud',                       value:640,  owner:'household' },
+        { id:'exp10', category:'expenses', expenseCategory:'Seguros',           subcategory:'Auto',                   alias:'GEICO x2 autos',     name:'Seguros – Auto',                        value:210,  owner:'household' },
+        { id:'exp11', category:'expenses', expenseCategory:'Seguros',           subcategory:'Vida - Term',            alias:'Term Carlos',        name:'Seguros – Vida - Term',                 value:95,   owner:'p1' },
+        // Dependientes
+        { id:'exp12', category:'expenses', expenseCategory:'Dependientes',      subcategory:'Educación',              alias:'Colegio Sofía',      name:'Dependientes – Educación',              value:890,  owner:'household' },
+        // Deuda (pagos mensuales)
+        { id:'exp13', category:'expenses', expenseCategory:'Deuda',             subcategory:'Hipoteca',               alias:'Hipoteca casa',      name:'Deuda – Hipoteca',                      value:2240, owner:'household' },
+        { id:'exp14', category:'expenses', expenseCategory:'Deuda',             subcategory:'Préstamo de auto',       alias:'Toyota RAV4',        name:'Deuda – Préstamo de auto',              value:520,  owner:'p2' },
+        { id:'exp15', category:'expenses', expenseCategory:'Deuda',             subcategory:'Tarjeta de crédito',     alias:'Chase Sapphire',     name:'Deuda – Tarjeta de crédito',            value:200,  owner:'p1' },
+        // Entretenimiento
+        { id:'exp16', category:'expenses', expenseCategory:'Entretenimiento',   subcategory:'Streaming',              alias:'Netflix+Spotify+Disney', name:'Entretenimiento – Streaming',       value:58,   owner:'household' },
+        { id:'exp17', category:'expenses', expenseCategory:'Entretenimiento',   subcategory:'Vacaciones',             alias:'Viajes anuales /12', name:'Entretenimiento – Vacaciones',          value:350,  owner:'household' },
+        // Telecomunicaciones
+        { id:'exp18', category:'expenses', expenseCategory:'Telecomunicaciones', subcategory:'Teléfono',              alias:'AT&T familia',       name:'Telecomunicaciones – Teléfono',         value:160,  owner:'household' },
+        { id:'exp19', category:'expenses', expenseCategory:'Telecomunicaciones', subcategory:'Internet',              alias:'Xfinity',            name:'Telecomunicaciones – Internet',         value:80,   owner:'household' },
+        // Gastos médicos
+        { id:'exp20', category:'expenses', expenseCategory:'Gastos Médicos',    subcategory:'Medicamentos',           alias:'',                   name:'Gastos Médicos – Medicamentos',         value:90,   owner:'household' },
+
+        // AHORRO
+        { id:'sav1', category:'savings', expenseCategory:'Retiro',              subcategory:'401(k)',                 alias:'401k Carlos (6%)',   name:'Retiro – 401(k)',                       value:475,  owner:'p1' },
+        { id:'sav2', category:'savings', expenseCategory:'Retiro',              subcategory:'401(k)',                 alias:'401k María (4%)',    name:'Retiro – 401(k)',                       value:207,  owner:'p2' },
+        { id:'sav3', category:'savings', expenseCategory:'Reserva de emergencia', subcategory:'Aporte mensual',      alias:'',                   name:'Reserva de emergencia – Aporte mensual', value:500, owner:'household' },
+        { id:'sav4', category:'savings', expenseCategory:'Inversión',           subcategory:'Brokerage',              alias:'Robinhood',          name:'Inversión – Brokerage',                 value:300,  owner:'p1' },
+
+        // BANKING
+        { id:'ban1', category:'banking', type:'Checking',  alias:'Chase Checking familiar', name:'Chase Checking familiar', value:18500, owner:'household' },
+        { id:'ban2', category:'banking', type:'Savings',   alias:'HYSA Ally 4.8%',          name:'HYSA Ally',               value:24000, owner:'household' },
+        { id:'ban3', category:'banking', type:'Checking',  alias:'Cuenta personal María',   name:'Cuenta personal María',   value:3200,  owner:'p2' },
+
+        // INVERSIONES RETIRO
+        { id:'ret1', category:'investments_retirement', type:'401(k)',        alias:'401k Fidelity Carlos', name:'401k Fidelity Carlos', value:148000, owner:'p1' },
+        { id:'ret2', category:'investments_retirement', type:'401(k)',        alias:'401k Vanguard María',  name:'401k Vanguard María',  value:86000,  owner:'p2' },
+        { id:'ret3', category:'investments_retirement', type:'Roth IRA',      alias:'Roth IRA Carlos',      name:'Roth IRA Carlos',      value:32000,  owner:'p1' },
+
+        // INVERSIONES NO-RETIRO
+        { id:'inv1', category:'investments_nonretirement', type:'Brokerage account', alias:'Schwab taxable',   name:'Schwab taxable',   value:41000, owner:'p1' },
+        { id:'inv2', category:'investments_nonretirement', type:'ETF/Fondos mutuos', alias:'529 Plan Sofía',   name:'529 Plan Sofía',   value:22000, owner:'household' },
+
+        // BIENES RAÍCES
+        { id:'re1', category:'real_estate', type:'Casa principal', alias:'Casa Miami - 4/2', name:'Casa Miami – 4/2', value:520000, owner:'household' },
+
+        // PASIVOS (saldos pendientes)
+        { id:'deb1', category:'liabilities', type:'Hipoteca',            alias:'Hipoteca casa Miami',  name:'Hipoteca casa Miami',  value:310000, owner:'household', interestRate:6.75, monthsRemaining:312 },
+        { id:'deb2', category:'liabilities', type:'Préstamo de auto',    alias:'Toyota RAV4 2022',     name:'Toyota RAV4 2022',     value:22400,  owner:'p2',         interestRate:5.9,  monthsRemaining:42  },
+        { id:'deb3', category:'liabilities', type:'Tarjeta de crédito',  alias:'Chase Sapphire',       name:'Chase Sapphire',       value:8600,   owner:'p1',         interestRate:24.99, monthsRemaining:null },
+        { id:'deb4', category:'liabilities', type:'Préstamo estudiantil', alias:'Student loan María',  name:'Student loan María',   value:14200,  owner:'p2',         interestRate:5.0,  monthsRemaining:60  },
+
+        // SEGUROS
+        { id:'ins1', category:'insurance', type:'Vida - Term',  alias:'Term 20yr Carlos $750k',  name:'Term 20yr Carlos $750k',  value:750000,  owner:'p1' },
+        { id:'ins2', category:'insurance', type:'Salud',        alias:'BlueCross PPO familia',   name:'BlueCross PPO familia',   value:0,       owner:'household' },
+        { id:'ins3', category:'insurance', type:'Auto',         alias:'GEICO 2 autos',           name:'GEICO 2 autos',           value:0,       owner:'household' },
+
+        // OTROS ACTIVOS
+        { id:'oth1', category:'other_assets', type:'Vehículo', alias:'Toyota RAV4 2022', name:'Toyota RAV4 2022', value:28000, owner:'p2' },
+        { id:'oth2', category:'other_assets', type:'Vehículo', alias:'Honda Accord 2020', name:'Honda Accord 2020', value:19000, owner:'p1' },
+      ]
+    },
+
+    notes: 'Estamos pensando en refinanciar la casa en los próximos 6 meses. También queremos empezar a planificar la universidad de Sofía. No tenemos testamento ni trust y queremos saber por dónde empezar.',
+    wizardStep: 1,
+    wizardComplete: true,
+    step: 1,
+  });
+
+  syncHeaderInputs();
+  setStep(5);  // ir directo al paso final para ver el resumen
+  showToast('🧪 Datos de prueba cargados — revisa el resumen y genera los archivos');
+}
+
+$('#dummyBtn').addEventListener('click', ()=>{
+  if(state.financials.items.length > 0){
+    if(!confirm('¿Reemplazar los datos actuales con los datos de prueba?')) return;
+  }
+  loadDummyData();
+});
+
+// ── EXPORT FOR MONEY MAP ───────────────────────────────────────────────────
+$('#exportMMBtn').addEventListener('click', ()=>{
+  if(!state.financials.items.length && !state.people.members.length){
+    showToast('⚠️ No hay datos para exportar. Completa el discovery primero.');
+    return;
+  }
+  exportForMoneyMap(state);
+});
+
+// ── RESET ──────────────────────────────────────────────────────────────────
+$('#resetBtn').addEventListener('click',()=>{
+  if(!confirm('¿Reiniciar Discovery? Se borrarán todos los datos.')) return;
+  localStorage.removeItem('discovery_draft_v3');
+  Object.assign(state,{step:1,startTime:Date.now(),userName:'',userEmail:'',people:{template:'',householdRole:'',members:[]},goals:[],financials:{incomeRange:"",hasDebts:null,hasInvestments:null,hasRealEstate:null,hasInsurance:null,hasBusiness:null,hasLegal:null,hasOtherAssets:null,hasSavings:null,categoriesSelected:[],items:[]},wizardStep:1,wizardComplete:false,notes:""});
+  syncHeaderInputs();
+  $('#beforeSubmit').style.display='block';
+  $('#afterSubmit').style.display='none';
+  $('.btns').style.display='flex';
+  setStep(1); showToast('🔄 Discovery reiniciado');
+});
+
+// ── KEYBOARD SHORTCUTS ─────────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.altKey&&e.key==='ArrowRight'&&!nextBtn.disabled&&!nextBtn.hidden) nextBtn.click();
+  if(e.altKey&&e.key==='ArrowLeft') backBtn.click();
+  if(e.ctrlKey&&e.key==='s'){ e.preventDefault(); debouncedSave(); showToast('✓ Guardado'); }
+});
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+loadDraft();
+getUserInfoFromURL();
+wireHeaderInputs();   // conectar inputs del header al state
+syncHeaderInputs();   // mostrar valores guardados (si volvió de localStorage)
+setStep(state.step);
+
+})();
+</script>
+</body>
+</html>
