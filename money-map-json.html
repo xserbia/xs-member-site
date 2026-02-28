@@ -1178,9 +1178,9 @@ function RatiosFinancieros({ ratiosData, setRatiosData, totales, currency, ingre
                 ]},
                 {title:'💎 PATRIMONIO', cards:[
                   {label:'Patrimonio / Activos',val:isFinite(ratios.patrimonioActivos)?(ratios.patrimonioActivos*100).toFixed(1)+'%':'—',ok:ratios.patrimonioActivos>=0.70?'✅':ratios.patrimonioActivos>=0.50?'⚠️':'🚨',meta:'≥70% ✅ · 50-69% ⚠️ · <50% 🚨'},
-                  {label:'Inversión / Ingreso',val:isFinite(ratios.inversionRatio)?ratios.inversionRatio.toFixed(2)+'x':'—',ok:ratios.edad>=18&&ratios.inversionRatio>=getInvBm(ratios.edad)?'✅':'ℹ️',meta:'Ver benchmark por edad',btn:{label:'📊 Benchmark',action:()=>setShowBenchmarkModal(true)}},
+                  {label:'Inversión / Ingreso',val:isFinite(ratios.inversionRatio)?ratios.inversionRatio.toFixed(2)+'x':'—',ok:ratios.edad>=18&&ratios.inversionRatio>=getInvBm(ratios.edad)?'✅':'🚨',meta:'Ver benchmark por edad',btn:{label:'📊 Benchmark',action:()=>setShowBenchmarkModal(true)}},
                   {label:'Nivel riqueza neta',val:isFinite(ratios.riquezaNeta)?ratios.riquezaNeta.toFixed(2)+'x':'—',ok:ratios.edad>=18&&ratios.riquezaNeta>=getRiqBm(ratios.edad).great?'✅':ratios.edad>=18&&ratios.riquezaNeta>=getRiqBm(ratios.edad).good?'⚠️':'🚨',meta:'Ver benchmark por edad',btn:{label:'📊 Benchmark',action:()=>setShowBenchmarkModal(true)}},
-                  {label:'Ahorro para retiro',val:isFinite(ratios.ahorroRetiro)?ratios.ahorroRetiro.toFixed(2)+'x':'—',ok:ratios.edad>=18&&ratios.ahorroRetiro>=getRetBm(ratios.edad)?'✅':'ℹ️',meta:'Ver benchmark por edad',btn:{label:'📊 Benchmark',action:()=>setShowBenchmarkModal(true)}},
+                  {label:'Ahorro para retiro',val:isFinite(ratios.ahorroRetiro)?ratios.ahorroRetiro.toFixed(2)+'x':'—',ok:ratios.edad>=18&&ratios.ahorroRetiro>=getRetBm(ratios.edad)?'✅':'🚨',meta:'Ver benchmark por edad',btn:{label:'📊 Benchmark',action:()=>setShowBenchmarkModal(true)}},
                 ]},
               ].map(section => (
                 <div key={section.title} style={{padding:'0 16px'}}>
