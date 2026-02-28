@@ -377,6 +377,31 @@ function App() {
   useEffect(() => { localStorage.setItem('ingresos', JSON.stringify(ingresos)); }, [ingresos]);
   useEffect(() => { localStorage.setItem('gastos', JSON.stringify(gastos)); }, [gastos]);
   useEffect(() => { localStorage.setItem('ratiosData', JSON.stringify(ratiosData)); }, [ratiosData]);
+
+  // ── Keep ratiosData in sync with ingresos/gastos/activos/deudas ─────────
+  useEffect(() => {
+    const ingBruto    = ingresos.reduce((s,i)=>s+parseFloat(i.monto||0),0)*12;
+    const impAnual    = (gastos.impuestos?.reduce((s,g)=>s+parseFloat(g.monto||0),0)||0)*12;
+    const segAnual    = (gastos.seguros?.reduce((s,g)=>s+parseFloat(g.monto||0),0)||0)*12;
+    const ahorroAnual = (gastos.ahorro?.reduce((s,g)=>s+parseFloat(g.monto||0),0)||0)*12;
+    const deudaAnual  = (gastos.deuda?.reduce((s,g)=>s+parseFloat(g.monto||0),0)||0)*12;
+    const gastosAnual = (gastos.diarios?.reduce((s,g)=>s+parseFloat(g.monto||0),0)||0)*12;
+    setRatiosData(prev => ({
+      ...prev,
+      ingresoBruto: ingBruto,
+      ingresoNeto:  ingBruto - impAnual - segAnual,
+      ahorroAnual,
+      impuestosAnual: impAnual,
+      segurosAnual:   segAnual,
+      deudaAnual,
+      gastosAnual,
+      pagoDeudaMensual:          deudaAnual / 12,
+      gastosEsencialesMensuales: gastosAnual / 12,
+      reserva:           totales.totalEfectivo  || 0,
+      pasivosCorrientes: totales.pasivosTotales || 0,
+    }));
+  }, [ingresos, gastos, totales]);
+  // ─────────────────────────────────────────────────────────────────────────
   useEffect(() => { localStorage.setItem('modoCalculo', modoCalculo); }, [modoCalculo]);
   useEffect(() => { localStorage.setItem('currency', currency); }, [currency]);
 
@@ -1036,28 +1061,7 @@ function RatiosFinancieros({ ratiosData, setRatiosData, totales, currency, ingre
   const [showReservaModal, setShowReservaModal] = useState(false);
   const updateField = (field, val) => setRatiosData(prev => ({ ...prev, [field]: val }));
 
-  useEffect(() => {
-    const ingBruto    = ingresos.reduce((s,i)=>s+parseFloat(i.monto||0),0)*12;
-    const impAnual    = (gastos.impuestos?.reduce((s,g)=>s+parseFloat(g.monto||0),0)||0)*12;
-    const segAnual    = (gastos.seguros?.reduce((s,g)=>s+parseFloat(g.monto||0),0)||0)*12;
-    const ahorroAnual = (gastos.ahorro?.reduce((s,g)=>s+parseFloat(g.monto||0),0)||0)*12;
-    const deudaAnual  = (gastos.deuda?.reduce((s,g)=>s+parseFloat(g.monto||0),0)||0)*12;
-    const gastosAnual = (gastos.diarios?.reduce((s,g)=>s+parseFloat(g.monto||0),0)||0)*12;
-    setRatiosData(prev => ({
-      ...prev,
-      ingresoBruto: ingBruto,
-      ingresoNeto:  ingBruto-impAnual-segAnual,
-      ahorroAnual,
-      impuestosAnual: impAnual,
-      segurosAnual: segAnual,
-      deudaAnual,
-      gastosAnual,
-      pagoDeudaMensual: deudaAnual/12,
-      gastosEsencialesMensuales: gastosAnual/12,
-      reserva: totales.totalEfectivo||0,
-      pasivosCorrientes: totales.pasivosTotales||0,
-    }));
-  }, [ingresos, gastos, totales]);
+  // ratiosData is kept in sync by App-level useEffect
 
   const calcRatios = () => {
     const e=parseNumber(ratiosData.edad), ib=parseNumber(ratiosData.ingresoBruto), ineto=parseNumber(ratiosData.ingresoNeto);
