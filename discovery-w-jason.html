@@ -1807,6 +1807,49 @@ function generateCoachPDF(state){
     doc.line(MARG, 271, W-MARG, 271);
   }
 
+  // ── Sección: Protección Patrimonial (Docs Legales + Seguros)
+  try {
+    const legalItems  = (state.financials.items||[]).filter(i=>i.category==='legal');
+    const insureItems = (state.financials.items||[]).filter(i=>i.category==='insurance');
+    if(legalItems.length > 0 || insureItems.length > 0){
+      doc.addPage();
+      let yP = 20;
+      doc.setFontSize(16); doc.setFont('helvetica','bold'); doc.setTextColor(57,86,232);
+      doc.text('PROTECCIÓN PATRIMONIAL', 14, yP); yP += 10;
+      doc.setDrawColor(57,86,232); doc.setLineWidth(0.5); doc.line(14,yP,196,yP); yP += 8;
+
+      if(legalItems.length > 0){
+        doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.setTextColor(30,30,30);
+        doc.text('Documentos Legales', 14, yP); yP += 4;
+        doc.autoTable({
+          startY: yP,
+          head: [['Tipo','Detalles / Contacto']],
+          body: legalItems.map(i=>[i.type||'—', [i.alias,i.notes].filter(Boolean).join(' · ')||'—']),
+          theme:'striped', headStyles:{fillColor:[57,86,232]}, margin:{left:14,right:14}
+        });
+        yP = doc.lastAutoTable.finalY + 10;
+      }
+
+      if(insureItems.length > 0){
+        doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.setTextColor(30,30,30);
+        doc.text('Pólizas de Seguro', 14, yP); yP += 4;
+        const fmt$ = v => v ? '$'+Number(v).toLocaleString('en-US') : '—';
+        doc.autoTable({
+          startY: yP,
+          head: [['Tipo','Aseguradora','Cobertura','Prima','Deducible','Beneficiario']],
+          body: insureItems.map(i=>[
+            i.type||'—', i.alias||'—',
+            fmt$(i.coverageAmount||i.value),
+            i.premium ? fmt$(i.premium)+(i.premiumFrequency==='anual'?'/año':'/mes') : '—',
+            fmt$(i.deductible), i.beneficiary||'—'
+          ]),
+          theme:'striped', headStyles:{fillColor:[57,86,232]}, margin:{left:14,right:14},
+          columnStyles:{0:{cellWidth:28},1:{cellWidth:30},2:{cellWidth:28},3:{cellWidth:28},4:{cellWidth:28}}
+        });
+      }
+    }
+  } catch(e){ console.warn('PDF proteccion error:',e); }
+
   // ── Descargar
   const safeName = (state.userName||'cliente').replace(/\s+/g,'_');
   const dateStr  = new Date().toISOString().slice(0,10);
@@ -2007,6 +2050,38 @@ function exportForMoneyMap(state){
     parejaAvatar:  '👤'
   };
 
+  // ── Build proteccion: documentos legales + pólizas de seguro
+  const DOC_TIPOS = ['Testamento','Living Trust','Power of Attorney','Healthcare Directive','Beneficiarios actualizados'];
+  const legalItems = items.filter(i => i.category === 'legal');
+  const documentos = DOC_TIPOS.map(tipo => {
+    const match = legalItems.find(i => i.type && i.type.toLowerCase().includes(tipo.toLowerCase().split(' ')[0].toLowerCase()));
+    return {
+      tipo,
+      tiene: match ? 'si' : 'no',
+      fecha: match ? (match.date || '') : '',
+      contacto: match ? (match.alias || '') : '',
+      notas: match ? (match.notes || '') : ''
+    };
+  });
+
+  const polizas = items.filter(i => i.category === 'insurance').map(i => ({
+    tipo:           i.type || 'Otro',
+    aseguradora:    i.alias || '',
+    numeroPoliza:   i.policyNumber || '',
+    cobertura:      String(i.coverageAmount || i.value || 0),
+    prima:          String(i.premium || ''),
+    frecuenciaPrima:i.premiumFrequency || 'mensual',
+    deducible:      String(i.deductible || ''),
+    beneficiario:   i.beneficiary || '',
+    renovacion:     i.renewalDate || '',
+    notas:          i.notes || ''
+  }));
+
+  const proteccion = { documentos, polizas };
+
+  // ── Add transferencia to activos from legal/insurance context
+  // (transferencia is set manually in MM; Discovery captures the asset, MM the estate plan)
+
   // ── Final payload
   const payload = {
     _version:    '1.0',
@@ -2016,7 +2091,8 @@ function exportForMoneyMap(state){
     activos,
     deudas,
     ingresos,
-    gastos
+    gastos,
+    proteccion
   };
 
   // ── Download
@@ -2282,6 +2358,46 @@ function generateCoachExcel(state){
   ws5['!merges'] = [{s:{r:0,c:0},e:{r:0,c:3}}];
   styleHeader(ws5,{s:{r:2,c:0},e:{r:2,c:3}});
   XLSX.utils.book_append_sheet(WB, ws5, 'Por Titular');
+
+  // ── Hoja 6: Protección Patrimonial
+  try {
+    const legalItems  = items.filter(i=>i.category==='legal');
+    const insureItems = items.filter(i=>i.category==='insurance');
+    const ws6Data = [];
+    ws6Data.push(['PROTECCIÓN PATRIMONIAL','','','','','','']);
+    ws6Data.push([]);
+
+    ws6Data.push(['DOCUMENTOS LEGALES','','','','','','']);
+    ws6Data.push(['Tipo','Estado','Fecha','Contacto/Abogado','Notas','','']);
+    const DOC_TIPOS = ['Testamento','Living Trust','Power of Attorney','Healthcare Directive','Beneficiarios actualizados'];
+    DOC_TIPOS.forEach(tipo => {
+      const match = legalItems.find(i=>i.type&&i.type.toLowerCase().includes(tipo.toLowerCase().split(' ')[0].toLowerCase()));
+      ws6Data.push([tipo, match?'Sí':'No', match?(match.date||''):'', match?(match.alias||''):'', match?(match.notes||''):'','','']);
+    });
+
+    ws6Data.push([]);
+    ws6Data.push(['PÓLIZAS DE SEGURO','','','','','','']);
+    ws6Data.push(['Tipo','Aseguradora','# Póliza','Cobertura','Prima','Deducible','Beneficiario']);
+    if(insureItems.length > 0){
+      insureItems.forEach(i=>{
+        ws6Data.push([
+          i.type||'—', i.alias||'—', i.policyNumber||'—',
+          Number(i.coverageAmount||i.value||0),
+          Number(i.premium||0), Number(i.deductible||0),
+          i.beneficiary||'—'
+        ]);
+      });
+      const totalCob = insureItems.reduce((s,i)=>s+Number(i.coverageAmount||i.value||0),0);
+      ws6Data.push(['TOTAL COBERTURA','','','',totalCob,'','']);
+    } else {
+      ws6Data.push(['Sin pólizas registradas','','','','','','']);
+    }
+
+    const ws6 = XLSX.utils.aoa_to_sheet(ws6Data);
+    ws6['!cols'] = [{wch:28},{wch:18},{wch:16},{wch:16},{wch:14},{wch:14},{wch:20}];
+    styleHeader(ws6,{s:{r:0,c:0},e:{r:0,c:6}});
+    XLSX.utils.book_append_sheet(WB, ws6, 'Protección');
+  } catch(e){ console.warn('Excel proteccion error:',e); }
 
   // ── Descargar — usar Blob en vez de XLSX.writeFile (más fiable en browser)
   const safeName = (state.userName||'cliente').replace(/\s+/g,'_');
