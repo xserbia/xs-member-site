@@ -630,33 +630,84 @@ function InventarioDeudas({ deudas, setDeudas, currency }) {
 
 // ============= HOJA DE BALANCE =============
 function HojaBalance({ activos, deudas, totales, currency }) {
-  const nombres = { tarjetas:'Tarjetas de Crédito', lineaPersonal:'Línea Personal', lineaPropiedad:'Línea de Propiedad', casa:'Hipoteca/Casa', auto:'Auto', educacion:'Educativos', otros:'Otros' };
+  const nombresDeuda = { tarjetas:'Tarjetas de Crédito', lineaPersonal:'Línea Personal', lineaPropiedad:'Línea de Propiedad', casa:'Hipoteca/Casa', auto:'Auto', educacion:'Educativos', otros:'Otros' };
+
+  // Build rows for each side — pad shorter side with nulls so totals align
+  const activoRows = [
+    ['Efectivo y Equivalentes', totales.totalEfectivo],
+    ['Inversiones',             totales.totalInversiones],
+    ['Cuentas de Retiro',       totales.totalRetiro],
+    ['Bienes Raíces',           totales.totalBienesRaices],
+    ['Bienes Personales',       totales.totalBienesPersonales],
+  ];
+  const pasivoRows = Object.entries(deudas)
+    .map(([key, items]) => [nombresDeuda[key], items.reduce((s,i)=>s+parseNumber(i.balance),0)])
+    .filter(([,val]) => val > 0);
+
+  const maxRows = Math.max(activoRows.length, pasivoRows.length);
+  const rows = Array.from({length: maxRows}, (_, i) => ({
+    aLabel: activoRows[i]?.[0] ?? null,
+    aVal:   activoRows[i]?.[1] ?? null,
+    pLabel: pasivoRows[i]?.[0] ?? null,
+    pVal:   pasivoRows[i]?.[1] ?? null,
+  }));
+
+  const cellStyle  = {padding:'0.875rem 1rem', borderBottom:'1px solid var(--border)', fontSize:'0.95rem'};
+  const valStyle   = {padding:'0.875rem 1rem', borderBottom:'1px solid var(--border)', textAlign:'right', fontWeight:'700', fontFamily:"'Fraunces',serif", fontSize:'1rem'};
+  const totalRowSt = {background:'#f8fafc', borderTop:'2px solid var(--charcoal)'};
+  const totalCellSt= {padding:'1rem', fontWeight:'800', fontSize:'1.1rem', fontFamily:"'Fraunces',serif"};
+
   return (
     <div>
       <div className="card">
-        <div className="card-header"><div><h2 className="card-title">Balance General</h2><p className="card-subtitle">Resumen consolidado de tu situación financiera</p></div></div>
-        <div className="grid-2">
-          <div>
-            <h3 style={{fontSize:'1.25rem',marginBottom:'1rem',color:'var(--primary)'}}>ACTIVOS</h3>
-            {[['Efectivo y Equivalentes',totales.totalEfectivo],['Inversiones',totales.totalInversiones],['Cuentas de Retiro',totales.totalRetiro],['Bienes Raíces',totales.totalBienesRaices],['Bienes Personales',totales.totalBienesPersonales]].map(([label,val])=>(
-              <div className="summary-row" key={label}><span className="summary-row-label">{label}</span><span className="currency">{formatCurrency(val,currency)}</span></div>
-            ))}
-            <div className="summary-row"><span className="summary-row-label font-bold">Total Activos (I)</span><span className="summary-row-value">{formatCurrency(totales.activosTotales,currency)}</span></div>
-          </div>
-          <div>
-            <h3 style={{fontSize:'1.25rem',marginBottom:'1rem',color:'var(--danger)'}}>PASIVOS</h3>
-            {Object.entries(deudas).map(([key,items])=>{
-              const total = items.reduce((s,i)=>s+parseNumber(i.balance),0);
-              if(total===0) return null;
-              return <div className="summary-row" key={key}><span className="summary-row-label">{nombres[key]}</span><span className="currency">{formatCurrency(total,currency)}</span></div>;
-            })}
-            <div className="summary-row"><span className="summary-row-label font-bold">Total Pasivos (II)</span><span className="summary-row-value">{formatCurrency(totales.pasivosTotales,currency)}</span></div>
-          </div>
+        <div className="card-header">
+          <div><h2 className="card-title">Balance General</h2><p className="card-subtitle">Resumen consolidado de tu situación financiera</p></div>
         </div>
-        <div className="summary-card mt-2" style={{textAlign:'center'}}>
-          <h3 className="summary-title">Patrimonio Neto (I - II)</h3>
-          <div style={{fontSize:'3rem'}} className="currency"><span className={totales.patrimonioNeto>=0?'text-success':'text-danger'}>{formatCurrency(totales.patrimonioNeto,currency)}</span></div>
-          <p className="text-muted" style={{marginTop:'1rem'}}>{totales.patrimonioNeto>=0?'✅ Patrimonio positivo':'⚠️ Considera reducir deudas'}</p>
+
+        <div style={{overflowX:'auto'}}>
+          <table style={{width:'100%', borderCollapse:'collapse'}}>
+            <thead>
+              <tr style={{borderBottom:'2px solid var(--border)'}}>
+                <th style={{padding:'0.75rem 1rem', textAlign:'left', color:'var(--primary)', fontSize:'1rem', fontWeight:'800', width:'25%'}}>ACTIVOS</th>
+                <th style={{padding:'0.75rem 1rem', textAlign:'right', width:'25%'}}></th>
+                <th style={{padding:'0.75rem 1rem', textAlign:'left', color:'var(--danger)',  fontSize:'1rem', fontWeight:'800', width:'25%', borderLeft:'2px solid var(--border)'}}>PASIVOS</th>
+                <th style={{padding:'0.75rem 1rem', textAlign:'right', width:'25%'}}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <tr key={i}>
+                  <td style={cellStyle}>{row.aLabel ?? ''}</td>
+                  <td style={{...valStyle, color: row.aVal > 0 ? 'var(--text)' : 'var(--text-muted)'}}>
+                    {row.aVal !== null ? formatCurrency(row.aVal, currency) : ''}
+                  </td>
+                  <td style={{...cellStyle, borderLeft:'2px solid var(--border)'}}>{row.pLabel ?? ''}</td>
+                  <td style={{...valStyle, color: row.pVal > 0 ? 'var(--text)' : 'var(--text-muted)'}}>
+                    {row.pVal !== null ? formatCurrency(row.pVal, currency) : ''}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr style={totalRowSt}>
+                <td style={{...totalCellSt, color:'var(--primary)'}}>Total Activos (I)</td>
+                <td style={{...totalCellSt, textAlign:'right', color:'var(--primary)', fontSize:'1.5rem'}}>{formatCurrency(totales.activosTotales, currency)}</td>
+                <td style={{...totalCellSt, color:'var(--danger)', borderLeft:'2px solid var(--border)'}}>Total Pasivos (II)</td>
+                <td style={{...totalCellSt, textAlign:'right', color:'var(--danger)', fontSize:'1.5rem'}}>{formatCurrency(totales.pasivosTotales, currency)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        {/* Patrimonio Neto */}
+        <div style={{marginTop:'1.5rem', padding:'1.5rem', background: totales.patrimonioNeto >= 0 ? '#f0fdf4' : '#fef2f2', borderRadius:'12px', border:`2px solid ${totales.patrimonioNeto >= 0 ? '#10b981' : '#ef4444'}`, display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+          <div>
+            <div style={{fontWeight:'800', fontSize:'1.1rem', color: totales.patrimonioNeto >= 0 ? '#059669' : '#dc2626'}}>Patrimonio Neto (I − II)</div>
+            <div style={{color:'var(--text-muted)', fontSize:'0.875rem', marginTop:'0.25rem'}}>{totales.patrimonioNeto >= 0 ? '✅ Patrimonio positivo' : '⚠️ Considera reducir deudas'}</div>
+          </div>
+          <div style={{fontFamily:"'Fraunces',serif", fontSize:'2.5rem', fontWeight:'900', color: totales.patrimonioNeto >= 0 ? '#059669' : '#dc2626'}}>
+            {formatCurrency(totales.patrimonioNeto, currency)}
+          </div>
         </div>
       </div>
     </div>
