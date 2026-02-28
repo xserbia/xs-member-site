@@ -517,11 +517,11 @@ function App() {
 // ============= INVENTARIO ACTIVOS =============
 function InventarioActivos({ activos, setActivos, totales, currency }) {
   const categorias = [
-    { key: 'efectivo',         nombre: 'Efectivo y Equivalentes', items: ['Cuentas de cheque','Cuentas de ahorro','Efectivo a mano','Fondos de mercado'] },
-    { key: 'inversiones',      nombre: 'Inversiones',             items: ['Acciones','Bonos','Fondos mutuos','ETFs','Otros'] },
-    { key: 'retiro',           nombre: 'Cuentas de Retiro',       items: ['401(k)','IRA','Roth IRA','Pensión','Otros'] },
-    { key: 'bienesRaices',     nombre: 'Bienes Raíces',           items: ['Primera residencia','Segunda residencia','Propiedad de inversión','Terrenos'] },
-    { key: 'bienesPersonales', nombre: 'Bienes Personales',       items: ['Autos','Joyas','Arte','Coleccionables','Otros'] }
+    { key: 'efectivo',         nombre: 'Efectivo y Equivalentes', items: ['Checking','Savings','Money Market','CD','Efectivo a mano','Otro'] },
+    { key: 'inversiones',      nombre: 'Inversiones',             items: ['Brokerage account','Acciones','ETF/Fondos mutuos','Bonos','Criptomonedas','Otro'] },
+    { key: 'retiro',           nombre: 'Cuentas de Retiro',       items: ['401(k)','403(b)','IRA Tradicional','Roth IRA','SEP IRA','Pensión','Anualidad','Otro'] },
+    { key: 'bienesRaices',     nombre: 'Bienes Raíces',           items: ['Casa principal','Casa vacacional','Propiedad de renta','Apartamento','Terreno','Otro'] },
+    { key: 'bienesPersonales', nombre: 'Bienes Personales',       items: ['Vehículo','Bote','RV','Joyas','Arte','Coleccionables','Otro'] }
   ];
   const addItem    = cat => setActivos(prev => ({ ...prev, [cat]: [...prev[cat], { tipo: '', ubicacion: '', valor: '' }] }));
   const updateItem = (cat, idx, field, val) => setActivos(prev => ({ ...prev, [cat]: prev[cat].map((item, i) => i === idx ? { ...item, [field]: val } : item) }));
@@ -654,13 +654,13 @@ function HojaBalance({ activos, deudas, totales, currency }) {
 
 // ============= INGRESOS Y GASTOS =============
 function IngresosGastos({ ingresos, setIngresos, gastos, setGastos, modoCalculo, setModoCalculo, currency }) {
-  const categoriasIngresos = ['Salario','Negocio/Side Hustle','Bonos','Intereses','Renta','Otros'];
+  const categoriasIngresos = ['Salario','Pago por hora','Bono','Comisión','Negocio propio','Dividendos','Renta inmueble','Pensión','Seguro Social','Otro'];
   const categoriasGastos = {
-    ahorro:    { nombre: 'Ahorro',         items: ['Cuenta de ahorro','Inversiones','401(k)','IRA','Otros'] },
-    deuda:     { nombre: 'Pago de Deuda',  items: ['Hipoteca/Renta','Auto','Préstamos estudiantiles','Tarjetas de crédito','Otros'] },
-    diarios:   { nombre: 'Gastos Diarios', items: ['Supermercado','Comidas afuera','Transporte','Servicios','Entretenimiento','Otros'] },
-    seguros:   { nombre: 'Seguros',        items: ['Vida','Médico','Auto','Propiedad','Otros'] },
-    impuestos: { nombre: 'Impuestos',      items: ['Federal','Estatal','Seguro Social','Medicare','Propiedad','Otros'] }
+    ahorro:    { nombre: 'Ahorro',         items: ['Reserva de emergencia','401(k)','IRA/Roth','Brokerage','ETF','Cripto','Otro'] },
+    deuda:     { nombre: 'Pago de Deuda',  items: ['Hipoteca','HELOC','Tarjeta de crédito','Préstamo de auto','Préstamo estudiantil','Préstamo personal','Otro'] },
+    diarios:   { nombre: 'Gastos Diarios', items: ['Alimentación','Casa','Transportación','Entretenimiento','Telecomunicaciones','Gastos Médicos','Cuidado Personal','Dependientes','Regalos','Otro'] },
+    seguros:   { nombre: 'Seguros',        items: ['Vida - Term','Vida - Whole','Salud','Auto','Hogar','Disability','Umbrella','Otro'] },
+    impuestos: { nombre: 'Impuestos',      items: ['Federales','Estatales','Seguro social','Medicare','Propiedad','Otro'] }
   };
   const addIngreso    = () => setIngresos([...ingresos, { categoria: 'Salario', nombre: '', monto: '' }]);
   const updateIngreso = (idx, field, val) => setIngresos(ingresos.map((item, i) => i === idx ? { ...item, [field]: val } : item));
