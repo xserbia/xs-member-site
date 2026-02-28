@@ -1825,77 +1825,91 @@ function exportForMoneyMap(state){
   const items   = state.financials.items || [];
   const primary = members[0] || {};
 
-  // ── Debt type → Money Map category
-  const debtCatMap = (type) => {
-    if(!type) return 'otros';
-    const t = type.toLowerCase();
-    if(t.includes('hipoteca') || t.includes('mortgage')) return 'casa';
-    if(t.includes('heloc'))                               return 'lineaPropiedad';
-    if(t.includes('auto'))                                return 'auto';
-    if(t.includes('tarjeta') || t.includes('credit'))    return 'tarjetas';
-    if(t.includes('estudiantil') || t.includes('student')) return 'educacion';
-    if(t.includes('personal'))                            return 'lineaPersonal';
-    return 'otros';
+  // ── Exact lookup tables — Discovery type → Money Map category
+  const DEBT_MAP = {
+    'Tarjeta de crédito':    'tarjetas',
+    'Préstamo de auto':      'auto',
+    'Préstamo estudiantil':  'educacion',
+    'Hipoteca':              'casa',
+    'HELOC':                 'lineaPropiedad',
+    'Préstamo personal':     'lineaPersonal',
+    'Otro':                  'otros',
   };
+  const debtCatMap = (type) => DEBT_MAP[type] || 'otros';
 
-  // ── Income type → Money Map category
-  const incomeCatMap = (type) => {
-    if(!type) return 'Otros';
-    const t = type.toLowerCase();
-    if(t.includes('salario') || t.includes('hora') || t.includes('bono') || t.includes('comisi')) return 'Salario';
-    if(t.includes('negocio'))  return 'Negocio/Side Hustle';
-    if(t.includes('dividendo') || t.includes('inter')) return 'Intereses';
-    if(t.includes('renta'))    return 'Renta';
-    return 'Otros';
+  const INCOME_MAP = {
+    'Salario':          'Salario',
+    'Pago por hora':    'Salario',
+    'Bono':             'Bono',
+    'Comisión':         'Comisión',
+    'Negocio propio':   'Negocio propio',
+    'Dividendos':       'Dividendos',
+    'Renta inmueble':   'Renta inmueble',
+    'Pensión':          'Pensión',
+    'Seguro Social':    'Seguro Social',
+    'Otro':             'Otro',
   };
+  const incomeCatMap = (type) => INCOME_MAP[type] || 'Otro';
 
-  // ── Savings subcategory → Money Map ahorro category
+  const AHORRO_MAP = {
+    'Reserva de emergencia': 'Reserva de emergencia',
+    '401(k)':                '401(k)',
+    'IRA/Roth':              'IRA/Roth',
+    'Brokerage':             'Brokerage',
+    'ETF':                   'ETF',
+    'Cripto':                'Cripto',
+  };
   const ahorroCatMap = (cat, sub) => {
-    if(!cat) return 'Otros';
-    const c = cat.toLowerCase();
-    if(c.includes('reserva') || c.includes('emergencia')) return 'Cuenta de ahorro';
-    if(c.includes('retiro')) {
-      const s = (sub||'').toLowerCase();
-      if(s.includes('401')) return '401(k)';
-      if(s.includes('ira')) return 'IRA';
-      return '401(k)';
-    }
-    return 'Inversiones';
+    if (sub && AHORRO_MAP[sub]) return AHORRO_MAP[sub];
+    if (cat && AHORRO_MAP[cat]) return AHORRO_MAP[cat];
+    return 'Otro';
   };
 
-  // ── Expense subcategory → Money Map debt category
-  const deudaGastoCatMap = (sub) => {
-    if(!sub) return 'Otros';
-    const s = sub.toLowerCase();
-    if(s.includes('hipoteca') || s.includes('alquiler') || s.includes('renta')) return 'Hipoteca/Renta';
-    if(s.includes('auto'))    return 'Auto';
-    if(s.includes('estudiantil') || s.includes('student')) return 'Préstamos estudiantiles';
-    if(s.includes('tarjeta') || s.includes('credit')) return 'Tarjetas de crédito';
-    return 'Otros';
+  const DEUDA_GASTO_MAP = {
+    'Tarjeta de crédito':   'Tarjeta de crédito',
+    'Préstamo de auto':     'Préstamo de auto',
+    'Préstamo estudiantil': 'Préstamo estudiantil',
+    'Hipoteca':             'Hipoteca',
+    'HELOC':                'HELOC',
+    'Préstamo personal':    'Préstamo personal',
+    'Otro':                 'Otro',
   };
+  const deudaGastoCatMap = (sub) => DEUDA_GASTO_MAP[sub] || 'Otro';
 
-  // ── Seguros subcategory → Money Map seguros category
-  const segurosCatMap = (sub) => {
-    if(!sub) return 'Otros';
-    const s = sub.toLowerCase();
-    if(s.includes('vida') || s.includes('term') || s.includes('whole')) return 'Vida';
-    if(s.includes('salud') || s.includes('médico') || s.includes('health')) return 'Médico';
-    if(s.includes('auto')) return 'Auto';
-    if(s.includes('hogar') || s.includes('propiedad') || s.includes('home')) return 'Propiedad';
-    return 'Otros';
+  const SEGUROS_MAP = {
+    'Salud':        'Salud',
+    'Auto':         'Auto',
+    'Vida - Term':  'Vida - Term',
+    'Vida - Whole': 'Vida - Whole',
+    'Hogar':        'Hogar',
+    'Disability':   'Disability',
+    'Umbrella':     'Umbrella',
+    'Otro':         'Otro',
   };
+  const segurosCatMap = (sub) => SEGUROS_MAP[sub] || 'Otro';
 
-  // ── Impuestos subcategory → Money Map impuestos category
-  const impuestosCatMap = (sub) => {
-    if(!sub) return 'Otros';
-    const s = sub.toLowerCase();
-    if(s.includes('federal'))   return 'Federal';
-    if(s.includes('estatal'))   return 'Estatal';
-    if(s.includes('social'))    return 'Seguro Social';
-    if(s.includes('medicare'))  return 'Medicare';
-    if(s.includes('propiedad')) return 'Propiedad';
-    return 'Otros';
+  const IMPUESTOS_MAP = {
+    'Federales':    'Federales',
+    'Estatales':    'Estatales',
+    'Seguro social':'Seguro social',
+    'Medicare':     'Medicare',
+    'Propiedad':    'Propiedad',
   };
+  const impuestosCatMap = (sub) => IMPUESTOS_MAP[sub] || 'Otro';
+
+  // Gastos diarios: map expenseCategory directly (already matches MM)
+  const DIARIOS_MAP = {
+    'Alimentación':       'Alimentación',
+    'Casa':               'Casa',
+    'Transportación':     'Transportación',
+    'Entretenimiento':    'Entretenimiento',
+    'Telecomunicaciones': 'Telecomunicaciones',
+    'Gastos Médicos':     'Gastos Médicos',
+    'Cuidado Personal':   'Cuidado Personal',
+    'Dependientes':       'Dependientes',
+    'Regalos':            'Regalos',
+  };
+  const diariosCatMap = (cat) => DIARIOS_MAP[cat] || 'Otro';
 
   // ── Build activos
   const activos = {
@@ -1962,7 +1976,7 @@ function exportForMoneyMap(state){
       item.categoria = deudaGastoCatMap(i.subcategory);
       gastos.deuda.push(item);
     } else {
-      item.categoria = 'Otros';
+      item.categoria = diariosCatMap(i.expenseCategory);
       gastos.diarios.push(item);
     }
   });
