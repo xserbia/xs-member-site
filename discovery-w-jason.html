@@ -1273,6 +1273,17 @@ $('#finalSubmit').addEventListener('click', async ()=>{
     showToast('⚠️ Error en el Excel — revisa la consola');
   }
 
+  await new Promise(r=>setTimeout(r,300));
+
+  try{
+    document.getElementById('loaderStatus').textContent = '💾 Generando Money Map JSON...';
+    await new Promise(r=>setTimeout(r,80));
+    exportForMoneyMap(state);
+  } catch(err){
+    console.error('Error generando JSON:', err);
+    showToast('⚠️ Error en el JSON — revisa la consola');
+  }
+
   // Limpiar y mostrar éxito
   localStorage.removeItem('discovery_draft_v3');
   loader.remove();
@@ -1280,7 +1291,7 @@ $('#finalSubmit').addEventListener('click', async ()=>{
   $('#afterSubmit').style.display='block';
   $('.btns').style.display='none';
   window.scrollTo({top:0,behavior:'smooth'});
-  showToast('✅ PDF + Excel generados y descargados');
+  showToast('✅ PDF + Excel + JSON generados y descargados');
 });
 
 
