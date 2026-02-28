@@ -1902,13 +1902,24 @@ function exportForMoneyMap(state){
 
   // ── Build deudas (grouped by category)
   const deudas = {tarjetas:[],lineaPersonal:[],lineaPropiedad:[],casa:[],auto:[],educacion:[],otros:[]};
+  // ── Calcula pago mensual aproximado (amortización estándar)
+  const calcMensual = (balance, aprPct, meses) => {
+    const P = parseFloat(balance) || 0;
+    const n = parseFloat(meses)   || 0;
+    const r = (parseFloat(aprPct) || 0) / 100 / 12;
+    if (P <= 0 || n <= 0) return 0;
+    if (r === 0) return Math.round(P / n);
+    return Math.round(P * r / (1 - Math.pow(1 + r, -n)));
+  };
+
   items.filter(i=>i.category==='liabilities').forEach(i=>{
-    const cat = debtCatMap(i.type);
+    const cat          = debtCatMap(i.type);
+    const mensualCalc  = calcMensual(i.value, i.interestRate, i.monthsRemaining);
     deudas[cat].push({
       compania: i.alias || i.type || '',
-      apr:      i.interestRate != null ? String(i.interestRate) : '',
+      apr:      i.interestRate    != null ? String(i.interestRate)    : '',
       meses:    i.monthsRemaining != null ? String(i.monthsRemaining) : '',
-      mensual:  '',   // el coach puede completar esto en el Money Map
+      mensual:  mensualCalc > 0          ? String(mensualCalc)        : '',
       balance:  String(i.value||0)
     });
   });
