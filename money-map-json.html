@@ -317,6 +317,7 @@ function App() {
     if (data.deudas)   { setDeudas(data.deudas);      localStorage.setItem('deudas',    JSON.stringify(data.deudas)); }
     if (data.ingresos) { setIngresos(data.ingresos);  localStorage.setItem('ingresos',  JSON.stringify(data.ingresos)); }
     if (data.gastos)   { setGastos(data.gastos);      localStorage.setItem('gastos',    JSON.stringify(data.gastos)); }
+    if (data.proteccion) { setProteccion(data.proteccion); localStorage.setItem('proteccion', JSON.stringify(data.proteccion)); }
     if (prof) {
       const merged = { ...userProfile, ...prof };
       saveUserProfile(merged);
@@ -348,7 +349,7 @@ function App() {
 
   const clearAllData = () => {
     if (confirm('⚠️ ¿Estás seguro de que quieres borrar TODOS tus datos financieros?\n\nEsta acción no se puede deshacer.')) {
-      ['activos','deudas','ingresos','gastos','ratiosData','modoCalculo','currency','userProfile','hasSeenOnboarding'].forEach(k => localStorage.removeItem(k));
+      ['activos','deudas','ingresos','gastos','ratiosData','modoCalculo','currency','userProfile','hasSeenOnboarding','proteccion'].forEach(k => localStorage.removeItem(k));
       window.location.reload();
     }
   };
@@ -365,6 +366,19 @@ function App() {
   const [gastos, setGastos] = useState(() => {
     const saved = localStorage.getItem('gastos');
     return saved ? JSON.parse(saved) : { diarios: [], deuda: [], ahorro: [], impuestos: [], seguros: [] };
+  });
+  const [proteccion, setProteccion] = useState(() => {
+    const s = localStorage.getItem('proteccion');
+    return s ? JSON.parse(s) : {
+      documentos: [
+        { tipo:'Testamento',              tiene:'no', fecha:'', contacto:'', notas:'' },
+        { tipo:'Living Trust',            tiene:'no', fecha:'', contacto:'', notas:'' },
+        { tipo:'Power of Attorney',       tiene:'no', fecha:'', contacto:'', notas:'' },
+        { tipo:'Healthcare Directive',    tiene:'no', fecha:'', contacto:'', notas:'' },
+        { tipo:'Beneficiarios actualizados', tiene:'no', fecha:'', contacto:'', notas:'' },
+      ],
+      polizas: []
+    };
   });
   const [modoCalculo, setModoCalculo] = useState(() => localStorage.getItem('modoCalculo') || 'mensual');
   const [ratiosData, setRatiosData] = useState(() => {
@@ -403,6 +417,7 @@ function App() {
   }, [ingresos, gastos, totales]);
   // ─────────────────────────────────────────────────────────────────────────
   useEffect(() => { localStorage.setItem('modoCalculo', modoCalculo); }, [modoCalculo]);
+  useEffect(() => { localStorage.setItem('proteccion', JSON.stringify(proteccion)); }, [proteccion]);
   useEffect(() => { localStorage.setItem('currency', currency); }, [currency]);
 
   const totales = useMemo(() => {
@@ -490,7 +505,7 @@ function App() {
           </div>
 
           <div className="tabs-container">
-            {[['vistaGeneral','📊 Vista General'],['graficos','📈 Gráficos'],['ingresos','💵 Ingresos y Gastos'],['activos','💰 Activos'],['deudas','💳 Pasivos'],['balance','⚖️ Patrimonio Neto'],['ratios','📊 Ratios Financieros']].map(([key, label]) => (
+            {[['vistaGeneral','📊 Vista General'],['graficos','📈 Gráficos'],['ingresos','💵 Ingresos y Gastos'],['activos','💰 Activos'],['deudas','💳 Pasivos'],['balance','⚖️ Patrimonio Neto'],['proteccion','🛡️ Protección'],['ratios','📊 Ratios Financieros']].map(([key, label]) => (
               <button key={key} className={`tab-button ${activeTab === key ? 'active' : ''}`} onClick={() => setActiveTab(key)}>{label}</button>
             ))}
           </div>
@@ -504,6 +519,7 @@ function App() {
         {activeTab === 'deudas'       && <InventarioDeudas deudas={deudas} setDeudas={setDeudas} currency={currency} />}
         {activeTab === 'balance'      && <HojaBalance activos={activos} deudas={deudas} totales={totales} currency={currency} />}
         {activeTab === 'ingresos'     && <IngresosGastos ingresos={ingresos} setIngresos={setIngresos} gastos={gastos} setGastos={setGastos} modoCalculo={modoCalculo} setModoCalculo={setModoCalculo} currency={currency} />}
+        {activeTab === 'proteccion'   && <Proteccion proteccion={proteccion} setProteccion={setProteccion} activos={activos} setActivos={setActivos} currency={currency} />}
         {activeTab === 'ratios'       && <RatiosFinancieros ratiosData={ratiosData} setRatiosData={setRatiosData} totales={totales} currency={currency} ingresos={ingresos} gastos={gastos} setActiveTab={setActiveTab} />}
       </main>
 
@@ -548,7 +564,7 @@ function InventarioActivos({ activos, setActivos, totales, currency }) {
     { key: 'bienesRaices',     nombre: 'Bienes Raíces',           items: ['Casa principal','Casa vacacional','Propiedad de renta','Apartamento','Terreno','Otro'] },
     { key: 'bienesPersonales', nombre: 'Bienes Personales',       items: ['Vehículo','Bote','RV','Joyas','Arte','Coleccionables','Otro'] }
   ];
-  const addItem    = cat => setActivos(prev => ({ ...prev, [cat]: [...prev[cat], { tipo: '', ubicacion: '', valor: '' }] }));
+  const addItem    = cat => setActivos(prev => ({ ...prev, [cat]: [...prev[cat], { tipo: '', ubicacion: '', valor: '', transferencia: '' }] }));
   const updateItem = (cat, idx, field, val) => setActivos(prev => ({ ...prev, [cat]: prev[cat].map((item, i) => i === idx ? { ...item, [field]: val } : item) }));
   const removeItem = (cat, idx) => setActivos(prev => ({ ...prev, [cat]: prev[cat].filter((_, i) => i !== idx) }));
 
@@ -567,17 +583,23 @@ function InventarioActivos({ activos, setActivos, totales, currency }) {
           </div>
           {activos[cat.key].length === 0 ? <p className="text-muted">No hay activos registrados</p> : (
             <div className="table-container">
-              <table><thead><tr><th>Tipo</th><th>Institución</th><th>Valor</th><th style={{width:'80px'}}>Acción</th></tr></thead>
+              <table><thead><tr><th>Tipo</th><th>Institución</th><th>Transferencia</th><th>Valor</th><th style={{width:'80px'}}>Acción</th></tr></thead>
                 <tbody>{activos[cat.key].map((item, idx) => (
                   <tr key={idx}>
                     <td><select className="form-input" value={item.tipo} onChange={e => updateItem(cat.key, idx, 'tipo', e.target.value)}><option value="">Seleccionar...</option>{cat.items.map(t => <option key={t} value={t}>{t}</option>)}</select></td>
                     <td><input type="text" className="form-input" placeholder="Banco, broker..." value={item.ubicacion} onChange={e => updateItem(cat.key, idx, 'ubicacion', e.target.value)} /></td>
+                    <td>
+                      <select className="form-input" value={item.transferencia||''} onChange={e => updateItem(cat.key, idx, 'transferencia', e.target.value)}
+                        style={{borderColor: item.transferencia==='Sin designación'?'#ef4444': item.transferencia?'#10b981':'var(--border)'}}>
+                        {['','Beneficiario (TOD/POD)','Joint Tenancy (JTWROS)','Tenancy in Common','En Trust','Vía Testamento','Sin designación'].map(o => <option key={o} value={o}>{o||'Seleccionar...'}</option>)}
+                      </select>
+                    </td>
                     <td><input type="number" className="form-input" placeholder="0" value={item.valor} onChange={e => updateItem(cat.key, idx, 'valor', e.target.value)} /></td>
                     <td><button className="btn btn-danger btn-small" onClick={() => removeItem(cat.key, idx)}>🗑️</button></td>
                   </tr>
                 ))}</tbody>
                 <tfoot><tr style={{background:'#f0fdf4',borderTop:'2px solid #10b981',fontWeight:'700'}}>
-                  <td colSpan="2" style={{fontWeight:'700',color:'#475569',paddingLeft:'0.5rem'}}>Total {cat.nombre}</td>
+                  <td colSpan="3" style={{fontWeight:'700',color:'#475569',paddingLeft:'0.5rem'}}>Total {cat.nombre}</td>
                   <td style={{fontWeight:'800',color:'#059669',fontSize:'1rem',textAlign:'right',paddingRight:'0.5rem'}}>{formatCurrency(activos[cat.key].reduce((s,i)=>s+parseNumber(i.valor),0), currency)}</td>
                   <td></td>
                 </tr></tfoot>
@@ -1053,6 +1075,202 @@ function VistaGeneral({ totales, ingresos, gastos, ratiosData, currency, setActi
   );
 }
 
+
+
+// ============= PROTECCIÓN =============
+function Proteccion({ proteccion, setProteccion, activos, setActivos, currency }) {
+  const TIPOS_DOC = ['Testamento','Living Trust','Power of Attorney','Healthcare Directive','Beneficiarios actualizados'];
+  const TIPOS_POLIZA = ['Vida - Term','Vida - Whole','Salud','Auto','Hogar','Disability','Umbrella','Otro'];
+  const TRANSFER_OPTS = ['','Beneficiario (TOD/POD)','Joint Tenancy (JTWROS)','Tenancy in Common','En Trust','Vía Testamento','Sin designación'];
+
+  const updateDoc    = (idx, field, val) => setProteccion(prev => ({ ...prev, documentos: prev.documentos.map((d,i) => i===idx ? {...d,[field]:val} : d) }));
+  const addPoliza    = () => setProteccion(prev => ({ ...prev, polizas: [...prev.polizas, { tipo:'Vida - Term', aseguradora:'', numeroPoliza:'', cobertura:'', prima:'', frecuenciaPrima:'mensual', deducible:'', beneficiario:'', renovacion:'', notas:'' }] }));
+  const updatePoliza = (idx, field, val) => setProteccion(prev => ({ ...prev, polizas: prev.polizas.map((p,i) => i===idx ? {...p,[field]:val} : p) }));
+  const removePoliza = idx => setProteccion(prev => ({ ...prev, polizas: prev.polizas.filter((_,i) => i!==idx) }));
+
+  // Flatten all activos with transferencia info
+  const todosActivos = Object.entries(activos).flatMap(([cat, items]) =>
+    items.map(item => ({ ...item, cat }))
+  );
+  const sinDesignacion = todosActivos.filter(a => !a.transferencia || a.transferencia === 'Sin designación');
+  const conDesignacion = todosActivos.filter(a => a.transferencia && a.transferencia !== 'Sin designación');
+
+  const totalCobertura = proteccion.polizas.reduce((s,p) => s + parseNumber(p.cobertura), 0);
+  const totalPrimas    = proteccion.polizas.reduce((s,p) => {
+    const m = parseNumber(p.prima);
+    return s + (p.frecuenciaPrima === 'anual' ? m/12 : m);
+  }, 0);
+
+  const docStatus = (tiene) => tiene === 'si' ? { bg:'#f0fdf4', border:'#10b981', color:'#059669', label:'✅ Sí' }
+    : tiene === 'desactualizado' ? { bg:'#fffbeb', border:'#f59e0b', color:'#d97706', label:'⚠️ Desactualizado' }
+    : { bg:'#fef2f2', border:'#ef4444', color:'#dc2626', label:'❌ No' };
+
+  const CAT_LABELS = { efectivo:'Efectivo', inversiones:'Inversiones', retiro:'Retiro', bienesRaices:'Bienes Raíces', bienesPersonales:'Bienes Personales' };
+
+  return (
+    <div>
+      {/* ── Stats ── */}
+      <div className="stats-grid">
+        <div className="stat-card" style={{background:'linear-gradient(135deg,#7c3aed 0%,#6d28d9 100%)'}}>
+          <div className="stat-label">Documentos activos</div>
+          <div className="stat-value">{proteccion.documentos.filter(d=>d.tiene==='si').length} / {proteccion.documentos.length}</div>
+        </div>
+        <div className="stat-card" style={{background:'linear-gradient(135deg,#0891b2 0%,#0e7490 100%)'}}>
+          <div className="stat-label">Cobertura total seguros</div>
+          <div className="stat-value">{formatCurrency(totalCobertura, currency)}</div>
+        </div>
+        <div className="stat-card" style={{background:sinDesignacion.length>0?'linear-gradient(135deg,#ef4444 0%,#dc2626 100%)':'linear-gradient(135deg,#10b981 0%,#059669 100%)'}}>
+          <div className="stat-label">Activos sin designación</div>
+          <div className="stat-value">{sinDesignacion.length}</div>
+        </div>
+        <div className="stat-card" style={{background:'linear-gradient(135deg,var(--amber) 0%,#d97706 100%)'}}>
+          <div className="stat-label">Primas / mes</div>
+          <div className="stat-value">{formatCurrency(totalPrimas, currency)}</div>
+        </div>
+      </div>
+
+      {/* ── Documentos Legales ── */}
+      <div className="category-section">
+        <div className="category-header"><h3 className="category-title">📋 Documentos Legales</h3></div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(340px,1fr))',gap:'1rem'}}>
+          {proteccion.documentos.map((doc, idx) => {
+            const st = docStatus(doc.tiene);
+            return (
+              <div key={idx} style={{border:`2px solid ${st.border}`,borderRadius:'12px',padding:'1.25rem',background:st.bg}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'0.875rem'}}>
+                  <div style={{fontWeight:'700',fontSize:'1rem'}}>{doc.tipo}</div>
+                  <select value={doc.tiene} onChange={e=>updateDoc(idx,'tiene',e.target.value)}
+                    style={{padding:'0.35rem 0.75rem',borderRadius:'8px',border:`1px solid ${st.border}`,background:'white',fontWeight:'600',fontSize:'0.85rem',cursor:'pointer',color:st.color}}>
+                    <option value="no">❌ No</option>
+                    <option value="si">✅ Sí</option>
+                    <option value="desactualizado">⚠️ Desactualizado</option>
+                  </select>
+                </div>
+                {doc.tiene !== 'no' && (
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.5rem'}}>
+                    <div>
+                      <div style={{fontSize:'0.75rem',color:'#64748b',fontWeight:'600',marginBottom:'0.25rem'}}>Fecha</div>
+                      <input type="date" className="form-input" value={doc.fecha} onChange={e=>updateDoc(idx,'fecha',e.target.value)} style={{fontSize:'0.875rem',padding:'0.5rem'}}/>
+                    </div>
+                    <div>
+                      <div style={{fontSize:'0.75rem',color:'#64748b',fontWeight:'600',marginBottom:'0.25rem'}}>Abogado / Contacto</div>
+                      <input type="text" className="form-input" placeholder="Nombre..." value={doc.contacto} onChange={e=>updateDoc(idx,'contacto',e.target.value)} style={{fontSize:'0.875rem',padding:'0.5rem'}}/>
+                    </div>
+                  </div>
+                )}
+                {doc.tiene === 'no' && (
+                  <div style={{fontSize:'0.8rem',color:st.color,marginTop:'0.25rem'}}>⚠️ Item de acción para el cliente</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Pólizas de Seguro ── */}
+      <div className="category-section">
+        <div className="category-header">
+          <h3 className="category-title">🛡️ Pólizas de Seguro</h3>
+          <button className="btn btn-primary btn-small" onClick={addPoliza}>+ Añadir póliza</button>
+        </div>
+        {proteccion.polizas.length === 0 ? (
+          <p className="text-muted">No hay pólizas registradas</p>
+        ) : proteccion.polizas.map((p, idx) => (
+          <div key={idx} style={{border:'1px solid var(--border)',borderRadius:'12px',padding:'1.25rem',marginBottom:'1rem',background:'#fafafa'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem'}}>
+              <select className="form-input" value={p.tipo} onChange={e=>updatePoliza(idx,'tipo',e.target.value)} style={{width:'auto',fontWeight:'700',fontSize:'1rem'}}>
+                {TIPOS_POLIZA.map(t=><option key={t} value={t}>{t}</option>)}
+              </select>
+              <button className="btn btn-danger btn-small" onClick={()=>removePoliza(idx)}>🗑️</button>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:'0.75rem'}}>
+              {[
+                ['Aseguradora','aseguradora','text','Nombre compañía'],
+                ['# Póliza','numeroPoliza','text','Número de póliza'],
+                ['Beneficiario','beneficiario','text','Nombre beneficiario'],
+                ['Renovación','renovacion','date',''],
+              ].map(([label,field,type,ph]) => (
+                <div key={field}>
+                  <div style={{fontSize:'0.75rem',color:'#64748b',fontWeight:'600',marginBottom:'0.25rem'}}>{label}</div>
+                  <input type={type} className="form-input" placeholder={ph} value={p[field]} onChange={e=>updatePoliza(idx,field,e.target.value)} style={{fontSize:'0.875rem',padding:'0.5rem'}}/>
+                </div>
+              ))}
+              <div>
+                <div style={{fontSize:'0.75rem',color:'#64748b',fontWeight:'600',marginBottom:'0.25rem'}}>Cobertura ($)</div>
+                <input type="number" className="form-input" placeholder="500000" value={p.cobertura} onChange={e=>updatePoliza(idx,'cobertura',e.target.value)} style={{fontSize:'0.875rem',padding:'0.5rem'}}/>
+              </div>
+              <div>
+                <div style={{fontSize:'0.75rem',color:'#64748b',fontWeight:'600',marginBottom:'0.25rem'}}>Deducible ($)</div>
+                <input type="number" className="form-input" placeholder="1000" value={p.deducible} onChange={e=>updatePoliza(idx,'deducible',e.target.value)} style={{fontSize:'0.875rem',padding:'0.5rem'}}/>
+              </div>
+              <div>
+                <div style={{fontSize:'0.75rem',color:'#64748b',fontWeight:'600',marginBottom:'0.25rem'}}>Prima</div>
+                <div style={{display:'flex',gap:'0.4rem'}}>
+                  <input type="number" className="form-input" placeholder="150" value={p.prima} onChange={e=>updatePoliza(idx,'prima',e.target.value)} style={{fontSize:'0.875rem',padding:'0.5rem'}}/>
+                  <select value={p.frecuenciaPrima} onChange={e=>updatePoliza(idx,'frecuenciaPrima',e.target.value)} style={{padding:'0.5rem',border:'2px solid var(--border)',borderRadius:'8px',fontSize:'0.8rem',background:'white',cursor:'pointer'}}>
+                    <option value="mensual">/ mes</option>
+                    <option value="anual">/ año</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{gridColumn:'1/-1'}}>
+                <div style={{fontSize:'0.75rem',color:'#64748b',fontWeight:'600',marginBottom:'0.25rem'}}>Notas</div>
+                <input type="text" className="form-input" placeholder="Notas adicionales..." value={p.notas} onChange={e=>updatePoliza(idx,'notas',e.target.value)} style={{fontSize:'0.875rem',padding:'0.5rem'}}/>
+              </div>
+            </div>
+          </div>
+        ))}
+        {proteccion.polizas.length > 0 && (
+          <div style={{background:'#f0fdf4',border:'2px solid #10b981',borderRadius:'12px',padding:'1rem',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <span style={{fontWeight:'700',color:'#059669'}}>Total cobertura</span>
+            <span style={{fontWeight:'800',fontSize:'1.25rem',color:'#059669',fontFamily:"'Fraunces',serif"}}>{formatCurrency(totalCobertura, currency)}</span>
+            <span style={{fontWeight:'700',color:'#059669'}}>Primas / mes</span>
+            <span style={{fontWeight:'800',fontSize:'1.25rem',color:'#059669',fontFamily:"'Fraunces',serif"}}>{formatCurrency(totalPrimas, currency)}</span>
+          </div>
+        )}
+      </div>
+
+      {/* ── Resumen Patrimonial ── */}
+      <div className="category-section">
+        <div className="category-header"><h3 className="category-title">🗂️ Resumen de Transferencia Patrimonial</h3></div>
+
+        {sinDesignacion.length > 0 && (
+          <div style={{background:'#fef2f2',border:'2px solid #ef4444',borderRadius:'12px',padding:'1rem',marginBottom:'1.25rem'}}>
+            <div style={{fontWeight:'700',color:'#dc2626',marginBottom:'0.75rem'}}>⚠️ {sinDesignacion.length} activo(s) sin designación de transferencia</div>
+            {sinDesignacion.map((a,i) => (
+              <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'0.5rem 0.75rem',background:'white',borderRadius:'8px',marginBottom:'0.4rem',fontSize:'0.875rem'}}>
+                <span>{CAT_LABELS[a.cat]} — {a.tipo||'Sin tipo'} {a.ubicacion?`(${a.ubicacion})`:''}</span>
+                <span style={{fontWeight:'700',color:'#dc2626'}}>{formatCurrency(parseNumber(a.valor), currency)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {TRANSFER_OPTS.filter(o=>o).map(metodo => {
+          const grupo = conDesignacion.filter(a => a.transferencia === metodo);
+          if (grupo.length === 0) return null;
+          const total = grupo.reduce((s,a) => s+parseNumber(a.valor), 0);
+          return (
+            <div key={metodo} style={{marginBottom:'0.875rem'}}>
+              <div style={{fontWeight:'700',fontSize:'0.875rem',color:'#475569',marginBottom:'0.4rem',display:'flex',justifyContent:'space-between'}}>
+                <span>{metodo}</span>
+                <span style={{color:'#059669'}}>{formatCurrency(total,currency)}</span>
+              </div>
+              {grupo.map((a,i) => (
+                <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'0.5rem 0.75rem',background:'#f8fafc',borderRadius:'8px',marginBottom:'0.3rem',fontSize:'0.875rem',borderLeft:'3px solid #10b981'}}>
+                  <span>{CAT_LABELS[a.cat]} — {a.tipo||'Sin tipo'} {a.ubicacion?`(${a.ubicacion})`:''}</span>
+                  <span style={{fontWeight:'700'}}>{formatCurrency(parseNumber(a.valor), currency)}</span>
+                </div>
+              ))}
+            </div>
+          );
+        })}
+
+        {todosActivos.length === 0 && <p className="text-muted">Agrega activos en la pestaña Activos para ver el resumen de transferencia.</p>}
+      </div>
+    </div>
+  );
+}
 
 // ============= RATIOS FINANCIEROS =============
 function RatiosFinancieros({ ratiosData, setRatiosData, totales, currency, ingresos, gastos, setActiveTab }) {
