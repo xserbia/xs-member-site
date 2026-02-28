@@ -875,8 +875,10 @@ function renderCategoriesDetail(){
     card.dataset.cat=catKey;
 
     const bodyHTML = catKey==='expenses'  ? buildExpensesForm(multi)
-                   : catKey==='savings'   ? buildSavingsForm(multi)
-                   : catKey==='liabilities'? buildLiabilitiesForm(multi)
+                   : catKey==='savings'    ? buildSavingsForm(multi)
+                   : catKey==='liabilities' ? buildLiabilitiesForm(multi)
+                   : catKey==='insurance'   ? buildInsuranceForm(multi)
+                   : catKey==='legal'        ? buildLegalForm(multi)
                    : buildStandardForm(catKey, multi);
 
     card.innerHTML=`
@@ -914,9 +916,11 @@ function renderCategoriesDetail(){
     // ── Atar handlers del botón "+" — SIEMPRE después de appendChild
     const errEl = cont.querySelector(`#err_${catKey}`);
 
-    if(catKey==='expenses') wireExpensesForm(card, catKey, listEl, errEl, multi);
-    else if(catKey==='savings') wireSavingsForm(card, catKey, listEl, errEl, multi);
+    if(catKey==='expenses')    wireExpensesForm(card, catKey, listEl, errEl, multi);
+    else if(catKey==='savings')     wireSavingsForm(card, catKey, listEl, errEl, multi);
     else if(catKey==='liabilities') wireLiabilitiesForm(card, catKey, listEl, errEl, multi);
+    else if(catKey==='insurance')   wireInsuranceForm(card, catKey, listEl, errEl, multi);
+    else if(catKey==='legal')       wireLegalForm(card, catKey, listEl, errEl, multi);
     else wireStandardForm(card, catKey, listEl, errEl, multi);
 
     // Cascada de subcategoría para gastos
@@ -1148,6 +1152,138 @@ function wireLiabilitiesForm(card, k, listEl, errEl, multi){
 }
 
 // ══════════════════════════════════════════════════════════
+//  FORMULARIO SEGUROS
+// ══════════════════════════════════════════════════════════
+function buildInsuranceForm(multi){
+  const opts=INSURANCE_TYPES.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+  const ownerSel=multi?`<div class="inputGroup"><label for="ins_owner">Titular</label><select id="ins_owner">${ownerOpts('')}</select></div>`:'';
+  return `<div class="addRow">
+    <div class="inputGroup"><label for="ins_type">Tipo de seguro *</label>
+      <select id="ins_type"><option value="">Selecciona...</option>${opts}</select>
+    </div>
+    <div class="inputGroup"><label for="ins_alias">Aseguradora</label>
+      <input type="text" id="ins_alias" placeholder="Ej: Progressive, BlueCross..."/>
+    </div>
+    <div class="inputGroup"><label for="ins_cobertura">Cobertura / Valor $</label>
+      <input type="number" id="ins_cobertura" min="0" step="0.01" placeholder="500000"/>
+    </div>
+    <div class="inputGroup"><label for="ins_prima">Prima mensual $</label>
+      <input type="number" id="ins_prima" min="0" step="0.01" placeholder="150"/>
+    </div>
+    <div class="inputGroup"><label for="ins_deducible">Deducible $</label>
+      <input type="number" id="ins_deducible" min="0" step="0.01" placeholder="1000"/>
+    </div>
+    <div class="inputGroup"><label for="ins_beneficiario">Beneficiario</label>
+      <input type="text" id="ins_beneficiario" placeholder="Ej: Esposa, Hijos..."/>
+    </div>
+    <div class="inputGroup"><label for="ins_poliza">N° Póliza</label>
+      <input type="text" id="ins_poliza" placeholder="Opcional"/>
+    </div>
+    ${ownerSel}
+    <button type="button" class="addBtn" id="ins_add">+ Añadir</button>
+  </div>
+  <p class="hint" style="margin-top:0;margin-bottom:10px;">💡 El monto de cobertura es la suma asegurada, no el valor en efectivo.</p>`;
+}
+function wireInsuranceForm(card, k, listEl, errEl, multi){
+  const typeEl    = card.querySelector('#ins_type');
+  const aliasEl   = card.querySelector('#ins_alias');
+  const cobEl     = card.querySelector('#ins_cobertura');
+  const primaEl   = card.querySelector('#ins_prima');
+  const dedEl     = card.querySelector('#ins_deducible');
+  const benEl     = card.querySelector('#ins_beneficiario');
+  const polizaEl  = card.querySelector('#ins_poliza');
+  const ownerEl   = multi ? card.querySelector('#ins_owner') : null;
+  const addBtn    = card.querySelector('#ins_add');
+  function doAdd(){
+    errEl.classList.remove('show');
+    const type = typeEl.value.trim();
+    if(!type){ errEl.classList.add('show'); return; }
+    const cobertura = cobEl.value !== '' ? parseFloat(cobEl.value) : null;
+    const prima     = primaEl.value !== '' ? parseFloat(primaEl.value) : null;
+    const deducible = dedEl.value !== '' ? parseFloat(dedEl.value) : null;
+    const owner = ownerEl ? (ownerEl.value||'household') : (state.people.members[0]?.id||'household');
+    state.financials.items.push({
+      id: uid(k), category: k, type,
+      alias:       aliasEl.value.trim() || null,
+      name:        aliasEl.value.trim() || type,
+      value:       cobertura || 0,
+      coverageAmount: cobertura,
+      premium:        prima,
+      premiumFrequency: 'mensual',
+      deductible:     deducible,
+      beneficiary:    benEl.value.trim() || null,
+      policyNumber:   polizaEl.value.trim() || null,
+      owner
+    });
+    typeEl.value=''; aliasEl.value=''; cobEl.value=''; primaEl.value=''; dedEl.value=''; benEl.value=''; polizaEl.value='';
+    if(ownerEl) ownerEl.value='';
+    renderItemsList(k, listEl); debouncedSave();
+  }
+  addBtn.addEventListener('click', doAdd);
+}
+
+// ══════════════════════════════════════════════════════════
+//  FORMULARIO DOCUMENTOS LEGALES
+// ══════════════════════════════════════════════════════════
+function buildLegalForm(multi){
+  const opts=LEGAL_TYPES.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+  const ownerSel=multi?`<div class="inputGroup"><label for="leg_owner">Titular</label><select id="leg_owner">${ownerOpts('')}</select></div>`:'';
+  return `<div class="addRow">
+    <div class="inputGroup"><label for="leg_type">Tipo de documento *</label>
+      <select id="leg_type"><option value="">Selecciona...</option>${opts}</select>
+    </div>
+    <div class="inputGroup"><label for="leg_alias">Abogado / Notario</label>
+      <input type="text" id="leg_alias" placeholder="Nombre del profesional..."/>
+    </div>
+    <div class="inputGroup"><label for="leg_fecha">Fecha del documento</label>
+      <input type="date" id="leg_fecha"/>
+    </div>
+    <div class="inputGroup"><label for="leg_estado">Estado</label>
+      <select id="leg_estado">
+        <option value="vigente">✅ Vigente</option>
+        <option value="desactualizado">⚠️ Desactualizado</option>
+        <option value="pendiente">⏳ Pendiente de firmar</option>
+      </select>
+    </div>
+    <div class="inputGroup"><label for="leg_notas">Notas</label>
+      <input type="text" id="leg_notas" placeholder="Ej: En proceso, revisar beneficiarios..."/>
+    </div>
+    ${ownerSel}
+    <button type="button" class="addBtn" id="leg_add">+ Añadir</button>
+  </div>
+  <p class="hint" style="margin-top:0;margin-bottom:10px;">💡 Documenta cada instrumento legal por separado para mayor precisión.</p>`;
+}
+function wireLegalForm(card, k, listEl, errEl, multi){
+  const typeEl   = card.querySelector('#leg_type');
+  const aliasEl  = card.querySelector('#leg_alias');
+  const fechaEl  = card.querySelector('#leg_fecha');
+  const estadoEl = card.querySelector('#leg_estado');
+  const notasEl  = card.querySelector('#leg_notas');
+  const ownerEl  = multi ? card.querySelector('#leg_owner') : null;
+  const addBtn   = card.querySelector('#leg_add');
+  function doAdd(){
+    errEl.classList.remove('show');
+    const type = typeEl.value.trim();
+    if(!type){ errEl.classList.add('show'); return; }
+    const owner = ownerEl ? (ownerEl.value||'household') : (state.people.members[0]?.id||'household');
+    state.financials.items.push({
+      id: uid(k), category: k, type,
+      alias: aliasEl.value.trim() || null,
+      name:  aliasEl.value.trim() || type,
+      value: 0,
+      date:  fechaEl.value || null,
+      status: estadoEl.value,
+      notes: notasEl.value.trim() || null,
+      owner
+    });
+    typeEl.value=''; aliasEl.value=''; fechaEl.value=''; estadoEl.value='vigente'; notasEl.value='';
+    if(ownerEl) ownerEl.value='';
+    renderItemsList(k, listEl); debouncedSave();
+  }
+  addBtn.addEventListener('click', doAdd);
+}
+
+// ══════════════════════════════════════════════════════════
 //  RENDER LISTA DE ITEMS AÑADIDOS
 // ══════════════════════════════════════════════════════════
 function renderItemsList(catKey, container){
@@ -1165,13 +1301,24 @@ function renderItemsList(catKey, container){
           ? `${it.expenseCategory||''} – ${it.subcategory||''}`
           : (it.type || '—');
 
-        // Línea 2 — alias · monto · titular (+ extras deuda)
+        // Línea 2 — alias · monto · titular (+ extras por categoría)
         const parts = [];
         if(it.alias) parts.push(it.alias);
-        parts.push(fmtUSD(it.value) + (isMonthly ? '/mes' : ''));
+        if(catKey !== 'insurance' || it.value > 0) parts.push(fmtUSD(it.value) + (isMonthly ? '/mes' : ''));
         parts.push(pName(it.owner));
         if(isDebt && it.interestRate    != null) parts.push(`${it.interestRate}% anual`);
         if(isDebt && it.monthsRemaining != null) parts.push(`${it.monthsRemaining} meses`);
+        if(catKey==='insurance'){
+          if(it.coverageAmount != null) parts.push(`Cob: ${fmtUSD(it.coverageAmount)}`);
+          if(it.premium        != null) parts.push(`Prima: ${fmtUSD(it.premium)}/mes`);
+          if(it.deductible     != null) parts.push(`Ded: ${fmtUSD(it.deductible)}`);
+          if(it.beneficiary)            parts.push(`Ben: ${it.beneficiary}`);
+        }
+        if(catKey==='legal'){
+          if(it.date)   parts.push(it.date);
+          if(it.status) parts.push(it.status==='vigente'?'✅ Vigente':it.status==='desactualizado'?'⚠️ Desactualizado':'⏳ Pendiente');
+          if(it.notes)  parts.push(it.notes);
+        }
 
         return `<div class="itemChip" data-id="${it.id}">
           <div class="chipInfo">
