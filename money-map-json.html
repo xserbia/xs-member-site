@@ -1326,10 +1326,11 @@ function SalirDeDeuda({ deudas, gastos, currency }) {
 
   const [debtList,    setDebtList]  = useState(mmDebts);
   const [extraPay,    setExtraPay]  = useState(mmAhorro);
-  const [extraDraft,  setExtraDraft]= useState(mmAhorro);
+  const [ahorroUsado, setAhorroUsado]= useState(100);   // % of mmAhorro used
+  const [extraAdicional, setExtraAd]= useState(0);      // additional from other sources
   const [method,      setMethod]    = useState('avalanche');
   const [activeTab,   setTabView]   = useState('resumen');
-  const [editExtra,   setEditExtra] = useState(false);
+
   const [dragIdx,     setDragIdx]   = useState(null);
   const [dragOver,    setDragOver]  = useState(null);
   const balChartRef   = useRef(null);
@@ -1338,7 +1339,7 @@ function SalirDeDeuda({ deudas, gastos, currency }) {
   const debtChart     = useRef(null);
 
   useEffect(() => { setDebtList(mmDebts); }, [JSON.stringify(mmDebts)]);
-  useEffect(() => { setExtraPay(mmAhorro); setExtraDraft(mmAhorro); }, [mmAhorro]);
+  useEffect(() => { setExtraPay(mmAhorro); }, [mmAhorro]);
 
   // ── Simulation engine
   function simulate(debts, extra, sortFn) {
@@ -1379,14 +1380,15 @@ function SalirDeDeuda({ deudas, gastos, currency }) {
     custom:    (a,b)=>0, // order preserved from debtList
   };
 
+  const extraPayComputed = Math.round((extraPay * ahorroUsado / 100) + (extraAdicional||0));
   const enabledDebts = debtList.filter(d=>d.enabled);
   const totalBal  = enabledDebts.reduce((s,d)=>s+d.balance,0);
   const totalMin  = enabledDebts.reduce((s,d)=>s+d.minPay,0);
 
   // For custom: pass debts in current UI order, sort by position (stable)
-  const avResult  = useMemo(()=>simulate(debtList, extraPay, sortFns.avalanche), [debtList, extraPay]);
-  const sbResult  = useMemo(()=>simulate(debtList, extraPay, sortFns.snowball),  [debtList, extraPay]);
-  const cusResult = useMemo(()=>simulate([...debtList].map((d,i)=>({...d,_pos:i})), extraPay, (a,b)=>a._pos-b._pos), [debtList, extraPay]);
+  const avResult  = useMemo(()=>simulate(debtList, extraPayComputed, sortFns.avalanche), [debtList, extraPayComputed]);
+  const sbResult  = useMemo(()=>simulate(debtList, extraPayComputed, sortFns.snowball),  [debtList, extraPayComputed]);
+  const cusResult = useMemo(()=>simulate([...debtList].map((d,i)=>({...d,_pos:i})), extraPayComputed, (a,b)=>a._pos-b._pos), [debtList, extraPayComputed]);
 
   const activeResult = method==='avalanche'?avResult:method==='snowball'?sbResult:cusResult;
 
@@ -1436,7 +1438,7 @@ function SalirDeDeuda({ deudas, gastos, currency }) {
 
       {/* ── Stats */}
       <div className="stats-grid" style={{marginBottom:'1rem'}}>
-        {[['Deuda total',fmt$(totalBal),'#ef4444','#dc2626'],['Mínimos / mes',fmt$(totalMin),'#f59e0b','#d97706'],['Ahorro → deuda',fmt$(extraPay)+'/mes','#1d4ed8','#1e40af'],['Pago total / mes',fmt$(totalMin+extraPay),'#10b981','#059669']].map(([l,v,c1,c2])=>(
+        {[['Deuda total',fmt$(totalBal),'#ef4444','#dc2626'],['Mínimos / mes',fmt$(totalMin),'#f59e0b','#d97706'],['Extra → deuda',fmt$(extraPayComputed)+'/mes','#1d4ed8','#1e40af'],['Pago total / mes',fmt$(totalMin+extraPayComputed),'#10b981','#059669']].map(([l,v,c1,c2])=>(
           <div key={l} className="stat-card" style={{background:`linear-gradient(135deg,${c1},${c2})`}}>
             <div className="stat-label">{l}</div>
             <div className="stat-value">{v}</div>
@@ -1469,15 +1471,44 @@ function SalirDeDeuda({ deudas, gastos, currency }) {
         ))}
       </div>
 
-      {/* ── Extra payment */}
+      {/* ── Extra payment — inline editor */}
       <div style={cardSt}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={labelSt}>PAGO EXTRA HACIA DEUDA</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem'}}>
+          {/* Left: ahorro % */}
           <div>
-            <div style={labelSt}>AHORRO DISPONIBLE PARA DEUDA / MES</div>
-            <div style={{fontWeight:'900',fontSize:'1.5rem',color:'#1d4ed8'}}>{fmt$(extraPay)}<span style={{fontSize:'0.9rem',fontWeight:'600',color:'#94a3b8'}}>/mes</span></div>
-            <div style={{fontSize:'12px',color:'#94a3b8',marginTop:'2px'}}>Pre-cargado del ahorro registrado en Money Map</div>
+            <div style={{fontSize:'12px',fontWeight:'700',color:'#334155',marginBottom:'8px'}}>
+              Ahorro mensual registrado: <span style={{color:'#1d4ed8'}}>{fmt$(extraPay)}/mes</span>
+            </div>
+            <div style={{display:'flex',gap:'6px',flexWrap:'wrap',marginBottom:'8px'}}>
+              {[0,25,50,75,100].map(pct=>(
+                <button key={pct} onClick={()=>setAhorroUsado(pct)} style={{
+                  padding:'5px 10px',borderRadius:'8px',border:`2px solid ${ahorroUsado===pct?'#1d4ed8':'#e2e8f0'}`,
+                  background:ahorroUsado===pct?'#eff6ff':'#f8fafc',color:ahorroUsado===pct?'#1d4ed8':'#64748b',
+                  fontWeight:'700',fontSize:'12px',cursor:'pointer',fontFamily:'inherit'
+                }}>{pct}%</button>
+              ))}
+            </div>
+            <input type="range" min="0" max="100" value={ahorroUsado} onChange={e=>setAhorroUsado(Number(e.target.value))}
+              style={{width:'100%',accentColor:'#1d4ed8',marginBottom:'4px'}}/>
+            <div style={{fontSize:'12px',color:'#64748b'}}>{ahorroUsado}% del ahorro = <b style={{color:'#1d4ed8'}}>{fmt$(Math.round(extraPay*ahorroUsado/100))}/mes</b></div>
           </div>
-          <button onClick={()=>setEditExtra(true)} style={{padding:'8px 16px',background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:'8px',color:'#1d4ed8',fontSize:'13px',fontWeight:'700',cursor:'pointer',fontFamily:'inherit'}}>✎ Ajustar</button>
+          {/* Right: monto adicional */}
+          <div>
+            <div style={{fontSize:'12px',fontWeight:'700',color:'#334155',marginBottom:'8px'}}>Monto adicional (otra fuente)</div>
+            <div style={{display:'flex',alignItems:'center',background:'#f8fafc',border:'1.5px solid #e2e8f0',borderRadius:'10px',overflow:'hidden',marginBottom:'8px'}}>
+              <span style={{padding:'0 10px',color:'#94a3b8',fontWeight:'700',fontSize:'16px'}}>$</span>
+              <input type="number" min="0" value={extraAdicional||''} onChange={e=>setExtraAd(parseFloat(e.target.value)||0)}
+                placeholder="0" style={{flex:'1',background:'transparent',border:'none',padding:'10px 4px',fontSize:'15px',fontWeight:'800',fontFamily:'inherit',color:'#0f172a'}}/>
+              <span style={{padding:'0 10px',color:'#94a3b8',fontSize:'12px',fontWeight:'600'}}>/mes</span>
+            </div>
+            <div style={{fontSize:'11px',color:'#94a3b8'}}>Ej: bono, freelance, segundo ingreso…</div>
+          </div>
+        </div>
+        {/* Total extra */}
+        <div style={{marginTop:'12px',background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:'10px',padding:'10px 14px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <span style={{fontSize:'13px',fontWeight:'700',color:'#1d4ed8'}}>Total extra hacia deuda / mes</span>
+          <span style={{fontSize:'20px',fontWeight:'900',color:'#1d4ed8'}}>{fmt$(extraPayComputed)}</span>
         </div>
       </div>
 
@@ -1515,7 +1546,7 @@ function SalirDeDeuda({ deudas, gastos, currency }) {
                   <div style={{textAlign:'center',padding:'1rem 0 1.5rem',borderBottom:'1px solid #f1f5f9',marginBottom:'1.25rem'}}>
                     <div style={labelSt}>QUEDARÁS LIBRE DE DEUDA EN</div>
                     <div style={{fontWeight:'900',fontSize:'52px',lineHeight:'1',letterSpacing:'-2px',color:'#1d4ed8'}}>{fmtMos(r.months)}</div>
-                    <div style={{fontSize:'13px',color:'#94a3b8',marginTop:'8px'}}>{freeDate} · {fmt$(totalMin+extraPay)}/mes</div>
+                    <div style={{fontSize:'13px',color:'#94a3b8',marginTop:'8px'}}>{freeDate} · {fmt$(totalMin+extraPayComputed)}/mes</div>
                   </div>
 
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'10px',marginBottom:'1.25rem'}}>
@@ -1589,7 +1620,7 @@ function SalirDeDeuda({ deudas, gastos, currency }) {
                         <tr key={row.month} style={{background:i%2===0?'white':'#fafafa'}}>
                           <td style={{padding:'7px 10px',fontWeight:'700'}}>{row.month}</td>
                           <td style={{padding:'7px 10px',color:'#ef4444'}}>{fmtFull(row.mInt)}</td>
-                          <td style={{padding:'7px 10px',fontWeight:'700'}}>{fmt$(totalMin+extraPay)}</td>
+                          <td style={{padding:'7px 10px',fontWeight:'700'}}>{fmt$(totalMin+extraPayComputed)}</td>
                           <td style={{padding:'7px 10px',fontWeight:'700'}}>{fmt$(row.rem)}</td>
                           <td style={{padding:'7px 10px',minWidth:'100px'}}>
                             <div style={{height:'6px',background:'#f1f5f9',borderRadius:'3px',overflow:'hidden'}}>
@@ -1677,27 +1708,7 @@ function SalirDeDeuda({ deudas, gastos, currency }) {
         Asume pagos y tasas constantes. No considera cambios de APR ni refinanciamiento.
       </div>
 
-      {/* Edit extra modal */}
-      {editExtra && (
-        <div style={{position:'fixed',inset:0,background:'rgba(15,23,42,0.55)',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',padding:'16px'}} onClick={e=>{if(e.target===e.currentTarget)setEditExtra(false);}}>
-          <div style={{background:'white',borderRadius:'20px',width:'100%',maxWidth:'400px',padding:'24px',boxShadow:'0 24px 64px rgba(0,0,0,0.2)'}}>
-            <div style={{fontWeight:'900',fontSize:'1.2rem',marginBottom:'4px'}}>Ahorro disponible para deuda</div>
-            <div style={{fontSize:'12px',color:'#94a3b8',marginBottom:'1.25rem'}}>Ajusta el monto que destinarás a pagar deuda cada mes adicional a los mínimos.</div>
-            <div style={{display:'flex',alignItems:'center',background:'#f8fafc',border:'1.5px solid #e2e8f0',borderRadius:'10px',overflow:'hidden',marginBottom:'8px'}}>
-              <span style={{padding:'0 14px',color:'#94a3b8',fontSize:'20px',fontWeight:'700'}}>$</span>
-              <input type="number" value={extraDraft||''} onChange={e=>setExtraDraft(parseFloat(e.target.value)||0)}
-                placeholder="0" style={{flex:'1',background:'transparent',border:'none',padding:'12px 4px',fontSize:'26px',fontWeight:'900',fontFamily:'inherit',color:'#0f172a'}}
-                onKeyDown={e=>{if(e.key==='Enter'){setExtraPay(extraDraft);setEditExtra(false);}}}/>
-              <span style={{padding:'0 14px',color:'#94a3b8',fontSize:'13px',fontWeight:'600'}}>/mes</span>
-            </div>
-            <div style={{fontSize:'12px',color:'#94a3b8',marginBottom:'20px'}}>Ahorro registrado en Money Map: {fmt$(mmAhorro)}/mes</div>
-            <div style={{display:'flex',gap:'10px'}}>
-              <button onClick={()=>{setExtraPay(extraDraft);setEditExtra(false);}} style={{flex:1,padding:'13px',background:'#1d4ed8',border:'none',borderRadius:'12px',color:'white',fontSize:'15px',fontWeight:'800',cursor:'pointer',fontFamily:'inherit'}}>Guardar</button>
-              <button onClick={()=>setEditExtra(false)} style={{padding:'13px 18px',background:'#f1f5f9',border:'none',borderRadius:'12px',color:'#64748b',fontSize:'15px',fontWeight:'700',cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }
