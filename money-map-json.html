@@ -1275,7 +1275,7 @@ function Proteccion({ proteccion, setProteccion, activos, setActivos, currency }
 
 
 // ============= RUNWAY CALCULATOR =============
-function RunwayCalculator({ activos, gastos, ingresos, currency }) {
+function RunwayCalculator({ activos, gastos, ingresos, deudas, currency }) {
   const { useState, useEffect, useMemo } = React;
 
   const ASSET_CATS = [
@@ -1298,17 +1298,58 @@ function RunwayCalculator({ activos, gastos, ingresos, currency }) {
 
   const mmToCat = { efectivo:'cash', inversiones:'inversiones', retiro:'retiro', bienesRaices:'bienes_raices', bienesPersonales:'personales' };
 
+  // Map asset category → related debt keys for netting
+  const debtForCat = {
+    bienesRaices: ['casa', 'lineaPropiedad'],   // home value - mortgage - HELOC
+    efectivo:     ['tarjetas', 'lineaPersonal'], // liquid assets - revolving debt
+    bienesPersonales: ['auto'],                 // vehicle value - auto loan
+  };
+
   const mmAssets = useMemo(() => {
+    // Pre-compute debt totals per key
+    const debtTotals = {};
+    if (deudas) {
+      Object.entries(deudas).forEach(([key, items]) => {
+        debtTotals[key] = (items || []).reduce((s,i) => s + parseNumber(i.balance), 0);
+      });
+    }
+
+    // For each asset category, figure out how much debt to net out
+    // Distribute debt proportionally across assets in that category
+    const debtUsed = {};  // track debt already allocated
+
     const list = [];
     Object.entries(activos).forEach(([key, items]) => {
-      const catId = mmToCat[key] || 'negocio';
+      const catId   = mmToCat[key] || 'negocio';
+      const relKeys = debtForCat[key] || [];
+
+      // Total gross value for this category
+      const catGross = items.reduce((s,i) => s + parseNumber(i.valor), 0);
+
+      // Total applicable debt for this category (not yet used)
+      let catDebt = relKeys.reduce((s, dk) => {
+        const used = debtUsed[dk] || 0;
+        return s + Math.max(0, (debtTotals[dk] || 0) - used);
+      }, 0);
+
       items.forEach(item => {
-        const v = parseNumber(item.valor);
-        if (v > 0) list.push({ id:`${key}-${item.tipo}-${item.ubicacion}`, categoryId:catId, label:item.ubicacion||item.tipo||catId, amount:v });
+        const gross = parseNumber(item.valor);
+        if (gross <= 0) return;
+
+        // Prorate debt to this item
+        const itemDebt = catGross > 0 ? catDebt * (gross / catGross) : 0;
+        const net      = Math.max(0, gross - itemDebt);
+
+        const label = item.ubicacion || item.tipo || catId;
+        const entry = { id:`${key}-${item.tipo}-${item.ubicacion}`, categoryId:catId, label, amount:net, gross, debt:itemDebt };
+        if (net > 0) list.push(entry);
       });
+
+      // Mark this debt as used
+      relKeys.forEach(dk => { debtUsed[dk] = (debtTotals[dk] || 0); });
     });
     return list;
-  }, [activos]);
+  }, [activos, deudas]);
 
   const mmExpenses = useMemo(() => ({
     impuestos:      (gastos.impuestos ||[]).reduce((s,i)=>s+parseNumber(i.monto),0),
@@ -1408,9 +1449,15 @@ function RunwayCalculator({ activos, gastos, ingresos, currency }) {
               </div>
               {group.map(a=>(
                 <div key={a.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'7px 10px',borderRadius:'9px',background:'#fafafa',marginBottom:'3px'}}>
-                  <span style={{fontSize:'13px',fontWeight:'600',color:'#334155'}}>{a.label}</span>
+                  <div>
+                    <div style={{fontSize:'13px',fontWeight:'600',color:'#334155'}}>{a.label}</div>
+                    {a.debt > 0 && <div style={{fontSize:'11px',color:'#94a3b8',marginTop:'1px'}}>Bruto {fmt(a.gross)} − Deuda {fmt(a.debt)}</div>}
+                  </div>
                   <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
-                    <span style={{fontSize:'14px',fontWeight:'800'}}>{fmt(a.amount)}</span>
+                    <div style={{textAlign:'right'}}>
+                      <div style={{fontSize:'14px',fontWeight:'800',color: a.debt>0?'#059669':'#0f172a'}}>{fmt(a.amount)}</div>
+                      {a.debt > 0 && <div style={{fontSize:'10px',fontWeight:'700',color:'#059669'}}>neto</div>}
+                    </div>
                     <button onClick={()=>setAssets(p=>p.filter(x=>x.id!==a.id))} style={{background:'none',border:'none',color:'#d1d5db',fontSize:'14px',cursor:'pointer',padding:'2px 5px',borderRadius:'5px'}}>✕</button>
                   </div>
                 </div>
@@ -1465,7 +1512,7 @@ function RunwayCalculator({ activos, gastos, ingresos, currency }) {
                       </div>
                     </div>
                     <div style={{textAlign:'right'}}>
-                      <div style={{fontSize:'13px',fontWeight:'800'}}>{fmt(a.amount)}</div>
+                      <div style={{fontSize:'13px',fontWeight:'800',color: a.debt>0?'#059669':'#0f172a'}}>{fmt(a.amount)}{a.debt>0 && <span style={{fontSize:'10px',fontWeight:'600',color:'#059669',marginLeft:'4px'}}>neto</span>}</div>
                       <div style={{fontSize:'11px',fontWeight:'700',color:cat?.color}}>{mos} meses</div>
                     </div>
                   </div>
