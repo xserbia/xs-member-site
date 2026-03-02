@@ -1293,7 +1293,6 @@ function RunwayCalculator({ activos, gastos, ingresos, deudas, currency }) {
     { id:'seguros',        label:'Seguros',        icon:'🛡️' },
     { id:'deuda',          label:'Deuda',          icon:'💳' },
     { id:'casa',           label:'Casa / HOA',     icon:'🏠' },
-    { id:'otros',          label:'Ahorro / Otros', icon:'📦' },
   ];
 
   const mmToCat = { efectivo:'cash', inversiones:'inversiones', retiro:'retiro', bienesRaices:'bienes_raices', bienesPersonales:'personales' };
@@ -1357,7 +1356,7 @@ function RunwayCalculator({ activos, gastos, ingresos, deudas, currency }) {
     seguros:        (gastos.seguros   ||[]).reduce((s,i)=>s+parseNumber(i.monto),0),
     deuda:          (gastos.deuda     ||[]).reduce((s,i)=>s+parseNumber(i.monto),0),
     casa:           0,
-    otros:          (gastos.ahorro    ||[]).reduce((s,i)=>s+parseNumber(i.monto),0),
+    // Ahorro excluido — en emergencia el ahorro se detiene
   }), [gastos]);
 
   const [assetList, setAssets]   = useState(mmAssets);
