@@ -1401,7 +1401,14 @@ function RunwayCalculator({ activos, gastos, ingresos, deudas, currency }) {
   const rColor  = m => m>=24?'#16a34a':m>=12?'#0d9488':m>=6?'#d97706':m>=3?'#ea580c':'#dc2626';
   const rBg     = m => m>=24?'#f0fdf4':m>=12?'#f0fdfa':m>=6?'#fffbeb':m>=3?'#fff7ed':'#fef2f2';
   const rBorder = m => m>=24?'#bbf7d0':m>=12?'#99f6e4':m>=6?'#fde68a':m>=3?'#fed7aa':'#fecaca';
-  const rLabel  = m => m>=24?'✓ Excelente — Más de 2 años de colchón':m>=12?'◆ Bueno — Tienes un año para reaccionar':m>=6?'▲ Moderado — Actúa en los próximos meses':m>=3?'⚠ Urgente — Busca solución de inmediato':'🔴 Crítico — Menos de 3 meses';
+  const rLabel  = m => {
+    const fmtM = n => {
+      if (!isFinite(n)||n<=0) return '—';
+      if (n>=12){ const y=Math.floor(n/12),mo=Math.round(n%12); return mo>0?`${y} año${y>1?'s':''} y ${mo} mes${mo>1?'es':''}`:`${y} año${y>1?'s':''}`; }
+      return `${n.toFixed(1)} meses`;
+    };
+    return `Sin ingresos, tus activos netos cubren ${fmtM(m)} de gastos esenciales.`;
+  };
 
   const totalExp = Object.values(expVals).reduce((s,v)=>s+(parseFloat(v)||0),0);
   const totalAss = assetList.reduce((s,a)=>s+a.amount,0);
@@ -1498,8 +1505,8 @@ function RunwayCalculator({ activos, gastos, ingresos, deudas, currency }) {
             </div>
 
             {/* Status */}
-            <div style={{borderRadius:'10px',padding:'12px 16px',textAlign:'center',marginBottom:'1.5rem',background:bg,border:`1px solid ${brd}`}}>
-              <span style={{fontSize:'13px',fontWeight:'800',color:col}}>{rLabel(totalMonths)}</span>
+            <div style={{borderRadius:'10px',padding:'12px 16px',textAlign:'center',marginBottom:'1.5rem',background:'#f8fafc',border:'1px solid #e2e8f0'}}>
+              <span style={{fontSize:'13px',fontWeight:'600',color:'#475569'}}>{rLabel(totalMonths)}</span>
             </div>
 
             {/* Liquidation order */}
