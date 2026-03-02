@@ -505,7 +505,7 @@ function App() {
           </div>
 
           <div className="tabs-container">
-            {[['vistaGeneral','📊 Vista General'],['graficos','📈 Gráficos'],['ingresos','💵 Ingresos y Gastos'],['activos','💰 Activos'],['deudas','💳 Pasivos'],['balance','⚖️ Patrimonio Neto'],['proteccion','🛡️ Protección'],['ratios','📊 Ratios Financieros'],['runway','⏱️ Runway']].map(([key, label]) => (
+            {[['vistaGeneral','📊 Vista General'],['graficos','📈 Gráficos'],['ingresos','💵 Ingresos y Gastos'],['activos','💰 Activos'],['deudas','💳 Pasivos'],['balance','⚖️ Patrimonio Neto'],['proteccion','🛡️ Protección'],['ratios','📊 Ratios Financieros'],['runway','⏱️ Runway'],['calc_deuda','💳 Salir de Deuda']].map(([key, label]) => (
               <button key={key} className={`tab-button ${activeTab === key ? 'active' : ''}`} onClick={() => setActiveTab(key)}>{label}</button>
             ))}
           </div>
@@ -522,6 +522,7 @@ function App() {
         {activeTab === 'proteccion'   && <Proteccion proteccion={proteccion} setProteccion={setProteccion} activos={activos} setActivos={setActivos} currency={currency} />}
         {activeTab === 'ratios'       && <RatiosFinancieros ratiosData={ratiosData} setRatiosData={setRatiosData} totales={totales} currency={currency} ingresos={ingresos} gastos={gastos} setActiveTab={setActiveTab} />}
         {activeTab === 'runway'       && <RunwayCalculator activos={activos} gastos={gastos} ingresos={ingresos} deudas={deudas} totales={totales} currency={currency} />}
+        {activeTab === 'calc_deuda'  && <SalirDeDeuda deudas={deudas} gastos={gastos} ingresos={ingresos} currency={currency} />}
       </main>
 
       {/* Help Modal */}
@@ -1273,6 +1274,433 @@ function Proteccion({ proteccion, setProteccion, activos, setActivos, currency }
   );
 }
 
+
+
+// ============= SALIR DE DEUDA =============
+function SalirDeDeuda({ deudas, gastos, currency }) {
+  const { useState, useEffect, useMemo, useRef, useCallback } = React;
+
+  const COLORS = ['#e74c3c','#3498db','#9b59b6','#2ecc71','#f39c12','#1abc9c','#e67e22','#34495e','#c0392b','#2980b9'];
+  const CAT_NAMES = { tarjetas:'Tarjeta', lineaPersonal:'Línea Personal', lineaPropiedad:'HELOC', casa:'Hipoteca', auto:'Auto', educacion:'Estudiante', otros:'Otro' };
+  const EXCLUDE_CATS = ['casa']; // hipoteca se excluye — estrategia de largo plazo
+
+  const fmt$ = n => '$' + new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}).format(n||0);
+  const fmtFull = n => '$' + new Intl.NumberFormat('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n||0);
+  const fmtMos = m => { if (!m) return '—'; const y=Math.floor(m/12),mo=m%12; return y&&mo?`${y}a ${mo}m`:y?`${y} año${y>1?'s':''}`:`${mo} mes${mo>1?'es':''}`; };
+
+  function estimarMin(d) {
+    const bal=parseNumber(d.balance), apr=parseFloat(d.apr)||0, n=parseFloat(d.meses)||0;
+    const men=parseNumber(d.mensual);
+    if (men>0) return men;
+    if (bal<=0||n<=0) return Math.round(bal*0.02);
+    const r=apr/100/12;
+    return r===0 ? Math.round(bal/n) : Math.round(bal*r/(1-Math.pow(1+r,-n)));
+  }
+
+  // ── Build debt list from Money Map
+  const mmDebts = useMemo(() => {
+    const list = []; let ci = 0;
+    Object.entries(deudas).forEach(([key, items]) => {
+      if (EXCLUDE_CATS.includes(key)) return;
+      items.forEach(item => {
+        const bal = parseNumber(item.balance);
+        if (bal <= 0) return;
+        list.push({
+          id: `${key}-${ci}`,
+          name: item.tipo || CAT_NAMES[key] || key,
+          balance: bal,
+          apr: parseFloat(item.apr) || 0,
+          minPay: estimarMin(item),
+          color: COLORS[ci % COLORS.length],
+          enabled: true,
+        });
+        ci++;
+      });
+    });
+    return list;
+  }, [deudas]);
+
+  const mmAhorro = useMemo(() =>
+    (gastos.ahorro||[]).reduce((s,i)=>s+parseNumber(i.monto),0)
+  , [gastos]);
+
+  const [debtList,    setDebtList]  = useState(mmDebts);
+  const [extraPay,    setExtraPay]  = useState(mmAhorro);
+  const [extraDraft,  setExtraDraft]= useState(mmAhorro);
+  const [method,      setMethod]    = useState('avalanche');
+  const [activeTab,   setTabView]   = useState('resumen');
+  const [editExtra,   setEditExtra] = useState(false);
+  const [dragIdx,     setDragIdx]   = useState(null);
+  const [dragOver,    setDragOver]  = useState(null);
+  const balChartRef   = useRef(null);
+  const debtChartRef  = useRef(null);
+  const balChart      = useRef(null);
+  const debtChart     = useRef(null);
+
+  useEffect(() => { setDebtList(mmDebts); }, [JSON.stringify(mmDebts)]);
+  useEffect(() => { setExtraPay(mmAhorro); setExtraDraft(mmAhorro); }, [mmAhorro]);
+
+  // ── Simulation engine
+  function simulate(debts, extra, sortFn) {
+    const ds = debts.filter(d=>d.enabled&&d.balance>0)
+      .map(d=>({...d, bal:d.balance, initBal:d.balance, paidOff:null}));
+    if (!ds.length) return null;
+    extra = Math.max(0, extra||0);
+    const schedule = [], balHistory = [];
+    let totalInt=0, totalPaid=0, month=0;
+    while (month<600) {
+      const alive=ds.filter(d=>d.bal>0);
+      if (!alive.length) break;
+      month++;
+      let mInt=0;
+      alive.forEach(d=>{ const int=d.bal*(d.apr/100/12); d.bal+=int; mInt+=int; });
+      totalInt+=mInt;
+      // pay minimums
+      alive.forEach(d=>{ const p=Math.min(d.minPay,d.bal); d.bal=Math.max(0,d.bal-p); totalPaid+=p; if(d.bal<0.01&&!d.paidOff)d.paidOff=month; });
+      // dump extra on priority target
+      let pool=extra, safety=0;
+      while (pool>0.01&&++safety<500) {
+        const tgt=ds.filter(d=>d.bal>0).sort(sortFn)[0];
+        if (!tgt) break;
+        const p=Math.min(pool,tgt.bal); tgt.bal=Math.max(0,tgt.bal-p); pool-=p; totalPaid+=p;
+        if(tgt.bal<0.01&&!tgt.paidOff)tgt.paidOff=month;
+      }
+      const rem=ds.reduce((s,d)=>s+d.bal,0);
+      schedule.push({month,mInt,rem});
+      const snap={month,total:rem}; ds.forEach(d=>{snap[d.id]=d.bal;}); balHistory.push(snap);
+    }
+    const done=ds.every(d=>d.bal<0.01);
+    return { months:done?month:null, totalInt, totalPaid, schedule, balHistory, ds };
+  }
+
+  const sortFns = {
+    avalanche: (a,b)=>b.apr-a.apr||b.bal-a.bal,
+    snowball:  (a,b)=>a.bal-b.bal,
+    custom:    (a,b)=>0, // order preserved from debtList
+  };
+
+  const enabledDebts = debtList.filter(d=>d.enabled);
+  const totalBal  = enabledDebts.reduce((s,d)=>s+d.balance,0);
+  const totalMin  = enabledDebts.reduce((s,d)=>s+d.minPay,0);
+
+  // For custom: pass debts in current UI order, sort by position (stable)
+  const avResult  = useMemo(()=>simulate(debtList, extraPay, sortFns.avalanche), [debtList, extraPay]);
+  const sbResult  = useMemo(()=>simulate(debtList, extraPay, sortFns.snowball),  [debtList, extraPay]);
+  const cusResult = useMemo(()=>simulate([...debtList].map((d,i)=>({...d,_pos:i})), extraPay, (a,b)=>a._pos-b._pos), [debtList, extraPay]);
+
+  const activeResult = method==='avalanche'?avResult:method==='snowball'?sbResult:cusResult;
+
+  // ── Charts
+  useEffect(()=>{
+    if (!activeResult||!balChartRef.current) return;
+    if (balChart.current) balChart.current.destroy();
+    const r=activeResult, labels=r.schedule.map(s=>`Mes ${s.month}`), data=r.schedule.map(s=>s.rem);
+    balChart.current = new Chart(balChartRef.current,{
+      type:'line', data:{labels,datasets:[{label:'Balance total',data,borderColor:'#1d4ed8',backgroundColor:'rgba(29,78,216,0.08)',fill:true,tension:0.4,borderWidth:2,pointRadius:0}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt$(c.parsed.y)}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>fmt$(v),color:'#94a3b8',font:{size:11}}},x:{ticks:{color:'#94a3b8',font:{size:10},maxTicksLimit:12}}}}
+    });
+    return ()=>{ if(balChart.current){balChart.current.destroy();balChart.current=null;} };
+  }, [activeResult]);
+
+  useEffect(()=>{
+    if (!activeResult||!debtChartRef.current) return;
+    if (debtChart.current) debtChart.current.destroy();
+    const r=activeResult, labels=r.schedule.map(s=>`Mes ${s.month}`);
+    const datasets=enabledDebts.map(d=>({
+      label:d.name, data:r.balHistory.map(s=>s[d.id]||0),
+      borderColor:d.color, backgroundColor:d.color+'22', fill:false, tension:0.4, borderWidth:2, pointRadius:0
+    }));
+    debtChart.current = new Chart(debtChartRef.current,{
+      type:'line', data:{labels,datasets},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#334155',font:{size:11},boxWidth:12}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmt$(c.parsed.y)}`}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>fmt$(v),color:'#94a3b8',font:{size:11}}},x:{ticks:{color:'#94a3b8',font:{size:10},maxTicksLimit:12}}}}
+    });
+    return ()=>{ if(debtChart.current){debtChart.current.destroy();debtChart.current=null;} };
+  }, [activeResult]);
+
+  // ── Drag & drop handlers
+  const onDragStart = (i) => setDragIdx(i);
+  const onDragOver  = (e,i) => { e.preventDefault(); setDragOver(i); };
+  const onDrop      = (i) => {
+    if (dragIdx===null||dragIdx===i) { setDragIdx(null);setDragOver(null);return; }
+    const next=[...debtList]; const [moved]=next.splice(dragIdx,1); next.splice(i,0,moved);
+    setDebtList(next); setDragIdx(null); setDragOver(null);
+  };
+
+  const cardSt  = {background:'white',borderRadius:'16px',border:'1px solid var(--border)',padding:'1.25rem',boxShadow:'0 1px 3px rgba(0,0,0,0.04)',marginBottom:'1rem'};
+  const labelSt = {fontSize:'11px',fontWeight:'700',letterSpacing:'1px',color:'#94a3b8',marginBottom:'6px'};
+  const tabBtnSt = (active)=>({padding:'8px 16px',borderRadius:'8px 8px 0 0',border:'none',cursor:'pointer',background:active?'#eff6ff':'transparent',color:active?'#1d4ed8':'#64748b',fontWeight:active?'800':'600',fontSize:'13px',fontFamily:'inherit',borderBottom:`2px solid ${active?'#1d4ed8':'transparent'}`,marginBottom:'-2px'});
+  const methodSt = (active)=>({flex:'1',padding:'12px 10px',borderRadius:'12px',border:`2px solid ${active?'#1d4ed8':'#e2e8f0'}`,background:active?'#eff6ff':'#f8fafc',cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all 0.15s'});
+
+  return (
+    <div style={{maxWidth:'820px',margin:'0 auto'}}>
+
+      {/* ── Stats */}
+      <div className="stats-grid" style={{marginBottom:'1rem'}}>
+        {[['Deuda total',fmt$(totalBal),'#ef4444','#dc2626'],['Mínimos / mes',fmt$(totalMin),'#f59e0b','#d97706'],['Ahorro → deuda',fmt$(extraPay)+'/mes','#1d4ed8','#1e40af'],['Pago total / mes',fmt$(totalMin+extraPay),'#10b981','#059669']].map(([l,v,c1,c2])=>(
+          <div key={l} className="stat-card" style={{background:`linear-gradient(135deg,${c1},${c2})`}}>
+            <div className="stat-label">{l}</div>
+            <div className="stat-value">{v}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Debt list */}
+      <div style={cardSt}>
+        <div style={{...labelSt,marginBottom:'10px'}}>DEUDAS — activa/desactiva · arrastra ⠿ para reordenar (modo Custom)</div>
+        {debtList.length===0 && <p style={{color:'#94a3b8',fontSize:'13px'}}>Sin deudas en el Money Map.</p>}
+        {debtList.map((d,i)=>(
+          <div key={d.id}
+            draggable onDragStart={()=>onDragStart(i)} onDragOver={e=>onDragOver(e,i)} onDrop={()=>onDrop(i)} onDragEnd={()=>{setDragIdx(null);setDragOver(null);}}
+            style={{display:'flex',alignItems:'center',gap:'10px',padding:'10px 12px',borderRadius:'10px',border:`2px solid ${dragOver===i?'#1d4ed8':d.enabled?d.color:'#e2e8f0'}`,background:dragOver===i?'#eff6ff':d.enabled?'#fafafa':'#f8fafc',opacity:d.enabled?1:0.5,marginBottom:'6px',transition:'all 0.15s',cursor:'grab'}}>
+            <span style={{color:'#94a3b8',fontSize:'18px',userSelect:'none',flexShrink:'0'}}>⠿</span>
+            <div style={{width:'10px',height:'10px',borderRadius:'3px',background:d.color,flexShrink:'0'}}/>
+            <div style={{flex:'1',minWidth:0}}>
+              <div style={{fontWeight:'700',fontSize:'14px',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{d.name}</div>
+              <div style={{fontSize:'11px',color:'#94a3b8',marginTop:'1px'}}>APR {d.apr}% · Mínimo {fmt$(d.minPay)}/mes</div>
+            </div>
+            <div style={{textAlign:'right',flexShrink:'0'}}>
+              <div style={{fontWeight:'800',fontSize:'14px'}}>{fmt$(d.balance)}</div>
+            </div>
+            <button onClick={()=>setDebtList(prev=>prev.map((x,j)=>j===i?{...x,enabled:!x.enabled}:x))}
+              style={{padding:'5px 10px',border:`1px solid ${d.enabled?d.color:'#e2e8f0'}`,borderRadius:'8px',background:d.enabled?'white':'#f1f5f9',color:d.enabled?d.color:'#94a3b8',fontSize:'11px',fontWeight:'700',cursor:'pointer',fontFamily:'inherit',flexShrink:'0'}}>
+              {d.enabled?'✓ ON':'OFF'}
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Extra payment */}
+      <div style={cardSt}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <div>
+            <div style={labelSt}>AHORRO DISPONIBLE PARA DEUDA / MES</div>
+            <div style={{fontWeight:'900',fontSize:'1.5rem',color:'#1d4ed8'}}>{fmt$(extraPay)}<span style={{fontSize:'0.9rem',fontWeight:'600',color:'#94a3b8'}}>/mes</span></div>
+            <div style={{fontSize:'12px',color:'#94a3b8',marginTop:'2px'}}>Pre-cargado del ahorro registrado en Money Map</div>
+          </div>
+          <button onClick={()=>setEditExtra(true)} style={{padding:'8px 16px',background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:'8px',color:'#1d4ed8',fontSize:'13px',fontWeight:'700',cursor:'pointer',fontFamily:'inherit'}}>✎ Ajustar</button>
+        </div>
+      </div>
+
+      {/* ── Method selector */}
+      <div style={cardSt}>
+        <div style={{...labelSt,marginBottom:'12px'}}>ESTRATEGIA</div>
+        <div style={{display:'flex',gap:'10px',marginBottom:'10px'}}>
+          {[['avalanche','📈 Avalanche','APR más alto primero · minimiza interés'],['snowball','⚡ Snowball','Balance más bajo · victorias rápidas'],['custom','🎯 Custom','Tu orden personalizado (arrastra arriba)']].map(([id,label,desc])=>(
+            <button key={id} style={methodSt(method===id)} onClick={()=>setMethod(id)}>
+              <div style={{fontWeight:'800',fontSize:'13px',color:method===id?'#1d4ed8':'#334155'}}>{label}</div>
+              <div style={{fontSize:'10px',color:'#94a3b8',marginTop:'3px',lineHeight:'1.3'}}>{desc}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Results */}
+      {activeResult ? (()=>{
+        const r=activeResult;
+        return (
+          <div style={cardSt}>
+            {/* Tab bar */}
+            <div style={{display:'flex',gap:'4px',marginBottom:'1.25rem',borderBottom:'2px solid #f1f5f9',paddingBottom:'0'}}>
+              {[['resumen','📊 Resumen'],['cronograma','📅 Cronograma'],['graficos','📈 Gráficos'],['comparacion','⚖️ Comparación']].map(([id,lbl])=>(
+                <button key={id} onClick={()=>setTabView(id)} style={tabBtnSt(activeTab===id)}>{lbl}</button>
+              ))}
+            </div>
+
+            {/* RESUMEN */}
+            {activeTab==='resumen' && (()=>{
+              const interestPct = totalBal>0?(r.totalInt/totalBal*100).toFixed(0):0;
+              const freeDate = r.months ? new Date(Date.now()+r.months*30.44*24*3600*1000).toLocaleDateString('es',{month:'long',year:'numeric'}) : '—';
+              return (
+                <div>
+                  <div style={{textAlign:'center',padding:'1rem 0 1.5rem',borderBottom:'1px solid #f1f5f9',marginBottom:'1.25rem'}}>
+                    <div style={labelSt}>QUEDARÁS LIBRE DE DEUDA EN</div>
+                    <div style={{fontWeight:'900',fontSize:'52px',lineHeight:'1',letterSpacing:'-2px',color:'#1d4ed8'}}>{fmtMos(r.months)}</div>
+                    <div style={{fontSize:'13px',color:'#94a3b8',marginTop:'8px'}}>{freeDate} · {fmt$(totalMin+extraPay)}/mes</div>
+                  </div>
+
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'10px',marginBottom:'1.25rem'}}>
+                    {[['Interés total',fmt$(r.totalInt),`${interestPct}% del principal`,'#fef2f2','#ef4444'],['Total a pagar',fmt$(r.totalPaid),'Principal + interés','#f0fdf4','#10b981'],['Pago promedio',fmt$(r.totalPaid/(r.months||1))+'/mes','Hasta liquidar','#eff6ff','#1d4ed8']].map(([l,v,s,bg,col])=>(
+                      <div key={l} style={{background:bg,borderRadius:'12px',padding:'12px',border:`1px solid ${col}22`}}>
+                        <div style={{fontSize:'10px',fontWeight:'700',letterSpacing:'0.5px',color:col,marginBottom:'4px'}}>{l.toUpperCase()}</div>
+                        <div style={{fontSize:'18px',fontWeight:'900',color:col}}>{v}</div>
+                        <div style={{fontSize:'10px',color:'#64748b',marginTop:'2px'}}>{s}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={labelSt}>ORDEN DE LIQUIDACIÓN</div>
+                  <div style={{display:'flex',flexDirection:'column',gap:'7px',marginBottom:'1.25rem'}}>
+                    {r.ds.filter(d=>d.paidOff).sort((a,b)=>a.paidOff-b.paidOff).map((d,i)=>(
+                      <div key={d.id} style={{display:'flex',alignItems:'center',gap:'10px',padding:'10px 12px',background:'#f8fafc',borderRadius:'10px',border:'1px solid #e2e8f0'}}>
+                        <div style={{width:'24px',height:'24px',borderRadius:'50%',background:d.color,color:'white',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',fontWeight:'800',flexShrink:'0'}}>{i+1}</div>
+                        <div style={{flex:'1'}}>
+                          <div style={{fontWeight:'700',fontSize:'13px'}}>{d.name}</div>
+                          <div style={{fontSize:'11px',color:'#94a3b8'}}>{fmt$(d.initBal)} · APR {d.apr}%</div>
+                        </div>
+                        <div style={{textAlign:'right'}}>
+                          <div style={{fontWeight:'800',color:'#059669',fontSize:'13px'}}>✓ Mes {d.paidOff}</div>
+                          <div style={{fontSize:'11px',color:'#94a3b8'}}>{fmtMos(d.paidOff)}</div>
+                        </div>
+                      </div>
+                    ))}
+                    {r.ds.filter(d=>!d.paidOff).map(d=>(
+                      <div key={d.id} style={{display:'flex',alignItems:'center',gap:'10px',padding:'10px 12px',background:'#fef2f2',borderRadius:'10px',border:'1px solid #fecaca'}}>
+                        <div style={{width:'24px',height:'24px',borderRadius:'50%',background:'#ef4444',color:'white',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',fontWeight:'800',flexShrink:'0'}}>!</div>
+                        <div style={{fontWeight:'700',fontSize:'13px',color:'#dc2626'}}>{d.name} — No se paga en 50 años con el pago actual</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Timeline */}
+                  <div style={labelSt}>LÍNEA DE TIEMPO</div>
+                  <div style={{background:'#f8fafc',borderRadius:'12px',padding:'14px',border:'1px solid #e2e8f0'}}>
+                    <div style={{display:'flex',height:'28px',borderRadius:'8px',overflow:'hidden',gap:'2px',marginBottom:'8px'}}>
+                      {r.ds.filter(d=>d.paidOff).sort((a,b)=>a.paidOff-b.paidOff).map(d=>{
+                        const pct=((d.paidOff/(r.months||1))*100).toFixed(1);
+                        return <div key={d.id} title={`${d.name}: mes ${d.paidOff}`}
+                          style={{background:d.color,width:`${pct}%`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'10px',color:'white',fontWeight:'800',borderRadius:'5px',overflow:'hidden',flexShrink:'0'}}>
+                          {pct>9?d.name.split(' ')[0]:''}
+                        </div>;
+                      })}
+                    </div>
+                    <div style={{display:'flex',justifyContent:'space-between',fontSize:'11px',color:'#94a3b8',fontWeight:'600'}}>
+                      <span>Hoy</span><span>Mes {Math.round((r.months||0)/2)}</span><span>{fmtMos(r.months)}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* CRONOGRAMA */}
+            {activeTab==='cronograma' && (
+              <div style={{overflowX:'auto'}}>
+                <table style={{width:'100%',borderCollapse:'collapse',fontSize:'12px'}}>
+                  <thead>
+                    <tr style={{background:'#f8fafc'}}>
+                      {['Mes','Interés','Pago','Balance restante','Progreso'].map(h=>(
+                        <th key={h} style={{padding:'8px 10px',textAlign:'left',fontWeight:'700',color:'#475569',borderBottom:'2px solid #e2e8f0',fontSize:'11px',letterSpacing:'0.5px',whiteSpace:'nowrap'}}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {r.schedule.slice(0,120).map((row,i)=>{
+                      const pct=(1-row.rem/totalBal)*100;
+                      return (
+                        <tr key={row.month} style={{background:i%2===0?'white':'#fafafa'}}>
+                          <td style={{padding:'7px 10px',fontWeight:'700'}}>{row.month}</td>
+                          <td style={{padding:'7px 10px',color:'#ef4444'}}>{fmtFull(row.mInt)}</td>
+                          <td style={{padding:'7px 10px',fontWeight:'700'}}>{fmt$(totalMin+extraPay)}</td>
+                          <td style={{padding:'7px 10px',fontWeight:'700'}}>{fmt$(row.rem)}</td>
+                          <td style={{padding:'7px 10px',minWidth:'100px'}}>
+                            <div style={{height:'6px',background:'#f1f5f9',borderRadius:'3px',overflow:'hidden'}}>
+                              <div style={{height:'100%',width:`${Math.max(0,pct).toFixed(1)}%`,background:'#1d4ed8',borderRadius:'3px'}}/>
+                            </div>
+                            <div style={{fontSize:'10px',color:'#94a3b8',marginTop:'2px'}}>{pct.toFixed(0)}% pagado</div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {r.schedule.length>120 && <div style={{fontSize:'11px',color:'#94a3b8',marginTop:'8px',textAlign:'center'}}>Mostrando primeros 120 de {r.schedule.length} meses</div>}
+              </div>
+            )}
+
+            {/* GRAFICOS */}
+            {activeTab==='graficos' && (
+              <div>
+                <div style={{...labelSt,marginBottom:'10px'}}>BALANCE TOTAL</div>
+                <div style={{position:'relative',height:'240px',marginBottom:'1.5rem'}}>
+                  <canvas ref={balChartRef}/>
+                </div>
+                <div style={{...labelSt,marginBottom:'10px'}}>DEUDAS INDIVIDUALES</div>
+                <div style={{position:'relative',height:'240px'}}>
+                  <canvas ref={debtChartRef}/>
+                </div>
+              </div>
+            )}
+
+            {/* COMPARACIÓN */}
+            {activeTab==='comparacion' && avResult && sbResult && cusResult && (()=>{
+              const methods = [
+                {id:'avalanche',label:'📈 Avalanche',desc:'APR más alto primero',r:avResult,color:'#1d4ed8',bg:'#eff6ff',brd:'#bfdbfe'},
+                {id:'snowball', label:'⚡ Snowball', desc:'Balance más bajo',    r:sbResult,color:'#7c3aed',bg:'#f5f3ff',brd:'#ddd6fe'},
+                {id:'custom',   label:'🎯 Custom',   desc:'Tu orden arrastrando',r:cusResult,color:'#0d9488',bg:'#f0fdfa',brd:'#99f6e4'},
+              ];
+              const bestInt  = methods.reduce((a,b)=>a.r.totalInt<b.r.totalInt?a:b);
+              const bestTime = methods.reduce((a,b)=>(a.r.months||9999)<(b.r.months||9999)?a:b);
+              return (
+                <div>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'10px',marginBottom:'1rem'}}>
+                    {methods.map(m=>{
+                      const isBestInt  = m.id===bestInt.id;
+                      const isBestTime = m.id===bestTime.id;
+                      const first = m.r.ds.filter(d=>d.paidOff).sort((a,b)=>a.paidOff-b.paidOff)[0];
+                      return (
+                        <div key={m.id} style={{padding:'14px',borderRadius:'12px',border:`2px solid ${isBestInt?m.color:m.brd}`,background:isBestInt?m.bg:'#f8fafc',position:'relative'}}>
+                          {isBestInt && <div style={{position:'absolute',top:'-10px',right:'8px',background:m.color,color:'white',padding:'3px 8px',borderRadius:'10px',fontSize:'10px',fontWeight:'700'}}>💰 Menos interés</div>}
+                          {!isBestInt&&isBestTime && <div style={{position:'absolute',top:'-10px',right:'8px',background:m.color,color:'white',padding:'3px 8px',borderRadius:'10px',fontSize:'10px',fontWeight:'700'}}>⚡ Más rápido</div>}
+                          <div style={{fontWeight:'800',fontSize:'14px',marginBottom:'2px'}}>{m.label}</div>
+                          <div style={{fontSize:'10px',color:'#64748b',marginBottom:'10px'}}>{m.desc}</div>
+                          {[['Tiempo',fmtMos(m.r.months)],['Interés',fmt$(m.r.totalInt)],['Total',fmt$(m.r.totalPaid)]].map(([l,v])=>(
+                            <div key={l} style={{display:'flex',justifyContent:'space-between',marginBottom:'5px',fontSize:'12px'}}>
+                              <span style={{color:'#64748b'}}>{l}</span>
+                              <span style={{fontWeight:'800'}}>{v}</span>
+                            </div>
+                          ))}
+                          {first && (
+                            <div style={{marginTop:'8px',padding:'7px',background:'white',borderRadius:'8px',fontSize:'11px',border:'1px solid #e2e8f0'}}>
+                              <div style={{fontWeight:'700',color:'#059669',marginBottom:'2px'}}>🎉 1ra victoria</div>
+                              <div><b>{first.name}</b> · mes {first.paidOff}</div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:'12px',padding:'12px 14px',fontSize:'12px',color:'#334155',lineHeight:'1.7'}}>
+                    <div style={{fontWeight:'700',color:'#059669',marginBottom:'6px'}}>📊 Análisis</div>
+                    Avalanche ahorra <b>{fmt$(Math.max(sbResult.totalInt,cusResult.totalInt)-avResult.totalInt)}</b> en interés vs la peor alternativa.
+                    {' '}Snowball paga la primera deuda en el mes {sbResult.ds.filter(d=>d.paidOff).sort((a,b)=>a.paidOff-b.paidOff)[0]?.paidOff||'—'}.
+                    {' '}Con tu orden custom, la primera sale en el mes {cusResult.ds.filter(d=>d.paidOff).sort((a,b)=>a.paidOff-b.paidOff)[0]?.paidOff||'—'}.
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        );
+      })() : (
+        <div style={{textAlign:'center',padding:'2rem',color:'#94a3b8',fontSize:'14px',fontWeight:'600'}}>Activa al menos una deuda para ver el plan →</div>
+      )}
+
+      <div style={{fontSize:'11px',color:'#cbd5e1',textAlign:'center',lineHeight:'1.8',fontWeight:'500',paddingBottom:'1rem'}}>
+        Asume pagos y tasas constantes. No considera cambios de APR ni refinanciamiento.
+      </div>
+
+      {/* Edit extra modal */}
+      {editExtra && (
+        <div style={{position:'fixed',inset:0,background:'rgba(15,23,42,0.55)',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',padding:'16px'}} onClick={e=>{if(e.target===e.currentTarget)setEditExtra(false);}}>
+          <div style={{background:'white',borderRadius:'20px',width:'100%',maxWidth:'400px',padding:'24px',boxShadow:'0 24px 64px rgba(0,0,0,0.2)'}}>
+            <div style={{fontWeight:'900',fontSize:'1.2rem',marginBottom:'4px'}}>Ahorro disponible para deuda</div>
+            <div style={{fontSize:'12px',color:'#94a3b8',marginBottom:'1.25rem'}}>Ajusta el monto que destinarás a pagar deuda cada mes adicional a los mínimos.</div>
+            <div style={{display:'flex',alignItems:'center',background:'#f8fafc',border:'1.5px solid #e2e8f0',borderRadius:'10px',overflow:'hidden',marginBottom:'8px'}}>
+              <span style={{padding:'0 14px',color:'#94a3b8',fontSize:'20px',fontWeight:'700'}}>$</span>
+              <input type="number" value={extraDraft||''} onChange={e=>setExtraDraft(parseFloat(e.target.value)||0)}
+                placeholder="0" style={{flex:'1',background:'transparent',border:'none',padding:'12px 4px',fontSize:'26px',fontWeight:'900',fontFamily:'inherit',color:'#0f172a'}}
+                onKeyDown={e=>{if(e.key==='Enter'){setExtraPay(extraDraft);setEditExtra(false);}}}/>
+              <span style={{padding:'0 14px',color:'#94a3b8',fontSize:'13px',fontWeight:'600'}}>/mes</span>
+            </div>
+            <div style={{fontSize:'12px',color:'#94a3b8',marginBottom:'20px'}}>Ahorro registrado en Money Map: {fmt$(mmAhorro)}/mes</div>
+            <div style={{display:'flex',gap:'10px'}}>
+              <button onClick={()=>{setExtraPay(extraDraft);setEditExtra(false);}} style={{flex:1,padding:'13px',background:'#1d4ed8',border:'none',borderRadius:'12px',color:'white',fontSize:'15px',fontWeight:'800',cursor:'pointer',fontFamily:'inherit'}}>Guardar</button>
+              <button onClick={()=>setEditExtra(false)} style={{padding:'13px 18px',background:'#f1f5f9',border:'none',borderRadius:'12px',color:'#64748b',fontSize:'15px',fontWeight:'700',cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ============= RUNWAY CALCULATOR =============
 function RunwayCalculator({ activos, gastos, ingresos, deudas, currency }) {
