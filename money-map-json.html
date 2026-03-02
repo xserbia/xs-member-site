@@ -1446,31 +1446,6 @@ function SalirDeDeuda({ deudas, gastos, currency }) {
         ))}
       </div>
 
-      {/* ── Debt list */}
-      <div style={cardSt}>
-        <div style={{...labelSt,marginBottom:'10px'}}>DEUDAS — activa/desactiva · arrastra ⠿ para reordenar (modo Custom)</div>
-        {debtList.length===0 && <p style={{color:'#94a3b8',fontSize:'13px'}}>Sin deudas en el Money Map.</p>}
-        {debtList.map((d,i)=>(
-          <div key={d.id}
-            draggable onDragStart={()=>onDragStart(i)} onDragOver={e=>onDragOver(e,i)} onDrop={()=>onDrop(i)} onDragEnd={()=>{setDragIdx(null);setDragOver(null);}}
-            style={{display:'flex',alignItems:'center',gap:'10px',padding:'10px 12px',borderRadius:'10px',border:`2px solid ${dragOver===i?'#1d4ed8':d.enabled?d.color:'#e2e8f0'}`,background:dragOver===i?'#eff6ff':d.enabled?'#fafafa':'#f8fafc',opacity:d.enabled?1:0.5,marginBottom:'6px',transition:'all 0.15s',cursor:'grab'}}>
-            <span style={{color:'#94a3b8',fontSize:'18px',userSelect:'none',flexShrink:'0'}}>⠿</span>
-            <div style={{width:'10px',height:'10px',borderRadius:'3px',background:d.color,flexShrink:'0'}}/>
-            <div style={{flex:'1',minWidth:0}}>
-              <div style={{fontWeight:'700',fontSize:'14px',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{d.name}</div>
-              <div style={{fontSize:'11px',color:'#94a3b8',marginTop:'1px'}}>APR {d.apr}% · Mínimo {fmt$(d.minPay)}/mes</div>
-            </div>
-            <div style={{textAlign:'right',flexShrink:'0'}}>
-              <div style={{fontWeight:'800',fontSize:'14px'}}>{fmt$(d.balance)}</div>
-            </div>
-            <button onClick={()=>setDebtList(prev=>prev.map((x,j)=>j===i?{...x,enabled:!x.enabled}:x))}
-              style={{padding:'5px 10px',border:`1px solid ${d.enabled?d.color:'#e2e8f0'}`,borderRadius:'8px',background:d.enabled?'white':'#f1f5f9',color:d.enabled?d.color:'#94a3b8',fontSize:'11px',fontWeight:'700',cursor:'pointer',fontFamily:'inherit',flexShrink:'0'}}>
-              {d.enabled?'✓ ON':'OFF'}
-            </button>
-          </div>
-        ))}
-      </div>
-
       {/* ── Extra payment — inline editor */}
       <div style={cardSt}>
         <div style={labelSt}>PAGO EXTRA HACIA DEUDA</div>
@@ -1510,6 +1485,31 @@ function SalirDeDeuda({ deudas, gastos, currency }) {
           <span style={{fontSize:'13px',fontWeight:'700',color:'#1d4ed8'}}>Total extra hacia deuda / mes</span>
           <span style={{fontSize:'20px',fontWeight:'900',color:'#1d4ed8'}}>{fmt$(extraPayComputed)}</span>
         </div>
+      </div>
+
+      {/* ── Debt list */}
+      <div style={cardSt}>
+        <div style={{...labelSt,marginBottom:'10px'}}>DEUDAS — activa/desactiva · arrastra ⠿ para reordenar (modo Custom)</div>
+        {debtList.length===0 && <p style={{color:'#94a3b8',fontSize:'13px'}}>Sin deudas en el Money Map.</p>}
+        {debtList.map((d,i)=>(
+          <div key={d.id}
+            draggable onDragStart={()=>onDragStart(i)} onDragOver={e=>onDragOver(e,i)} onDrop={()=>onDrop(i)} onDragEnd={()=>{setDragIdx(null);setDragOver(null);}}
+            style={{display:'flex',alignItems:'center',gap:'10px',padding:'10px 12px',borderRadius:'10px',border:`2px solid ${dragOver===i?'#1d4ed8':d.enabled?d.color:'#e2e8f0'}`,background:dragOver===i?'#eff6ff':d.enabled?'#fafafa':'#f8fafc',opacity:d.enabled?1:0.5,marginBottom:'6px',transition:'all 0.15s',cursor:'grab'}}>
+            <span style={{color:'#94a3b8',fontSize:'18px',userSelect:'none',flexShrink:'0'}}>⠿</span>
+            <div style={{width:'10px',height:'10px',borderRadius:'3px',background:d.color,flexShrink:'0'}}/>
+            <div style={{flex:'1',minWidth:0}}>
+              <div style={{fontWeight:'700',fontSize:'14px',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{d.name}</div>
+              <div style={{fontSize:'11px',color:'#94a3b8',marginTop:'1px'}}>APR {d.apr}% · Mínimo {fmt$(d.minPay)}/mes</div>
+            </div>
+            <div style={{textAlign:'right',flexShrink:'0'}}>
+              <div style={{fontWeight:'800',fontSize:'14px'}}>{fmt$(d.balance)}</div>
+            </div>
+            <button onClick={()=>setDebtList(prev=>prev.map((x,j)=>j===i?{...x,enabled:!x.enabled}:x))}
+              style={{padding:'5px 10px',border:`1px solid ${d.enabled?d.color:'#e2e8f0'}`,borderRadius:'8px',background:d.enabled?'white':'#f1f5f9',color:d.enabled?d.color:'#94a3b8',fontSize:'11px',fontWeight:'700',cursor:'pointer',fontFamily:'inherit',flexShrink:'0'}}>
+              {d.enabled?'✓ ON':'OFF'}
+            </button>
+          </div>
+        ))}
       </div>
 
       {/* ── Method selector */}
