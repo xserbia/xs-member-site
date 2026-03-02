@@ -505,7 +505,7 @@ function App() {
           </div>
 
           <div className="tabs-container">
-            {[['vistaGeneral','📊 Vista General'],['graficos','📈 Gráficos'],['ingresos','💵 Ingresos y Gastos'],['activos','💰 Activos'],['deudas','💳 Pasivos'],['balance','⚖️ Patrimonio Neto'],['proteccion','🛡️ Protección'],['ratios','📊 Ratios Financieros']].map(([key, label]) => (
+            {[['vistaGeneral','📊 Vista General'],['graficos','📈 Gráficos'],['ingresos','💵 Ingresos y Gastos'],['activos','💰 Activos'],['deudas','💳 Pasivos'],['balance','⚖️ Patrimonio Neto'],['proteccion','🛡️ Protección'],['ratios','📊 Ratios Financieros'],['runway','⏱️ Runway']].map(([key, label]) => (
               <button key={key} className={`tab-button ${activeTab === key ? 'active' : ''}`} onClick={() => setActiveTab(key)}>{label}</button>
             ))}
           </div>
@@ -521,6 +521,7 @@ function App() {
         {activeTab === 'ingresos'     && <IngresosGastos ingresos={ingresos} setIngresos={setIngresos} gastos={gastos} setGastos={setGastos} modoCalculo={modoCalculo} setModoCalculo={setModoCalculo} currency={currency} />}
         {activeTab === 'proteccion'   && <Proteccion proteccion={proteccion} setProteccion={setProteccion} activos={activos} setActivos={setActivos} currency={currency} />}
         {activeTab === 'ratios'       && <RatiosFinancieros ratiosData={ratiosData} setRatiosData={setRatiosData} totales={totales} currency={currency} ingresos={ingresos} gastos={gastos} setActiveTab={setActiveTab} />}
+        {activeTab === 'runway'       && <RunwayCalculator activos={activos} gastos={gastos} ingresos={ingresos} deudas={deudas} totales={totales} currency={currency} />}
       </main>
 
       {/* Help Modal */}
@@ -1268,6 +1269,457 @@ function Proteccion({ proteccion, setProteccion, activos, setActivos, currency }
 
         {todosActivos.length === 0 && <p className="text-muted">Agrega activos en la pestaña Activos para ver el resumen de transferencia.</p>}
       </div>
+    </div>
+  );
+}
+
+
+// ============= RUNWAY CALCULATOR =============
+function RunwayCalculator({ activos, gastos, ingresos, deudas, totales, currency }) {
+  const { useState, useMemo } = React;
+
+  // ── Map Money Map asset categories → Runway liquidity categories
+  const ASSET_CATS = [
+    { id:'cash',          label:'Cash y equivalentes',  icon:'💵', color:'#16a34a', bg:'#f0fdf4', border:'#bbf7d0', liquidity:1, liqLabel:'Inmediato'   },
+    { id:'inversiones',   label:'Inversiones',           icon:'📈', color:'#2563eb', bg:'#eff6ff', border:'#bfdbfe', liquidity:3, liqLabel:'1–4 semanas' },
+    { id:'retiro',        label:'Cuentas de retiro',     icon:'🏛️', color:'#7c3aed', bg:'#f5f3ff', border:'#ddd6fe', liquidity:4, liqLabel:'1–3 meses'  },
+    { id:'bienes_raices', label:'Bienes raíces',         icon:'🏘️', color:'#ea580c', bg:'#fff7ed', border:'#fed7aa', liquidity:6, liqLabel:'6+ meses'   },
+    { id:'negocio',       label:'Negocio / Otros',       icon:'🏢', color:'#0d9488', bg:'#f0fdfa', border:'#99f6e4', liquidity:5, liqLabel:'3–6 meses'  },
+    { id:'personales',    label:'Activos personales',    icon:'🚗', color:'#db2777', bg:'#fdf2f8', border:'#fbcfe8', liquidity:5, liqLabel:'3–6 meses'  },
+  ];
+
+  // Map Money Map keys → runway cat ids
+  const mmToCat = { efectivo:'cash', inversiones:'inversiones', retiro:'retiro', bienesRaices:'bienes_raices', bienesPersonales:'personales' };
+
+  // ── Build asset list from Money Map activos
+  const mmAssets = useMemo(() => {
+    const list = [];
+    Object.entries(activos).forEach(([key, items]) => {
+      const catId = mmToCat[key] || 'negocio';
+      items.forEach(item => {
+        const v = parseNumber(item.valor);
+        if (v > 0) list.push({ id: `${key}-${item.tipo}-${item.ubicacion}`, categoryId: catId, label: item.ubicacion || item.tipo || catId, amount: v });
+      });
+    });
+    return list;
+  }, [activos]);
+
+  // ── Build monthly expense from Money Map gastos (always monthly)
+  const mmExpenses = useMemo(() => ({
+    impuestos:      (gastos.impuestos   || []).reduce((s,i) => s + parseNumber(i.monto), 0),
+    gastos_diarios: (gastos.diarios     || []).reduce((s,i) => s + parseNumber(i.monto), 0),
+    seguros:        (gastos.seguros     || []).reduce((s,i) => s + parseNumber(i.monto), 0),
+    deuda:          (gastos.deuda       || []).reduce((s,i) => s + parseNumber(i.monto), 0),
+    casa:           0,
+    otros:          (gastos.ahorro      || []).reduce((s,i) => s + parseNumber(i.monto), 0),
+  }), [gastos]);
+
+  const mmIncome = useMemo(() =>
+    ingresos.reduce((s,i) => s + parseNumber(i.monto), 0)
+  , [ingresos]);
+
+  // ── Local state — prefilled from MM but editable
+  const [mode,          setMode]   = useState('sin_ingreso');
+  const [assetList,     setAssets] = useState(mmAssets);
+  const [expVals,       setExpVals]= useState(mmExpenses);
+  const [monthlyIncome, setInc]    = useState(mmIncome);
+  const [result,        setResult] = useState(null);
+  const [autoCalced,    setAutoCalced] = useState(false);
+  const [showAssetModal,setAssetM] = useState(false);
+  const [showExpModal,  setExpM]   = useState(false);
+  const [showIncModal,  setIncM]   = useState(false);
+  const [assetDraft,    setADraft] = useState({ categoryId:'cash', label:'', amount:'' });
+  const [expDraft,      setEDraft] = useState(mmExpenses);
+  const [incDraft,      setIDraft] = useState(mmIncome);
+
+  // Sync if MM data changes
+  React.useEffect(() => { setAssets(mmAssets); }, [JSON.stringify(mmAssets)]);
+  React.useEffect(() => { setExpVals(mmExpenses); setEDraft(mmExpenses); }, [JSON.stringify(mmExpenses)]);
+  React.useEffect(() => { setInc(mmIncome); setIDraft(mmIncome); }, [mmIncome]);
+
+  // Auto-calculate whenever inputs change
+  React.useEffect(() => {
+    const tExp = Object.values(expVals).reduce((s,v) => s + (parseFloat(v)||0), 0);
+    const tAss = assetList.reduce((s,a) => s + a.amount, 0);
+    const g    = mode === 'deficit' ? Math.max(0, tExp - monthlyIncome) : tExp;
+    if (g > 0 && tAss > 0) {
+      const sorted = [...assetList].sort((a,b) => {
+        const ca = ASSET_CATS.find(c=>c.id===a.categoryId);
+        const cb = ASSET_CATS.find(c=>c.id===b.categoryId);
+        return (ca?.liquidity||3) - (cb?.liquidity||3);
+      });
+      setResult({ totalMonths: tAss/g, totalAss: tAss, gap: g, sorted });
+    } else {
+      setResult(null);
+    }
+  }, [assetList, expVals, monthlyIncome, mode]);
+
+  const EXPENSE_CATS = [
+    { id:'impuestos',      label:'Impuestos',      icon:'🏛️', hint:'Federal, estatal, predial…' },
+    { id:'gastos_diarios', label:'Gastos diarios', icon:'🛒', hint:'Comida, transporte, entretenimiento…' },
+    { id:'seguros',        label:'Seguros',        icon:'🛡️', hint:'Auto, salud, vida, hogar…' },
+    { id:'deuda',          label:'Deuda',          icon:'💳', hint:'Tarjetas, hipoteca, préstamos…' },
+    { id:'casa',           label:'Casa / HOA',     icon:'🏠', hint:'Renta, servicios, mantenimiento…' },
+    { id:'otros',          label:'Ahorro / Otros', icon:'📦', hint:'Ahorro, educación, suscripciones…' },
+  ];
+
+  const fmt    = n => '$' + new Intl.NumberFormat('en-US', { minimumFractionDigits:0, maximumFractionDigits:0 }).format(n || 0);
+  const totalExp   = Object.values(expVals).reduce((s,v) => s + (parseFloat(v)||0), 0);
+  const totalAss   = assetList.reduce((s,a) => s + a.amount, 0);
+  const gap        = mode === 'deficit' ? Math.max(0, totalExp - monthlyIncome) : totalExp;
+  const canCalc    = gap > 0 && totalAss > 0;
+
+  const fmtMonths = m => {
+    if (!isFinite(m) || m <= 0) return '—';
+    if (m >= 12) { const y = Math.floor(m/12), mo = Math.round(m%12); return mo > 0 ? `${y}a ${mo}m` : `${y} año${y>1?'s':''}`; }
+    return `${m.toFixed(1)} meses`;
+  };
+  const runwayColor  = m => m>=24?'#16a34a':m>=12?'#0d9488':m>=6?'#d97706':m>=3?'#ea580c':'#dc2626';
+  const runwayBg     = m => m>=24?'#f0fdf4':m>=12?'#f0fdfa':m>=6?'#fffbeb':m>=3?'#fff7ed':'#fef2f2';
+  const runwayBorder = m => m>=24?'#bbf7d0':m>=12?'#99f6e4':m>=6?'#fde68a':m>=3?'#fed7aa':'#fecaca';
+  const runwayLabel  = m =>
+    m>=24 ? '✓ Excelente — Más de 2 años de colchón' :
+    m>=12 ? '◆ Bueno — Tienes un año para reaccionar' :
+    m>=6  ? '▲ Moderado — Actúa en los próximos meses' :
+    m>=3  ? '⚠ Urgente — Busca solución de inmediato' :
+             '🔴 Crítico — Menos de 3 meses';
+
+  function calculate() {
+    if (!canCalc) return;
+    const sorted = [...assetList].sort((a,b) => {
+      const ca = ASSET_CATS.find(c=>c.id===a.categoryId);
+      const cb = ASSET_CATS.find(c=>c.id===b.categoryId);
+      return (ca?.liquidity||3) - (cb?.liquidity||3);
+    });
+    setResult({ totalMonths: totalAss/gap, totalAss, gap, sorted });
+  }
+
+  const S = { // shared inline styles
+    card: { background:'white', borderRadius:'16px', border:'1px solid var(--border)', padding:'1.25rem', boxShadow:'0 1px 3px rgba(0,0,0,0.04)', marginBottom:'1rem' },
+    label: { fontSize:'11px', fontWeight:'700', letterSpacing:'1px', color:'#94a3b8', marginBottom:'4px' },
+    amount: { fontWeight:'900', fontSize:'1.75rem', letterSpacing:'-0.5px', color:'#0f172a' },
+    row: { display:'flex', justifyContent:'space-between', alignItems:'flex-start' },
+    pill: (active, color, bg) => ({ padding:'7px 14px', borderRadius:'20px', fontSize:'12px', fontWeight:'700', border:`1.5px solid ${active?color:'#e2e8f0'}`, background: active?bg:'#f8fafc', color: active?color:'#64748b', cursor:'pointer', fontFamily:'inherit' }),
+    modeBtn: (active) => ({ padding:'14px 16px', textAlign:'left', border:`2px solid ${active?'#2563eb':'#e2e8f0'}`, background: active?'#eff6ff':'#f8fafc', borderRadius:'12px', cursor:'pointer', fontFamily:'inherit', flex:'1' }),
+    inputWrap: { display:'flex', alignItems:'center', background:'#f8fafc', border:'1.5px solid #e2e8f0', borderRadius:'10px', overflow:'hidden', marginBottom:'0.75rem' },
+    overlay: { position:'fixed', inset:0, background:'rgba(15,23,42,0.55)', zIndex:200, display:'flex', alignItems:'center', justifyContent:'center', padding:'16px' },
+    modal: { background:'white', borderRadius:'20px', width:'100%', maxWidth:'500px', maxHeight:'90vh', overflowY:'auto', boxShadow:'0 24px 64px rgba(0,0,0,0.2)', padding:'24px' },
+  };
+
+  // ── Asset Modal
+  const AssetModal = () => (
+    <div style={S.overlay} onClick={e => { if(e.target===e.currentTarget) setAssetM(false); }}>
+      <div style={S.modal}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1.25rem'}}>
+          <div style={{fontWeight:'900',fontSize:'1.2rem'}}>Agregar Activo</div>
+          <button onClick={()=>setAssetM(false)} style={{background:'#f1f5f9',border:'none',borderRadius:'8px',width:'32px',height:'32px',cursor:'pointer',fontSize:'16px',color:'#64748b'}}>✕</button>
+        </div>
+        <div style={{fontSize:'11px',fontWeight:'700',letterSpacing:'1px',color:'#94a3b8',marginBottom:'8px'}}>CATEGORÍA</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px',marginBottom:'16px'}}>
+          {ASSET_CATS.map(cat => {
+            const sel = assetDraft.categoryId === cat.id;
+            return <button key={cat.id} onClick={()=>setADraft(d=>({...d,categoryId:cat.id}))}
+              style={{background:sel?cat.bg:'#f8fafc',border:`2px solid ${sel?cat.color:'#e2e8f0'}`,borderRadius:'12px',padding:'10px 12px',textAlign:'left',cursor:'pointer'}}>
+              <div style={{fontSize:'20px',marginBottom:'3px'}}>{cat.icon}</div>
+              <div style={{fontSize:'12px',fontWeight:'800',color:sel?cat.color:'#334155'}}>{cat.label}</div>
+              <div style={{fontSize:'10px',color:'#94a3b8',marginTop:'2px'}}>{cat.liqLabel}</div>
+            </button>;
+          })}
+        </div>
+        <div style={{fontSize:'11px',fontWeight:'700',letterSpacing:'1px',color:'#94a3b8',marginBottom:'8px'}}>NOMBRE</div>
+        <input value={assetDraft.label} onChange={e=>setADraft(d=>({...d,label:e.target.value}))}
+          placeholder="Ej: Checking BofA" style={{width:'100%',background:'#f8fafc',border:'1.5px solid #e2e8f0',borderRadius:'10px',padding:'10px 14px',fontSize:'14px',fontWeight:'700',fontFamily:'inherit',marginBottom:'16px'}}/>
+        <div style={{fontSize:'11px',fontWeight:'700',letterSpacing:'1px',color:'#94a3b8',marginBottom:'8px'}}>VALOR</div>
+        <div style={S.inputWrap}>
+          <span style={{padding:'0 12px',color:'#94a3b8',fontSize:'16px',fontWeight:'700'}}>$</span>
+          <input type="number" value={assetDraft.amount} onChange={e=>setADraft(d=>({...d,amount:e.target.value}))}
+            placeholder="0" style={{flex:'1',background:'transparent',border:'none',padding:'12px 4px',fontSize:'22px',fontWeight:'900',fontFamily:'inherit',color:'#0f172a'}}
+            onKeyDown={e=>{if(e.key==='Enter')addCustomAsset();}}/>
+        </div>
+        <div style={{display:'flex',gap:'10px',marginTop:'8px'}}>
+          <button onClick={addCustomAsset} style={{flex:1,padding:'13px',background:'#1d4ed8',border:'none',borderRadius:'12px',color:'white',fontSize:'15px',fontWeight:'800',cursor:'pointer',fontFamily:'inherit'}}>Agregar activo</button>
+          <button onClick={()=>setAssetM(false)} style={{padding:'13px 18px',background:'#f1f5f9',border:'none',borderRadius:'12px',color:'#64748b',fontSize:'15px',fontWeight:'700',cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  function addCustomAsset() {
+    const amt = parseFloat(assetDraft.amount);
+    if (!amt || amt <= 0) return;
+    const cat = ASSET_CATS.find(c=>c.id===assetDraft.categoryId);
+    setAssets(prev => [...prev, { id: Date.now(), categoryId: assetDraft.categoryId, label: assetDraft.label || cat.label, amount: amt }]);
+    setADraft({ categoryId:'cash', label:'', amount:'' });
+    setAssetM(false);
+    setResult(null);
+  }
+
+  // ── Expense Modal
+  const ExpenseModal = () => (
+    <div style={S.overlay} onClick={e=>{ if(e.target===e.currentTarget) setExpM(false); }}>
+      <div style={S.modal}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1.25rem'}}>
+          <div><div style={{fontWeight:'900',fontSize:'1.2rem'}}>Gastos Mensuales</div><div style={{fontSize:'12px',color:'#94a3b8'}}>Pre-cargados desde tu Money Map</div></div>
+          <button onClick={()=>setExpM(false)} style={{background:'#f1f5f9',border:'none',borderRadius:'8px',width:'32px',height:'32px',cursor:'pointer',fontSize:'16px',color:'#64748b'}}>✕</button>
+        </div>
+        {EXPENSE_CATS.map(cat => (
+          <div key={cat.id} style={{marginBottom:'14px'}}>
+            <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'6px'}}>
+              <span style={{fontSize:'18px'}}>{cat.icon}</span>
+              <span style={{fontSize:'14px',fontWeight:'700'}}>{cat.label}</span>
+              <span style={{fontSize:'11px',color:'#94a3b8',marginLeft:'4px'}}>{cat.hint}</span>
+            </div>
+            <div style={S.inputWrap}>
+              <span style={{padding:'0 12px',color:'#94a3b8',fontWeight:'700'}}>$</span>
+              <input type="number" placeholder="0" value={expDraft[cat.id]||''}
+                onChange={e=>setEDraft(d=>({...d,[cat.id]:e.target.value}))}
+                style={{flex:'1',background:'transparent',border:'none',padding:'11px 4px',fontSize:'15px',fontWeight:'800',fontFamily:'inherit',color:'#0f172a'}}/>
+              <span style={{padding:'0 12px',color:'#94a3b8',fontSize:'12px',fontWeight:'600'}}>/mes</span>
+            </div>
+          </div>
+        ))}
+        <div style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:'12px',padding:'14px 16px',display:'flex',justifyContent:'space-between',marginBottom:'16px'}}>
+          <span style={{fontWeight:'700',color:'#1d4ed8',fontSize:'13px'}}>Total mensual</span>
+          <span style={{fontWeight:'900',fontSize:'1.25rem',color:'#1d4ed8'}}>{fmt(Object.values(expDraft).reduce((s,v)=>s+(parseFloat(v)||0),0))}</span>
+        </div>
+        <div style={{display:'flex',gap:'10px'}}>
+          <button onClick={()=>{setExpVals({...expDraft});setExpM(false);setResult(null);}} style={{flex:1,padding:'13px',background:'#1d4ed8',border:'none',borderRadius:'12px',color:'white',fontSize:'15px',fontWeight:'800',cursor:'pointer',fontFamily:'inherit'}}>Guardar</button>
+          <button onClick={()=>setExpM(false)} style={{padding:'13px 18px',background:'#f1f5f9',border:'none',borderRadius:'12px',color:'#64748b',fontSize:'15px',fontWeight:'700',cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── Income Modal
+  const IncomeModal = () => (
+    <div style={S.overlay} onClick={e=>{ if(e.target===e.currentTarget) setIncM(false); }}>
+      <div style={S.modal}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1.25rem'}}>
+          <div><div style={{fontWeight:'900',fontSize:'1.2rem'}}>Ingresos Mensuales</div><div style={{fontSize:'12px',color:'#94a3b8'}}>Pre-cargados desde tu Money Map</div></div>
+          <button onClick={()=>setIncM(false)} style={{background:'#f1f5f9',border:'none',borderRadius:'8px',width:'32px',height:'32px',cursor:'pointer',fontSize:'16px',color:'#64748b'}}>✕</button>
+        </div>
+        <div style={{fontSize:'11px',fontWeight:'700',letterSpacing:'1px',color:'#94a3b8',marginBottom:'8px'}}>INGRESO NETO MENSUAL</div>
+        <div style={{...S.inputWrap,marginBottom:'8px'}}>
+          <span style={{padding:'0 14px',color:'#94a3b8',fontSize:'20px',fontWeight:'700'}}>$</span>
+          <input type="number" value={incDraft||''} onChange={e=>setIDraft(parseFloat(e.target.value)||0)}
+            placeholder="0" style={{flex:'1',background:'transparent',border:'none',padding:'13px 4px',fontSize:'28px',fontWeight:'900',fontFamily:'inherit',color:'#0f172a'}}
+            onKeyDown={e=>{if(e.key==='Enter'){setInc(incDraft);setIncM(false);setResult(null);}}}/>
+        </div>
+        <div style={{fontSize:'12px',color:'#94a3b8',marginBottom:'24px'}}>Salario, freelance, rentas, dividendos u otros ingresos recurrentes.</div>
+        <div style={{display:'flex',gap:'10px'}}>
+          <button onClick={()=>{setInc(incDraft);setIncM(false);setResult(null);}} style={{flex:1,padding:'13px',background:'#1d4ed8',border:'none',borderRadius:'12px',color:'white',fontSize:'15px',fontWeight:'800',cursor:'pointer',fontFamily:'inherit'}}>Guardar</button>
+          <button onClick={()=>setIncM(false)} style={{padding:'13px 18px',background:'#f1f5f9',border:'none',borderRadius:'12px',color:'#64748b',fontSize:'15px',fontWeight:'700',cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{maxWidth:'680px',margin:'0 auto',padding:'0.5rem 0'}}>
+
+      {/* ── Scenario selector */}
+      <div style={S.card}>
+        <div style={S.label}>ESCENARIO</div>
+        <div style={{display:'flex',gap:'10px',marginTop:'12px'}}>
+          <button style={S.modeBtn(mode==='sin_ingreso')} onClick={()=>{setMode('sin_ingreso');setResult(null);}}>
+            <div style={{fontSize:'22px',marginBottom:'6px'}}>📭</div>
+            <div style={{fontSize:'13px',fontWeight:'800',color:mode==='sin_ingreso'?'#1d4ed8':'#334155'}}>Sin ingresos</div>
+            <div style={{fontSize:'11px',color:'#94a3b8',marginTop:'3px',fontWeight:'500',lineHeight:'1.4'}}>Perdiste tus ingresos y vives de tus activos</div>
+          </button>
+          <button style={S.modeBtn(mode==='deficit')} onClick={()=>{setMode('deficit');setResult(null);}}>
+            <div style={{fontSize:'22px',marginBottom:'6px'}}>📉</div>
+            <div style={{fontSize:'13px',fontWeight:'800',color:mode==='deficit'?'#1d4ed8':'#334155'}}>Con déficit</div>
+            <div style={{fontSize:'11px',color:'#94a3b8',marginTop:'3px',fontWeight:'500',lineHeight:'1.4'}}>Tienes ingresos pero no alcanzan a cubrir los gastos</div>
+          </button>
+        </div>
+      </div>
+
+      {/* ── Income card (deficit mode only) */}
+      {mode === 'deficit' && (
+        <div style={S.card}>
+          <div style={S.row}>
+            <div>
+              <div style={S.label}>INGRESOS MENSUALES</div>
+              <div style={{...S.amount, color: monthlyIncome>0?'#0f172a':'#cbd5e1'}}>{fmt(monthlyIncome)}</div>
+              {monthlyIncome > 0 && totalExp > 0 && (
+                <div style={{marginTop:'6px'}}>
+                  {monthlyIncome >= totalExp
+                    ? <span style={{fontSize:'12px',fontWeight:'700',color:'#16a34a',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:'20px',padding:'3px 10px'}}>✓ Cubre los gastos</span>
+                    : <span style={{fontSize:'12px',fontWeight:'700',color:'#dc2626',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:'20px',padding:'3px 10px'}}>Déficit: {fmt(totalExp-monthlyIncome)}/mes</span>
+                  }
+                </div>
+              )}
+            </div>
+            <button onClick={()=>setIncM(true)} style={{padding:'9px 18px',background:'#1d4ed8',border:'none',borderRadius:'10px',color:'white',fontSize:'13px',fontWeight:'700',cursor:'pointer',fontFamily:'inherit'}}>
+              {monthlyIncome > 0 ? '✎ Editar' : '+ Agregar'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Expenses card */}
+      <div style={S.card}>
+        <div style={{...S.row,marginBottom: totalExp>0?'12px':'0'}}>
+          <div>
+            <div style={S.label}>GASTOS MENSUALES</div>
+            <div style={{...S.amount, color: totalExp>0?'#0f172a':'#cbd5e1'}}>{fmt(totalExp)}<span style={{fontSize:'1rem',fontWeight:'600',color:'#94a3b8'}}>/mes</span></div>
+          </div>
+          <button onClick={()=>{setEDraft({...expVals});setExpM(true);}} style={{padding:'9px 18px',background:'#1d4ed8',border:'none',borderRadius:'10px',color:'white',fontSize:'13px',fontWeight:'700',cursor:'pointer',fontFamily:'inherit'}}>
+            {totalExp > 0 ? '✎ Editar' : '+ Agregar'}
+          </button>
+        </div>
+        {totalExp > 0 && (
+          <div style={{display:'flex',flexWrap:'wrap',gap:'7px'}}>
+            {EXPENSE_CATS.filter(c=>parseFloat(expVals[c.id])>0).map(c=>(
+              <div key={c.id} style={{display:'flex',alignItems:'center',gap:'6px',background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:'8px',padding:'5px 11px',fontSize:'12px',fontWeight:'600',color:'#475569'}}>
+                {c.icon} {c.label} <span style={{color:'#0f172a',fontWeight:'800'}}>{fmt(expVals[c.id])}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Assets card */}
+      <div style={S.card}>
+        <div style={{...S.row,marginBottom: totalAss>0?'14px':'0'}}>
+          <div>
+            <div style={S.label}>MIS ACTIVOS</div>
+            <div style={{...S.amount, color: totalAss>0?'#0f172a':'#cbd5e1'}}>{fmt(totalAss)}</div>
+          </div>
+          <button onClick={()=>setAssetM(true)} style={{padding:'9px 18px',background:'#1d4ed8',border:'none',borderRadius:'10px',color:'white',fontSize:'13px',fontWeight:'700',cursor:'pointer',fontFamily:'inherit'}}>+ Agregar</button>
+        </div>
+        {assetList.length === 0 && <div style={{textAlign:'center',padding:'10px 0',color:'#cbd5e1',fontSize:'13px',fontWeight:'600'}}>Los activos del Money Map se cargaron aquí ↑</div>}
+        {ASSET_CATS.map(cat => {
+          const group = assetList.filter(a=>a.categoryId===cat.id);
+          if (!group.length) return null;
+          return (
+            <div key={cat.id} style={{marginBottom:'14px'}}>
+              <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'8px'}}>
+                <div style={{width:'28px',height:'28px',borderRadius:'8px',background:cat.bg,border:`1px solid ${cat.border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'15px'}}>{cat.icon}</div>
+                <span style={{fontSize:'12px',fontWeight:'800',color:cat.color}}>{cat.label}</span>
+                <span style={{fontSize:'11px',color:'#94a3b8',fontWeight:'500'}}>· {cat.liqLabel}</span>
+              </div>
+              {group.map(a => {
+                const mos = gap > 0 ? (a.amount/gap).toFixed(1)+' meses' : '';
+                return (
+                  <div key={a.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'9px 12px',borderRadius:'10px',marginBottom:'4px',background:'#fafafa'}}>
+                    <span style={{fontSize:'13px',fontWeight:'600',color:'#334155'}}>{a.label}</span>
+                    <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
+                      <span style={{fontSize:'14px',fontWeight:'800',color:'#0f172a'}}>{fmt(a.amount)}</span>
+                      {mos && <span style={{fontSize:'11px',color:'#94a3b8'}}>{mos}</span>}
+                      <button onClick={()=>{setAssets(prev=>prev.filter(x=>x.id!==a.id));setResult(null);}}
+                        style={{background:'none',border:'none',color:'#d1d5db',fontSize:'14px',padding:'2px 6px',borderRadius:'6px',cursor:'pointer'}}>✕</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── No deficit notice */}
+      {mode==='deficit' && monthlyIncome>0 && totalExp>0 && monthlyIncome>=totalExp && (
+        <div style={{width:'100%',padding:'14px',background:'#f0fdf4',border:'2px solid #10b981',borderRadius:'14px',color:'#059669',fontSize:'14px',fontWeight:'800',textAlign:'center',marginBottom:'1rem'}}>
+          ✓ Sin déficit — los ingresos cubren todos los gastos
+        </div>
+      )}
+
+      {/* ── Result */}
+      {result && (() => {
+        const { totalMonths, totalAss: tAss, gap: g, sorted } = result;
+        const col = runwayColor(totalMonths);
+        const bg  = runwayBg(totalMonths);
+        const brd = runwayBorder(totalMonths);
+        return (
+          <div style={{background:'white',borderRadius:'16px',border:`1.5px solid ${brd}`,padding:'24px',boxShadow:'0 1px 3px rgba(0,0,0,0.04)',marginBottom:'1rem'}}>
+            <div style={S.label}>RESULTADO</div>
+            {/* Big number */}
+            <div style={{textAlign:'center',padding:'16px 0 20px'}}>
+              <div style={{fontSize:'12px',color:'#94a3b8',fontWeight:'700',marginBottom:'8px',letterSpacing:'0.5px'}}>
+                {mode==='deficit'?'TUS ACTIVOS CUBREN EL DÉFICIT POR':'TU RUNWAY TOTAL'}
+              </div>
+              <div style={{fontWeight:'900',fontSize:'54px',lineHeight:'1',letterSpacing:'-2px',color:col}}>{fmtMonths(totalMonths)}</div>
+              <div style={{fontSize:'13px',color:'#94a3b8',marginTop:'10px',fontWeight:'500'}}>
+                {fmt(tAss)} en activos ÷ {mode==='deficit'?'déficit de ':''}{fmt(g)}/mes
+              </div>
+            </div>
+
+            {/* Deficit grid */}
+            {mode==='deficit' && (
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'10px',marginBottom:'20px'}}>
+                {[['INGRESOS',monthlyIncome,'#15803d','#f0fdf4','#bbf7d0'],['GASTOS',totalExp,'#dc2626','#fef2f2','#fecaca'],['DÉFICIT',g,'#ea580c','#fff7ed','#fed7aa']].map(([l,v,c,bg2,br])=>(
+                  <div key={l} style={{borderRadius:'10px',padding:'12px',textAlign:'center',background:bg2,border:`1px solid ${br}`}}>
+                    <div style={{fontSize:'10px',fontWeight:'700',letterSpacing:'0.5px',marginBottom:'4px',color:c}}>{l}</div>
+                    <div style={{fontSize:'17px',fontWeight:'900',color:c}}>{fmt(v)}</div>
+                    <div style={{fontSize:'10px',fontWeight:'600',marginTop:'2px',color:c,opacity:0.7}}>/mes</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Status badge */}
+            <div style={{borderRadius:'10px',padding:'12px 16px',textAlign:'center',marginBottom:'24px',background:bg,border:`1px solid ${brd}`}}>
+              <span style={{fontSize:'13px',fontWeight:'800',color:col}}>{runwayLabel(totalMonths)}</span>
+            </div>
+
+            {/* Liquidation order */}
+            <div style={{fontSize:'11px',fontWeight:'700',letterSpacing:'1px',color:'#94a3b8',marginBottom:'14px'}}>ORDEN DE LIQUIDACIÓN</div>
+            {sorted.map(a => {
+              const cat = ASSET_CATS.find(c=>c.id===a.categoryId);
+              const pct = (a.amount/tAss*100).toFixed(2);
+              const mos = (a.amount/g).toFixed(1);
+              return (
+                <div key={a.id} style={{marginBottom:'14px'}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'6px'}}>
+                    <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                      <span style={{fontSize:'18px'}}>{cat?.icon}</span>
+                      <div>
+                        <div style={{fontSize:'13px',fontWeight:'700',color:'#334155'}}>{a.label}</div>
+                        <div style={{fontSize:'10px',fontWeight:'700',color:cat?.color}}>{cat?.liqLabel}</div>
+                      </div>
+                    </div>
+                    <div style={{textAlign:'right'}}>
+                      <div style={{fontSize:'13px',fontWeight:'800',color:'#0f172a'}}>{fmt(a.amount)}</div>
+                      <div style={{fontSize:'11px',fontWeight:'700',color:cat?.color}}>{mos} meses</div>
+                    </div>
+                  </div>
+                  <div style={{height:'8px',background:'#f1f5f9',borderRadius:'4px',overflow:'hidden'}}>
+                    <div style={{height:'100%',width:`${pct}%`,background:cat?.color,borderRadius:'4px',opacity:0.8}}/>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Timeline strip */}
+            <div style={{marginTop:'20px',background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:'12px',padding:'16px'}}>
+              <div style={{fontSize:'11px',fontWeight:'700',color:'#94a3b8',letterSpacing:'1px',marginBottom:'10px'}}>LÍNEA DE TIEMPO</div>
+              <div style={{display:'flex',height:'32px',borderRadius:'8px',overflow:'hidden',gap:'2px'}}>
+                {sorted.map(a => {
+                  const cat = ASSET_CATS.find(c=>c.id===a.categoryId);
+                  const pct = (a.amount/tAss*100).toFixed(2);
+                  return <div key={a.id} title={`${a.label}: ${(a.amount/g).toFixed(1)} meses`}
+                    style={{width:`${pct}%`,background:cat?.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'14px',borderRadius:'6px',flexShrink:'0',overflow:'hidden'}}>
+                    {pct>7 ? cat?.icon : ''}
+                  </div>;
+                })}
+              </div>
+              <div style={{display:'flex',justifyContent:'space-between',marginTop:'8px',fontSize:'11px',color:'#94a3b8',fontWeight:'600'}}>
+                <span>Hoy</span><span>Mes {Math.round(totalMonths/2)}</span><span>Mes {Math.round(totalMonths)}</span>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      <div style={{fontSize:'11px',color:'#cbd5e1',textAlign:'center',lineHeight:'1.8',fontWeight:'500',marginBottom:'1rem'}}>
+        Asume gastos e ingresos constantes. No considera rendimientos, inflación ni costos de liquidación.
+      </div>
+
+      {/* Modals */}
+      {showAssetModal && <AssetModal />}
+      {showExpModal   && <ExpenseModal />}
+      {showIncModal   && <IncomeModal />}
     </div>
   );
 }
