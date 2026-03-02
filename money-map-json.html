@@ -1438,7 +1438,7 @@ function SalirDeDeuda({ deudas, gastos, currency }) {
 
       {/* ── Stats */}
       <div className="stats-grid" style={{marginBottom:'1rem'}}>
-        {[['Deuda total',fmt$(totalBal),'#ef4444','#dc2626'],['Mínimos / mes',fmt$(totalMin),'#f59e0b','#d97706'],['Extra → deuda',fmt$(extraPayComputed)+'/mes','#1d4ed8','#1e40af'],['Pago total / mes',fmt$(totalMin+extraPayComputed),'#10b981','#059669']].map(([l,v,c1,c2])=>(
+        {[['Deuda total',fmt$(totalBal),'#ef4444','#dc2626'],['Mínimos / mes',fmt$(totalMin),'#f59e0b','#d97706'],['Ahorro disponible',fmt$(extraPay)+'/mes','#1d4ed8','#1e40af']].map(([l,v,c1,c2])=>(
           <div key={l} className="stat-card" style={{background:`linear-gradient(135deg,${c1},${c2})`}}>
             <div className="stat-label">{l}</div>
             <div className="stat-value">{v}</div>
