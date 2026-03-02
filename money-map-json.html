@@ -1291,7 +1291,7 @@ function RunwayCalculator({ activos, gastos, ingresos, deudas, currency }) {
     { id:'impuestos',      label:'Impuestos',      icon:'🏛️' },
     { id:'gastos_diarios', label:'Gastos diarios', icon:'🛒' },
     { id:'seguros',        label:'Seguros',        icon:'🛡️' },
-    { id:'deuda',          label:'Deuda',          icon:'💳' },
+    { id:'deuda',          label:'Deuda (sin auto)',icon:'💳' },
     { id:'casa',           label:'Casa / HOA',     icon:'🏠' },
   ];
 
@@ -1301,7 +1301,7 @@ function RunwayCalculator({ activos, gastos, ingresos, deudas, currency }) {
   const debtForCat = {
     bienesRaices: ['casa', 'lineaPropiedad'],   // home value - mortgage - HELOC
     efectivo:     ['tarjetas', 'lineaPersonal'], // liquid assets - revolving debt
-    bienesPersonales: ['auto'],                 // vehicle value - auto loan
+    // autos excluded — assumed sold to pay off auto loan, net = 0
   };
 
   const mmAssets = useMemo(() => {
@@ -1319,6 +1319,7 @@ function RunwayCalculator({ activos, gastos, ingresos, deudas, currency }) {
 
     const list = [];
     Object.entries(activos).forEach(([key, items]) => {
+      if (key === 'bienesPersonales') return; // autos excluded — sell to pay debt, net = 0
       const catId   = mmToCat[key] || 'negocio';
       const relKeys = debtForCat[key] || [];
 
@@ -1350,14 +1351,21 @@ function RunwayCalculator({ activos, gastos, ingresos, deudas, currency }) {
     return list;
   }, [activos, deudas]);
 
-  const mmExpenses = useMemo(() => ({
-    impuestos:      (gastos.impuestos ||[]).reduce((s,i)=>s+parseNumber(i.monto),0),
-    gastos_diarios: (gastos.diarios   ||[]).reduce((s,i)=>s+parseNumber(i.monto),0),
-    seguros:        (gastos.seguros   ||[]).reduce((s,i)=>s+parseNumber(i.monto),0),
-    deuda:          (gastos.deuda     ||[]).reduce((s,i)=>s+parseNumber(i.monto),0),
-    casa:           0,
-    // Ahorro excluido — en emergencia el ahorro se detiene
-  }), [gastos]);
+  const mmExpenses = useMemo(() => {
+    // Auto loan payments excluded — auto assumed sold to cancel debt
+    const deudaItems = (gastos.deuda || []);
+    const autoPayment = deudaItems
+      .filter(i => /auto|carro|veh/i.test(i.tipo || i.subcategoria || ''))
+      .reduce((s,i) => s + parseNumber(i.monto), 0);
+    return {
+      impuestos:      (gastos.impuestos ||[]).reduce((s,i)=>s+parseNumber(i.monto),0),
+      gastos_diarios: (gastos.diarios   ||[]).reduce((s,i)=>s+parseNumber(i.monto),0),
+      seguros:        (gastos.seguros   ||[]).reduce((s,i)=>s+parseNumber(i.monto),0),
+      deuda:          Math.max(0, deudaItems.reduce((s,i)=>s+parseNumber(i.monto),0) - autoPayment),
+      casa:           0,
+      // Ahorro excluido — en emergencia el ahorro se detiene
+    };
+  }, [gastos]);
 
   const [assetList, setAssets]   = useState(mmAssets);
   const [expVals,   setExpVals]  = useState(mmExpenses);
@@ -1522,23 +1530,62 @@ function RunwayCalculator({ activos, gastos, ingresos, deudas, currency }) {
               );
             })}
 
-            {/* Timeline */}
-            <div style={{marginTop:'16px',background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:'12px',padding:'14px'}}>
-              <div style={{fontSize:'11px',fontWeight:'700',color:'#94a3b8',letterSpacing:'1px',marginBottom:'9px'}}>LÍNEA DE TIEMPO</div>
-              <div style={{display:'flex',height:'30px',borderRadius:'8px',overflow:'hidden',gap:'2px'}}>
-                {sorted.map(a=>{
-                  const cat=ASSET_CATS.find(c=>c.id===a.categoryId);
-                  const pct=(a.amount/tAss*100).toFixed(2);
-                  return <div key={a.id} title={`${a.label}: ${(a.amount/gap).toFixed(1)} meses`}
-                    style={{width:`${pct}%`,background:cat?.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'13px',borderRadius:'5px',flexShrink:'0',overflow:'hidden'}}>
-                    {pct>7?cat?.icon:''}
-                  </div>;
-                })}
-              </div>
-              <div style={{display:'flex',justifyContent:'space-between',marginTop:'7px',fontSize:'11px',color:'#94a3b8',fontWeight:'600'}}>
-                <span>Hoy</span><span>Mes {Math.round(totalMonths/2)}</span><span>Mes {Math.round(totalMonths)}</span>
-              </div>
-            </div>
+            {/* Cumulative Timeline */}
+            {(() => {
+              // Build cumulative segments with month markers
+              let cumMonths = 0;
+              const segs = sorted.map(a => {
+                const cat   = ASSET_CATS.find(c=>c.id===a.categoryId);
+                const mos   = a.amount / gap;
+                const start = cumMonths;
+                cumMonths  += mos;
+                const pct   = (mos / totalMonths * 100).toFixed(2);
+                return { ...a, cat, mos, start, end: cumMonths, pct };
+              });
+              // Tick marks: every 6 months up to totalMonths
+              const tickInterval = totalMonths <= 12 ? 3 : totalMonths <= 36 ? 6 : 12;
+              const ticks = [];
+              for (let t = 0; t <= Math.ceil(totalMonths); t += tickInterval) {
+                if (t > totalMonths) break;
+                ticks.push(t);
+              }
+              if (ticks[ticks.length-1] < totalMonths) ticks.push(Math.round(totalMonths));
+              return (
+                <div style={{marginTop:'16px',background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:'12px',padding:'14px'}}>
+                  <div style={{fontSize:'11px',fontWeight:'700',color:'#94a3b8',letterSpacing:'1px',marginBottom:'9px'}}>LÍNEA DE TIEMPO ACUMULATIVA</div>
+                  {/* Strip */}
+                  <div style={{display:'flex',height:'30px',borderRadius:'8px',overflow:'hidden',gap:'2px'}}>
+                    {segs.map(s=>(
+                      <div key={s.id} title={`${s.label}: mes ${s.start.toFixed(1)} → ${s.end.toFixed(1)}`}
+                        style={{width:`${s.pct}%`,background:s.cat?.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',borderRadius:'5px',flexShrink:'0',overflow:'hidden',position:'relative'}}>
+                        {s.pct>7 ? s.cat?.icon : ''}
+                      </div>
+                    ))}
+                  </div>
+                  {/* Cumulative month ticks */}
+                  <div style={{position:'relative',marginTop:'6px',height:'18px'}}>
+                    {ticks.map(t=>{
+                      const leftPct = (t / totalMonths * 100);
+                      return (
+                        <div key={t} style={{position:'absolute',left:`${leftPct}%`,transform:'translateX(-50%)',fontSize:'11px',color:'#94a3b8',fontWeight:'600',whiteSpace:'nowrap'}}>
+                          {t===0 ? 'Hoy' : `Mes ${t}`}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {/* Legend */}
+                  <div style={{display:'flex',flexWrap:'wrap',gap:'8px',marginTop:'14px'}}>
+                    {segs.map(s=>(
+                      <div key={s.id} style={{display:'flex',alignItems:'center',gap:'5px',fontSize:'11px',fontWeight:'600',color:'#475569'}}>
+                        <div style={{width:'10px',height:'10px',borderRadius:'3px',background:s.cat?.color,flexShrink:'0'}}/>
+                        <span>{s.label}</span>
+                        <span style={{color:s.cat?.color,fontWeight:'800'}}>→ mes {Math.round(s.end)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         );
       })()}
