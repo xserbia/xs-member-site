@@ -2377,6 +2377,7 @@ function BenchmarkTables({ ingresoBruto }) {
           <thead style={{background:'var(--primary)'}}><tr>
             <th style={thStyle}>Edad</th>
             <th style={thStyle}>Good ⚠️</th>
+            {ing>0 && <th style={thStyle}>Ejemplo Good</th>}
             <th style={thStyle}>Great ✅</th>
             {ing>0 && <th style={thStyle}>Ejemplo Great</th>}
           </tr></thead>
@@ -2385,6 +2386,7 @@ function BenchmarkTables({ ingresoBruto }) {
               <tr key={age}>
                 <td style={tdStyle(false)}><b>{age}</b></td>
                 <td style={tdStyle(false)}>{fmtX(riqBm[age].good)}</td>
+                {ing>0 && <td style={tdStyle(true)}>{fmt$(ing*riqBm[age].good)}</td>}
                 <td style={tdStyle(false)}>{fmtX(riqBm[age].great)}</td>
                 {ing>0 && <td style={tdStyle(true)}>{fmt$(ing*riqBm[age].great)}</td>}
               </tr>
