@@ -2116,7 +2116,6 @@ function RunwayCalculator({ activos, gastos, ingresos, deudas, currency }) {
 
 // ============= RATIOS FINANCIEROS =============
 function RatiosFinancieros({ ratiosData, setRatiosData, totales, currency, ingresos, gastos, setActiveTab }) {
-  const [showResultsModal, setShowResultsModal] = useState(false);
   const [showBenchmarkModal, setShowBenchmarkModal] = useState(false);
   const [showReservaModal, setShowReservaModal] = useState(false);
   const updateField = (field, val) => setRatiosData(prev => ({ ...prev, [field]: val }));
@@ -2168,48 +2167,10 @@ function RatiosFinancieros({ ratiosData, setRatiosData, totales, currency, ingre
         <div className="stat-card" style={{background:totales.patrimonioNeto>=0?'linear-gradient(135deg,var(--emerald) 0%,var(--emerald-dark) 100%)':'linear-gradient(135deg,var(--danger) 0%,#dc2626 100%)'}}><div className="stat-label">Patrimonio Neto</div><div className="stat-value">{formatCurrency(totales.patrimonioNeto,currency)}</div></div>
       </div>
 
-      <div className="card">
-        <div className="card-header"><div><h2 className="card-title">📊 Información Financiera</h2><p className="card-subtitle">Calculada automáticamente desde otras pestañas</p></div></div>
-        <div className="grid-3">
-          <div className="form-group">
-            <label className="form-label">Edad</label>
-            <input type="number" className="form-input" placeholder="35" value={ratiosData.edad} onChange={e=>updateField('edad',e.target.value)} />
-          </div>
-          {[
-            ['Ingreso Bruto Anual','ingresoBruto','Calculado desde Ingresos'],
-            ['Ingreso Neto Anual','ingresoNeto','Ingresos - Impuestos - Seguros'],
-            ['Ahorro Anual','ahorroAnual','Desde categoría "Ahorro"'],
-            ['Impuestos Anuales','impuestosAnual','Desde "Impuestos"'],
-            ['Seguros Anuales','segurosAnual','Desde "Seguros"'],
-            ['Gastos Diarios Anuales','gastosAnual','Desde "Gastos Diarios"'],
-            ['Servicio Deuda Anual','deudaAnual','Desde "Pago de Deuda"'],
-            ['Pago Mensual Deudas','pagoDeudaMensual','Desde "Pago de Deuda"'],
-            ['Gastos Esenciales Mens.','gastosEsencialesMensuales','Desde "Gastos Diarios"'],
-            ['Reserva de Emergencia','reserva','Desde "Efectivo" en Activos'],
-            ['Pasivos Corrientes','pasivosCorrientes','Desde Pasivos Totales'],
-          ].map(([label, field, hint]) => (
-            <div key={field} className="form-group">
-              <label className="form-label">{label}</label>
-              <input type="text" className="form-input" value={formatCurrency(ratiosData[field]||0,currency)} readOnly style={{background:'#f8fafc',cursor:'not-allowed'}} />
-              <div style={{fontSize:'0.75rem',color:'var(--text-muted)',marginTop:'0.25rem'}}>✅ {hint}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{marginTop:'2rem',textAlign:'center'}}>
-          <button className="btn btn-primary" onClick={()=>setShowResultsModal(true)} style={{fontSize:'1.1rem',padding:'1rem 2.5rem'}}>📊 Ver Análisis Completo de Ratios</button>
-        </div>
-      </div>
+      
 
-      {/* Results Modal */}
-      {showResultsModal && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:'20px',backdropFilter:'blur(8px)'}} onClick={()=>setShowResultsModal(false)}>
-          <div style={{background:'#fff',borderRadius:'20px',maxWidth:'1400px',width:'100%',maxHeight:'90vh',overflow:'hidden',display:'flex',flexDirection:'column',boxShadow:'0 25px 70px rgba(0,0,0,0.5)'}} onClick={e=>e.stopPropagation()}>
-            <div style={{padding:'20px 24px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-              <button onClick={()=>setShowResultsModal(false)} style={{background:'none',border:'none',color:'var(--primary)',fontSize:'17px',fontWeight:'600',cursor:'pointer'}}>← Volver</button>
-              <div style={{fontSize:'22px',fontWeight:'800',flex:1,textAlign:'center'}}>Resultados de Ratios</div>
-              <button onClick={()=>setShowResultsModal(false)} style={{background:'var(--border)',border:'none',width:'32px',height:'32px',borderRadius:'50%',fontSize:'20px',cursor:'pointer'}}>×</button>
-            </div>
-            <div style={{flex:1,overflowY:'auto',padding:'20px'}}>
+            <div>
+
               {/* Summary */}
               <div style={{background:'white',margin:'12px 0',borderRadius:'16px',boxShadow:'0 2px 8px rgba(0,0,0,.08)',padding:'16px'}}>
                 <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'12px'}}>
@@ -2285,10 +2246,7 @@ function RatiosFinancieros({ ratiosData, setRatiosData, totales, currency, ingre
             </div>
             <div style={{padding:'32px',overflowY:'auto'}}>
               <BenchmarkTables ingresoBruto={ratios.ingresoBruto} />
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
 
       {/* Reserva Modal */}
       {showReservaModal && (
