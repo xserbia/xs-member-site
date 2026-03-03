@@ -2284,7 +2284,7 @@ function RatiosFinancieros({ ratiosData, setRatiosData, totales, currency, ingre
               <button onClick={()=>setShowBenchmarkModal(false)} style={{background:'rgba(255,255,255,0.2)',border:'none',width:'32px',height:'32px',borderRadius:'50%',fontSize:'20px',cursor:'pointer',color:'white'}}>×</button>
             </div>
             <div style={{padding:'32px',overflowY:'auto'}}>
-              <BenchmarkTables />
+              <BenchmarkTables ingresoBruto={ratios.ingresoBruto} />
             </div>
           </div>
         </div>
@@ -2315,25 +2315,104 @@ function RatiosFinancieros({ ratiosData, setRatiosData, totales, currency, ingre
   );
 }
 
-function BenchmarkTables() {
+function BenchmarkTables({ ingresoBruto }) {
+  const ing = ingresoBruto || 0;
+  const fmt$ = n => '$' + new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}).format(Math.round(n));
+  const fmtX = n => n.toFixed(2) + 'x';
+  const ingLabel = ing > 0 ? `Ejemplo (${fmt$(ing)}/año)` : 'Ejemplo (ingreso del caso)';
+
+  // Benchmarks at 5-year intervals
+  const AGES = [25,30,35,40,45,50,55,60,65,70];
+
+  // Inversión / Ingreso Bruto (Stanley-style)
+  const invBm = {25:0.2,30:0.6,35:1.2,40:2.0,45:3.5,50:5.5,55:8.5,60:12.0,65:16.0,70:18.0};
+
+  // Nivel de Riqueza Neta — good / great multiples of gross income
+  const riqBm = {
+    25:{good:2.5,great:5.0},30:{good:3.0,great:6.0},35:{good:3.5,great:7.0},
+    40:{good:4.0,great:8.0},45:{good:4.5,great:9.0},50:{good:5.0,great:10.0},
+    55:{good:5.5,great:11.0},60:{good:6.0,great:12.0},65:{good:6.5,great:13.0},70:{good:7.0,great:14.0}
+  };
+
+  // Ahorro para Retiro (Fidelity-style multiples)
+  const retBm = {25:0.35,30:1.0,35:2.0,40:3.0,45:4.0,50:6.0,55:7.0,60:8.0,65:10.0,70:11.0};
+
   const tableStyle = {width:'100%',borderCollapse:'collapse',background:'#fff',borderRadius:'12px',overflow:'hidden',marginBottom:'24px'};
-  const thStyle    = {padding:'14px 16px',textAlign:'left',fontWeight:'700',fontSize:'14px',color:'white'};
-  const tdStyle    = {padding:'12px 16px',borderBottom:'1px solid var(--border)'};
+  const thStyle    = {padding:'12px 14px',textAlign:'left',fontWeight:'700',fontSize:'13px',color:'white'};
+  const tdStyle    = (highlight) => ({padding:'11px 14px',borderBottom:'1px solid var(--border)',background:highlight?'#fffbeb':'white',fontWeight:highlight?'700':'400'});
+
   return (
     <div>
-      {[
-        {title:'💰 Inversión / Ingreso Bruto',cols:['Edad','Benchmark','Ejemplo ($50k)'],rows:[[25,'0.2x','$10,000'],[30,'0.6x','$30,000'],[40,'1.8x','$90,000'],[50,'5.5x','$275,000'],[60,'12.0x','$600,000'],[65,'16.0x','$800,000']]},
-        {title:'💎 Nivel de Riqueza Neta',cols:['Edad','Good ⚠️','Great ✅','Ejemplo Great ($50k)'],rows:[[25,'2.5x','5.0x','$250,000'],[30,'3.0x','6.0x','$300,000'],[40,'4.0x','8.0x','$400,000'],[50,'5.0x','10.0x','$500,000'],[60,'6.0x','12.0x','$600,000'],[70,'7.0x','14.0x','$700,000']]},
-        {title:'🏖️ Ahorro para Retiro',cols:['Edad','Benchmark','Ejemplo ($50k)'],rows:[[25,'0.35x','$17,500'],[30,'0.85x','$42,500'],[40,'2.58x','$129,000'],[50,'4.92x','$246,000'],[60,'7.23x','$361,500'],[65,'10.84x','$542,000']]},
-      ].map(t => (
-        <div key={t.title} style={{marginBottom:'32px'}}>
-          <h3 style={{margin:'0 0 16px',padding:'12px 16px',fontSize:'18px',fontWeight:'700',color:'white',background:'var(--primary)',borderRadius:'10px'}}>{t.title}</h3>
-          <table style={tableStyle}>
-            <thead style={{background:'var(--primary)'}}><tr>{t.cols.map(c=><th key={c} style={thStyle}>{c}</th>)}</tr></thead>
-            <tbody>{t.rows.map(r=><tr key={r[0]}>{r.map((cell,i)=><td key={i} style={tdStyle}>{cell}</td>)}</tr>)}</tbody>
-          </table>
+      {ing > 0 && (
+        <div style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:'10px',padding:'12px 16px',marginBottom:'24px',fontSize:'14px',color:'#1d4ed8',fontWeight:'600'}}>
+          📊 Columna "Ejemplo" calculada con el ingreso bruto del caso: <b>{fmt$(ing)}/año</b>
         </div>
-      ))}
+      )}
+
+      {/* Inversión / Ingreso */}
+      <div style={{marginBottom:'32px'}}>
+        <h3 style={{margin:'0 0 14px',padding:'12px 16px',fontSize:'17px',fontWeight:'700',color:'white',background:'var(--primary)',borderRadius:'10px'}}>💰 Inversión / Ingreso Bruto</h3>
+        <table style={tableStyle}>
+          <thead style={{background:'var(--primary)'}}><tr>
+            <th style={thStyle}>Edad</th>
+            <th style={thStyle}>Benchmark</th>
+            {ing>0 && <th style={thStyle}>{ingLabel}</th>}
+          </tr></thead>
+          <tbody>
+            {AGES.map(age=>(
+              <tr key={age}>
+                <td style={tdStyle(false)}><b>{age}</b></td>
+                <td style={tdStyle(false)}>{fmtX(invBm[age])}</td>
+                {ing>0 && <td style={tdStyle(true)}>{fmt$(ing*invBm[age])}</td>}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Nivel de Riqueza Neta */}
+      <div style={{marginBottom:'32px'}}>
+        <h3 style={{margin:'0 0 14px',padding:'12px 16px',fontSize:'17px',fontWeight:'700',color:'white',background:'var(--primary)',borderRadius:'10px'}}>💎 Nivel de Riqueza Neta</h3>
+        <table style={tableStyle}>
+          <thead style={{background:'var(--primary)'}}><tr>
+            <th style={thStyle}>Edad</th>
+            <th style={thStyle}>Good ⚠️</th>
+            <th style={thStyle}>Great ✅</th>
+            {ing>0 && <th style={thStyle}>Ejemplo Great</th>}
+          </tr></thead>
+          <tbody>
+            {AGES.map(age=>(
+              <tr key={age}>
+                <td style={tdStyle(false)}><b>{age}</b></td>
+                <td style={tdStyle(false)}>{fmtX(riqBm[age].good)}</td>
+                <td style={tdStyle(false)}>{fmtX(riqBm[age].great)}</td>
+                {ing>0 && <td style={tdStyle(true)}>{fmt$(ing*riqBm[age].great)}</td>}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Ahorro para Retiro */}
+      <div style={{marginBottom:'32px'}}>
+        <h3 style={{margin:'0 0 14px',padding:'12px 16px',fontSize:'17px',fontWeight:'700',color:'white',background:'var(--primary)',borderRadius:'10px'}}>🏖️ Ahorro para Retiro</h3>
+        <table style={tableStyle}>
+          <thead style={{background:'var(--primary)'}}><tr>
+            <th style={thStyle}>Edad</th>
+            <th style={thStyle}>Benchmark</th>
+            {ing>0 && <th style={thStyle}>{ingLabel}</th>}
+          </tr></thead>
+          <tbody>
+            {AGES.map(age=>(
+              <tr key={age}>
+                <td style={tdStyle(false)}><b>{age}</b></td>
+                <td style={tdStyle(false)}>{fmtX(retBm[age])}</td>
+                {ing>0 && <td style={tdStyle(true)}>{fmt$(ing*retBm[age])}</td>}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
