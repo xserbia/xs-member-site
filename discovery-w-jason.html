@@ -143,6 +143,20 @@
     .goalCard .goalIcon{ font-size:48px; line-height:1; }
     .goalCard .goalLabel{ font-size:13px; font-weight:700; color:var(--text); }
     .goalCard.selected .goalLabel{ color:var(--primary); }
+    .goalBadge{ font-size:10px; font-weight:700; color:var(--ok); background:rgba(22,163,74,.1); border:1px solid rgba(22,163,74,.3); padding:2px 7px; border-radius:999px; margin-top:2px; }
+    .goalModal-overlay{ position:fixed; inset:0; background:rgba(15,23,42,.6); z-index:2000; display:flex; align-items:center; justify-content:center; padding:16px; backdrop-filter:blur(4px); animation:fadeIn .2s ease; }
+    .goalModal{ background:#fff; border-radius:20px; max-width:480px; width:100%; padding:28px; box-shadow:0 24px 64px rgba(15,23,42,.25); animation:fadeIn .25s ease; }
+    .goalModal h3{ margin:0 0 4px; font-size:20px; font-weight:800; }
+    .goalModal .gmSubtitle{ margin:0 0 20px; color:var(--muted); font-size:14px; }
+    .goalModal .gmField{ margin-bottom:16px; }
+    .goalModal .gmField label{ display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text); }
+    .goalModal .gmField input, .goalModal .gmField select{ width:100%; padding:11px 14px; border:1.5px solid var(--border); border-radius:12px; font-size:14px; outline:none; font-family:inherit; }
+    .goalModal .gmField input:focus, .goalModal .gmField select:focus{ border-color:rgba(57,86,232,.5); box-shadow:0 0 0 3px rgba(57,86,232,.1); }
+    .goalModal .gmHint{ font-size:11px; color:var(--muted); margin-top:4px; }
+    .goalModal .gmNote{ background:rgba(57,86,232,.06); border-left:3px solid var(--primary); border-radius:4px; padding:10px 12px; font-size:13px; color:var(--primary); margin-bottom:16px; }
+    .goalModal .gmRow{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .goalModal .gmBtns{ display:flex; gap:10px; margin-top:20px; }
+    .goalModal .gmBtns .btn{ flex:1; justify-content:center; }
 
     .wizardFlow{ max-width:680px; margin:0 auto; }
     .wizardStep{ display:none; animation:fadeIn .3s ease; }
@@ -425,10 +439,11 @@
               </div>
             </div>
             <div class="wizardStep" data-wizard="5">
-              <div class="wizardQ"><b>Pregunta 5 de 9</b><h3>¿Tienes seguros activos?</h3></div>
+              <div class="wizardQ"><b>Pregunta 5 de 9</b><h3>¿Tienes seguros activos?</h3><p style="font-size:13px;color:#666;margin-top:6px;">Vida, salud, auto, hogar, disability…</p></div>
               <div class="wizardOptions">
-                <button class="optionBtn" data-answer="yes" type="button">🛡️ Sí, tengo seguro(s)</button>
-                <button class="optionBtn" data-answer="no" type="button">✗ No tengo seguros</button>
+                <button class="optionBtn" data-answer="yes" type="button">🛡️ Sí, tengo uno o más seguros</button>
+                <button class="optionBtn" data-answer="partial" type="button">🤔 Solo los básicos (auto/salud)</button>
+                <button class="optionBtn" data-answer="no" type="button">✗ No tengo seguros de vida ni otros</button>
               </div>
             </div>
             <div class="wizardStep" data-wizard="6">
@@ -439,9 +454,9 @@
               </div>
             </div>
             <div class="wizardStep" data-wizard="7">
-              <div class="wizardQ"><b>Pregunta 7 de 9</b><h3>¿Tienes documentos legales importantes?</h3></div>
+              <div class="wizardQ"><b>Pregunta 7 de 9</b><h3>¿Tienes documentos de planificación patrimonial?</h3><p style="font-size:13px;color:#666;margin-top:6px;">Testamento, Trust, Power of Attorney, Healthcare Directive…</p></div>
               <div class="wizardOptions">
-                <button class="optionBtn" data-answer="yes" type="button">📄 Sí, tengo documentos</button>
+                <button class="optionBtn" data-answer="yes" type="button">📄 Sí, tengo algunos documentos</button>
                 <button class="optionBtn" data-answer="no" type="button">✗ No tengo / No estoy seguro</button>
               </div>
             </div>
@@ -562,7 +577,7 @@ const state = {
   step:1, startTime:Date.now(),
   userName:'', userEmail:'',
   people:{ template:'', householdRole:'', members:[] },
-  goals:[],
+  goals:[], goalDetails:{},
   financials:{
     incomeRange:"", hasDebts:null, hasInvestments:null, hasRealEstate:null,
     hasInsurance:null, hasBusiness:null, hasLegal:null, hasOtherAssets:null, hasSavings:null,
@@ -732,19 +747,213 @@ function renderPeople(){
 }
 
 // ── STEP 3: GOALS ──────────────────────────────────────────────────────────
+// Goals that need no modal (self-explanatory or captured elsewhere)
+const GOALS_NO_MODAL = new Set(['deudas','emergencia','inversiones','negocio']);
+
 function renderGoals(){
-  $$('.goalCard').forEach(c=>c.classList.toggle('selected',state.goals.includes(c.dataset.goal)));
+  $$('.goalCard').forEach(c=>{
+    const g = c.dataset.goal;
+    c.classList.toggle('selected', state.goals.includes(g));
+    // Show checkmark badge if details captured
+    let badge = c.querySelector('.goalBadge');
+    if(state.goalDetails[g] && Object.keys(state.goalDetails[g]).length > 0){
+      if(!badge){ badge=document.createElement('div'); badge.className='goalBadge'; c.appendChild(badge); }
+      badge.textContent='✓ detallado';
+    } else if(badge){ badge.remove(); }
+  });
 }
+
 $$('.goalCard').forEach(card=>{
   const nc=card.cloneNode(true); card.parentNode.replaceChild(nc,card);
   nc.addEventListener('click',()=>{
     const g=nc.dataset.goal;
-    if(nc.classList.toggle('selected')) state.goals.push(g);
-    else state.goals=state.goals.filter(x=>x!==g);
+    const wasSelected = state.goals.includes(g);
+    if(!wasSelected){
+      state.goals.push(g);
+      nc.classList.add('selected');
+      // Open modal if this goal needs details
+      if(!GOALS_NO_MODAL.has(g)){
+        openGoalModal(g);
+      }
+    } else {
+      // If already selected, clicking opens modal (if has one) or deselects
+      if(!GOALS_NO_MODAL.has(g)){
+        openGoalModal(g);
+      } else {
+        state.goals = state.goals.filter(x=>x!==g);
+        nc.classList.remove('selected');
+      }
+    }
     debouncedSave();
   });
 });
 
+
+// ════════════════════════════════════════════════════════════════════════════
+//  GOAL MODALS — preguntas de cuantificación por meta
+// ════════════════════════════════════════════════════════════════════════════
+
+const GOAL_MODAL_CONFIG = {
+  casa: {
+    icon:'🏠', title:'Comprar Casa', subtitle:'Cuéntanos sobre esta meta',
+    fields:[
+      {id:'tipo',      label:'¿Es tu primera vivienda?',       type:'select', opts:['Primera vivienda','Segunda vivienda / vacacional','Propiedad de inversión']},
+      {id:'cuando',    label:'¿En cuánto tiempo quieres comprar?', type:'select', opts:['En 1-2 años','En 3-5 años','En más de 5 años','No estoy seguro']},
+      {id:'precio',    label:'Precio estimado de la propiedad ($)', type:'number', placeholder:'Ej: 400000', hint:'Aproximado está bien'},
+      {id:'enganche',  label:'Enganche disponible actualmente ($)', type:'number', placeholder:'Ej: 60000', hint:'Cuánto tienes ahorrado para esto hoy'},
+    ]
+  },
+  retiro: {
+    icon:'🏖️', title:'Retiro Cómodo', subtitle:'Solo dos preguntas clave',
+    fields:[
+      {id:'edadRetiro',   label:'¿A qué edad quieres retirarte?', type:'number', placeholder:'Ej: 62', hint:'Edad objetivo de retiro'},
+      {id:'ingresoMensual', label:'¿Cuánto quisieras recibir por mes al retirarte? ($)', type:'number', placeholder:'Ej: 5000', hint:'En dólares de hoy — el sistema calcula la tasa de reemplazo automáticamente'},
+    ]
+  },
+  educacion: {
+    icon:'🎓', title:'Educación de Hijos', subtitle:'Planifiquemos juntos',
+    fields:[
+      {id:'numHijos',  label:'¿Cuántos hijos planeas apoyar?', type:'select', opts:['1','2','3','4+']},
+      {id:'anosInicio',label:'¿En cuántos años empieza el mayor?', type:'select', opts:['Menos de 3 años','3-5 años','6-10 años','Más de 10 años']},
+      {id:'tipo',      label:'Tipo de universidad objetivo',   type:'select', opts:['Pública estatal','Privada nacional','Ivy League / Top 20','No estoy seguro']},
+      {id:'presupuesto',label:'Presupuesto por hijo (total 4 años) ($)', type:'number', placeholder:'Ej: 80000', hint:'Matrícula + vivienda + gastos'},
+    ]
+  },
+  independencia: {
+    icon:'🦅', title:'Independencia Financiera', subtitle:'Tu número mágico',
+    fields:[
+      {id:'edadObjetivo', label:'¿A qué edad quieres lograrla?', type:'number', placeholder:'Ej: 50', hint:'Edad en la que ya no necesitarías trabajar'},
+      {id:'ingresoMensual',label:'Ingreso mensual pasivo deseado ($)', type:'number', placeholder:'Ej: 7000', hint:'Cuánto necesitas al mes sin trabajar'},
+      {id:'ingresoPasivo', label:'Ingresos pasivos actuales al mes ($)', type:'number', placeholder:'Ej: 0', hint:'Rentas, dividendos, etc. que ya tienes hoy'},
+    ]
+  },
+  viaje: {
+    icon:'✈️', title:'Viaje / Vacaciones', subtitle:'¡Planifiquemos ese viaje!',
+    fields:[
+      {id:'destino',   label:'Destino soñado',                type:'text',   placeholder:'Ej: Europa, Japón, Caribe...'},
+      {id:'cuando',    label:'¿Cuándo aproximadamente?',      type:'select', opts:['Este año','En 1-2 años','En 3-5 años','Sin fecha fija']},
+      {id:'presupuesto',label:'Presupuesto estimado ($)',     type:'number', placeholder:'Ej: 8000', hint:'Total por el viaje (todos los viajeros)'},
+    ]
+  },
+  auto: {
+    icon:'🚗', title:'Comprar Auto', subtitle:'Cuéntanos sobre el vehículo',
+    fields:[
+      {id:'tipo',      label:'¿Nuevo o usado?',               type:'select', opts:['Nuevo','Usado certificado','No estoy seguro']},
+      {id:'cuando',    label:'¿Cuándo lo necesitas?',         type:'select', opts:['En menos de 6 meses','En 6-12 meses','En 1-2 años','Sin prisa']},
+      {id:'precio',    label:'Precio estimado ($)',           type:'number', placeholder:'Ej: 35000'},
+      {id:'enganche',  label:'Enganche disponible ($)',       type:'number', placeholder:'Ej: 5000', hint:'Cuánto tienes para dar de entrada'},
+    ]
+  },
+  herencia: {
+    icon:'🎁', title:'Dejar Herencia', subtitle:'Tu legado financiero',
+    fields:[
+      {id:'monto',        label:'Monto objetivo a dejar ($)', type:'number', placeholder:'Ej: 500000', hint:'Valor total que quisieras transferir'},
+      {id:'beneficiarios',label:'¿A quiénes?',                type:'select', opts:['Hijos','Cónyuge e hijos','Nietos','Organización benéfica','Combinación']},
+      {id:'plazo',        label:'¿En cuántos años aproximadamente?', type:'select', opts:['Menos de 10 años','10-20 años','Más de 20 años','No tengo prisa']},
+    ]
+  },
+  otro: {
+    icon:'🎯', title:'Otra Meta', subtitle:'Cuéntanos qué tienes en mente',
+    fields:[
+      {id:'descripcion', label:'Describe tu meta',            type:'text',   placeholder:'Ej: Pagar la universidad, montar un negocio...'},
+      {id:'monto',       label:'Monto estimado necesario ($)',type:'number', placeholder:'Ej: 50000', hint:'Aproximado está bien'},
+      {id:'plazo',       label:'¿En cuánto tiempo?',         type:'select', opts:['Menos de 1 año','1-3 años','3-5 años','Más de 5 años']},
+    ]
+  },
+};
+
+function openGoalModal(goalKey){
+  const cfg = GOAL_MODAL_CONFIG[goalKey];
+  if(!cfg) return;
+
+  // Remove existing modal if any
+  const existing = document.getElementById('goalModalOverlay');
+  if(existing) existing.remove();
+
+  const saved = state.goalDetails[goalKey] || {};
+
+  // Build fields HTML
+  const fieldsHTML = cfg.fields.map(f => {
+    const val = saved[f.id] || '';
+    let input = '';
+    if(f.type === 'select'){
+      const opts = f.opts.map(o => `<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('');
+      input = `<select id="gmf_${f.id}"><option value="">Selecciona…</option>${opts}</select>`;
+    } else if(f.type === 'number'){
+      input = `<input type="number" id="gmf_${f.id}" min="0" step="1" placeholder="${f.placeholder||''}" value="${val}"/>`;
+    } else {
+      input = `<input type="text" id="gmf_${f.id}" placeholder="${f.placeholder||''}" value="${escapeHtml(val)}"/>`;
+    }
+    return `<div class="gmField">
+      <label for="gmf_${f.id}">${f.label}</label>
+      ${input}
+      ${f.hint ? `<div class="gmHint">💡 ${f.hint}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  // Special note for retiro
+  const noteHTML = goalKey === 'retiro'
+    ? `<div class="gmNote">💡 Con tu edad actual e ingreso, calcularemos automáticamente la tasa de reemplazo y cuánto necesitas ahorrar.</div>`
+    : goalKey === 'independencia'
+    ? `<div class="gmNote">💡 Usaremos la regla del 4% para estimar tu número mágico de independencia financiera.</div>`
+    : '';
+
+  const overlay = document.createElement('div');
+  overlay.id = 'goalModalOverlay';
+  overlay.className = 'goalModal-overlay';
+  overlay.innerHTML = `
+    <div class="goalModal">
+      <div style="font-size:36px;margin-bottom:8px;">${cfg.icon}</div>
+      <h3>${cfg.title}</h3>
+      <p class="gmSubtitle">${cfg.subtitle}</p>
+      ${noteHTML}
+      ${fieldsHTML}
+      <div class="gmBtns">
+        <button class="btn ghost" id="gmSkip">Omitir por ahora</button>
+        <button class="btn primary" id="gmSave">Guardar meta ✓</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+
+  // Close on overlay click
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+
+  // Skip — just close, goal stays selected
+  document.getElementById('gmSkip').addEventListener('click', () => overlay.remove());
+
+  // Save
+  document.getElementById('gmSave').addEventListener('click', () => {
+    const details = {};
+    cfg.fields.forEach(f => {
+      const el = document.getElementById(`gmf_${f.id}`);
+      if(el && el.value.trim()) details[f.id] = el.value.trim();
+    });
+
+    // Special computed fields
+    if(goalKey === 'retiro' && details.ingresoMensual){
+      const ingresoAnual = state.financials.items
+        .filter(i=>i.category==='income')
+        .reduce((a,b)=>a+b.value, 0);
+      if(ingresoAnual > 0){
+        const tasaReemplazo = ((parseFloat(details.ingresoMensual)*12) / ingresoAnual * 100).toFixed(0);
+        details._tasaReemplazo = tasaReemplazo + '%';
+        details._ingresoAnualReferencia = ingresoAnual;
+      }
+    }
+    if(goalKey === 'independencia' && details.ingresoMensual){
+      const numeroMagico = parseFloat(details.ingresoMensual) * 12 * 25; // 4% rule
+      details._numeroMagico = Math.round(numeroMagico);
+    }
+
+    state.goalDetails[goalKey] = details;
+    debouncedSave();
+    renderGoals();
+    overlay.remove();
+    showToast(`✓ Meta "${cfg.title}" detallada`);
+  });
+}
+// ════════════════════════════════════════════════════════════════════════════
 // ── STEP 4: WIZARD + CATEGORIES ────────────────────────────────────────────
 const CAT_SUGGESTIONS = {
   '0-50k':    ['income','expenses','banking','liabilities','other_assets'],
@@ -811,9 +1020,9 @@ $$('.wizardStep').forEach((step,si)=>{
     if(sn===2){ f.hasDebts=a==='yes'; if(a==='yes'&&!f.categoriesSelected.includes('liabilities')) f.categoriesSelected.push('liabilities'); }
     if(sn===3){ f.hasInvestments=a; if(a==='retirement'&&!f.categoriesSelected.includes('investments_retirement')) f.categoriesSelected.push('investments_retirement'); if(a==='both'){ ['investments_retirement','investments_nonretirement'].forEach(k=>{if(!f.categoriesSelected.includes(k))f.categoriesSelected.push(k);}); } }
     if(sn===4){ f.hasRealEstate=a==='yes'; if(a==='yes'&&!f.categoriesSelected.includes('real_estate')) f.categoriesSelected.push('real_estate'); }
-    if(sn===5){ f.hasInsurance=a==='yes'; if(a==='yes'&&!f.categoriesSelected.includes('insurance')) f.categoriesSelected.push('insurance'); }
+    if(sn===5){ f.hasInsurance=a!=='no'; if(!f.categoriesSelected.includes('insurance')) f.categoriesSelected.push('insurance'); }
     if(sn===6){ f.hasBusiness=a==='yes'; if(a==='yes'&&!f.categoriesSelected.includes('business_trust')) f.categoriesSelected.push('business_trust'); }
-    if(sn===7){ f.hasLegal=a==='yes'; if(a==='yes'&&!f.categoriesSelected.includes('legal')) f.categoriesSelected.push('legal'); }
+    if(sn===7){ f.hasLegal=a==='yes'; if(!f.categoriesSelected.includes('legal')) f.categoriesSelected.push('legal'); }
     if(sn===8){ f.hasOtherAssets=a==='yes'; if(a==='yes'&&!f.categoriesSelected.includes('other_assets')) f.categoriesSelected.push('other_assets'); }
     if(sn===9){ f.hasSavings=a==='yes'; if(a==='yes'&&!f.categoriesSelected.includes('savings')) f.categoriesSelected.push('savings'); }
     debouncedSave();
@@ -1351,10 +1560,13 @@ function renderConfirmation(){
   $('#finalNotes').value=state.notes||'';
   const v=validateFinal();
   const sg=$('#summaryGrid');
+  // Count goals with details
+  const goalsWithDetails = state.goals.filter(g=>state.goalDetails[g]&&Object.keys(state.goalDetails[g]).length>0).length;
   const checklist=[
     {step:2,icon:'👥',title:`Personas (${state.people.members.length})`,ok:state.people.members.length>0},
     {step:3,icon:'🎯',title:`Metas (${state.goals.length})`,ok:true,optional:true},
     {step:4,icon:'💰',title:`Ítems financieros (${state.financials.items.length})`,ok:state.financials.items.length>0},
+    {step:3,icon:'🎯',title:`Metas detalladas (${goalsWithDetails}/${state.goals.length})`,ok:true,optional:true},
   ];
   if(!v.ok){
     sg.innerHTML=`<div style="grid-column:1/-1;background:#fff3cd;border:2px solid #ffc107;border-radius:12px;padding:24px;text-align:center;">
@@ -1678,6 +1890,34 @@ function generateCoachPDF(state){
     Y += Math.ceil(state.goals.length/goalsPerRow)*gh + 6;
   } else {
     setFont(false,8.5,C.muted); doc.text('No se seleccionaron metas.', MARG, Y); Y+=8;
+  }
+
+  // Goal Details table
+  const goalsWithDets = state.goals.filter(g=>state.goalDetails[g]&&Object.keys(state.goalDetails[g]).length>0);
+  if(goalsWithDets.length > 0){
+    needsPage(20);
+    sectionBanner('DETALLE DE METAS');
+    const GOAL_LBL2={casa:'🏠 Comprar Casa',retiro:'🏖️ Retiro',educacion:'🎓 Educación',independencia:'🦅 Independencia Financiera',viaje:'✈️ Viaje',auto:'🚗 Auto',herencia:'🎁 Herencia',otro:'🎯 Otra Meta'};
+    const FIELD_LBL={tipo:'Tipo',cuando:'Cuándo',precio:'Precio est.',enganche:'Enganche disp.',edadRetiro:'Edad retiro',ingresoMensual:'Ingreso mensual deseado',_tasaReemplazo:'Tasa reemplazo (calc.)',_ingresoAnualReferencia:'Ingreso anual ref.',numHijos:'# Hijos',anosInicio:'Inicio en',presupuesto:'Presupuesto',edadObjetivo:'Edad objetivo',ingresoPasivo:'Ingresos pasivos act.',_numeroMagico:'Número mágico (calc.)',destino:'Destino',monto:'Monto objetivo',beneficiarios:'Beneficiarios',plazo:'Plazo',descripcion:'Descripción'};
+    const tableBody = [];
+    goalsWithDets.forEach(g=>{
+      const det = state.goalDetails[g];
+      const label = GOAL_LBL2[g]||g;
+      Object.entries(det).forEach(([k,v],i)=>{
+        tableBody.push([i===0?label:'', FIELD_LBL[k]||k, String(v)]);
+      });
+      tableBody.push(['','','']);
+    });
+    doc.autoTable({
+      startY:Y, margin:{left:MARG,right:MARG},
+      head:[['Meta','Campo','Valor']],
+      body: tableBody,
+      styles:{fontSize:8.5,cellPadding:3},
+      headStyles:{fillColor:C.primary,textColor:C.white,fontStyle:'bold'},
+      alternateRowStyles:{fillColor:C.section},
+      columnStyles:{0:{cellWidth:55,fontStyle:'bold'},1:{cellWidth:65},2:{cellWidth:CW-120}},
+    });
+    Y = doc.lastAutoTable.finalY + 8;
   }
 
   // ── Nota del cliente
@@ -2230,11 +2470,18 @@ function exportForMoneyMap(state){
   // (transferencia is set manually in MM; Discovery captures the asset, MM the estate plan)
 
   // ── Final payload
+  // Build goals with details
+  const goalsExport = state.goals.map(g => ({
+    key: g,
+    details: state.goalDetails[g] || {}
+  }));
+
   const payload = {
     _version:    '1.0',
     _exportDate: new Date().toISOString().slice(0,10),
     _clientName: state.userName || `${primary.firstName||''} ${primary.lastName||''}`.trim(),
     userProfile,
+    goals: goalsExport,
     activos,
     deudas,
     ingresos,
@@ -2380,7 +2627,14 @@ function generateCoachExcel(state){
     ['Seguros activos',             state.financials.hasInsurance?'Sí':'No','',''],
     [],
     ['─── METAS DECLARADAS ───','','',''],
-    ...(state.goals.length ? state.goals.map(g=>['•', GOAL_LBL[g]||g,'','']) : [['(ninguna)','','','']]),
+    ...(state.goals.length ? state.goals.map(g=>{
+      const det = state.goalDetails[g];
+      const detStr = det && Object.keys(det).length > 0
+        ? Object.entries(det).filter(([k])=>!k.startsWith('_')).map(([k,v])=>v).join(' · ')
+        : '(sin detallar)';
+      return ['•', GOAL_LBL[g]||g, detStr, ''];
+    }) : [['(ninguna)','','','']]),"
+new_excel_goals
     [],
     ['─── NOTA DEL CLIENTE ───','','',''],
     [state.notes||'(sin notas)','','',''],
@@ -2582,7 +2836,13 @@ function loadDummyData(){
       ]
     },
 
-    goals: ['retiro','emergencia','educacion','inversiones','deudas'],
+    goals: ['retiro','emergencia','educacion','inversiones','deudas','casa','viaje'],
+    goalDetails: {
+      retiro: { edadRetiro:'62', ingresoMensual:'7000', _tasaReemplazo:'43%', _ingresoAnualReferencia:160200 },
+      educacion: { numHijos:'1', anosInicio:'3-5 años', tipo:'Privada nacional', presupuesto:'120000' },
+      casa: { tipo:'Segunda vivienda / vacacional', cuando:'En 3-5 años', precio:'450000', enganche:'90000' },
+      viaje: { destino:'Japón', cuando:'En 1-2 años', presupuesto:'12000' },
+    },
 
     financials: {
       incomeRange:      '100-200k',
@@ -2703,7 +2963,7 @@ $('#exportMMBtn').addEventListener('click', ()=>{
 $('#resetBtn').addEventListener('click',()=>{
   if(!confirm('¿Reiniciar Discovery? Se borrarán todos los datos.')) return;
   localStorage.removeItem('discovery_draft_v3');
-  Object.assign(state,{step:1,startTime:Date.now(),userName:'',userEmail:'',people:{template:'',householdRole:'',members:[]},goals:[],financials:{incomeRange:"",hasDebts:null,hasInvestments:null,hasRealEstate:null,hasInsurance:null,hasBusiness:null,hasLegal:null,hasOtherAssets:null,hasSavings:null,categoriesSelected:[],items:[]},wizardStep:1,wizardComplete:false,notes:""});
+  Object.assign(state,{step:1,startTime:Date.now(),userName:'',userEmail:'',people:{template:'',householdRole:'',members:[]},goals:[],goalDetails:{},financials:{incomeRange:"",hasDebts:null,hasInvestments:null,hasRealEstate:null,hasInsurance:null,hasBusiness:null,hasLegal:null,hasOtherAssets:null,hasSavings:null,categoriesSelected:[],items:[]},wizardStep:1,wizardComplete:false,notes:""});
   syncHeaderInputs();
   $('#beforeSubmit').style.display='block';
   $('#afterSubmit').style.display='none';
