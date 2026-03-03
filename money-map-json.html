@@ -2116,6 +2116,7 @@ function RunwayCalculator({ activos, gastos, ingresos, deudas, currency }) {
 
 // ============= RATIOS FINANCIEROS =============
 function RatiosFinancieros({ ratiosData, setRatiosData, totales, currency, ingresos, gastos, setActiveTab }) {
+  const [showResultsModal, setShowResultsModal] = useState(true);
   const [showBenchmarkModal, setShowBenchmarkModal] = useState(false);
   const [showReservaModal, setShowReservaModal] = useState(false);
   const updateField = (field, val) => setRatiosData(prev => ({ ...prev, [field]: val }));
@@ -2167,9 +2168,9 @@ function RatiosFinancieros({ ratiosData, setRatiosData, totales, currency, ingre
         <div className="stat-card" style={{background:totales.patrimonioNeto>=0?'linear-gradient(135deg,var(--emerald) 0%,var(--emerald-dark) 100%)':'linear-gradient(135deg,var(--danger) 0%,#dc2626 100%)'}}><div className="stat-label">Patrimonio Neto</div><div className="stat-value">{formatCurrency(totales.patrimonioNeto,currency)}</div></div>
       </div>
 
-      
-
-            <div>
+      {showResultsModal && (
+        <div>
+            <div style={{padding:'0 4px'}}>
 
               {/* Summary */}
               <div style={{background:'white',margin:'12px 0',borderRadius:'16px',boxShadow:'0 2px 8px rgba(0,0,0,.08)',padding:'16px'}}>
@@ -2232,7 +2233,6 @@ function RatiosFinancieros({ ratiosData, setRatiosData, totales, currency, ingre
                 </div>
               ))}
             </div>
-          </div>
         </div>
       )}
 
@@ -2246,7 +2246,10 @@ function RatiosFinancieros({ ratiosData, setRatiosData, totales, currency, ingre
             </div>
             <div style={{padding:'32px',overflowY:'auto'}}>
               <BenchmarkTables ingresoBruto={ratios.ingresoBruto} />
-      </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Reserva Modal */}
       {showReservaModal && (
