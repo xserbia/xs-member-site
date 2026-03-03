@@ -2633,8 +2633,7 @@ function generateCoachExcel(state){
         ? Object.entries(det).filter(([k])=>!k.startsWith('_')).map(([k,v])=>v).join(' · ')
         : '(sin detallar)';
       return ['•', GOAL_LBL[g]||g, detStr, ''];
-    }) : [['(ninguna)','','','']]),"
-new_excel_goals
+    }) : [['(ninguna)','','','']]),
     [],
     ['─── NOTA DEL CLIENTE ───','','',''],
     [state.notes||'(sin notas)','','',''],
