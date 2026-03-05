@@ -426,9 +426,9 @@ function App() {
       deudaAnual,
       gastosAnual,
       pagoDeudaMensual:          deudaAnual / 12,
-      gastosEsencialesMensuales: gastosAnual / 12,
+      gastosEsencialesMensuales: (gastosAnual + segAnual + deudaAnual) / 12, // diarios + seguros + deuda
       reserva:           totales.totalEfectivo  || 0,
-      pasivosCorrientes: totales.pasivosCorrientes || 0, // solo tarjetas + línea personal
+      pasivosCorrientes: gastosAnual + segAnual + deudaAnual, // gastos esenciales anualizados
     }));
   }, [ingresos, gastos, totales]);
   // ─────────────────────────────────────────────────────────────────────────
