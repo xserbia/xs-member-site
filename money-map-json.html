@@ -2706,11 +2706,9 @@ function RetiroCalculator({ userProfile, ingresos, activos, goals = [] }) {
   const ratioReemplazo = ingresoAnual > 0 && ingresoMes > 0
     ? Math.round((ingresoMes / (ingresoAnual/12)) * 100) : 80;
 
-  const iframeRef = React.useRef(null);
-
-  React.useEffect(() => {
+  const calcHtml = React.useMemo(() => {
     const b64 = window._RETIRO_CALC_B64;
-    if (!b64 || !iframeRef.current) return;
+    if (!b64) return '';
     let html = atob(b64);
     html = html
       .replace('__EDAD_ACTUAL__',     String(edadActual))
@@ -2718,7 +2716,7 @@ function RetiroCalculator({ userProfile, ingresos, activos, goals = [] }) {
       .replace('__INGRESO_ANUAL__',   String(ingresoAnual > 0 ? ingresoAnual : 75000))
       .replace('__AHORRO_ACTUAL__',   String(ahorroTotal))
       .replace('__RATIO_REEMPLAZO__', String(ratioReemplazo));
-    iframeRef.current.srcdoc = html;
+    return html;
   }, [edadActual, edadRetiro, ingresoAnual, ahorroTotal, ratioReemplazo]);
 
   const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
@@ -2729,12 +2727,17 @@ function RetiroCalculator({ userProfile, ingresos, activos, goals = [] }) {
         <strong>Datos desde Money Map: </strong>
         Edad {edadActual} · Ingreso anual {fmt(ingresoAnual)} · Ahorros {fmt(ahorroTotal)} · Edad retiro {edadRetiro}
       </div>
-      <iframe
-        ref={iframeRef}
-        style={{width:'100%',height:'900px',border:'none',borderRadius:'10px',boxShadow:'0 2px 12px rgba(0,0,0,0.1)'}}
-        title="Calculadora Retiro"
-        sandbox="allow-scripts allow-same-origin"
-      />
+      {calcHtml
+        ? <iframe
+            srcdoc={calcHtml}
+            style={{width:'100%',height:'900px',border:'none',borderRadius:'10px',boxShadow:'0 2px 12px rgba(0,0,0,0.1)'}}
+            title="Calculadora Retiro"
+            sandbox="allow-scripts allow-same-origin"
+          />
+        : <div style={{padding:'40px',textAlign:'center',color:'#94a3b8',fontSize:'14px'}}>
+            ⏳ Cargando calculadora...
+          </div>
+      }
     </div>
   );
 }
