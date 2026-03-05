@@ -428,7 +428,7 @@ function App() {
       pagoDeudaMensual:          deudaAnual / 12,
       gastosEsencialesMensuales: gastosAnual / 12,
       reserva:           totales.totalEfectivo  || 0,
-      pasivosCorrientes: totales.pasivosTotales || 0,
+      pasivosCorrientes: totales.pasivosCorrientes || 0, // solo tarjetas + línea personal
     }));
   }, [ingresos, gastos, totales]);
   // ─────────────────────────────────────────────────────────────────────────
@@ -461,7 +461,8 @@ function App() {
     const totalImpuestos      = (gastos.impuestos||[]).reduce((s, i) => s + parseNumber(i.monto), 0) * mult;
     const totalGastos         = totalAhorro + totalDeudaGastos + totalDiarios + totalSeguros + totalImpuestos;
     const superavit           = totalIngresos - totalGastos;
-    return { activosTotales, pasivosTotales, patrimonioNeto, totalIngresos, totalGastos, superavit, totalEfectivo, totalInversiones, totalRetiro, totalBienesRaices, totalBienesPersonales, activosLiquidos: totalEfectivo, inversiones: totalInversiones + totalRetiro };
+    const pasivosCorrientes = totalTarjetas + totalLineaPersonal;
+    return { activosTotales, pasivosTotales, pasivosCorrientes, patrimonioNeto, totalIngresos, totalGastos, superavit, totalEfectivo, totalInversiones, totalRetiro, totalBienesRaices, totalBienesPersonales, activosLiquidos: totalEfectivo, inversiones: totalInversiones + totalRetiro };
   }, [activos, deudas, ingresos, gastos, modoCalculo]);
 
   return (
