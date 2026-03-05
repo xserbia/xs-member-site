@@ -127,7 +127,7 @@ const parseNumber = (value) => {
 };
 
 // ============= ONBOARDING MODAL =============
-function OnboardingModal({ isOpen, onClose, onSave, initialProfile }) {
+function OnboardingModal({ isOpen, onClose, onSave, onLoadDemo, initialProfile }) {
   const [formData, setFormData] = useState({ ...initialProfile, parejaNombre: initialProfile.parejaNombre || '', parejaApellido: initialProfile.parejaApellido || '', parejaAvatar: initialProfile.parejaAvatar || '👤' });
   const avatarOptions = ['👤','👨','👩','🧑','👨‍💼','👩‍💼','👨‍🎓','👩‍🎓','🧔','👨‍🦰','👩‍🦰','👱‍♂️','👱‍♀️'];
   const handleSubmit = (e) => {
@@ -187,6 +187,7 @@ function OnboardingModal({ isOpen, onClose, onSave, initialProfile }) {
             </>
           )}
           <div style={{marginBottom:'2rem'}}><label style={{display:'block',fontWeight:'600',marginBottom:'0.5rem',fontSize:'0.9rem'}}>Número de Dependientes</label><input type="number" min="0" max="20" value={formData.dependientes} onChange={e=>updateField('dependientes',parseInt(e.target.value)||0)} style={{width:'100%',padding:'0.75rem',border:'2px solid var(--border)',borderRadius:'8px',fontSize:'1rem',outline:'none'}} /><div style={{fontSize:'0.8rem',color:'var(--text-muted)',marginTop:'0.25rem'}}>Hijos, padres u otras personas que dependan económicamente de ti</div></div>
+          <button type="button" onClick={onLoadDemo} style={{background:'#f1f5f9',color:'#475569',border:'2px dashed #cbd5e1',padding:'0.75rem 2rem',borderRadius:'8px',fontSize:'0.9rem',fontWeight:'600',cursor:'pointer',width:'100%',marginBottom:'0.75rem'}}>🧪 Cargar Datos de Prueba</button>
           <button type="submit" style={{background:'var(--primary)',color:'white',border:'none',padding:'0.875rem 2rem',borderRadius:'8px',fontSize:'1rem',fontWeight:'700',cursor:'pointer',width:'100%'}}>Comenzar 🚀</button>
         </form>
       </div>
@@ -309,6 +310,12 @@ function App() {
       }
     };
     reader.readAsText(file);
+  };
+
+  const DEMO_DATA = {"userProfile":{"nombre":"Carlos","apellido":"Mendoza","edad":"42","estadoCivil":"casado","dependientes":2,"avatar":"👨","analisisConjunto":true,"parejaNombre":"María","parejaApellido":"Mendoza","parejaAvatar":"👩"},"ingresos":[{"categoria":"Salario","nombre":"Salario Carlos - Ingeniero Senior","monto":"9500"},{"categoria":"Salario","nombre":"Salario María - Maestra","monto":"4200"},{"categoria":"Negocio Propio","nombre":"Consultoría IT (part-time)","monto":"1800"},{"categoria":"Renta","nombre":"Renta apartamento inversión","monto":"1400"},{"categoria":"Dividendos","nombre":"Dividendos portafolio brokerage","monto":"320"},{"categoria":"Otro","nombre":"Bono anual prorrateado","monto":"833"}],"gastos":{"diarios":[{"categoria":"Alimentación","nombre":"Supermercado + restaurantes","monto":"1200"},{"categoria":"Casa","nombre":"Hipoteca residencia principal","monto":"2850"},{"categoria":"Casa","nombre":"HOA + mantenimiento casa","monto":"380"},{"categoria":"Transportación","nombre":"Gasolina + mantenimiento autos","monto":"420"},{"categoria":"Telecomunicaciones","nombre":"Internet + celulares familia","monto":"185"},{"categoria":"Entretenimiento","nombre":"Streaming + salidas + gym","monto":"310"},{"categoria":"Gastos Médicos","nombre":"Copagos + medicamentos","monto":"220"},{"categoria":"Cuidado Personal","nombre":"Ropa + peluquería + misc","monto":"180"},{"categoria":"Dependientes","nombre":"Actividades hijos + útiles","monto":"450"},{"categoria":"Otro","nombre":"Donaciones iglesia","monto":"200"}],"ahorro":[{"categoria":"401(k)","nombre":"401k Carlos - employer match 4%","monto":"950"},{"categoria":"IRA/Roth","nombre":"Roth IRA María","monto":"541"},{"categoria":"Reserva de emergencia","nombre":"High-yield savings HYSA","monto":"300"},{"categoria":"Brokerage","nombre":"Portafolio ETFs largo plazo","monto":"500"},{"categoria":"ETF","nombre":"529 Plan educación hijos","monto":"250"}],"deuda":[{"categoria":"Hipoteca","nombre":"Hipoteca casa principal","monto":"2850"},{"categoria":"Préstamo de auto","nombre":"Auto Carlos 2022 Honda Pilot","monto":"620"},{"categoria":"Tarjeta de crédito","nombre":"Chase Sapphire - pago mínimo","monto":"0"}],"impuestos":[{"categoria":"Federal","nombre":"Impuesto federal retenido","monto":"2100"},{"categoria":"Estatal","nombre":"Impuesto estatal TX (0%)","monto":"0"},{"categoria":"FICA","nombre":"Social Security + Medicare","monto":"1285"}],"seguros":[{"categoria":"Salud","nombre":"Plan médico familiar employer","monto":"480"},{"categoria":"Vida","nombre":"Seguro vida término Carlos","monto":"85"},{"categoria":"Propiedad","nombre":"Homeowners insurance","monto":"195"},{"categoria":"Auto","nombre":"Auto insurance 2 vehículos","monto":"220"},{"categoria":"Discapacidad","nombre":"LTD - Long Term Disability","monto":"65"}]},"activos":{"efectivo":[{"tipo":"Cuenta Corriente","ubicacion":"Chase Bank","valor":"18500","transferencia":"Joint Tenancy (JTWROS)"},{"tipo":"Cuenta de Ahorro","ubicacion":"Marcus by Goldman","valor":"42000","transferencia":"Joint Tenancy (JTWROS)"},{"tipo":"Cuenta Corriente","ubicacion":"Bank of America - nómina María","valor":"6200","transferencia":"Beneficiario (TOD/POD)"}],"inversiones":[{"tipo":"ETF/Fondos mutuos","ubicacion":"Fidelity - FXAIX S&P500","valor":"87400","transferencia":"Beneficiario (TOD/POD)"},{"tipo":"ETF/Fondos mutuos","ubicacion":"Vanguard - VTI Total Market","valor":"34200","transferencia":"Beneficiario (TOD/POD)"},{"tipo":"Acciones","ubicacion":"Schwab - Apple/Microsoft","valor":"22100","transferencia":"Beneficiario (TOD/POD)"},{"tipo":"Brokerage account","ubicacion":"529 Plan hijos - Vanguard","valor":"28500","transferencia":"En Trust"}],"retiro":[{"tipo":"401(k)","ubicacion":"Fidelity - employer Carlos","valor":"186000","transferencia":"Beneficiario (TOD/POD)","aporteMensual":"950"},{"tipo":"Roth IRA","ubicacion":"Vanguard - María","valor":"54800","transferencia":"Beneficiario (TOD/POD)","aporteMensual":"541"},{"tipo":"IRA Tradicional","ubicacion":"Fidelity - rollover anterior","valor":"31200","transferencia":"Beneficiario (TOD/POD)","aporteMensual":"0"}],"bienesRaices":[{"tipo":"Casa principal","ubicacion":"Houston TX - 4bd/3ba","valor":"485000","transferencia":"Joint Tenancy (JTWROS)"},{"tipo":"Propiedad de renta","ubicacion":"Austin TX - apartamento","valor":"285000","transferencia":"En Trust"}],"bienesPersonales":[{"tipo":"Vehículo","ubicacion":"Honda Pilot 2022 Carlos","valor":"32000","transferencia":"Vía Testamento"},{"tipo":"Vehículo","ubicacion":"Toyota RAV4 2020 María","valor":"24500","transferencia":"Vía Testamento"},{"tipo":"Joyas","ubicacion":"Anillo + herencia familiar","valor":"8500","transferencia":"Vía Testamento"}]},"deudas":{"tarjetas":[{"compania":"Chase Sapphire Preferred","apr":"22.99","meses":"0","mensual":"0","balance":"0"},{"compania":"American Express Blue","apr":"19.99","meses":"0","mensual":"0","balance":"2400"}],"lineaPersonal":[],"lineaPropiedad":[{"compania":"Chase HELOC - casa principal","apr":"8.25","meses":"180","mensual":"0","balance":"45000"}],"casa":[{"compania":"Wells Fargo - hipoteca principal","apr":"3.875","meses":"276","mensual":"2850","balance":"312000"},{"compania":"Chase - hipoteca propiedad renta","apr":"4.25","meses":"300","mensual":"1420","balance":"198000"}],"auto":[{"compania":"Honda Financial - Pilot 2022","apr":"4.9","meses":"48","mensual":"620","balance":"24800"}],"educacion":[],"otros":[{"compania":"Family loan - papá Carlos","apr":"0","meses":"36","mensual":"200","balance":"7200"}]},"proteccion":{"documentos":[{"tipo":"Testamento","tiene":"si","fecha":"2021-03-15","contacto":"Abogado Luis Pérez (713) 555-0192","notas":"Revisado tras nacimiento segundo hijo. Copia en caja fuerte."},{"tipo":"Living Trust","tiene":"si","fecha":"2021-03-15","contacto":"Abogado Luis Pérez (713) 555-0192","notas":"Trust revocable. Propiedad renta Austin ya transferida."},{"tipo":"Power of Attorney","tiene":"si","fecha":"2021-03-15","contacto":"Hermano Carlos - Roberto Mendoza","notas":"POA durable para asuntos financieros."},{"tipo":"Healthcare Directive","tiene":"si","fecha":"2021-03-20","contacto":"Médico Dr. Sandra Torres","notas":"Living will + proxy healthcare para ambos."},{"tipo":"Beneficiarios actualizados","tiene":"si","fecha":"2023-01-10","contacto":"Fidelity + Vanguard verificados","notas":"Todos los cuentas de retiro y brokerage actualizados. Revisar 529."}],"polizas":[{"tipo":"Vida - Term","aseguradora":"Lincoln Financial","numeroPoliza":"LF-2847-CM","cobertura":"1500000","prima":"85","frecuenciaPrima":"mensual","deducible":"","beneficiario":"María Mendoza (primario) / Hijos (contingente)","renovacion":"2038-06-01","notas":"Término 20 años. Comprada 2018. Considerar aumentar cobertura."},{"tipo":"Vida - Term","aseguradora":"Protective Life","numeroPoliza":"PL-5521-MM","cobertura":"750000","prima":"42","frecuenciaPrima":"mensual","deducible":"","beneficiario":"Carlos Mendoza (primario) / Hijos (contingente)","renovacion":"2040-09-01","notas":"Póliza María. Término 20 años."},{"tipo":"Salud - HMO/PPO","aseguradora":"Blue Cross Blue Shield","numeroPoliza":"BCBS-FAM-88821","cobertura":"Familiar - deducible $3,000 familiar","prima":"480","frecuenciaPrima":"mensual","deducible":"3000","beneficiario":"Carlos, María, 2 hijos","renovacion":"2025-01-01","notas":"Plan PPO employer. OOP max $8,000 familiar. HSA eligible."},{"tipo":"Propiedad - Homeowners","aseguradora":"State Farm","numeroPoliza":"SF-HO-44192","cobertura":"485000","prima":"195","frecuenciaPrima":"mensual","deducible":"2500","beneficiario":"Carlos y María Mendoza","renovacion":"2025-08-15","notas":"Cubre estructura + contenido. Flood insurance separado pendiente."},{"tipo":"Discapacidad - LTD","aseguradora":"Unum Group","numeroPoliza":"UG-LTD-77441","cobertura":"60% del salario hasta $6,000/mes","prima":"65","frecuenciaPrima":"mensual","deducible":"90 días","beneficiario":"Carlos Mendoza","renovacion":"Employer group - anual","notas":"LTD employer. María no tiene LTD - pendiente cotizar."}]},"goals":[{"key":"retiro","status":"en progreso","notes":"Meta principal. Carlos quiere retirarse a 62, María a 60. Quieren mantener estilo de vida actual con viajes 2x/año.","details":{"edadRetiro":"62","ingresoMensual":"12000"}},{"key":"independencia","status":"pendiente","notes":"Independencia financiera como meta secundaria. Si la consultoría crece, podrían lograrlo antes.","details":{"edadObjetivo":"55","ingresoMensual":"9000","ingresoPasivo":"1720"}},{"key":"educacion","status":"en progreso","notes":"2 hijos: Sofía (8 años) y Diego (5 años). Prefieren universidad privada. 529 comenzó tarde, necesitan acelerar aportes.","details":{"numHijos":"2","anosInicio":"10+ años","tipo":"Privada","presupuesto":"120000"}},{"key":"casa","status":"completado","notes":"Ya tienen casa principal en Houston. Evalúan segunda propiedad en futuro.","details":{"tipo":"Primera vivienda","cuando":"5+ años","precio":"485000","enganche":"97000"}},{"key":"herencia","status":"pendiente","notes":"Quieren dejar algo significativo a hijos y posiblemente a organización benéfica religiosa.","details":{"monto":"1000000","beneficiarios":"Hijos","plazo":"20+ años"}},{"key":"viaje","status":"en progreso","notes":"Viaje familiar Europa verano 2026 con niños. Meta concreta.","details":{"destino":"Europa - Italia y España","cuando":"1-2 años","presupuesto":"18000"}}],"currency":"USD","modoCalculo":"mensual"};
+
+  const handleLoadDemo = () => {
+    handleImportConfirm(DEMO_DATA);
   };
 
   const handleImportConfirm = (data) => {
@@ -460,7 +467,7 @@ function App() {
 
   return (
     <div className="app-container">
-      <OnboardingModal isOpen={showOnboardingModal} onClose={() => setShowOnboardingModal(false)} onSave={saveUserProfile} initialProfile={userProfile} />
+      <OnboardingModal isOpen={showOnboardingModal} onClose={() => setShowOnboardingModal(false)} onSave={saveUserProfile} onLoadDemo={handleLoadDemo} initialProfile={userProfile} />
 
       {/* Import Preview Modal */}
       <ImportPreviewModal data={importPreview} onConfirm={handleImportConfirm} onCancel={() => setImportPreview(null)} />
@@ -965,7 +972,7 @@ function VistaGeneral({ totales, ingresos, gastos, ratiosData, currency, setActi
       {/* 3-column CSS Grid — never wraps */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: '300px 1fr 1fr',
+        gridTemplateColumns: '300px 1fr 2fr',
         gap: '1.5rem',
         alignItems: 'start',
         minHeight: '600px'
@@ -1061,49 +1068,31 @@ function VistaGeneral({ totales, ingresos, gastos, ratiosData, currency, setActi
         </div>
 
 
-        {/* ── GOALS MINI WIDGET ── */}
-        {goals.length > 0 && (
-          <div style={{background:'white',borderRadius:'16px',padding:'1.25rem',boxShadow:'0 2px 8px rgba(0,0,0,0.08)',border:'1px solid var(--border)',cursor:'pointer'}} onClick={()=>setActiveTab('metas')}>
-            <div style={{fontWeight:'700',marginBottom:'0.75rem',color:'var(--primary)',fontSize:'0.875rem',textTransform:'uppercase',letterSpacing:'0.5px'}}>🎯 Metas del Cliente</div>
-            {goals.slice(0,4).map(g=>{
-              const ICONS={casa:'🏠',retiro:'🏖️',emergencia:'🛡️',educacion:'🎓',viaje:'✈️',deudas:'💳',negocio:'💼',auto:'🚗',inversiones:'📈',independencia:'🦅',herencia:'🎁',otro:'🎯'};
-              const LABELS={casa:'Casa',retiro:'Retiro',emergencia:'Emergencia',educacion:'Educación',viaje:'Viaje',deudas:'Deudas',negocio:'Negocio',auto:'Auto',inversiones:'Invertir',independencia:'Independencia',herencia:'Herencia',otro:'Otra'};
-              const color = g.status==='completada'?'#10b981':g.status==='en_progreso'?'#f59e0b':'#94a3b8';
-              return (
-                <div key={g.key} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 8px',borderRadius:'8px',marginBottom:'4px',background:'#f8fafc'}}>
-                  <span style={{fontSize:'13px'}}>{ICONS[g.key]||'🎯'} {LABELS[g.key]||g.key}</span>
-                  <span style={{fontSize:'10px',fontWeight:'700',color,textTransform:'uppercase'}}>{g.status==='completada'?'✅':g.status==='en_progreso'?'⏳':'⬜'}</span>
-                </div>
-              );
-            })}
-            {goals.length > 4 && <div style={{fontSize:'12px',color:'#94a3b8',textAlign:'center',marginTop:'6px'}}>+{goals.length-4} más → ver todas</div>}
-            <div style={{marginTop:'10px',fontSize:'12px',color:'var(--primary)',fontWeight:'700',textAlign:'center'}}>Ver plan de metas completo →</div>
-          </div>
-        )}
 
         {/* ── COLUMNA 3: Ratios Financieros ── */}
         <div style={{display:'flex',flexDirection:'column',gap:'0.875rem'}}>
           <div style={{fontWeight:'800',fontSize:'1rem',color:'#0f172a',marginBottom:'0.25rem'}}>🎯 Ratios Financieros <span style={{fontSize:'0.75rem',color:'var(--text-muted)',fontWeight:'400'}}>— clic para ver detalle</span></div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.875rem'}}>
+            <RatioCard title="💧 Liquidez" items={[
+              {label:'Meses de reserva',   value:isFinite(mesesReserva)?mesesReserva.toFixed(1)+'m':'—',   ok:mesesReserva>=6?'green':mesesReserva>=3?'yellow':'red'},
+              {label:'Razón corriente',    value:isFinite(razonCorriente)?razonCorriente.toFixed(2):'—',   ok:razonCorriente>=1?'green':'red'},
+            ]}/>
 
-          <RatioCard title="💧 Liquidez" items={[
-            {label:'Meses de reserva',   value:isFinite(mesesReserva)?mesesReserva.toFixed(1)+'m':'—',   ok:mesesReserva>=6?'green':mesesReserva>=3?'yellow':'red'},
-            {label:'Razón corriente',    value:isFinite(razonCorriente)?razonCorriente.toFixed(2):'—',   ok:razonCorriente>=1?'green':'red'},
-          ]}/>
+            <RatioCard title="🐷 Ahorro" items={[
+              {label:'Tasa de ahorro',      value:isFinite(tasaAhorro)?(tasaAhorro*100).toFixed(1)+'%':'—',   ok:tasaAhorro>=0.30?'green':tasaAhorro>=0.15?'yellow':'red'},
+              {label:'Cap. acumulación',    value:isFinite(capAcum)?(capAcum*100).toFixed(1)+'%':'—',         ok:capAcum>=0.30?'green':capAcum>=0.10?'yellow':'red'},
+            ]}/>
 
-          <RatioCard title="🐷 Ahorro" items={[
-            {label:'Tasa de ahorro',      value:isFinite(tasaAhorro)?(tasaAhorro*100).toFixed(1)+'%':'—',   ok:tasaAhorro>=0.30?'green':tasaAhorro>=0.15?'yellow':'red'},
-            {label:'Cap. acumulación',    value:isFinite(capAcum)?(capAcum*100).toFixed(1)+'%':'—',         ok:capAcum>=0.30?'green':capAcum>=0.10?'yellow':'red'},
-          ]}/>
+            <RatioCard title="🏦 Deuda" items={[
+              {label:'DTI neto',            value:isFinite(dtiNeto)?(dtiNeto*100).toFixed(1)+'%':'—',         ok:dtiNeto<=0.36?'green':'red'},
+              {label:'Pasivos / Activos',   value:isFinite(deudaActivos)?(deudaActivos*100).toFixed(1)+'%':'—', ok:deudaActivos<=0.30?'green':deudaActivos<=0.50?'yellow':'red'},
+            ]}/>
 
-          <RatioCard title="🏦 Deuda" items={[
-            {label:'DTI neto',            value:isFinite(dtiNeto)?(dtiNeto*100).toFixed(1)+'%':'—',         ok:dtiNeto<=0.36?'green':'red'},
-            {label:'Pasivos / Activos',   value:isFinite(deudaActivos)?(deudaActivos*100).toFixed(1)+'%':'—', ok:deudaActivos<=0.30?'green':deudaActivos<=0.50?'yellow':'red'},
-          ]}/>
-
-          <RatioCard title="💎 Patrimonio" items={[
-            {label:'Patrimonio / Activos', value:isFinite(patrimonioActivos)?(patrimonioActivos*100).toFixed(1)+'%':'—', ok:patrimonioActivos>=0.70?'green':patrimonioActivos>=0.50?'yellow':'red'},
-            {label:'Ver análisis completo →', value:'', ok:''},
-          ]}/>
+            <RatioCard title="💎 Patrimonio" items={[
+              {label:'Patrimonio / Activos', value:isFinite(patrimonioActivos)?(patrimonioActivos*100).toFixed(1)+'%':'—', ok:patrimonioActivos>=0.70?'green':patrimonioActivos>=0.50?'yellow':'red'},
+              {label:'Ver análisis completo →', value:'', ok:''},
+            ]}/>
+          </div>
         </div>
 
       </div>
