@@ -36,15 +36,14 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; }
 .app-container { min-height: 100vh; display: flex; flex-direction: column; }
-.app-header { background: linear-gradient(135deg, var(--primary) 0%, #2845d9 100%); color: white; padding: 2rem 2rem 0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-.header-content { max-width: 1400px; margin: 0 auto; }
-.app-subtitle { color: var(--slate-light); font-size: 1rem; margin-bottom: 2rem; font-weight: 400; }
-.tabs-container { display: flex; gap: 0.5rem; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; }
-.tabs-container::-webkit-scrollbar { display: none; }
-.tab-button { background: transparent; border: none; color: rgba(255,255,255,0.6); padding: 1rem 1.5rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; border-bottom: 3px solid transparent; white-space: nowrap; font-family: 'DM Sans', sans-serif; }
-.tab-button:hover { color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.05); }
-.tab-button.active { color: white; border-bottom-color: var(--emerald); }
-.main-content { flex: 1; padding: 2rem; max-width: 1400px; margin: 0 auto; width: 100%; }
+.app-header { background: linear-gradient(135deg, var(--primary) 0%, #2845d9 100%); color: white; padding: 0.6rem 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; z-index: 100; }
+.app-body { display: flex; flex: 1; overflow: hidden; }
+.app-sidebar { width: 200px; min-width: 200px; background: linear-gradient(180deg, #1c2fa8 0%, #1a2d9e 100%); color: white; display: flex; flex-direction: column; height: calc(100vh - 56px - 40px); position: sticky; top: 56px; overflow-y: auto; box-shadow: 3px 0 10px rgba(0,0,0,0.12); }
+.tabs-container { display: flex; flex-direction: column; gap: 0.2rem; padding: 0.6rem; flex: 1; }
+.tab-button { background: transparent; border: none; color: rgba(255,255,255,0.65); padding: 0.6rem 0.9rem; font-size: 0.83rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; border-radius: 7px; white-space: nowrap; font-family: 'DM Sans', sans-serif; text-align: left; width: 100%; border-left: 3px solid transparent; }
+.tab-button:hover { color: rgba(255,255,255,0.95); background: rgba(255,255,255,0.08); }
+.tab-button.active { color: white; background: rgba(255,255,255,0.15); border-left-color: var(--emerald); }
+.main-content { flex: 1; padding: 1.75rem 2rem; overflow-y: auto; min-width: 0; }
 .card { background: var(--card); border-radius: 16px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid var(--border); margin-bottom: 1.5rem; }
 .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid var(--border); }
 .card-title { font-family: 'Fraunces', serif; font-size: 1.5rem; font-weight: 700; color: var(--charcoal); }
@@ -200,16 +199,16 @@ function ImportPreviewModal({ data, onConfirm, onCancel }) {
   if (!data) return null;
   const pn = n => parseFloat(String(n).replace(/[$,]/g, '')) || 0;
   const prof           = data.userProfile || data.profile || {};
-  const totalIngresos  = data.ingresos.reduce((s, i) => s + pn(i.monto), 0) * 12;
-  const totalEfectivo  = data.activos.efectivo.reduce((s, i) => s + pn(i.valor), 0);
-  const totalRetiro    = data.activos.retiro.reduce((s, i) => s + pn(i.valor), 0);
-  const totalInv       = data.activos.inversiones.reduce((s, i) => s + pn(i.valor), 0);
-  const totalBR        = data.activos.bienesRaices.reduce((s, i) => s + pn(i.valor), 0);
-  const totalBP        = data.activos.bienesPersonales.reduce((s, i) => s + pn(i.valor), 0);
+  const totalIngresos  = (data.ingresos||[]).reduce((s, i) => s + pn(i.monto), 0) * 12;
+  const totalEfectivo  = (data.activos?.efectivo||[]).reduce((s, i) => s + pn(i.valor), 0);
+  const totalRetiro    = (data.activos?.retiro||[]).reduce((s, i) => s + pn(i.valor), 0);
+  const totalInv       = (data.activos?.inversiones||[]).reduce((s, i) => s + pn(i.valor), 0);
+  const totalBR        = (data.activos?.bienesRaices||[]).reduce((s, i) => s + pn(i.valor), 0);
+  const totalBP        = (data.activos?.bienesPersonales||[]).reduce((s, i) => s + pn(i.valor), 0);
   const totalActivos   = totalEfectivo + totalRetiro + totalInv + totalBR + totalBP;
-  const totalDeudas    = Object.values(data.deudas).flat().reduce((s, d) => s + pn(d.balance), 0);
+  const totalDeudas    = Object.values(data.deudas||{}).flat().reduce((s, d) => s + pn(d.balance), 0);
   const patrimonio     = totalActivos - totalDeudas;
-  const totalItems     = data.ingresos.length + Object.values(data.gastos).flat().length + Object.values(data.activos).flat().length + Object.values(data.deudas).flat().length;
+  const totalItems     = (data.ingresos||[]).length + Object.values(data.gastos||{}).flat().length + Object.values(data.activos||{}).flat().length + Object.values(data.deudas||{}).flat().length;
   const fmt = v => '$' + Math.round(v).toLocaleString('en-US');
 
   const Card = ({ label, value, color, bg }) => (
@@ -411,7 +410,7 @@ function App() {
 
   // ── Keep ratiosData in sync with ingresos/gastos/activos/deudas ─────────
   useEffect(() => {
-    const ingBruto    = ingresos.reduce((s,i)=>s+parseFloat(i.monto||0),0)*12;
+    const ingBruto    = (ingresos||[]).reduce((s,i)=>s+parseFloat(i.monto||0),0)*12;
     const impAnual    = (gastos.impuestos?.reduce((s,g)=>s+parseFloat(g.monto||0),0)||0)*12;
     const segAnual    = (gastos.seguros?.reduce((s,g)=>s+parseFloat(g.monto||0),0)||0)*12;
     const ahorroAnual = (gastos.ahorro?.reduce((s,g)=>s+parseFloat(g.monto||0),0)||0)*12;
@@ -438,28 +437,28 @@ function App() {
   useEffect(() => { localStorage.setItem('currency', currency); }, [currency]);
 
   const totales = useMemo(() => {
-    const totalEfectivo       = activos.efectivo.reduce((s, i) => s + parseNumber(i.valor), 0);
-    const totalInversiones    = activos.inversiones.reduce((s, i) => s + parseNumber(i.valor), 0);
-    const totalRetiro         = activos.retiro.reduce((s, i) => s + parseNumber(i.valor), 0);
-    const totalBienesRaices   = activos.bienesRaices.reduce((s, i) => s + parseNumber(i.valor), 0);
-    const totalBienesPersonales = activos.bienesPersonales.reduce((s, i) => s + parseNumber(i.valor), 0);
+    const totalEfectivo       = (activos.efectivo||[]).reduce((s, i) => s + parseNumber(i.valor), 0);
+    const totalInversiones    = (activos.inversiones||[]).reduce((s, i) => s + parseNumber(i.valor), 0);
+    const totalRetiro         = (activos.retiro||[]).reduce((s, i) => s + parseNumber(i.valor), 0);
+    const totalBienesRaices   = (activos.bienesRaices||[]).reduce((s, i) => s + parseNumber(i.valor), 0);
+    const totalBienesPersonales = (activos.bienesPersonales||[]).reduce((s, i) => s + parseNumber(i.valor), 0);
     const activosTotales      = totalEfectivo + totalInversiones + totalRetiro + totalBienesRaices + totalBienesPersonales;
-    const totalTarjetas       = deudas.tarjetas.reduce((s, i) => s + parseNumber(i.balance), 0);
-    const totalLineaPersonal  = deudas.lineaPersonal.reduce((s, i) => s + parseNumber(i.balance), 0);
-    const totalLineaPropiedad = deudas.lineaPropiedad.reduce((s, i) => s + parseNumber(i.balance), 0);
-    const totalCasa           = deudas.casa.reduce((s, i) => s + parseNumber(i.balance), 0);
-    const totalAuto           = deudas.auto.reduce((s, i) => s + parseNumber(i.balance), 0);
-    const totalEducacion      = deudas.educacion.reduce((s, i) => s + parseNumber(i.balance), 0);
-    const totalOtros          = deudas.otros.reduce((s, i) => s + parseNumber(i.balance), 0);
+    const totalTarjetas       = (deudas.tarjetas||[]).reduce((s, i) => s + parseNumber(i.balance), 0);
+    const totalLineaPersonal  = (deudas.lineaPersonal||[]).reduce((s, i) => s + parseNumber(i.balance), 0);
+    const totalLineaPropiedad = (deudas.lineaPropiedad||[]).reduce((s, i) => s + parseNumber(i.balance), 0);
+    const totalCasa           = (deudas.casa||[]).reduce((s, i) => s + parseNumber(i.balance), 0);
+    const totalAuto           = (deudas.auto||[]).reduce((s, i) => s + parseNumber(i.balance), 0);
+    const totalEducacion      = (deudas.educacion||[]).reduce((s, i) => s + parseNumber(i.balance), 0);
+    const totalOtros          = (deudas.otros||[]).reduce((s, i) => s + parseNumber(i.balance), 0);
     const pasivosTotales      = totalTarjetas + totalLineaPersonal + totalLineaPropiedad + totalCasa + totalAuto + totalEducacion + totalOtros;
     const patrimonioNeto      = activosTotales - pasivosTotales;
     const mult                = modoCalculo === 'anual' ? 12 : 1;
-    const totalIngresos       = ingresos.reduce((s, i) => s + parseNumber(i.monto), 0) * mult;
-    const totalAhorro         = gastos.ahorro.reduce((s, i) => s + parseNumber(i.monto), 0) * mult;
-    const totalDeudaGastos    = gastos.deuda.reduce((s, i) => s + parseNumber(i.monto), 0) * mult;
-    const totalDiarios        = gastos.diarios.reduce((s, i) => s + parseNumber(i.monto), 0) * mult;
-    const totalSeguros        = gastos.seguros.reduce((s, i) => s + parseNumber(i.monto), 0) * mult;
-    const totalImpuestos      = gastos.impuestos.reduce((s, i) => s + parseNumber(i.monto), 0) * mult;
+    const totalIngresos       = (ingresos||[]).reduce((s, i) => s + parseNumber(i.monto), 0) * mult;
+    const totalAhorro         = (gastos.ahorro||[]).reduce((s, i) => s + parseNumber(i.monto), 0) * mult;
+    const totalDeudaGastos    = (gastos.deuda||[]).reduce((s, i) => s + parseNumber(i.monto), 0) * mult;
+    const totalDiarios        = (gastos.diarios||[]).reduce((s, i) => s + parseNumber(i.monto), 0) * mult;
+    const totalSeguros        = (gastos.seguros||[]).reduce((s, i) => s + parseNumber(i.monto), 0) * mult;
+    const totalImpuestos      = (gastos.impuestos||[]).reduce((s, i) => s + parseNumber(i.monto), 0) * mult;
     const totalGastos         = totalAhorro + totalDeudaGastos + totalDiarios + totalSeguros + totalImpuestos;
     const superavit           = totalIngresos - totalGastos;
     return { activosTotales, pasivosTotales, patrimonioNeto, totalIngresos, totalGastos, superavit, totalEfectivo, totalInversiones, totalRetiro, totalBienesRaices, totalBienesPersonales, activosLiquidos: totalEfectivo, inversiones: totalInversiones + totalRetiro };
@@ -472,62 +471,47 @@ function App() {
       {/* Import Preview Modal */}
       <ImportPreviewModal data={importPreview} onConfirm={handleImportConfirm} onCancel={() => setImportPreview(null)} />
 
+      {/* ── TOP HEADER ───────────────────────────────────────────────── */}
       <header className="app-header">
-        <div className="header-content">
-          <img src="https://xserbia.github.io/calculadora-financiera/assets/XAVIER-MONEY-MAP-LOGO.png" alt="Xavier Serbia Money Map" style={{ height: '60px', marginBottom: '0.5rem' }} />
-          <p className="app-subtitle">Tu mapa financiero personal hacia la libertad económica</p>
+        <img src="https://xserbia.github.io/calculadora-financiera/assets/XAVIER-MONEY-MAP-LOGO.png" alt="Xavier Serbia Money Map" style={{ height: '36px' }} />
+        <div style={{ width: '1px', height: '28px', background: 'rgba(255,255,255,0.2)', margin: '0 0.25rem' }} />
+        {/* Currency */}
+        <select value={currency} onChange={e => setCurrency(e.target.value)} style={{ padding: '0.35rem 0.6rem', borderRadius: '7px', border: '1.5px solid rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.12)', color: 'white', fontWeight: '600', fontSize: '0.82rem', cursor: 'pointer', outline: 'none' }}>
+          <option value="USD" style={{ background: '#2845d9' }}>🇺🇸 USD</option>
+          <option value="EUR" style={{ background: '#2845d9' }}>🇪🇺 EUR</option>
+          <option value="GBP" style={{ background: '#2845d9' }}>🇬🇧 GBP</option>
+          <option value="MXN" style={{ background: '#2845d9' }}>🇲🇽 MXN</option>
+          <option value="COP" style={{ background: '#2845d9' }}>🇨🇴 COP</option>
+          <option value="ARS" style={{ background: '#2845d9' }}>🇦🇷 ARS</option>
+          <option value="CLP" style={{ background: '#2845d9' }}>🇨🇱 CLP</option>
+          <option value="PEN" style={{ background: '#2845d9' }}>🇵🇪 PEN</option>
+          <option value="BRL" style={{ background: '#2845d9' }}>🇧🇷 BRL</option>
+          <option value="CAD" style={{ background: '#2845d9' }}>🇨🇦 CAD</option>
+        </select>
+        <button onClick={() => setShowOnboardingModal(true)} style={{ padding: '0.35rem 0.85rem', borderRadius: '7px', border: '1.5px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.12)', color: 'white', fontWeight: '600', fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          {userProfile.avatar} Mi Perfil
+        </button>
+        <button onClick={() => setShowHelpModal(true)} style={{ padding: '0.35rem 0.85rem', borderRadius: '7px', border: '1.5px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.12)', color: 'white', fontWeight: '600', fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          ❓ Cómo usar
+        </button>
+        <button onClick={() => importFileRef.current && importFileRef.current.click()} style={{ padding: '0.35rem 0.85rem', borderRadius: '7px', border: '1.5px solid rgba(99,255,180,0.5)', background: 'rgba(16,185,129,0.25)', color: 'white', fontWeight: '700', fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }} title="Importar datos desde el archivo .moneymap.json del Discovery Form">
+          📂 Importar Discovery
+        </button>
+        <input ref={importFileRef} type="file" accept=".json,.moneymap.json" style={{ display: 'none' }} onChange={handleImportFile} />
+        <button onClick={clearAllData} style={{ padding: '0.35rem 0.85rem', borderRadius: '7px', border: '1.5px solid rgba(239,68,68,0.45)', background: 'rgba(239,68,68,0.18)', color: 'white', fontWeight: '600', fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }} title="Borrar todos los datos guardados">
+          🗑️ Limpiar Datos
+        </button>
+      </header>
 
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-            {/* Currency selector */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <label style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem', fontWeight: '600' }}>Moneda:</label>
-              <select value={currency} onChange={e => setCurrency(e.target.value)} style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '2px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.1)', color: 'white', fontWeight: '600', fontSize: '0.9rem', cursor: 'pointer', outline: 'none' }}>
-                <option value="USD" style={{ background: '#2845d9' }}>🇺🇸 USD</option>
-                <option value="EUR" style={{ background: '#2845d9' }}>🇪🇺 EUR</option>
-                <option value="GBP" style={{ background: '#2845d9' }}>🇬🇧 GBP</option>
-                <option value="MXN" style={{ background: '#2845d9' }}>🇲🇽 MXN</option>
-                <option value="COP" style={{ background: '#2845d9' }}>🇨🇴 COP</option>
-                <option value="ARS" style={{ background: '#2845d9' }}>🇦🇷 ARS</option>
-                <option value="CLP" style={{ background: '#2845d9' }}>🇨🇱 CLP</option>
-                <option value="PEN" style={{ background: '#2845d9' }}>🇵🇪 PEN</option>
-                <option value="BRL" style={{ background: '#2845d9' }}>🇧🇷 BRL</option>
-                <option value="CAD" style={{ background: '#2845d9' }}>🇨🇦 CAD</option>
-              </select>
-            </div>
-
-            {/* Mi Perfil */}
-            <button onClick={() => setShowOnboardingModal(true)} style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: '2px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.15)', color: 'white', fontWeight: '600', fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              {userProfile.avatar} Mi Perfil
-            </button>
-
-            {/* Cómo usar */}
-            <button onClick={() => setShowHelpModal(true)} style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: '2px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.15)', color: 'white', fontWeight: '600', fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              ❓ Cómo usar
-            </button>
-
-            {/* 📂 IMPORTAR DISCOVERY ← NUEVO */}
-            <button
-              onClick={() => importFileRef.current && importFileRef.current.click()}
-              style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: '2px solid rgba(99,255,180,0.6)', background: 'rgba(16,185,129,0.3)', color: 'white', fontWeight: '700', fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-              title="Importar datos desde el archivo .moneymap.json del Discovery Form"
-            >
-              📂 Importar Discovery
-            </button>
-            <input ref={importFileRef} type="file" accept=".json,.moneymap.json" style={{ display: 'none' }} onChange={handleImportFile} />
-
-            {/* Limpiar datos */}
-            <button onClick={clearAllData} style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: '2px solid rgba(239,68,68,0.5)', background: 'rgba(239,68,68,0.15)', color: 'white', fontWeight: '600', fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }} title="Borrar todos los datos guardados">
-              🗑️ Limpiar Datos
-            </button>
-          </div>
-
+      {/* ── BODY: sidebar + content ───────────────────────────────────── */}
+      <div className="app-body">
+        <aside className="app-sidebar">
           <div className="tabs-container">
             {[['vistaGeneral','📊 Vista General'],['metas','🎯 Metas'],['graficos','📈 Gráficos'],['ingresos','💵 Ingresos y Gastos'],['activos','💰 Activos'],['deudas','💳 Pasivos'],['balance','⚖️ Patrimonio Neto'],['proteccion','🛡️ Protección'],['ratios','📊 Ratios Financieros'],['runway','⏱️ Runway'],['calc_deuda','💳 Salir de Deuda'],['retiro','🏖️ Retiro']].map(([key, label]) => (
               <button key={key} className={`tab-button ${activeTab === key ? 'active' : ''}`} onClick={() => setActiveTab(key)}>{label}</button>
             ))}
           </div>
-        </div>
-      </header>
+        </aside>
 
       <main className="main-content fade-in">
         {activeTab === 'vistaGeneral' && <VistaGeneral totales={totales} ingresos={ingresos} gastos={gastos} ratiosData={ratiosData} currency={currency} setActiveTab={setActiveTab} userProfile={userProfile} goals={goals} />}
@@ -543,6 +527,7 @@ function App() {
         {activeTab === 'calc_deuda'  && <SalirDeDeuda deudas={deudas} gastos={gastos} ingresos={ingresos} currency={currency} />}
         {activeTab === 'retiro' && <RetiroCalculator userProfile={userProfile} ingresos={ingresos} activos={activos} gastos={gastos} goals={goals} />}
       </main>
+      </div>{/* end app-body */}
 
       {/* Help Modal */}
       {showHelpModal && (
@@ -800,8 +785,8 @@ function IngresosGastos({ ingresos, setIngresos, gastos, setGastos, modoCalculo,
   const updateGasto   = (cat, idx, field, val) => setGastos(prev => ({ ...prev, [cat]: prev[cat].map((item, i) => i === idx ? { ...item, [field]: val } : item) }));
   const removeGasto   = (cat, idx) => setGastos(prev => ({ ...prev, [cat]: prev[cat].filter((_, i) => i !== idx) }));
   const mult = modoCalculo === 'anual' ? 12 : 1;
-  const totalIngresos = ingresos.reduce((s, i) => s + parseNumber(i.monto), 0) * mult;
-  const totalGastos   = Object.values(gastos).flat().reduce((s, i) => s + parseNumber(i.monto), 0) * mult;
+  const totalIngresos = (ingresos||[]).reduce((s, i) => s + parseNumber(i.monto), 0) * mult;
+  const totalGastos   = Object.values(gastos||{}).flat().reduce((s, i) => s + parseNumber(i.monto), 0) * mult;
   const balance       = totalIngresos - totalGastos;
   return (
     <div>
