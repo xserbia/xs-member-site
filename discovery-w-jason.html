@@ -2817,121 +2817,156 @@ function generateCoachExcel(state){
 
 // ════════════════════════════════════════════════════════════════════════════
 //  DUMMY DATA — para revisar el reporte sin llenar el form manualmente
-//  Familia López-Rivera: pareja con hijo, ingresos medios-altos, deudas activas
+//  Familia Mendoza-Reyes: pareja con 2 hijos, ingresos altos, Houston TX
 // ════════════════════════════════════════════════════════════════════════════
 function loadDummyData(){
   Object.assign(state, {
-    startTime: Date.now() - 420000,
-    userName:  'Carlos López',
-    userEmail: 'carlos.lopez@email.com',
+    startTime: Date.now() - 480000,
+    userName:  'Carlos Mendoza',
+    userEmail: 'carlos.mendoza@email.com',
 
     people: {
-      template:       'family',
-      householdRole:  'shared',
+      template:      'family',
+      householdRole: 'shared',
       members: [
-        { id:'p1', role:'primary',    firstName:'Carlos',  lastName:'López',   age:42, gender:'male',   relationshipToPrimary:'' },
-        { id:'p2', role:'additional', firstName:'María',   lastName:'Rivera',  age:39, gender:'female', relationshipToPrimary:'spouse' },
-        { id:'p3', role:'additional', firstName:'Sofía',   lastName:'López',   age:14, gender:'female', relationshipToPrimary:'child' },
+        { id:'p1', role:'primary',    firstName:'Carlos', lastName:'Mendoza', age:42, gender:'male',   relationshipToPrimary:'' },
+        { id:'p2', role:'additional', firstName:'María',  lastName:'Reyes',   age:39, gender:'female', relationshipToPrimary:'spouse' },
+        { id:'p3', role:'additional', firstName:'Sofía',  lastName:'Mendoza', age:12, gender:'female', relationshipToPrimary:'child' },
+        { id:'p4', role:'additional', firstName:'Diego',  lastName:'Mendoza', age:8,  gender:'male',   relationshipToPrimary:'child' },
       ]
     },
 
-    goals: ['retiro','emergencia','educacion','inversiones','deudas','casa','viaje'],
+    goals: ['retiro','independencia','educacion','casa','herencia','viaje','deudas'],
     goalDetails: {
-      retiro: { edadRetiro:'62', ingresoMensual:'7000', _tasaReemplazo:'43%', _ingresoAnualReferencia:160200 },
-      educacion: { numHijos:'1', anosInicio:'3-5 años', tipo:'Privada nacional', presupuesto:'120000' },
-      casa: { tipo:'Segunda vivienda / vacacional', cuando:'En 3-5 años', precio:'450000', enganche:'90000' },
-      viaje: { destino:'Japón', cuando:'En 1-2 años', presupuesto:'12000' },
+      retiro:        { edadRetiro:'62', ingresoMensual:'12000', _tasaReemplazo:'69%', _ingresoAnualReferencia:208800 },
+      independencia: { edadObjetivo:'55', ingresoMensual:'9000', ingresoPasivo:'1720' },
+      educacion:     { numHijos:'2', anosInicio:'6-10 años', tipo:'Privada', presupuesto:'120000' },
+      casa:          { tipo:'Segunda vivienda / vacacional', cuando:'En 3-5 años', precio:'420000', enganche:'84000' },
+      herencia:      { monto:'1000000', beneficiarios:'Hijos', plazo:'20+ años' },
+      viaje:         { destino:'Europa – Italia y España', cuando:'En 1-2 años', presupuesto:'18000' },
     },
 
     financials: {
-      incomeRange:      '100-200k',
-      hasDebts:         true,
-      hasInvestments:   'both',
-      hasRealEstate:    true,
-      hasInsurance:     true,
-      hasBusiness:      false,
-      hasLegal:         false,
-      hasOtherAssets:   true,
-      hasSavings:       true,
+      incomeRange:        '100-200k',
+      hasDebts:           true,
+      hasInvestments:     'both',
+      hasRealEstate:      true,
+      hasInsurance:       true,
+      hasBusiness:        true,
+      hasLegal:           true,
+      hasOtherAssets:     true,
+      hasSavings:         true,
       categoriesSelected: ['income','expenses','savings','banking','investments_retirement','investments_nonretirement','liabilities','insurance','real_estate','other_assets'],
       items: [
-        // INGRESOS
-        { id:'inc1', category:'income', type:'Salario',          alias:'Salario Carlos',   name:'Salario Carlos',   value:95000, owner:'p1' },
-        { id:'inc2', category:'income', type:'Salario',          alias:'Salario María',    name:'Salario María',    value:62000, owner:'p2' },
-        { id:'inc3', category:'income', type:'Dividendos',       alias:'Dividendos acciones', name:'Dividendos',   value:3200,  owner:'p1' },
 
-        // GASTOS — Alimentación
-        { id:'exp1',  category:'expenses', expenseCategory:'Alimentación',      subcategory:'Supermercado',           alias:'Costco + Publix',    name:'Alimentación – Supermercado',           value:1100, owner:'household' },
-        { id:'exp2',  category:'expenses', expenseCategory:'Alimentación',      subcategory:'Comidas fuera',          alias:'Restaurants',         name:'Alimentación – Comidas fuera',          value:420,  owner:'household' },
+        // ── INGRESOS ────────────────────────────────────────────────────────
+        { id:'inc1', category:'income', type:'Salario',       alias:'Salario Carlos – Ing. Senior TechCorp', name:'Salario Carlos',        value:114000, owner:'p1' },
+        { id:'inc2', category:'income', type:'Salario',       alias:'Salario María – Maestra distrito',      name:'Salario María',         value:50400,  owner:'p2' },
+        { id:'inc3', category:'income', type:'Negocio Propio',alias:'Consultoría IT (part-time)',             name:'Consultoría IT',        value:21600,  owner:'p1' },
+        { id:'inc4', category:'income', type:'Renta',         alias:'Apartamento inversión Austin TX',       name:'Renta apartamento',     value:16800,  owner:'household' },
+        { id:'inc5', category:'income', type:'Dividendos',    alias:'Dividendos portafolio Schwab',          name:'Dividendos brokerage',  value:3840,   owner:'p1' },
+        { id:'inc6', category:'income', type:'Bono',          alias:'Bono anual prorrateado /12',            name:'Bono anual',            value:9996,   owner:'p1' },
+
+        // ── GASTOS – Alimentación ────────────────────────────────────────────
+        { id:'exp1',  category:'expenses', expenseCategory:'Alimentación',       subcategory:'Supermercado',          alias:'Costco + HEB',           name:'Alimentación – Supermercado',           value:900,  owner:'household' },
+        { id:'exp2',  category:'expenses', expenseCategory:'Alimentación',       subcategory:'Comidas fuera',         alias:'Restaurants + delivery',  name:'Alimentación – Comidas fuera',          value:300,  owner:'household' },
+
         // Casa
-        { id:'exp3',  category:'expenses', expenseCategory:'Casa',              subcategory:'Servicios básicos',      alias:'FPL + agua + gas',   name:'Casa – Servicios básicos',              value:380,  owner:'household' },
-        { id:'exp4',  category:'expenses', expenseCategory:'Casa',              subcategory:'Mantenimiento',          alias:'HOA + reparaciones', name:'Casa – Mantenimiento',                  value:320,  owner:'household' },
+        { id:'exp3',  category:'expenses', expenseCategory:'Casa',               subcategory:'Servicios básicos',     alias:'CenterPoint + agua',      name:'Casa – Servicios básicos',              value:280,  owner:'household' },
+        { id:'exp4',  category:'expenses', expenseCategory:'Casa',               subcategory:'Mantenimiento',         alias:'HOA + reparaciones',      name:'Casa – Mantenimiento',                  value:380,  owner:'household' },
+
         // Impuestos
-        { id:'exp5',  category:'expenses', expenseCategory:'Impuestos',         subcategory:'Federales',              alias:'',                   name:'Impuestos – Federales',                 value:1950, owner:'household' },
-        { id:'exp6',  category:'expenses', expenseCategory:'Impuestos',         subcategory:'Seguro social',          alias:'',                   name:'Impuestos – Seguro social',             value:610,  owner:'household' },
+        { id:'exp5',  category:'expenses', expenseCategory:'Impuestos',          subcategory:'Federales',             alias:'',                        name:'Impuestos – Federales',                 value:2100, owner:'household' },
+        { id:'exp6',  category:'expenses', expenseCategory:'Impuestos',          subcategory:'Seguro social',         alias:'FICA Carlos + María',     name:'Impuestos – FICA',                      value:1285, owner:'household' },
+
         // Transportación
-        { id:'exp7',  category:'expenses', expenseCategory:'Transportación',    subcategory:'Gasolina',               alias:'',                   name:'Transportación – Gasolina',             value:280,  owner:'household' },
-        { id:'exp8',  category:'expenses', expenseCategory:'Transportación',    subcategory:'Mantenimiento',          alias:'',                   name:'Transportación – Mantenimiento',        value:120,  owner:'household' },
-        // Seguros
-        { id:'exp9',  category:'expenses', expenseCategory:'Seguros',           subcategory:'Salud',                  alias:'BlueCross',          name:'Seguros – Salud',                       value:640,  owner:'household' },
-        { id:'exp10', category:'expenses', expenseCategory:'Seguros',           subcategory:'Auto',                   alias:'GEICO x2 autos',     name:'Seguros – Auto',                        value:210,  owner:'household' },
-        { id:'exp11', category:'expenses', expenseCategory:'Seguros',           subcategory:'Vida - Term',            alias:'Term Carlos',        name:'Seguros – Vida - Term',                 value:95,   owner:'p1' },
+        { id:'exp7',  category:'expenses', expenseCategory:'Transportación',     subcategory:'Gasolina',              alias:'2 vehículos',             name:'Transportación – Gasolina',             value:320,  owner:'household' },
+        { id:'exp8',  category:'expenses', expenseCategory:'Transportación',     subcategory:'Mantenimiento',         alias:'',                        name:'Transportación – Mantenimiento',        value:100,  owner:'household' },
+
+        // Seguros (como gasto corriente)
+        { id:'exp9',  category:'expenses', expenseCategory:'Seguros',            subcategory:'Salud',                 alias:'BCBS familiar employer',  name:'Seguros – Salud',                       value:480,  owner:'household' },
+        { id:'exp10', category:'expenses', expenseCategory:'Seguros',            subcategory:'Auto',                  alias:'State Farm 2 autos',      name:'Seguros – Auto',                        value:220,  owner:'household' },
+        { id:'exp11', category:'expenses', expenseCategory:'Seguros',            subcategory:'Vida - Term',           alias:'Lincoln Financial Carlos',name:'Seguros – Vida Term',                   value:85,   owner:'p1' },
+        { id:'exp12', category:'expenses', expenseCategory:'Seguros',            subcategory:'Propiedad',             alias:'State Farm Homeowners',   name:'Seguros – Propiedad',                   value:195,  owner:'household' },
+        { id:'exp13', category:'expenses', expenseCategory:'Seguros',            subcategory:'Discapacidad',          alias:'Unum LTD Carlos',         name:'Seguros – Discapacidad',                value:65,   owner:'p1' },
+
         // Dependientes
-        { id:'exp12', category:'expenses', expenseCategory:'Dependientes',      subcategory:'Educación',              alias:'Colegio Sofía',      name:'Dependientes – Educación',              value:890,  owner:'household' },
-        // Deuda (pagos mensuales)
-        { id:'exp13', category:'expenses', expenseCategory:'Deuda',             subcategory:'Hipoteca',               alias:'Hipoteca casa',      name:'Deuda – Hipoteca',                      value:2240, owner:'household' },
-        { id:'exp14', category:'expenses', expenseCategory:'Deuda',             subcategory:'Préstamo de auto',       alias:'Toyota RAV4',        name:'Deuda – Préstamo de auto',              value:520,  owner:'p2' },
-        { id:'exp15', category:'expenses', expenseCategory:'Deuda',             subcategory:'Tarjeta de crédito',     alias:'Chase Sapphire',     name:'Deuda – Tarjeta de crédito',            value:200,  owner:'p1' },
+        { id:'exp14', category:'expenses', expenseCategory:'Dependientes',       subcategory:'Educación',             alias:'Actividades Sofía + Diego',name:'Dependientes – Educación y activ.',     value:450,  owner:'household' },
+
+        // Deuda – pagos mensuales
+        { id:'exp15', category:'expenses', expenseCategory:'Deuda',              subcategory:'Hipoteca',              alias:'Wells Fargo hipoteca',    name:'Deuda – Hipoteca principal',            value:2850, owner:'household' },
+        { id:'exp16', category:'expenses', expenseCategory:'Deuda',              subcategory:'Hipoteca',              alias:'Chase hipoteca renta',    name:'Deuda – Hipoteca inversión',            value:1420, owner:'household' },
+        { id:'exp17', category:'expenses', expenseCategory:'Deuda',              subcategory:'Préstamo de auto',      alias:'Honda Financial Pilot',   name:'Deuda – Préstamo auto',                 value:620,  owner:'p1' },
+
         // Entretenimiento
-        { id:'exp16', category:'expenses', expenseCategory:'Entretenimiento',   subcategory:'Streaming',              alias:'Netflix+Spotify+Disney', name:'Entretenimiento – Streaming',       value:58,   owner:'household' },
-        { id:'exp17', category:'expenses', expenseCategory:'Entretenimiento',   subcategory:'Vacaciones',             alias:'Viajes anuales /12', name:'Entretenimiento – Vacaciones',          value:350,  owner:'household' },
+        { id:'exp18', category:'expenses', expenseCategory:'Entretenimiento',    subcategory:'Streaming',             alias:'Netflix+Spotify+Disney+',  name:'Entretenimiento – Streaming',           value:75,   owner:'household' },
+        { id:'exp19', category:'expenses', expenseCategory:'Entretenimiento',    subcategory:'Vacaciones',            alias:'Presupuesto viajes /12',  name:'Entretenimiento – Vacaciones prorrat.',  value:500,  owner:'household' },
+        { id:'exp20', category:'expenses', expenseCategory:'Entretenimiento',    subcategory:'Otros',                 alias:'Gym + salidas familia',   name:'Entretenimiento – Gym y salidas',       value:235,  owner:'household' },
+
         // Telecomunicaciones
-        { id:'exp18', category:'expenses', expenseCategory:'Telecomunicaciones', subcategory:'Teléfono',              alias:'AT&T familia',       name:'Telecomunicaciones – Teléfono',         value:160,  owner:'household' },
-        { id:'exp19', category:'expenses', expenseCategory:'Telecomunicaciones', subcategory:'Internet',              alias:'Xfinity',            name:'Telecomunicaciones – Internet',         value:80,   owner:'household' },
+        { id:'exp21', category:'expenses', expenseCategory:'Telecomunicaciones', subcategory:'Teléfono',              alias:'AT&T familia x4 líneas',  name:'Telecomunicaciones – Teléfono',         value:185,  owner:'household' },
+
         // Gastos médicos
-        { id:'exp20', category:'expenses', expenseCategory:'Gastos Médicos',    subcategory:'Medicamentos',           alias:'',                   name:'Gastos Médicos – Medicamentos',         value:90,   owner:'household' },
+        { id:'exp22', category:'expenses', expenseCategory:'Gastos Médicos',     subcategory:'Copagos',               alias:'',                        name:'Gastos Médicos – Copagos',              value:150,  owner:'household' },
+        { id:'exp23', category:'expenses', expenseCategory:'Gastos Médicos',     subcategory:'Medicamentos',          alias:'',                        name:'Gastos Médicos – Medicamentos',         value:70,   owner:'household' },
 
-        // AHORRO
-        { id:'sav1', category:'savings', expenseCategory:'Retiro',              subcategory:'401(k)',                 alias:'401k Carlos (6%)',   name:'Retiro – 401(k)',                       value:475,  owner:'p1' },
-        { id:'sav2', category:'savings', expenseCategory:'Retiro',              subcategory:'401(k)',                 alias:'401k María (4%)',    name:'Retiro – 401(k)',                       value:207,  owner:'p2' },
-        { id:'sav3', category:'savings', expenseCategory:'Reserva de emergencia', subcategory:'Aporte mensual',      alias:'',                   name:'Reserva de emergencia – Aporte mensual', value:500, owner:'household' },
-        { id:'sav4', category:'savings', expenseCategory:'Inversión',           subcategory:'Brokerage',              alias:'Robinhood',          name:'Inversión – Brokerage',                 value:300,  owner:'p1' },
+        // Cuidado personal
+        { id:'exp24', category:'expenses', expenseCategory:'Cuidado Personal',   subcategory:'Ropa',                  alias:'',                        name:'Cuidado Personal – Ropa',               value:180,  owner:'household' },
 
-        // BANKING
-        { id:'ban1', category:'banking', type:'Checking',  alias:'Chase Checking familiar', name:'Chase Checking familiar', value:18500, owner:'household' },
-        { id:'ban2', category:'banking', type:'Savings',   alias:'HYSA Ally 4.8%',          name:'HYSA Ally',               value:24000, owner:'household' },
-        { id:'ban3', category:'banking', type:'Checking',  alias:'Cuenta personal María',   name:'Cuenta personal María',   value:3200,  owner:'p2' },
+        // Donaciones
+        { id:'exp25', category:'expenses', expenseCategory:'Otro',               subcategory:'Donaciones',            alias:'Iglesia (tithe)',         name:'Donaciones – Iglesia',                  value:200,  owner:'household' },
 
-        // INVERSIONES RETIRO
-        { id:'ret1', category:'investments_retirement', type:'401(k)',        alias:'401k Fidelity Carlos', name:'401k Fidelity Carlos', value:148000, owner:'p1' },
-        { id:'ret2', category:'investments_retirement', type:'401(k)',        alias:'401k Vanguard María',  name:'401k Vanguard María',  value:86000,  owner:'p2' },
-        { id:'ret3', category:'investments_retirement', type:'Roth IRA',      alias:'Roth IRA Carlos',      name:'Roth IRA Carlos',      value:32000,  owner:'p1' },
+        // ── AHORRO ──────────────────────────────────────────────────────────
+        { id:'sav1', category:'savings', expenseCategory:'Retiro',               subcategory:'401(k)',                 alias:'401k Carlos 8% + 4% match',name:'Retiro – 401(k) Carlos',               value:950,  owner:'p1' },
+        { id:'sav2', category:'savings', expenseCategory:'Retiro',               subcategory:'401(k)',                 alias:'401k María 6% employer',   name:'Retiro – 401(k) María',                value:541,  owner:'p2' },
+        { id:'sav3', category:'savings', expenseCategory:'Reserva de emergencia',subcategory:'Aporte mensual',         alias:'Marcus Goldman HYSA',      name:'Reserva emergencia – Aporte',          value:300,  owner:'household' },
+        { id:'sav4', category:'savings', expenseCategory:'Inversión',            subcategory:'Brokerage',              alias:'ETFs largo plazo Fidelity', name:'Inversión – Brokerage ETFs',           value:500,  owner:'p1' },
+        { id:'sav5', category:'savings', expenseCategory:'Educación',            subcategory:'529 Plan',               alias:'529 hijos – Vanguard',     name:'Educación – 529 Plan hijos',           value:250,  owner:'household' },
 
-        // INVERSIONES NO-RETIRO
-        { id:'inv1', category:'investments_nonretirement', type:'Brokerage account', alias:'Schwab taxable',   name:'Schwab taxable',   value:41000, owner:'p1' },
-        { id:'inv2', category:'investments_nonretirement', type:'ETF/Fondos mutuos', alias:'529 Plan Sofía',   name:'529 Plan Sofía',   value:22000, owner:'household' },
+        // ── BANKING ─────────────────────────────────────────────────────────
+        { id:'ban1', category:'banking', type:'Checking', alias:'Chase Checking familiar', name:'Chase Checking familiar', value:18500, owner:'household' },
+        { id:'ban2', category:'banking', type:'Savings',  alias:'Marcus HYSA 4.8%',        name:'Marcus Goldman HYSA',     value:42000, owner:'household' },
+        { id:'ban3', category:'banking', type:'Checking', alias:'BofA nómina María',       name:'Cuenta nómina María',     value:6200,  owner:'p2' },
 
-        // BIENES RAÍCES
-        { id:'re1', category:'real_estate', type:'Casa principal', alias:'Casa Miami - 4/2', name:'Casa Miami – 4/2', value:520000, owner:'household' },
+        // ── INVERSIONES RETIRO ───────────────────────────────────────────────
+        { id:'ret1', category:'investments_retirement', type:'401(k)',          alias:'Fidelity 401k Carlos',      name:'Fidelity 401k Carlos',      value:186000, owner:'p1' },
+        { id:'ret2', category:'investments_retirement', type:'401(k)',          alias:'Vanguard 401k María',       name:'Vanguard 401k María',       value:54800,  owner:'p2' },
+        { id:'ret3', category:'investments_retirement', type:'IRA Tradicional', alias:'Fidelity rollover anterior',name:'IRA Tradicional – rollover', value:31200,  owner:'p1' },
 
-        // PASIVOS (saldos pendientes)
-        { id:'deb1', category:'liabilities', type:'Hipoteca',            alias:'Hipoteca casa Miami',  name:'Hipoteca casa Miami',  value:310000, owner:'household', interestRate:6.75, monthsRemaining:312 },
-        { id:'deb2', category:'liabilities', type:'Préstamo de auto',    alias:'Toyota RAV4 2022',     name:'Toyota RAV4 2022',     value:22400,  owner:'p2',         interestRate:5.9,  monthsRemaining:42  },
-        { id:'deb3', category:'liabilities', type:'Tarjeta de crédito',  alias:'Chase Sapphire',       name:'Chase Sapphire',       value:8600,   owner:'p1',         interestRate:24.99, monthsRemaining:null },
-        { id:'deb4', category:'liabilities', type:'Préstamo estudiantil', alias:'Student loan María',  name:'Student loan María',   value:14200,  owner:'p2',         interestRate:5.0,  monthsRemaining:60  },
+        // ── INVERSIONES NO-RETIRO ────────────────────────────────────────────
+        { id:'inv1', category:'investments_nonretirement', type:'ETF/Fondos mutuos',  alias:'Fidelity FXAIX S&P500',   name:'Fidelity FXAIX',      value:87400, owner:'p1' },
+        { id:'inv2', category:'investments_nonretirement', type:'ETF/Fondos mutuos',  alias:'Vanguard VTI Total Market',name:'Vanguard VTI',        value:34200, owner:'p1' },
+        { id:'inv3', category:'investments_nonretirement', type:'Acciones',           alias:'Schwab – Apple/Microsoft', name:'Schwab acciones',     value:22100, owner:'p1' },
+        { id:'inv4', category:'investments_nonretirement', type:'ETF/Fondos mutuos',  alias:'529 Plan hijos – Vanguard',name:'529 Plan Vanguard',   value:28500, owner:'household' },
 
-        // SEGUROS
-        { id:'ins1', category:'insurance', type:'Vida - Term',  alias:'Term 20yr Carlos $750k',  name:'Term 20yr Carlos $750k',  value:750000,  owner:'p1' },
-        { id:'ins2', category:'insurance', type:'Salud',        alias:'BlueCross PPO familia',   name:'BlueCross PPO familia',   value:0,       owner:'household' },
-        { id:'ins3', category:'insurance', type:'Auto',         alias:'GEICO 2 autos',           name:'GEICO 2 autos',           value:0,       owner:'household' },
+        // ── BIENES RAÍCES ────────────────────────────────────────────────────
+        { id:'re1', category:'real_estate', type:'Casa principal',     alias:'Houston TX 4bd/3ba',        name:'Casa principal Houston',     value:485000, owner:'household' },
+        { id:'re2', category:'real_estate', type:'Propiedad de renta', alias:'Apartamento Austin TX',     name:'Propiedad renta Austin',     value:285000, owner:'household' },
 
-        // OTROS ACTIVOS
-        { id:'oth1', category:'other_assets', type:'Vehículo', alias:'Toyota RAV4 2022', name:'Toyota RAV4 2022', value:28000, owner:'p2' },
-        { id:'oth2', category:'other_assets', type:'Vehículo', alias:'Honda Accord 2020', name:'Honda Accord 2020', value:19000, owner:'p1' },
+        // ── PASIVOS ──────────────────────────────────────────────────────────
+        { id:'deb1', category:'liabilities', type:'Hipoteca',            alias:'Wells Fargo hipoteca principal', name:'Hipoteca casa Houston', value:312000, owner:'household', interestRate:3.875, monthsRemaining:276 },
+        { id:'deb2', category:'liabilities', type:'Hipoteca',            alias:'Chase hipoteca propiedad renta', name:'Hipoteca Austin',       value:198000, owner:'household', interestRate:4.25,  monthsRemaining:300 },
+        { id:'deb3', category:'liabilities', type:'HELOC',               alias:'Chase HELOC casa principal',    name:'HELOC casa principal',  value:45000,  owner:'household', interestRate:8.25,  monthsRemaining:180 },
+        { id:'deb4', category:'liabilities', type:'Préstamo de auto',    alias:'Honda Financial – Pilot 2022',  name:'Auto Honda Pilot',      value:24800,  owner:'p1',        interestRate:4.9,   monthsRemaining:48  },
+        { id:'deb5', category:'liabilities', type:'Tarjeta de crédito',  alias:'American Express Blue',         name:'Amex Blue balance',     value:2400,   owner:'household', interestRate:19.99, monthsRemaining:null },
+        { id:'deb6', category:'liabilities', type:'Otro',                alias:'Préstamo familiar – papá Carlos',name:'Préstamo familiar',    value:7200,   owner:'p1',        interestRate:0,     monthsRemaining:36  },
+
+        // ── SEGUROS (pólizas) ────────────────────────────────────────────────
+        { id:'ins1', category:'insurance', type:'Vida - Term',     alias:'Lincoln Financial – Term 20yr $1.5M Carlos', name:'Vida Term Carlos $1.5M',  value:1500000, owner:'p1' },
+        { id:'ins2', category:'insurance', type:'Vida - Term',     alias:'Protective Life – Term 20yr $750k María',    name:'Vida Term María $750k',   value:750000,  owner:'p2' },
+        { id:'ins3', category:'insurance', type:'Salud',           alias:'BCBS PPO familiar – deducible $3,000',       name:'BCBS PPO familiar',       value:0,       owner:'household' },
+        { id:'ins4', category:'insurance', type:'Propiedad',       alias:'State Farm Homeowners $485k',                name:'Homeowners State Farm',   value:485000,  owner:'household' },
+        { id:'ins5', category:'insurance', type:'Discapacidad',    alias:'Unum LTD – 60% salario hasta $6k/mes',       name:'LTD Carlos Unum',         value:0,       owner:'p1' },
+        { id:'ins6', category:'insurance', type:'Auto',            alias:'State Farm 2 autos – Honda Pilot + RAV4',    name:'Auto State Farm x2',      value:0,       owner:'household' },
+
+        // ── OTROS ACTIVOS ────────────────────────────────────────────────────
+        { id:'oth1', category:'other_assets', type:'Vehículo', alias:'Honda Pilot 2022 – Carlos',  name:'Honda Pilot 2022',  value:32000, owner:'p1' },
+        { id:'oth2', category:'other_assets', type:'Vehículo', alias:'Toyota RAV4 2020 – María',   name:'Toyota RAV4 2020',  value:24500, owner:'p2' },
+        { id:'oth3', category:'other_assets', type:'Joyas',    alias:'Anillo + herencia familiar', name:'Joyas y herencia',  value:8500,  owner:'household' },
       ]
     },
 
-    notes: 'Estamos pensando en refinanciar la casa en los próximos 6 meses. También queremos empezar a planificar la universidad de Sofía. No tenemos testamento ni trust y queremos saber por dónde empezar.',
+    notes: 'Tenemos testamento y living trust actualizados desde 2021 (abogado Luis Pérez). Queremos revisar si la cobertura de vida de María es suficiente. Estamos evaluando si conviene refinanciar la propiedad de renta en Austin. La meta principal es retirarnos juntos a los 62/60 con un ingreso mensual de $12,000. Carlos quiere saber si puede acelerar la independencia financiera si la consultoría sigue creciendo.',
     wizardStep: 1,
     wizardComplete: true,
     step: 1,
