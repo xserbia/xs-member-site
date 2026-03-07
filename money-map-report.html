@@ -2783,7 +2783,7 @@ function MetasPlan({ goals, setGoals, ingresos, gastos = {}, totales, currency, 
 
     const FIELDS_BY_KEY = {
       retiro:        [{id:'edadRetiro', lbl:'Edad objetivo de retiro', type:'number', ph:'62'}, {id:'ingresoMensual', lbl:'Ingreso mensual deseado ($)', type:'number', ph:'7000'}],
-      independencia: [],
+      independencia: [{id:'edadObjetivo', lbl:'Edad objetivo', type:'number', ph:'50'}, {id:'ingresoMensual', lbl:'Ingreso mensual pasivo deseado ($)', type:'number', ph:'7000'}, {id:'ingresoPasivo', lbl:'Ingresos pasivos actuales/mes ($)', type:'number', ph:'0'}],
       casa:          [{id:'tipo', lbl:'Tipo', type:'select', opts:['Primera vivienda','Segunda vivienda','Inversión']}, {id:'cuando', lbl:'¿Cuándo?', type:'select', opts:['1-2 años','3-5 años','5+ años']}, {id:'precio', lbl:'Precio estimado ($)', type:'number', ph:'400000'}, {id:'enganche', lbl:'Enganche disponible ($)', type:'number', ph:'60000'}],
       educacion:     [{id:'numHijos', lbl:'# hijos', type:'number', ph:'1'}, {id:'anosInicio', lbl:'Años para inicio', type:'select', opts:['< 3 años','3-5 años','6-10 años','10+ años']}, {id:'tipo', lbl:'Tipo universidad', type:'select', opts:['Pública','Privada','Ivy / Top 20']}, {id:'presupuesto', lbl:'Presupuesto por hijo ($)', type:'number', ph:'80000'}],
       viaje:         [{id:'destino', lbl:'Destino', type:'text', ph:'Ej: Europa'}, {id:'cuando', lbl:'¿Cuándo?', type:'select', opts:['Este año','1-2 años','3-5 años','Sin fecha']}, {id:'presupuesto', lbl:'Presupuesto ($)', type:'number', ph:'8000'}],
