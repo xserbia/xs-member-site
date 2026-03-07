@@ -1073,11 +1073,7 @@ function generarReportePDF({ userProfile, totales, ingresos, gastos, activos, de
 
   const kpiCard = (x, y, w, h, label, value, color, subtext='') => {
     rRect(x, y, w, h, 3, color);
-    // white overlay for depth
-    doc.setFillColor(255,255,255);
-    doc.setGState(doc.GState({opacity:0.08}));
-    doc.roundedRect(x+w-12, y, 12, h, 2, 2, 'F');
-    doc.setGState(doc.GState({opacity:1}));
+    // overlay removed for jsPDF 2.5 compat
     txt(label, x+4, y+7, 7, C.white, 'left', 'normal');
     txt(value, x+4, y+16, 13, C.white, 'left', 'bold');
     if (subtext) txt(subtext, x+4, y+21, 6, [200,220,255], 'left');
@@ -1114,10 +1110,7 @@ function generarReportePDF({ userProfile, totales, ingresos, gastos, activos, de
   const pageHeader = (title, subtitle, accent=C.blue) => {
     rect(0, 0, W, 28, accent);
     // diagonal accent strip
-    doc.setFillColor(...safeColor(C.lblue));
-    doc.setGState(doc.GState({opacity:0.3}));
-    doc.triangle(W-50, 0, W, 0, W, 28, 'F');
-    doc.setGState(doc.GState({opacity:1}));
+    // decorative triangle removed (jsPDF 2.5 compat)
     txt(title, 12, 12, 16, C.white, 'left', 'bold');
     txt(subtitle, 12, 21, 8, [200,220,255], 'left');
     txt(userProfile.nombre+' '+userProfile.apellido, W-12, 12, 8, [200,220,255], 'right');
@@ -1138,11 +1131,7 @@ function generarReportePDF({ userProfile, totales, ingresos, gastos, activos, de
   // gradient strips
   for(let i=0;i<8;i++) { rect(0, i*8, W, 7, [15+i*3, 23+i*5, 66+i*12]); }
   // accent shapes
-  doc.setFillColor(...safeColor(C.blue));
-  doc.setGState(doc.GState({opacity:0.25}));
-  doc.ellipse(W+20, 60, 80, 80, 'F');
-  doc.ellipse(-20, H-60, 70, 70, 'F');
-  doc.setGState(doc.GState({opacity:1}));
+  // ellipses removed for jsPDF 2.5 compat
 
   // Top strip
   rect(0, 0, W, 3, C.blue);
