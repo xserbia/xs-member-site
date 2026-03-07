@@ -586,7 +586,7 @@ function App() {
         {activeTab === 'balance'      && <HojaBalance activos={activos} deudas={deudas} totales={totales} currency={currency} />}
         {activeTab === 'ingresos'     && <IngresosGastos ingresos={ingresos} setIngresos={setIngresos} gastos={gastos} setGastos={setGastos} modoCalculo={modoCalculo} setModoCalculo={setModoCalculo} currency={currency} />}
         {activeTab === 'proteccion'   && <Proteccion proteccion={proteccion} setProteccion={setProteccion} activos={activos} setActivos={setActivos} currency={currency} />}
-        {activeTab === 'metas'       && <MetasPlan goals={goals} setGoals={setGoals} ingresos={ingresos} totales={totales} currency={currency} userProfile={userProfile} />}
+        {activeTab === 'metas'       && <MetasPlan goals={goals} setGoals={setGoals} ingresos={ingresos} gastos={gastos} totales={totales} currency={currency} userProfile={userProfile} />}
         {activeTab === 'ratios'       && <RatiosFinancieros ratiosData={ratiosData} setRatiosData={setRatiosData} totales={totales} currency={currency} ingresos={ingresos} gastos={gastos} deudas={deudas} userProfile={userProfile} setActiveTab={setActiveTab} />}
         {activeTab === 'runway'       && <RunwayCalculator activos={activos} gastos={gastos} ingresos={ingresos} deudas={deudas} totales={totales} currency={currency} />}
         {activeTab === 'calc_deuda'  && <SalirDeDeuda deudas={deudas} gastos={gastos} ingresos={ingresos} currency={currency} />}
@@ -2524,13 +2524,15 @@ function RatiosFinancieros({ ratiosData, setRatiosData, totales, currency, ingre
 // ════════════════════════════════════════════════════════════════════════════
 //  MetasPlan — Goals tracking and quantification
 // ════════════════════════════════════════════════════════════════════════════
-function MetasPlan({ goals, setGoals, ingresos, totales, currency, userProfile }) {
+function MetasPlan({ goals, setGoals, ingresos, gastos = {}, totales, currency, userProfile }) {
   const [editingIdx, setEditingIdx] = React.useState(null);
   const [showAddModal, setShowAddModal] = React.useState(false);
 
   const fmtC = (v) => formatCurrency(v, currency);
   const ingresoBruto = ingresos.reduce((s,i)=>s+parseFloat(i.monto||0),0)*12;
   const ingresoBrutoMensual = ingresoBruto / 12;
+  // Gastos corrientes mensuales (diarios = vida diaria, el verdadero "lifestyle cost")
+  const gastosDiariosMensual = (gastos.diarios||[]).reduce((s,g)=>s+parseFloat(g.monto||0),0);
 
   const GOAL_META = {
     casa:          { icon:'🏠', label:'Comprar Casa',               color:'#3b82f6', bg:'#eff6ff' },
@@ -2555,35 +2557,53 @@ function MetasPlan({ goals, setGoals, ingresos, totales, currency, userProfile }
     const computed = {};
 
     if (g.key === 'retiro') {
-      const edadActual = parseInt(userProfile?.edad) || 40;
-      const edadRetiro = parseInt(d.edadRetiro) || 65;
+      const edadActual    = parseInt(userProfile?.edad) || 40;
+      const edadRetiro    = parseInt(d.edadRetiro) || 65;
       const ingresoMensual = parseFloat(d.ingresoMensual) || 0;
       const anosParaRetiro = Math.max(0, edadRetiro - edadActual);
-      const neededNest = ingresoMensual * 12 * 25; // 4% rule
-      const tasaReemplazo = ingresoBrutoMensual > 0 ? ((ingresoMensual / ingresoBrutoMensual) * 100).toFixed(0) : 0;
-      computed.label1 = `Edad objetivo: ${edadRetiro} años`;
-      computed.label2 = `${anosParaRetiro} años para lograrlo`;
-      computed.label3 = `Tasa de reemplazo: ${tasaReemplazo}%`;
-      computed.neededNest = neededNest;
-      computed.neededLabel = `Nido estimado (regla 4%): ${formatCurrency(neededNest, currency)}`;
+      // Methodology: same as RetiroCalculator (PV of growing annuity)
+      // 1) Project current income forward at 2.5%/yr to get nominal income at retirement
+      // 2) Apply replacement ratio (desired income / current income)
+      // 3) PV of growing annuity: dist rate 5%, inflation 3%, lifespan to 90
+      const ingresoAnual       = ingresoBrutoMensual * 12;
+      const tasaReemplazo      = ingresoBrutoMensual > 0 ? Math.round((ingresoMensual / ingresoBrutoMensual) * 100) : 80;
+      const esperanzaVida      = 90;
+      const anosDistribucion   = Math.max(0, esperanzaVida - edadRetiro);
+      const ingresoFinalAnual  = ingresoAnual * Math.pow(1.025, anosParaRetiro);
+      const ingresoNecAnual    = ingresoFinalAnual * (tasaReemplazo / 100);
+      const tRA                = (1.05 / 1.03) - 1; // real adjusted rate
+      let neededNest = 0;
+      if (anosDistribucion > 0) {
+        neededNest = Math.abs(tRA) > 0.00001
+          ? ingresoNecAnual * (1 - Math.pow(1 + tRA, -anosDistribucion)) / tRA
+          : ingresoNecAnual * anosDistribucion / 1.05;
+      }
+      computed.label1      = `Edad objetivo: ${edadRetiro} años`;
+      computed.label2      = `${anosParaRetiro} años para lograrlo`;
+      computed.label3      = `Tasa de reemplazo: ${tasaReemplazo}%`;
+      computed.neededNest  = neededNest;
+      computed.neededLabel = `Nido estimado (anualidad): ${formatCurrency(neededNest, currency)}`;
       computed.monthlyNeeded = anosParaRetiro > 0
         ? Math.round(neededNest / (anosParaRetiro * 12))
         : 0;
     }
 
     if (g.key === 'independencia') {
-      const edadObj = parseInt(d.edadObjetivo) || 50;
-      const edadActual = parseInt(userProfile?.edad) || 40;
-      const ingresoMensual = parseFloat(d.ingresoMensual) || 0;
-      const ingresoPasivo = parseFloat(d.ingresoPasivo) || 0;
-      const neededNest = ingresoMensual * 12 * 25;
-      const gap = Math.max(0, ingresoMensual - ingresoPasivo);
+      const edadObj       = parseInt(d.edadObjetivo) || 50;
+      const edadActual    = parseInt(userProfile?.edad) || 40;
       const anosRestantes = Math.max(0, edadObj - edadActual);
-      computed.label1 = `Edad objetivo: ${edadObj} años (${anosRestantes} años)`;
-      computed.label2 = `Ingreso pasivo deseado: ${formatCurrency(ingresoMensual, currency)}/mes`;
-      computed.label3 = `Ingresos pasivos actuales: ${formatCurrency(ingresoPasivo, currency)}/mes`;
-      computed.neededNest = neededNest;
-      computed.neededLabel = `Número mágico (regla 4%): ${formatCurrency(neededNest, currency)}`;
+      // PMT = gastos diarios actuales (lifestyle cost, en $ de hoy)
+      // PV anualidad real, FV=0 a los 95: r=3% real, n=95-edadActual
+      const gastosAnuales  = gastosDiariosMensual * 12;
+      const edadMortalidad = 95;
+      const nAnios         = Math.max(1, edadMortalidad - edadActual);
+      const rReal          = 0.03;
+      const neededNest     = gastosAnuales * (1 - Math.pow(1 + rReal, -nAnios)) / rReal;
+      computed.label1      = `¿Cuánto necesitas hoy para no trabajar más?`;
+      computed.label2      = `Ingreso pasivo (gastos actuales): ${formatCurrency(gastosDiariosMensual, currency)}/mes`;
+      computed.label3      = `Horizonte: hoy (${edadActual} años) → 95 (${nAnios} años)`;
+      computed.neededNest  = neededNest;
+      computed.neededLabel = `Número mágico (3% real, FV=0 a 95): ${formatCurrency(neededNest, currency)}`;
       computed.monthlyNeeded = anosRestantes > 0
         ? Math.round(Math.max(0, neededNest - totales.inversiones) / (anosRestantes * 12))
         : 0;
