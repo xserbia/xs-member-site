@@ -114,6 +114,535 @@ tbody tr:hover { background: var(--bg); }
 .text-muted { color: var(--text-muted); } .text-right { text-align: right; } .text-center { text-align: center; }
 .mb-0 { margin-bottom: 0; } .mt-2 { margin-top: 2rem; } .font-bold { font-weight: 700; }
 </style>
+
+<script>
+
+// ════════════════════════════════════════════════════════════════════════════
+//  REPORTE PDF — Keynote-style financial summary
+// ════════════════════════════════════════════════════════════════════════════
+
+const GOAL_META = {
+  retiro:'Retiro cómodo', emergencia:'Fondo emergencia', casa:'Comprar casa',
+  educacion:'Educación hijos', deudas:'Pagar deudas', inversiones:'Crecer dinero',
+  independencia:'Independencia financiera', negocio:'Negocio propio',
+  auto:'Comprar auto', viaje:'Viaje / Vacaciones', herencia:'Dejar herencia', otro:'Otra meta',
+};
+
+function autoRecos(totales, ratiosData, userProfile, currency) {
+  const fc = v => {
+    const s = { USD:'$', EUR:'€', GBP:'£', MXN:'$', COP:'$', ARS:'$', CLP:'$', PEN:'S/', BRL:'R$', CAD:'C$' };
+    return (s[currency]||'$') + Number(v||0).toLocaleString('en-US',{maximumFractionDigits:0});
+  };
+  const lines = [];
+  const nombre = userProfile.nombre || 'el cliente';
+
+  // Net worth
+  if (totales.patrimonioNeto > 0)
+    lines.push(`✅ Patrimonio neto positivo de ${fc(totales.patrimonioNeto)}. Continuar estrategia de acumulación.`);
+  else
+    lines.push(`⚠️ Patrimonio neto negativo (${fc(totales.patrimonioNeto)}). Prioridad: reducir pasivos.`);
+
+  // Savings rate
+  const ahorro = (totales.totalIngresos - totales.totalGastos);
+  const tasaAhorro = totales.totalIngresos > 0 ? (ahorro / totales.totalIngresos) * 100 : 0;
+  if (tasaAhorro >= 20)
+    lines.push(`✅ Tasa de ahorro del ${tasaAhorro.toFixed(0)}% — excelente disciplina financiera.`);
+  else if (tasaAhorro >= 10)
+    lines.push(`💛 Tasa de ahorro del ${tasaAhorro.toFixed(0)}%. Meta recomendada: 20%. Identificar gastos a reducir.`);
+  else
+    lines.push(`🔴 Tasa de ahorro baja (${tasaAhorro.toFixed(0)}%). Acción urgente: revisar presupuesto y gastos fijos.`);
+
+  // Reserva emergencia
+  const re = ratiosData?.reservaEmergencia;
+  if (re) {
+    if (re.valor >= 6) lines.push(`✅ Fondo de emergencia adecuado (${re.valor.toFixed(1)} meses). Mantener en cuenta HYSA.`);
+    else lines.push(`🔴 Fondo de emergencia insuficiente (${re.valor.toFixed(1)} meses). Meta: ${re.meta||6}+ meses de gastos.`);
+  }
+
+  // Deuda/ingreso
+  const di = ratiosData?.deudaIngreso;
+  if (di) {
+    if (di.valor <= 36) lines.push(`✅ Ratio deuda/ingreso saludable (${di.valor.toFixed(0)}%). Por debajo del límite del 36%.`);
+    else lines.push(`⚠️ Ratio deuda/ingreso elevado (${di.valor.toFixed(0)}%). Priorizar amortización de deudas de alto interés.`);
+  }
+
+  lines.push(`\n📅 Próximos pasos sugeridos:`);
+  lines.push(`• Revisar y actualizar beneficiarios en cuentas de retiro`);
+  lines.push(`• Programar revisión trimestral del portfolio`);
+  lines.push(`• Evaluar incremento en aportes al 401(k) para capturar máximo employer match`);
+
+  return lines.join('\n');
+}
+
+function generarReportePDF({ userProfile, totales, ingresos, gastos, activos, deudas, ratiosData, goals, currency, recomendaciones, notasCoach }) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  const W = 210, H = 297;
+
+  const C = {
+    navy:   [15, 23, 66],
+    blue:   [57, 86, 232],
+    lblue:  [99, 131, 246],
+    teal:   [6, 182, 212],
+    green:  [16, 185, 129],
+    amber:  [245, 158, 11],
+    red:    [239, 68, 68],
+    purple: [139, 92, 246],
+    white:  [255, 255, 255],
+    offwhite:[248,249,255],
+    gray:   [100, 116, 139],
+    lgray:  [226, 232, 240],
+    dark:   [30, 41, 59],
+  };
+
+  const sym = { USD:'$', EUR:'€', GBP:'£', MXN:'$', COP:'$', ARS:'$', CLP:'$', PEN:'S/', BRL:'R$', CAD:'C$' };
+  const cs = sym[currency] || '$';
+  const fc = v => cs + Number(v||0).toLocaleString('en-US',{maximumFractionDigits:0});
+  const pct = v => (v||0).toFixed(1) + '%';
+
+  // ── helpers ──────────────────────────────────────────────────────────────
+  const safeColor = (color) => Array.isArray(color) && color.length >= 3 ? color : [100,116,139];
+  const rect = (x, y, w, h, color, alpha=1) => {
+    doc.setFillColor(...safeColor(color));
+    doc.rect(x, y, w, h, 'F');
+  };
+  const rRect = (x, y, w, h, r, color) => {
+    doc.setFillColor(...safeColor(color));
+    doc.roundedRect(x, y, w, h, r, r, 'F');
+  };
+  const txt = (text, x, y, size, color, align='left', style='normal') => {
+    doc.setFontSize(size);
+    doc.setTextColor(...safeColor(color));
+    doc.setFont('helvetica', style);
+    doc.text(String(text||''), x, y, { align });
+  };
+  const line = (x1, y1, x2, y2, color, lw=0.3) => {
+    doc.setDrawColor(...safeColor(color));
+    doc.setLineWidth(lw);
+    doc.line(x1, y1, x2, y2);
+  };
+
+  const kpiCard = (x, y, w, h, label, value, color, subtext='') => {
+    rRect(x, y, w, h, 3, color);
+    // overlay removed for jsPDF 2.5 compat
+    txt(label, x+4, y+7, 7, C.white, 'left', 'normal');
+    txt(value, x+4, y+16, 13, C.white, 'left', 'bold');
+    if (subtext) txt(subtext, x+4, y+21, 6, [200,220,255], 'left');
+  };
+
+  const semaphore = (x, y, valor, meta, label, valueLabel, invert=false) => {
+    let color, status;
+    if (invert) {
+      color = valor <= meta * 0.8 ? C.green : valor <= meta ? C.amber : C.red;
+      status = valor <= meta * 0.8 ? 'EXCELENTE' : valor <= meta ? 'ACEPTABLE' : 'REVISAR';
+    } else {
+      color = valor >= meta ? C.green : valor >= meta * 0.67 ? C.amber : C.red;
+      status = valor >= meta ? 'CUMPLIDO' : valor >= meta * 0.67 ? 'EN CAMINO' : 'ATENCIÓN';
+    }
+    rRect(x, y, 90, 18, C.offwhite, 3);
+    rRect(x, y, 4, 18, color, 2);
+    txt(label, x+8, y+7, 7.5, C.dark, 'left', 'bold');
+    txt(valueLabel, x+8, y+13, 8, color, 'left', 'bold');
+    rRect(x+60, y+4, 26, 10, color, 3);
+    txt(status, x+73, y+10, 6.5, C.white, 'center', 'bold');
+  };
+
+  const progressBar = (x, y, w, pctVal, color, bgColor=[230,234,255]) => {
+    rRect(x, y, w, 4, bgColor, 2);
+    const filled = Math.min(pctVal/100, 1) * w;
+    if (filled > 0) rRect(x, y, filled, 4, color, 2);
+  };
+
+  const newPage = (bgColor=C.offwhite) => {
+    doc.addPage();
+    rect(0, 0, W, H, bgColor);
+  };
+
+  const pageHeader = (title, subtitle, accent=C.blue) => {
+    rect(0, 0, W, 28, accent);
+    // diagonal accent strip
+    // decorative triangle removed (jsPDF 2.5 compat)
+    txt(title, 12, 12, 16, C.white, 'left', 'bold');
+    txt(subtitle, 12, 21, 8, [200,220,255], 'left');
+    txt(userProfile.nombre+' '+userProfile.apellido, W-12, 12, 8, [200,220,255], 'right');
+    txt(new Date().toLocaleDateString('es-ES',{year:'numeric',month:'long',day:'numeric'}), W-12, 21, 7, [170,190,255], 'right');
+  };
+
+  const pageFooter = (pageNum) => {
+    rect(0, H-10, W, 10, C.navy);
+    txt('Xavier Serbia · Money Map', 12, H-3.5, 6.5, [120,140,200]);
+    txt(`Pág. ${pageNum}`, W/2, H-3.5, 6.5, [120,140,200], 'center');
+    txt('Confidencial', W-12, H-3.5, 6.5, [120,140,200], 'right');
+  };
+
+  // ═══════════════════════════════════════════════════════════
+  //  PAGE 1 — COVER
+  // ═══════════════════════════════════════════════════════════
+  rect(0, 0, W, H, C.navy);
+  // gradient strips
+  for(let i=0;i<8;i++) { rect(0, i*8, W, 7, [15+i*3, 23+i*5, 66+i*12]); }
+  // accent shapes
+  // ellipses removed for jsPDF 2.5 compat
+
+  // Top strip
+  rect(0, 0, W, 3, C.blue);
+  rRect(0, 0, 3, H, 0, C.green);
+
+  // Logo text
+  txt('XAVIER SERBIA', 16, 28, 10, C.lblue, 'left', 'bold');
+  txt('MONEY MAP', 16, 36, 8, [120,150,220], 'left', 'normal');
+
+  // Main title
+  txt('DIAGNÓSTICO', 16, 80, 32, C.white, 'left', 'bold');
+  txt('FINANCIERO', 16, 100, 32, C.green, 'left', 'bold');
+  txt('PERSONAL', 16, 120, 32, [150,170,255], 'left', 'bold');
+
+  // Decorative line
+  rect(16, 128, 80, 2, C.green);
+  rect(16, 128, 40, 2, C.blue);
+
+  // Client card
+  rRect(14, 145, W-28, 55, 4, [20,35,90]);
+  rRect(14, 145, 5, 55, 2, C.green);
+  txt('PREPARADO PARA:', 26, 158, 8, C.teal, 'left', 'bold');
+  const fullName = `${userProfile.nombre || 'Cliente'} ${userProfile.apellido || ''}`.trim();
+  txt(fullName, 26, 172, 22, C.white, 'left', 'bold');
+  if (userProfile.analisisConjunto && userProfile.parejaNombre) {
+    txt('& ' + userProfile.parejaNombre, 26, 182, 13, [150,200,255], 'left');
+  }
+  const ageLine = [userProfile.edad && `${userProfile.edad} años`, userProfile.estadoCivil, userProfile.dependientes > 0 && `${userProfile.dependientes} dependiente(s)`].filter(Boolean).join('  ·  ');
+  txt(ageLine, 26, 194, 8, [120,160,210], 'left');
+
+  // Date & advisor
+  txt(new Date().toLocaleDateString('es-ES',{year:'numeric',month:'long',day:'numeric'}), W-16, 162, 9, [120,160,210], 'right');
+  txt('Confidencial · Uso exclusivo del cliente', W-16, 172, 7, [80,110,170], 'right');
+
+  // Quick KPIs on cover
+  const kpis = [
+    { label:'Patrimonio Neto', value: fc(totales.patrimonioNeto), color: totales.patrimonioNeto >= 0 ? C.green : C.red },
+    { label:'Ingresos / mes',  value: fc(totales.totalIngresos/12), color: C.blue },
+    { label:'Activos Totales', value: fc(totales.activosTotales),  color: C.purple },
+    { label:'Deudas Totales',  value: fc(totales.pasivosTotales),  color: C.amber },
+  ];
+  const kw = (W-28-18)/4;
+  kpis.forEach((k, i) => {
+    rRect(14 + i*(kw+6), 212, kw, 28, [20,35,90], 3);
+    rRect(14 + i*(kw+6), 212, kw, 3, k.color, 1);
+    txt(k.label, 14 + i*(kw+6) + kw/2, 224, 6.5, [150,180,230], 'center');
+    txt(k.value, 14 + i*(kw+6) + kw/2, 234, 10, k.color, 'center', 'bold');
+  });
+
+  // Bottom tag
+  txt('Generado con Xavier Serbia Money Map', W/2, H-18, 8, [60,90,150], 'center');
+  rect(0, H-6, W, 6, C.green);
+
+  // ═══════════════════════════════════════════════════════════
+  //  PAGE 2 — RESUMEN EJECUTIVO
+  // ═══════════════════════════════════════════════════════════
+  newPage();
+  pageHeader('RESUMEN EJECUTIVO', 'Métricas clave · Semáforo financiero', C.blue);
+  pageFooter(2);
+
+  let y = 36;
+  // Big KPI row
+  const kpiColors = [C.green, C.blue, C.purple, C.teal, C.amber, C.red];
+  const kpis2 = [
+    { label:'Patrimonio Neto',  value:fc(totales.patrimonioNeto),       color: totales.patrimonioNeto>=0?C.green:C.red,  sub: 'Activos − Pasivos' },
+    { label:'Ingresos / mes',   value:fc(totales.totalIngresos/12),      color: C.blue,   sub: 'Total mensual' },
+    { label:'Activos Totales',  value:fc(totales.activosTotales),        color: C.purple, sub: 'Todos los activos' },
+    { label:'Deudas Totales',   value:fc(totales.pasivosTotales),        color: C.amber,  sub: 'Pasivos totales' },
+    { label:'Superávit / mes',  value:fc((totales.totalIngresos-totales.totalGastos)/12), color: (totales.totalIngresos-totales.totalGastos)>=0?C.green:C.red, sub: 'Flujo libre' },
+    { label:'Cuentas Retiro',   value:fc(totales.totalRetiro),           color: C.teal,   sub: '401k + IRA + otros' },
+  ];
+  const kw2 = (W-24-10)/3;
+  kpis2.forEach((k, i) => {
+    let col = i % 3, row = Math.floor(i/3);
+    kpiCard(12 + col*(kw2+5), y + row*32, kw2, 28, k.label, k.value, k.color, k.sub);
+  });
+
+  y += 72;
+  txt('INDICADORES FINANCIEROS', 12, y, 9, C.dark, 'left', 'bold');
+  rect(12, y+2, 60, 0.5, C.blue);
+  y += 10;
+
+  // Ratios semaphores — 2 columns
+  const ratios = ratiosData || {};
+  const semData = [
+    { label:'Reserva Emergencia',    val: ratios.reservaEmergencia?.valor||0,    meta:6,  display: (ratios.reservaEmergencia?.valor||0).toFixed(1)+' meses',  invert:false },
+    { label:'Ratio Deuda / Ingreso', val: ratios.deudaIngreso?.valor||0,         meta:36, display: pct(ratios.deudaIngreso?.valor||0),                         invert:true  },
+    { label:'Tasa de Ahorro',        val: ratios.tasaAhorro?.valor||0,           meta:20, display: pct(ratios.tasaAhorro?.valor||0),                           invert:false },
+    { label:'Razón Corriente',       val: ratios.razonCorriente?.valor||0,       meta:1,  display: (ratios.razonCorriente?.valor||0).toFixed(2)+'x',            invert:false },
+    { label:'Inversión / Ingreso',   val: ratios.inversionIngreso?.valor||0,     meta:1,  display: (ratios.inversionIngreso?.valor||0).toFixed(1)+'x',          invert:false },
+    { label:'Nivel Riqueza Neta',    val: ratios.riquezaNeta?.valor||0,          meta:1,  display: (ratios.riquezaNeta?.valor||0).toFixed(1)+'x',               invert:false },
+  ];
+  semData.forEach((s, i) => {
+    let col2 = i % 2, row2 = Math.floor(i/2);
+    semaphore(12 + col2*97, y + row2*22, s.val, s.meta, s.label, s.display, s.invert);
+  });
+
+  y += 72;
+  // Savings rate visual bar
+  const tasaAhorro = totales.totalIngresos > 0 ? ((totales.totalIngresos - totales.totalGastos) / totales.totalIngresos) * 100 : 0;
+  rRect(12, y, W-24, 22, C.offwhite, 3);
+  txt('TASA DE AHORRO', 18, y+8, 7, C.dark, 'left', 'bold');
+  txt(pct(tasaAhorro), W-18, y+8, 10, tasaAhorro>=20?C.green:tasaAhorro>=10?C.amber:C.red, 'right', 'bold');
+  progressBar(18, y+13, W-36, tasaAhorro, tasaAhorro>=20?C.green:tasaAhorro>=10?C.amber:C.red);
+  // benchmarks
+  txt('10%', 18 + (W-36)*0.1, y+20, 5.5, C.gray, 'center');
+  txt('20%', 18 + (W-36)*0.2, y+20, 5.5, C.green, 'center');
+  line(18+(W-36)*0.2, y+10, 18+(W-36)*0.2, y+17, C.green, 0.4);
+
+  // ═══════════════════════════════════════════════════════════
+  //  PAGE 3 — FLUJO DE CAJA
+  // ═══════════════════════════════════════════════════════════
+  newPage();
+  pageHeader('FLUJO DE CAJA', 'Ingresos · Gastos · Ahorro mensual', C.teal);
+  pageFooter(3);
+
+  y = 36;
+  const ingMens  = totales.totalIngresos / 12;
+  const gastMens = totales.totalGastos / 12;
+  const ahorMens = (totales.totalIngresos - totales.totalGastos) / 12;
+
+  // 3 big cards
+  [
+    { label:'INGRESOS TOTALES / MES', value: fc(ingMens),  color:C.green,  sub:'Fuentes activas y pasivas' },
+    { label:'GASTOS TOTALES / MES',   value: fc(gastMens), color:C.red,    sub:'Incl. deuda y seguros' },
+    { label:'FLUJO LIBRE / MES',      value: fc(ahorMens), color:ahorMens>=0?C.teal:C.red, sub:'Superávit disponible' },
+  ].forEach((k, i) => {
+    const bw = (W-24-10)/3;
+    kpiCard(12 + i*(bw+5), y, bw, 32, k.label, k.value, k.color, k.sub);
+  });
+  y += 40;
+
+  // Waterfall bar
+  rRect(12, y, W-24, 70, C.offwhite, 3);
+  txt('DISTRIBUCIÓN DEL INGRESO', 18, y+9, 8, C.dark, 'left', 'bold');
+  y += 14;
+
+  const gastCats = [
+    { label:'Gastos diarios',  val: (totales.totalDiarios||0)/12,    color:C.amber  },
+    { label:'Seguros',         val: (totales.totalSeguros||0)/12,     color:C.purple },
+    { label:'Deuda (pagos)',   val: (totales.totalDeudaGastos||0)/12, color:C.red    },
+    { label:'Impuestos',       val: (totales.totalImpuestos||0)/12,   color:[150,100,200] },
+    { label:'Ahorro / Inv.',   val: (totales.totalAhorro||0)/12,      color:C.green  },
+  ];
+  const totalForBar = ingMens || 1;
+  let cumPct = 0;
+  const barW = W-24-20;
+  const barX = 18;
+  const barY = y + 6;
+
+  gastCats.forEach(gc => {
+    let gpct = (gc.val / totalForBar) * 100;
+    const segW = (gpct/100) * barW;
+    if (segW > 1) {
+      rRect(barX + (cumPct/100)*barW, barY, segW, 12, gc.color, 1);
+      cumPct += p;
+    }
+  });
+  y += 22;
+
+  // Legend
+  let lx = barX; let ly = y+8;
+  gastCats.forEach((gc, i) => {
+    if (i===3) { lx = barX; ly += 12; }
+    rRect(lx, ly-4, 8, 5, gc.color, 1);
+    txt(gc.label, lx+10, ly, 6.5, C.dark);
+    txt(fc(gc.val), lx+50, ly, 6.5, gc.color, 'right');
+    lx += 90;
+  });
+  y += 28;
+
+  // Ingreso detail table
+  txt('DETALLE DE INGRESOS', 12, y+9, 8, C.dark, 'left', 'bold');
+  y += 14;
+  const ingRows = (ingresos||[]).slice(0,8).map(i=>[ i.nombre||'Ingreso', i.categoria||'', fc(parseFloat(i.monto||0)), pct(parseFloat(i.monto||0)*100/(ingMens||1)) ]);
+  doc.autoTable({
+    startY: y,
+    head: [['Fuente de ingreso','Categoría','Mensual','% del total']],
+    body: ingRows,
+    theme:'grid',
+    margin:{left:12,right:12},
+    headStyles:{fillColor:C.teal,textColor:C.white,fontStyle:'bold',fontSize:7},
+    bodyStyles:{fontSize:7,textColor:C.dark},
+    alternateRowStyles:{fillColor:[240,253,252]},
+    columnStyles:{0:{cellWidth:70},1:{cellWidth:40},2:{cellWidth:35,halign:'right'},3:{cellWidth:25,halign:'right'}},
+  });
+
+  // ═══════════════════════════════════════════════════════════
+  //  PAGE 4 — BALANCE GENERAL
+  // ═══════════════════════════════════════════════════════════
+  newPage();
+  pageHeader('BALANCE GENERAL', 'Activos · Pasivos · Patrimonio neto', C.purple);
+  pageFooter(4);
+
+  y = 36;
+  // Activos vs Pasivos big visual
+  const actTotal = totales.activosTotales || 1;
+  const pasTotal = totales.pasivosTotales;
+  const patNeto  = totales.patrimonioNeto;
+
+  // Side-by-side bars
+  const halfW = (W-24-8)/2;
+  // Activos
+  rRect(12, y, halfW, 28, C.purple, 3);
+  txt('ACTIVOS TOTALES', 18, y+9, 7, C.white, 'left', 'bold');
+  txt(fc(totales.activosTotales), 18, y+21, 14, C.white, 'left', 'bold');
+  // Pasivos
+  rRect(16+halfW, y, halfW, 28, C.amber, 3);
+  txt('PASIVOS TOTALES', 22+halfW, y+9, 7, C.white, 'left', 'bold');
+  txt(fc(totales.pasivosTotales), 22+halfW, y+21, 14, C.white, 'left', 'bold');
+  y += 34;
+
+  // Patrimonio bar
+  rRect(12, y, W-24, 18, patNeto>=0?[230,253,245]:[255,235,235], 3);
+  rRect(12, y, 5, 18, patNeto>=0?C.green:C.red, 2);
+  txt('PATRIMONIO NETO', 22, y+8, 8, C.dark, 'left', 'bold');
+  txt(fc(patNeto), W-14, y+8, 13, patNeto>=0?C.green:C.red, 'right', 'bold');
+  txt(patNeto>=0?'Posición financiera sólida':'Patrimonio negativo — acción requerida', 22, y+14, 6.5, C.gray, 'left');
+  y += 24;
+
+  // Asset breakdown donut-style horizontal bars
+  txt('COMPOSICIÓN DE ACTIVOS', 12, y+8, 8, C.dark, 'left', 'bold');
+  y += 13;
+  const actCats = [
+    { label:'Efectivo / Liquidez',  val: totales.totalEfectivo,      color:C.teal   },
+    { label:'Inversiones',          val: totales.totalInversiones,    color:C.blue   },
+    { label:'Retiro (401k/IRA)',     val: totales.totalRetiro,         color:C.amber  },
+    { label:'Bienes Raíces',        val: totales.totalBienesRaices,   color:C.green  },
+    { label:'Bienes Personales',    val: totales.totalBienesPersonales, color:C.purple },
+  ];
+  actCats.forEach(ac => {
+    let apct = actTotal > 0 ? (ac.val / actTotal)*100 : 0;
+    rRect(12, y, W-24, 11, C.offwhite, 2);
+    rRect(12, y, 4, 11, ac.color, 1);
+    txt(ac.label, 20, y+7.5, 7, C.dark);
+    progressBar(70, y+3.5, 80, apct, ac.color);
+    txt(pct(p), 154, y+7.5, 6.5, ac.color, 'right');
+    txt(fc(ac.val), W-12, y+7.5, 7, C.dark, 'right', 'bold');
+    y += 13;
+  });
+
+  y += 4;
+  txt('COMPOSICIÓN DE DEUDAS', 12, y+8, 8, C.dark, 'left', 'bold');
+  y += 13;
+  const dCats = [
+    { label:'Hipotecas',         val:(deudas.casa||[]).reduce((s,i)=>s+parseFloat(i.balance||0),0),         color:C.amber  },
+    { label:'Tarjetas crédito',  val:(deudas.tarjetas||[]).reduce((s,i)=>s+parseFloat(i.balance||0),0),     color:C.red    },
+    { label:'Auto',              val:(deudas.auto||[]).reduce((s,i)=>s+parseFloat(i.balance||0),0),         color:C.purple },
+    { label:'HELOC / Propiedad', val:(deudas.lineaPropiedad||[]).reduce((s,i)=>s+parseFloat(i.balance||0),0), color:C.blue },
+    { label:'Préstamos pers.',   val:(deudas.lineaPersonal||[]).reduce((s,i)=>s+parseFloat(i.balance||0),0), color:C.teal  },
+    { label:'Otros',             val:(deudas.otros||[]).reduce((s,i)=>s+parseFloat(i.balance||0),0),        color:C.gray  },
+  ].filter(d => d.val > 0);
+  const dTotal = pasTotal || 1;
+  dCats.forEach(dc => {
+    let dpct = (dc.val / dTotal)*100;
+    rRect(12, y, W-24, 11, [255,250,250], 2);
+    rRect(12, y, 4, 11, dc.color, 1);
+    txt(dc.label, 20, y+7.5, 7, C.dark);
+    progressBar(70, y+3.5, 80, dpct, dc.color, [255,220,220]);
+    txt(pct(p), 154, y+7.5, 6.5, dc.color, 'right');
+    txt(fc(dc.val), W-12, y+7.5, 7, C.dark, 'right', 'bold');
+    y += 13;
+  });
+
+  // ═══════════════════════════════════════════════════════════
+  //  PAGE 5 — METAS
+  // ═══════════════════════════════════════════════════════════
+  if (goals && goals.length > 0) {
+    newPage();
+    pageHeader('METAS FINANCIERAS', 'Objetivos · Prioridades · Estado actual', C.green);
+    pageFooter(5);
+
+    y = 36;
+    const goalColors = { completado:C.green, 'en progreso':C.blue, pendiente:C.amber, 'no aplica':C.gray };
+    const goalIcons  = { retiro:'🏖', emergencia:'🛡', casa:'🏠', educacion:'🎓', deudas:'💳', inversiones:'📈', independencia:'🦅', negocio:'💼', auto:'🚗', viaje:'✈', herencia:'🎁', otro:'🎯' };
+
+    goals.slice(0, 10).forEach((g, i) => {
+      const gColor = goalColors[g.status] || C.amber;
+      const label = GOAL_META[g.key] || g.key;
+      const statusLabel = (g.status || 'pendiente').toUpperCase();
+
+      rRect(12, y, W-24, 20, i%2===0?C.offwhite:[240,242,255], 3);
+      rRect(12, y, 5, 20, gColor, 2);
+      txt(label, 22, y+8, 9, C.dark, 'left', 'bold');
+      if (g.notes) {
+        const noteLines = doc.splitTextToSize(g.notes, 110);
+        txt(noteLines[0], 22, y+15, 6.5, C.gray, 'left');
+      }
+      rRect(W-45, y+5, 33, 10, gColor, 3);
+      txt(statusLabel, W-29, y+11.5, 6.5, C.white, 'center', 'bold');
+      y += 23;
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //  PAGE 6 — RECOMENDACIONES
+  // ═══════════════════════════════════════════════════════════
+  newPage();
+  pageHeader('RECOMENDACIONES DEL COACH', 'Plan de acción personalizado', [15, 120, 80]);
+  pageFooter(6);
+
+  y = 36;
+  // Advisor note card
+  rRect(12, y, W-24, 16, [240,253,244], 3);
+  rRect(12, y, 5, 16, C.green, 2);
+  txt('Análisis y plan de acción preparado por tu coach financiero', 22, y+6.5, 7.5, C.dark, 'left', 'bold');
+  txt('Las siguientes recomendaciones están basadas en tu perfil y datos financieros actuales.', 22, y+12, 6.5, C.gray);
+  y += 22;
+
+  // Recommendations text
+  const recoLines = doc.splitTextToSize(recomendaciones || '', W-36);
+  const lineHeight = 6;
+  let lineBlock = 0;
+  recoLines.forEach(rl => {
+    if (y + lineHeight > H - 20) {
+      doc.addPage();
+      rect(0, 0, W, H, C.offwhite);
+      pageFooter('6+');
+      y = 16;
+    }
+    const isAction = rl.startsWith('•') || rl.startsWith('✅') || rl.startsWith('⚠️') || rl.startsWith('🔴') || rl.startsWith('💛') || rl.startsWith('📅');
+    const isSectionHeader = rl.startsWith('📅') || rl.startsWith('\n');
+    if (isSectionHeader) { y += 4; }
+    doc.setFontSize(isAction ? 8 : 8);
+    doc.setTextColor(...safeColor(rl.startsWith('✅')?C.green:rl.startsWith('🔴')?C.red:rl.startsWith('⚠️')?[180,100,0]:C.dark));
+    doc.setFont('helvetica', isAction?'normal':'normal');
+    doc.text(rl, 14, y);
+    y += lineHeight;
+    lineBlock++;
+  });
+
+  if (notasCoach && notasCoach.trim()) {
+    y += 6;
+    rRect(12, y, W-24, 10, [240,253,244], 3);
+    txt('NOTAS ADICIONALES DEL COACH', 18, y+7, 7, C.green, 'left', 'bold');
+    y += 14;
+    const notaLines = doc.splitTextToSize(notasCoach, W-36);
+    notaLines.forEach(nl => {
+      doc.setFontSize(8);
+      doc.setTextColor(...safeColor(C.dark));
+      doc.text(nl, 14, y);
+      y += 6;
+    });
+  }
+
+  // Signature block
+  if (y + 40 < H - 15) {
+    y += 10;
+    line(12, y, 80, y, C.lgray, 0.5);
+    txt('Firma del Coach / Asesor', 12, y+6, 7, C.gray);
+    line(W-80, y, W-12, y, C.lgray, 0.5);
+    txt('Firma del Cliente', W-80, y+6, 7, C.gray);
+  }
+
+  // Save
+  const safeName = (fullName || 'cliente').replace(/\s+/g,'_');
+  doc.save(`MoneyMap_Reporte_${safeName}_${new Date().toISOString().slice(0,10)}.pdf`);
+}
+
+</script>
 </head>
 <body>
 <div id="root"></div>
@@ -953,530 +1482,6 @@ function calcMesesRecomendados(userProfile) {
   return 6;
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-//  REPORTE PDF — Keynote-style financial summary
-// ════════════════════════════════════════════════════════════════════════════
-
-const GOAL_META = {
-  retiro:'Retiro cómodo', emergencia:'Fondo emergencia', casa:'Comprar casa',
-  educacion:'Educación hijos', deudas:'Pagar deudas', inversiones:'Crecer dinero',
-  independencia:'Independencia financiera', negocio:'Negocio propio',
-  auto:'Comprar auto', viaje:'Viaje / Vacaciones', herencia:'Dejar herencia', otro:'Otra meta',
-};
-
-function autoRecos(totales, ratiosData, userProfile, currency) {
-  const fc = v => {
-    const s = { USD:'$', EUR:'€', GBP:'£', MXN:'$', COP:'$', ARS:'$', CLP:'$', PEN:'S/', BRL:'R$', CAD:'C$' };
-    return (s[currency]||'$') + Number(v||0).toLocaleString('en-US',{maximumFractionDigits:0});
-  };
-  const lines = [];
-  const nombre = userProfile.nombre || 'el cliente';
-
-  // Net worth
-  if (totales.patrimonioNeto > 0)
-    lines.push(`✅ Patrimonio neto positivo de ${fc(totales.patrimonioNeto)}. Continuar estrategia de acumulación.`);
-  else
-    lines.push(`⚠️ Patrimonio neto negativo (${fc(totales.patrimonioNeto)}). Prioridad: reducir pasivos.`);
-
-  // Savings rate
-  const ahorro = (totales.totalIngresos - totales.totalGastos);
-  const tasaAhorro = totales.totalIngresos > 0 ? (ahorro / totales.totalIngresos) * 100 : 0;
-  if (tasaAhorro >= 20)
-    lines.push(`✅ Tasa de ahorro del ${tasaAhorro.toFixed(0)}% — excelente disciplina financiera.`);
-  else if (tasaAhorro >= 10)
-    lines.push(`💛 Tasa de ahorro del ${tasaAhorro.toFixed(0)}%. Meta recomendada: 20%. Identificar gastos a reducir.`);
-  else
-    lines.push(`🔴 Tasa de ahorro baja (${tasaAhorro.toFixed(0)}%). Acción urgente: revisar presupuesto y gastos fijos.`);
-
-  // Reserva emergencia
-  const re = ratiosData?.reservaEmergencia;
-  if (re) {
-    if (re.valor >= 6) lines.push(`✅ Fondo de emergencia adecuado (${re.valor.toFixed(1)} meses). Mantener en cuenta HYSA.`);
-    else lines.push(`🔴 Fondo de emergencia insuficiente (${re.valor.toFixed(1)} meses). Meta: ${re.meta||6}+ meses de gastos.`);
-  }
-
-  // Deuda/ingreso
-  const di = ratiosData?.deudaIngreso;
-  if (di) {
-    if (di.valor <= 36) lines.push(`✅ Ratio deuda/ingreso saludable (${di.valor.toFixed(0)}%). Por debajo del límite del 36%.`);
-    else lines.push(`⚠️ Ratio deuda/ingreso elevado (${di.valor.toFixed(0)}%). Priorizar amortización de deudas de alto interés.`);
-  }
-
-  lines.push(`\n📅 Próximos pasos sugeridos:`);
-  lines.push(`• Revisar y actualizar beneficiarios en cuentas de retiro`);
-  lines.push(`• Programar revisión trimestral del portfolio`);
-  lines.push(`• Evaluar incremento en aportes al 401(k) para capturar máximo employer match`);
-
-  return lines.join('\n');
-}
-
-function generarReportePDF({ userProfile, totales, ingresos, gastos, activos, deudas, ratiosData, goals, currency, recomendaciones, notasCoach }) {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
-  const W = 210, H = 297;
-
-  const C = {
-    navy:   [15, 23, 66],
-    blue:   [57, 86, 232],
-    lblue:  [99, 131, 246],
-    teal:   [6, 182, 212],
-    green:  [16, 185, 129],
-    amber:  [245, 158, 11],
-    red:    [239, 68, 68],
-    purple: [139, 92, 246],
-    white:  [255, 255, 255],
-    offwhite:[248,249,255],
-    gray:   [100, 116, 139],
-    lgray:  [226, 232, 240],
-    dark:   [30, 41, 59],
-  };
-
-  const sym = { USD:'$', EUR:'€', GBP:'£', MXN:'$', COP:'$', ARS:'$', CLP:'$', PEN:'S/', BRL:'R$', CAD:'C$' };
-  const cs = sym[currency] || '$';
-  const fc = v => cs + Number(v||0).toLocaleString('en-US',{maximumFractionDigits:0});
-  const pct = v => (v||0).toFixed(1) + '%';
-
-  // ── helpers ──────────────────────────────────────────────────────────────
-  const safeColor = (color) => Array.isArray(color) && color.length >= 3 ? color : [100,116,139];
-  const rect = (x, y, w, h, color, alpha=1) => {
-    doc.setFillColor(...safeColor(color));
-    doc.rect(x, y, w, h, 'F');
-  };
-  const rRect = (x, y, w, h, r, color) => {
-    doc.setFillColor(...safeColor(color));
-    doc.roundedRect(x, y, w, h, r, r, 'F');
-  };
-  const txt = (text, x, y, size, color, align='left', style='normal') => {
-    doc.setFontSize(size);
-    doc.setTextColor(...safeColor(color));
-    doc.setFont('helvetica', style);
-    doc.text(String(text||''), x, y, { align });
-  };
-  const line = (x1, y1, x2, y2, color, lw=0.3) => {
-    doc.setDrawColor(...safeColor(color));
-    doc.setLineWidth(lw);
-    doc.line(x1, y1, x2, y2);
-  };
-
-  const kpiCard = (x, y, w, h, label, value, color, subtext='') => {
-    rRect(x, y, w, h, 3, color);
-    // overlay removed for jsPDF 2.5 compat
-    txt(label, x+4, y+7, 7, C.white, 'left', 'normal');
-    txt(value, x+4, y+16, 13, C.white, 'left', 'bold');
-    if (subtext) txt(subtext, x+4, y+21, 6, [200,220,255], 'left');
-  };
-
-  const semaphore = (x, y, valor, meta, label, valueLabel, invert=false) => {
-    let color, status;
-    if (invert) {
-      color = valor <= meta * 0.8 ? C.green : valor <= meta ? C.amber : C.red;
-      status = valor <= meta * 0.8 ? 'EXCELENTE' : valor <= meta ? 'ACEPTABLE' : 'REVISAR';
-    } else {
-      color = valor >= meta ? C.green : valor >= meta * 0.67 ? C.amber : C.red;
-      status = valor >= meta ? 'CUMPLIDO' : valor >= meta * 0.67 ? 'EN CAMINO' : 'ATENCIÓN';
-    }
-    rRect(x, y, 90, 18, C.offwhite, 3);
-    rRect(x, y, 4, 18, color, 2);
-    txt(label, x+8, y+7, 7.5, C.dark, 'left', 'bold');
-    txt(valueLabel, x+8, y+13, 8, color, 'left', 'bold');
-    rRect(x+60, y+4, 26, 10, color, 3);
-    txt(status, x+73, y+10, 6.5, C.white, 'center', 'bold');
-  };
-
-  const progressBar = (x, y, w, pctVal, color, bgColor=[230,234,255]) => {
-    rRect(x, y, w, 4, bgColor, 2);
-    const filled = Math.min(pctVal/100, 1) * w;
-    if (filled > 0) rRect(x, y, filled, 4, color, 2);
-  };
-
-  const newPage = (bgColor=C.offwhite) => {
-    doc.addPage();
-    rect(0, 0, W, H, bgColor);
-  };
-
-  const pageHeader = (title, subtitle, accent=C.blue) => {
-    rect(0, 0, W, 28, accent);
-    // diagonal accent strip
-    // decorative triangle removed (jsPDF 2.5 compat)
-    txt(title, 12, 12, 16, C.white, 'left', 'bold');
-    txt(subtitle, 12, 21, 8, [200,220,255], 'left');
-    txt(userProfile.nombre+' '+userProfile.apellido, W-12, 12, 8, [200,220,255], 'right');
-    txt(new Date().toLocaleDateString('es-ES',{year:'numeric',month:'long',day:'numeric'}), W-12, 21, 7, [170,190,255], 'right');
-  };
-
-  const pageFooter = (pageNum) => {
-    rect(0, H-10, W, 10, C.navy);
-    txt('Xavier Serbia · Money Map', 12, H-3.5, 6.5, [120,140,200]);
-    txt(`Pág. ${pageNum}`, W/2, H-3.5, 6.5, [120,140,200], 'center');
-    txt('Confidencial', W-12, H-3.5, 6.5, [120,140,200], 'right');
-  };
-
-  // ═══════════════════════════════════════════════════════════
-  //  PAGE 1 — COVER
-  // ═══════════════════════════════════════════════════════════
-  rect(0, 0, W, H, C.navy);
-  // gradient strips
-  for(let i=0;i<8;i++) { rect(0, i*8, W, 7, [15+i*3, 23+i*5, 66+i*12]); }
-  // accent shapes
-  // ellipses removed for jsPDF 2.5 compat
-
-  // Top strip
-  rect(0, 0, W, 3, C.blue);
-  rRect(0, 0, 3, H, 0, C.green);
-
-  // Logo text
-  txt('XAVIER SERBIA', 16, 28, 10, C.lblue, 'left', 'bold');
-  txt('MONEY MAP', 16, 36, 8, [120,150,220], 'left', 'normal');
-
-  // Main title
-  txt('DIAGNÓSTICO', 16, 80, 32, C.white, 'left', 'bold');
-  txt('FINANCIERO', 16, 100, 32, C.green, 'left', 'bold');
-  txt('PERSONAL', 16, 120, 32, [150,170,255], 'left', 'bold');
-
-  // Decorative line
-  rect(16, 128, 80, 2, C.green);
-  rect(16, 128, 40, 2, C.blue);
-
-  // Client card
-  rRect(14, 145, W-28, 55, 4, [20,35,90]);
-  rRect(14, 145, 5, 55, 2, C.green);
-  txt('PREPARADO PARA:', 26, 158, 8, C.teal, 'left', 'bold');
-  const fullName = `${userProfile.nombre || 'Cliente'} ${userProfile.apellido || ''}`.trim();
-  txt(fullName, 26, 172, 22, C.white, 'left', 'bold');
-  if (userProfile.analisisConjunto && userProfile.parejaNombre) {
-    txt('& ' + userProfile.parejaNombre, 26, 182, 13, [150,200,255], 'left');
-  }
-  const ageLine = [userProfile.edad && `${userProfile.edad} años`, userProfile.estadoCivil, userProfile.dependientes > 0 && `${userProfile.dependientes} dependiente(s)`].filter(Boolean).join('  ·  ');
-  txt(ageLine, 26, 194, 8, [120,160,210], 'left');
-
-  // Date & advisor
-  txt(new Date().toLocaleDateString('es-ES',{year:'numeric',month:'long',day:'numeric'}), W-16, 162, 9, [120,160,210], 'right');
-  txt('Confidencial · Uso exclusivo del cliente', W-16, 172, 7, [80,110,170], 'right');
-
-  // Quick KPIs on cover
-  const kpis = [
-    { label:'Patrimonio Neto', value: fc(totales.patrimonioNeto), color: totales.patrimonioNeto >= 0 ? C.green : C.red },
-    { label:'Ingresos / mes',  value: fc(totales.totalIngresos/12), color: C.blue },
-    { label:'Activos Totales', value: fc(totales.activosTotales),  color: C.purple },
-    { label:'Deudas Totales',  value: fc(totales.pasivosTotales),  color: C.amber },
-  ];
-  const kw = (W-28-18)/4;
-  kpis.forEach((k, i) => {
-    rRect(14 + i*(kw+6), 212, kw, 28, [20,35,90], 3);
-    rRect(14 + i*(kw+6), 212, kw, 3, k.color, 1);
-    txt(k.label, 14 + i*(kw+6) + kw/2, 224, 6.5, [150,180,230], 'center');
-    txt(k.value, 14 + i*(kw+6) + kw/2, 234, 10, k.color, 'center', 'bold');
-  });
-
-  // Bottom tag
-  txt('Generado con Xavier Serbia Money Map', W/2, H-18, 8, [60,90,150], 'center');
-  rect(0, H-6, W, 6, C.green);
-
-  // ═══════════════════════════════════════════════════════════
-  //  PAGE 2 — RESUMEN EJECUTIVO
-  // ═══════════════════════════════════════════════════════════
-  newPage();
-  pageHeader('RESUMEN EJECUTIVO', 'Métricas clave · Semáforo financiero', C.blue);
-  pageFooter(2);
-
-  let y = 36;
-  // Big KPI row
-  const kpiColors = [C.green, C.blue, C.purple, C.teal, C.amber, C.red];
-  const kpis2 = [
-    { label:'Patrimonio Neto',  value:fc(totales.patrimonioNeto),       color: totales.patrimonioNeto>=0?C.green:C.red,  sub: 'Activos − Pasivos' },
-    { label:'Ingresos / mes',   value:fc(totales.totalIngresos/12),      color: C.blue,   sub: 'Total mensual' },
-    { label:'Activos Totales',  value:fc(totales.activosTotales),        color: C.purple, sub: 'Todos los activos' },
-    { label:'Deudas Totales',   value:fc(totales.pasivosTotales),        color: C.amber,  sub: 'Pasivos totales' },
-    { label:'Superávit / mes',  value:fc((totales.totalIngresos-totales.totalGastos)/12), color: (totales.totalIngresos-totales.totalGastos)>=0?C.green:C.red, sub: 'Flujo libre' },
-    { label:'Cuentas Retiro',   value:fc(totales.totalRetiro),           color: C.teal,   sub: '401k + IRA + otros' },
-  ];
-  const kw2 = (W-24-10)/3;
-  kpis2.forEach((k, i) => {
-    let col = i % 3, row = Math.floor(i/3);
-    kpiCard(12 + col*(kw2+5), y + row*32, kw2, 28, k.label, k.value, k.color, k.sub);
-  });
-
-  y += 72;
-  txt('INDICADORES FINANCIEROS', 12, y, 9, C.dark, 'left', 'bold');
-  rect(12, y+2, 60, 0.5, C.blue);
-  y += 10;
-
-  // Ratios semaphores — 2 columns
-  const ratios = ratiosData || {};
-  const semData = [
-    { label:'Reserva Emergencia',    val: ratios.reservaEmergencia?.valor||0,    meta:6,  display: (ratios.reservaEmergencia?.valor||0).toFixed(1)+' meses',  invert:false },
-    { label:'Ratio Deuda / Ingreso', val: ratios.deudaIngreso?.valor||0,         meta:36, display: pct(ratios.deudaIngreso?.valor||0),                         invert:true  },
-    { label:'Tasa de Ahorro',        val: ratios.tasaAhorro?.valor||0,           meta:20, display: pct(ratios.tasaAhorro?.valor||0),                           invert:false },
-    { label:'Razón Corriente',       val: ratios.razonCorriente?.valor||0,       meta:1,  display: (ratios.razonCorriente?.valor||0).toFixed(2)+'x',            invert:false },
-    { label:'Inversión / Ingreso',   val: ratios.inversionIngreso?.valor||0,     meta:1,  display: (ratios.inversionIngreso?.valor||0).toFixed(1)+'x',          invert:false },
-    { label:'Nivel Riqueza Neta',    val: ratios.riquezaNeta?.valor||0,          meta:1,  display: (ratios.riquezaNeta?.valor||0).toFixed(1)+'x',               invert:false },
-  ];
-  semData.forEach((s, i) => {
-    let col = i % 2, row = Math.floor(i/2);
-    semaphore(12 + col*97, y + row*22, s.val, s.meta, s.label, s.display, s.invert);
-  });
-
-  y += 72;
-  // Savings rate visual bar
-  const tasaAhorro = totales.totalIngresos > 0 ? ((totales.totalIngresos - totales.totalGastos) / totales.totalIngresos) * 100 : 0;
-  rRect(12, y, W-24, 22, C.offwhite, 3);
-  txt('TASA DE AHORRO', 18, y+8, 7, C.dark, 'left', 'bold');
-  txt(pct(tasaAhorro), W-18, y+8, 10, tasaAhorro>=20?C.green:tasaAhorro>=10?C.amber:C.red, 'right', 'bold');
-  progressBar(18, y+13, W-36, tasaAhorro, tasaAhorro>=20?C.green:tasaAhorro>=10?C.amber:C.red);
-  // benchmarks
-  txt('10%', 18 + (W-36)*0.1, y+20, 5.5, C.gray, 'center');
-  txt('20%', 18 + (W-36)*0.2, y+20, 5.5, C.green, 'center');
-  line(18+(W-36)*0.2, y+10, 18+(W-36)*0.2, y+17, C.green, 0.4);
-
-  // ═══════════════════════════════════════════════════════════
-  //  PAGE 3 — FLUJO DE CAJA
-  // ═══════════════════════════════════════════════════════════
-  newPage();
-  pageHeader('FLUJO DE CAJA', 'Ingresos · Gastos · Ahorro mensual', C.teal);
-  pageFooter(3);
-
-  y = 36;
-  const ingMens  = totales.totalIngresos / 12;
-  const gastMens = totales.totalGastos / 12;
-  const ahorMens = (totales.totalIngresos - totales.totalGastos) / 12;
-
-  // 3 big cards
-  [
-    { label:'INGRESOS TOTALES / MES', value: fc(ingMens),  color:C.green,  sub:'Fuentes activas y pasivas' },
-    { label:'GASTOS TOTALES / MES',   value: fc(gastMens), color:C.red,    sub:'Incl. deuda y seguros' },
-    { label:'FLUJO LIBRE / MES',      value: fc(ahorMens), color:ahorMens>=0?C.teal:C.red, sub:'Superávit disponible' },
-  ].forEach((k, i) => {
-    const bw = (W-24-10)/3;
-    kpiCard(12 + i*(bw+5), y, bw, 32, k.label, k.value, k.color, k.sub);
-  });
-  y += 40;
-
-  // Waterfall bar
-  rRect(12, y, W-24, 70, C.offwhite, 3);
-  txt('DISTRIBUCIÓN DEL INGRESO', 18, y+9, 8, C.dark, 'left', 'bold');
-  y += 14;
-
-  const gastCats = [
-    { label:'Gastos diarios',  val: (totales.totalDiarios||0)/12,    color:C.amber  },
-    { label:'Seguros',         val: (totales.totalSeguros||0)/12,     color:C.purple },
-    { label:'Deuda (pagos)',   val: (totales.totalDeudaGastos||0)/12, color:C.red    },
-    { label:'Impuestos',       val: (totales.totalImpuestos||0)/12,   color:[150,100,200] },
-    { label:'Ahorro / Inv.',   val: (totales.totalAhorro||0)/12,      color:C.green  },
-  ];
-  const totalForBar = ingMens || 1;
-  let cumPct = 0;
-  const barW = W-24-20;
-  const barX = 18;
-  const barY = y + 6;
-
-  gastCats.forEach(gc => {
-    let p = (gc.val / totalForBar) * 100;
-    const segW = (p/100) * barW;
-    if (segW > 1) {
-      rRect(barX + (cumPct/100)*barW, barY, segW, 12, gc.color, 1);
-      cumPct += p;
-    }
-  });
-  y += 22;
-
-  // Legend
-  let lx = barX; let ly = y+8;
-  gastCats.forEach((gc, i) => {
-    if (i===3) { lx = barX; ly += 12; }
-    rRect(lx, ly-4, 8, 5, gc.color, 1);
-    txt(gc.label, lx+10, ly, 6.5, C.dark);
-    txt(fc(gc.val), lx+50, ly, 6.5, gc.color, 'right');
-    lx += 90;
-  });
-  y += 28;
-
-  // Ingreso detail table
-  txt('DETALLE DE INGRESOS', 12, y+9, 8, C.dark, 'left', 'bold');
-  y += 14;
-  const ingRows = (ingresos||[]).slice(0,8).map(i=>[ i.nombre||'Ingreso', i.categoria||'', fc(parseFloat(i.monto||0)), pct(parseFloat(i.monto||0)*100/(ingMens||1)) ]);
-  doc.autoTable({
-    startY: y,
-    head: [['Fuente de ingreso','Categoría','Mensual','% del total']],
-    body: ingRows,
-    theme:'grid',
-    margin:{left:12,right:12},
-    headStyles:{fillColor:C.teal,textColor:C.white,fontStyle:'bold',fontSize:7},
-    bodyStyles:{fontSize:7,textColor:C.dark},
-    alternateRowStyles:{fillColor:[240,253,252]},
-    columnStyles:{0:{cellWidth:70},1:{cellWidth:40},2:{cellWidth:35,halign:'right'},3:{cellWidth:25,halign:'right'}},
-  });
-
-  // ═══════════════════════════════════════════════════════════
-  //  PAGE 4 — BALANCE GENERAL
-  // ═══════════════════════════════════════════════════════════
-  newPage();
-  pageHeader('BALANCE GENERAL', 'Activos · Pasivos · Patrimonio neto', C.purple);
-  pageFooter(4);
-
-  y = 36;
-  // Activos vs Pasivos big visual
-  const actTotal = totales.activosTotales || 1;
-  const pasTotal = totales.pasivosTotales;
-  const patNeto  = totales.patrimonioNeto;
-
-  // Side-by-side bars
-  const halfW = (W-24-8)/2;
-  // Activos
-  rRect(12, y, halfW, 28, C.purple, 3);
-  txt('ACTIVOS TOTALES', 18, y+9, 7, C.white, 'left', 'bold');
-  txt(fc(totales.activosTotales), 18, y+21, 14, C.white, 'left', 'bold');
-  // Pasivos
-  rRect(16+halfW, y, halfW, 28, C.amber, 3);
-  txt('PASIVOS TOTALES', 22+halfW, y+9, 7, C.white, 'left', 'bold');
-  txt(fc(totales.pasivosTotales), 22+halfW, y+21, 14, C.white, 'left', 'bold');
-  y += 34;
-
-  // Patrimonio bar
-  rRect(12, y, W-24, 18, patNeto>=0?[230,253,245]:[255,235,235], 3);
-  rRect(12, y, 5, 18, patNeto>=0?C.green:C.red, 2);
-  txt('PATRIMONIO NETO', 22, y+8, 8, C.dark, 'left', 'bold');
-  txt(fc(patNeto), W-14, y+8, 13, patNeto>=0?C.green:C.red, 'right', 'bold');
-  txt(patNeto>=0?'Posición financiera sólida':'Patrimonio negativo — acción requerida', 22, y+14, 6.5, C.gray, 'left');
-  y += 24;
-
-  // Asset breakdown donut-style horizontal bars
-  txt('COMPOSICIÓN DE ACTIVOS', 12, y+8, 8, C.dark, 'left', 'bold');
-  y += 13;
-  const actCats = [
-    { label:'Efectivo / Liquidez',  val: totales.totalEfectivo,      color:C.teal   },
-    { label:'Inversiones',          val: totales.totalInversiones,    color:C.blue   },
-    { label:'Retiro (401k/IRA)',     val: totales.totalRetiro,         color:C.amber  },
-    { label:'Bienes Raíces',        val: totales.totalBienesRaices,   color:C.green  },
-    { label:'Bienes Personales',    val: totales.totalBienesPersonales, color:C.purple },
-  ];
-  actCats.forEach(ac => {
-    let p = actTotal > 0 ? (ac.val / actTotal)*100 : 0;
-    rRect(12, y, W-24, 11, C.offwhite, 2);
-    rRect(12, y, 4, 11, ac.color, 1);
-    txt(ac.label, 20, y+7.5, 7, C.dark);
-    progressBar(70, y+3.5, 80, p, ac.color);
-    txt(pct(p), 154, y+7.5, 6.5, ac.color, 'right');
-    txt(fc(ac.val), W-12, y+7.5, 7, C.dark, 'right', 'bold');
-    y += 13;
-  });
-
-  y += 4;
-  txt('COMPOSICIÓN DE DEUDAS', 12, y+8, 8, C.dark, 'left', 'bold');
-  y += 13;
-  const dCats = [
-    { label:'Hipotecas',         val:(deudas.casa||[]).reduce((s,i)=>s+parseFloat(i.balance||0),0),         color:C.amber  },
-    { label:'Tarjetas crédito',  val:(deudas.tarjetas||[]).reduce((s,i)=>s+parseFloat(i.balance||0),0),     color:C.red    },
-    { label:'Auto',              val:(deudas.auto||[]).reduce((s,i)=>s+parseFloat(i.balance||0),0),         color:C.purple },
-    { label:'HELOC / Propiedad', val:(deudas.lineaPropiedad||[]).reduce((s,i)=>s+parseFloat(i.balance||0),0), color:C.blue },
-    { label:'Préstamos pers.',   val:(deudas.lineaPersonal||[]).reduce((s,i)=>s+parseFloat(i.balance||0),0), color:C.teal  },
-    { label:'Otros',             val:(deudas.otros||[]).reduce((s,i)=>s+parseFloat(i.balance||0),0),        color:C.gray  },
-  ].filter(d => d.val > 0);
-  const dTotal = pasTotal || 1;
-  dCats.forEach(dc => {
-    let p = (dc.val / dTotal)*100;
-    rRect(12, y, W-24, 11, [255,250,250], 2);
-    rRect(12, y, 4, 11, dc.color, 1);
-    txt(dc.label, 20, y+7.5, 7, C.dark);
-    progressBar(70, y+3.5, 80, p, dc.color, [255,220,220]);
-    txt(pct(p), 154, y+7.5, 6.5, dc.color, 'right');
-    txt(fc(dc.val), W-12, y+7.5, 7, C.dark, 'right', 'bold');
-    y += 13;
-  });
-
-  // ═══════════════════════════════════════════════════════════
-  //  PAGE 5 — METAS
-  // ═══════════════════════════════════════════════════════════
-  if (goals && goals.length > 0) {
-    newPage();
-    pageHeader('METAS FINANCIERAS', 'Objetivos · Prioridades · Estado actual', C.green);
-    pageFooter(5);
-
-    y = 36;
-    const goalColors = { completado:C.green, 'en progreso':C.blue, pendiente:C.amber, 'no aplica':C.gray };
-    const goalIcons  = { retiro:'🏖', emergencia:'🛡', casa:'🏠', educacion:'🎓', deudas:'💳', inversiones:'📈', independencia:'🦅', negocio:'💼', auto:'🚗', viaje:'✈', herencia:'🎁', otro:'🎯' };
-
-    goals.slice(0, 10).forEach((g, i) => {
-      const color = goalColors[g.status] || C.amber;
-      const label = GOAL_META[g.key] || g.key;
-      const statusLabel = (g.status || 'pendiente').toUpperCase();
-
-      rRect(12, y, W-24, 20, i%2===0?C.offwhite:[240,242,255], 3);
-      rRect(12, y, 5, 20, color, 2);
-      txt(label, 22, y+8, 9, C.dark, 'left', 'bold');
-      if (g.notes) {
-        const noteLines = doc.splitTextToSize(g.notes, 110);
-        txt(noteLines[0], 22, y+15, 6.5, C.gray, 'left');
-      }
-      rRect(W-45, y+5, 33, 10, color, 3);
-      txt(statusLabel, W-29, y+11.5, 6.5, C.white, 'center', 'bold');
-      y += 23;
-    });
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  //  PAGE 6 — RECOMENDACIONES
-  // ═══════════════════════════════════════════════════════════
-  newPage();
-  pageHeader('RECOMENDACIONES DEL COACH', 'Plan de acción personalizado', [15, 120, 80]);
-  pageFooter(6);
-
-  y = 36;
-  // Advisor note card
-  rRect(12, y, W-24, 16, [240,253,244], 3);
-  rRect(12, y, 5, 16, C.green, 2);
-  txt('Análisis y plan de acción preparado por tu coach financiero', 22, y+6.5, 7.5, C.dark, 'left', 'bold');
-  txt('Las siguientes recomendaciones están basadas en tu perfil y datos financieros actuales.', 22, y+12, 6.5, C.gray);
-  y += 22;
-
-  // Recommendations text
-  const recoLines = doc.splitTextToSize(recomendaciones || '', W-36);
-  const lineHeight = 6;
-  let lineBlock = 0;
-  recoLines.forEach(rl => {
-    if (y + lineHeight > H - 20) {
-      doc.addPage();
-      rect(0, 0, W, H, C.offwhite);
-      pageFooter('6+');
-      y = 16;
-    }
-    const isAction = rl.startsWith('•') || rl.startsWith('✅') || rl.startsWith('⚠️') || rl.startsWith('🔴') || rl.startsWith('💛') || rl.startsWith('📅');
-    const isSectionHeader = rl.startsWith('📅') || rl.startsWith('\n');
-    if (isSectionHeader) { y += 4; }
-    doc.setFontSize(isAction ? 8 : 8);
-    doc.setTextColor(...safeColor(rl.startsWith('✅')?C.green:rl.startsWith('🔴')?C.red:rl.startsWith('⚠️')?[180,100,0]:C.dark));
-    doc.setFont('helvetica', isAction?'normal':'normal');
-    doc.text(rl, 14, y);
-    y += lineHeight;
-    lineBlock++;
-  });
-
-  if (notasCoach && notasCoach.trim()) {
-    y += 6;
-    rRect(12, y, W-24, 10, [240,253,244], 3);
-    txt('NOTAS ADICIONALES DEL COACH', 18, y+7, 7, C.green, 'left', 'bold');
-    y += 14;
-    const notaLines = doc.splitTextToSize(notasCoach, W-36);
-    notaLines.forEach(nl => {
-      doc.setFontSize(8);
-      doc.setTextColor(...safeColor(C.dark));
-      doc.text(nl, 14, y);
-      y += 6;
-    });
-  }
-
-  // Signature block
-  if (y + 40 < H - 15) {
-    y += 10;
-    line(12, y, 80, y, C.lgray, 0.5);
-    txt('Firma del Coach / Asesor', 12, y+6, 7, C.gray);
-    line(W-80, y, W-12, y, C.lgray, 0.5);
-    txt('Firma del Cliente', W-80, y+6, 7, C.gray);
-  }
-
-  // Save
-  const safeName = (fullName || 'cliente').replace(/\s+/g,'_');
-  doc.save(`MoneyMap_Reporte_${safeName}_${new Date().toISOString().slice(0,10)}.pdf`);
-}
 
 // ── ReporteModal ─────────────────────────────────────────────────────────────
 function ReporteModal({ isOpen, onClose, totales, ratiosData, userProfile, ingresos, gastos, activos, deudas, goals, currency }) {
@@ -1563,6 +1568,7 @@ function ReporteModal({ isOpen, onClose, totales, ratiosData, userProfile, ingre
     </div>
   );
 }
+
 
 
 function VistaGeneral({ totales, ingresos, gastos, ratiosData, currency, setActiveTab, userProfile, goals=[] }) {
