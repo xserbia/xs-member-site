@@ -2866,17 +2866,9 @@ function MetasPlan({ goals, setGoals, ingresos, gastos = {}, totales, currency, 
   }
 
   const totalGoals = goals.length;
-  const completadas = goals.filter(g=>g.status==='completada').length;
-  const enProgreso  = goals.filter(g=>g.status==='en_progreso').length;
 
   return (
     <div>
-      {/* Header stats */}
-      <div className="stats-grid" style={{marginBottom:'24px'}}>
-        <div className="stat-card"><div className="stat-label">Metas Totales</div><div className="stat-value">{totalGoals}</div></div>
-        <div className="stat-card" style={{background:'linear-gradient(135deg,#f59e0b,#d97706)'}}><div className="stat-label">En Progreso</div><div className="stat-value">{enProgreso}</div></div>
-        <div className="stat-card" style={{background:'linear-gradient(135deg,var(--emerald),var(--emerald-dark))'}}><div className="stat-label">Completadas</div><div className="stat-value">{completadas}</div></div>
-      </div>
 
       {/* Goals grid */}
       {goals.length === 0 ? (
