@@ -2592,15 +2592,15 @@ function MetasPlan({ goals, setGoals, ingresos, gastos = {}, totales, currency, 
       const edadObj       = parseInt(d.edadObjetivo) || 50;
       const edadActual    = parseInt(userProfile?.edad) || 40;
       const anosRestantes = Math.max(0, edadObj - edadActual);
-      // PMT = gastos diarios actuales (lifestyle cost, en $ de hoy)
-      // PV anualidad real, FV=0 a los 95: r=3% real, n=95-edadActual
-      const gastosAnuales  = gastosDiariosMensual * 12;
+      // PMT = ingreso mensual pasivo deseado (del modal), o gastos diarios si no definido
+      const pmtMensual     = parseFloat(d.ingresoMensual) || gastosDiariosMensual;
+      const gastosAnuales  = pmtMensual * 12;
       const edadMortalidad = 95;
       const nAnios         = Math.max(1, edadMortalidad - edadActual);
       const rReal          = 0.03;
       const neededNest     = gastosAnuales * (1 - Math.pow(1 + rReal, -nAnios)) / rReal;
       computed.label1      = `¿Cuánto necesitas hoy para no trabajar más?`;
-      computed.label2      = `Ingreso pasivo (gastos actuales): ${formatCurrency(gastosDiariosMensual, currency)}/mes`;
+      computed.label2      = `Ingreso pasivo deseado: ${formatCurrency(pmtMensual, currency)}/mes`;
       computed.label3      = `Horizonte: hoy (${edadActual} años) → 95 (${nAnios} años)`;
       computed.neededNest  = neededNest;
       computed.neededLabel = `Número mágico (3% real, FV=0 a 95): ${formatCurrency(neededNest, currency)}`;
@@ -2709,9 +2709,14 @@ function MetasPlan({ goals, setGoals, ingresos, gastos = {}, totales, currency, 
 
   function GoalCard({ g, idx }) {
     const meta = GOAL_META[g.key] || GOAL_META.otro;
-    const computed = computeGoal(g);
-    const progress = getProgress(g);
-    const hasDetails = g.details && Object.keys(g.details).filter(k=>!k.startsWith('_')).length > 0;
+    const FIELD_LABELS = {
+      edadRetiro:'Edad de retiro', ingresoMensual:'Ingreso mensual deseado', edadObjetivo:'Edad objetivo',
+      ingresoPasivo:'Ingresos pasivos actuales', tipo:'Tipo', cuando:'¿Cuándo?', precio:'Precio estimado',
+      enganche:'Enganche disponible', numHijos:'# hijos', anosInicio:'Años para inicio', presupuesto:'Presupuesto',
+      destino:'Destino', monto:'Monto objetivo', beneficiarios:'Beneficiarios', plazo:'Plazo', descripcion:'Descripción',
+    };
+    const CURRENCY_FIELDS = new Set(['ingresoMensual','ingresoPasivo','precio','enganche','presupuesto','monto']);
+    const details = Object.entries(g.details||{}).filter(([k,v])=>v && !k.startsWith('_'));
 
     return (
       <div style={{background:'#fff', border:`2px solid ${meta.color}22`, borderRadius:'16px', padding:'20px', position:'relative', boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
@@ -2721,7 +2726,7 @@ function MetasPlan({ goals, setGoals, ingresos, gastos = {}, totales, currency, 
             <div style={{fontSize:'32px', lineHeight:'1'}}>{meta.icon}</div>
             <div>
               <div style={{fontWeight:'800', fontSize:'15px', color:meta.color}}>{meta.label}</div>
-              {g.status && <div style={{fontSize:'11px', fontWeight:'700', color: g.status==='completada'?'#10b981':g.status==='en_progreso'?'#f59e0b':'#94a3b8', textTransform:'uppercase', letterSpacing:'0.05em', marginTop:'2px'}}>{g.status==='completada'?'✅ Completada':g.status==='en_progreso'?'⏳ En Progreso':'⬜ Pendiente'}</div>}
+              {g.status && <div style={{fontSize:'11px', fontWeight:'700', color: g.status==='completada'?'#10b981':g.status==='en progreso'?'#f59e0b':'#94a3b8', textTransform:'uppercase', letterSpacing:'0.05em', marginTop:'2px'}}>{g.status==='completada'?'✅ Completada':g.status==='en progreso'?'⏳ En Progreso':'⬜ Pendiente'}</div>}
             </div>
           </div>
           <div style={{display:'flex', gap:'6px'}}>
@@ -2730,42 +2735,32 @@ function MetasPlan({ goals, setGoals, ingresos, gastos = {}, totales, currency, 
           </div>
         </div>
 
-        {/* Details */}
-        {hasDetails && (
-          <div style={{background:meta.bg, borderRadius:'10px', padding:'12px', marginBottom:'12px'}}>
-            {[computed.label1, computed.label2, computed.label3].filter(Boolean).map((l,i)=>(
-              <div key={i} style={{fontSize:'13px', color:'#475569', marginBottom:'3px'}}>• {l}</div>
+        {/* Goal details — what the client wants */}
+        {details.length > 0 && (
+          <div style={{background:meta.bg, borderRadius:'10px', padding:'12px', marginBottom:'14px'}}>
+            {details.map(([k,v])=>(
+              <div key={k} style={{display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:'13px', color:'#475569', marginBottom:'4px'}}>
+                <span style={{fontWeight:'600', color:'#64748b'}}>{FIELD_LABELS[k]||k}</span>
+                <span style={{fontWeight:'700', color:'#1e293b'}}>
+                  {CURRENCY_FIELDS.has(k) ? formatCurrency(parseFloat(v)||0, currency) : v}
+                </span>
+              </div>
             ))}
           </div>
         )}
 
-        {/* Needed amount highlight */}
-        {computed.neededLabel && (
-          <div style={{background:`${meta.color}11`, border:`1px solid ${meta.color}33`, borderRadius:'10px', padding:'10px 12px', marginBottom:'12px', fontSize:'13px', fontWeight:'700', color:meta.color}}>
-            💡 {computed.neededLabel}
-          </div>
-        )}
-
-        {/* Monthly savings needed */}
-        {computed.monthlyNeeded > 0 && (
-          <div style={{background:'#1e293b', borderRadius:'10px', padding:'10px 12px', marginBottom:'12px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-            <span style={{fontSize:'12px', color:'#94a3b8', fontWeight:'600'}}>Ahorro mensual sugerido</span>
-            <span style={{fontSize:'18px', fontWeight:'800', color:'#f59e0b'}}>{formatCurrency(computed.monthlyNeeded, currency)}/mes</span>
-          </div>
-        )}
-
-        {/* Progress bar */}
-        {progress !== null && (
-          <div>
-            <div style={{display:'flex', justifyContent:'space-between', marginBottom:'4px'}}>
-              <span style={{fontSize:'11px', color:'#94a3b8', fontWeight:'600'}}>PROGRESO ESTIMADO</span>
-              <span style={{fontSize:'12px', fontWeight:'800', color:progress>=100?'#10b981':meta.color}}>{progress}%</span>
-            </div>
-            <div style={{background:'#f1f5f9', borderRadius:'999px', height:'8px', overflow:'hidden'}}>
-              <div style={{width:`${progress}%`, height:'100%', background:progress>=100?'#10b981':meta.color, borderRadius:'999px', transition:'width 0.6s ease'}}/>
-            </div>
-          </div>
-        )}
+        {/* Coach notes */}
+        <div>
+          <div style={{fontSize:'11px', fontWeight:'700', color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'6px'}}>📝 Notas del Coach</div>
+          <textarea
+            value={g.notes||''}
+            onChange={e => setGoals(prev => prev.map((x,i) => i===idx ? {...x, notes: e.target.value} : x))}
+            placeholder="Escribe aquí tus recomendaciones, análisis y próximos pasos para esta meta..."
+            style={{width:'100%', minHeight:'80px', borderRadius:'10px', border:'1px solid #e2e8f0', padding:'10px 12px', fontSize:'13px', color:'#334155', resize:'vertical', fontFamily:'inherit', lineHeight:'1.5', outline:'none', boxSizing:'border-box', background:'#f8fafc'}}
+            onFocus={e=>e.target.style.borderColor='#94a3b8'}
+            onBlur={e=>e.target.style.borderColor='#e2e8f0'}
+          />
+        </div>
       </div>
     );
   }
