@@ -1192,7 +1192,7 @@ function generarReportePDF({ userProfile, totales, ingresos, gastos, activos, de
   ];
   const kw2 = (W-24-10)/3;
   kpis2.forEach((k, i) => {
-    const col = i % 3, row = Math.floor(i/3);
+    let col = i % 3, row = Math.floor(i/3);
     kpiCard(12 + col*(kw2+5), y + row*32, kw2, 28, k.label, k.value, k.color, k.sub);
   });
 
@@ -1212,7 +1212,7 @@ function generarReportePDF({ userProfile, totales, ingresos, gastos, activos, de
     { label:'Nivel Riqueza Neta',    val: ratios.riquezaNeta?.valor||0,          meta:1,  display: (ratios.riquezaNeta?.valor||0).toFixed(1)+'x',               invert:false },
   ];
   semData.forEach((s, i) => {
-    const col = i % 2, row = Math.floor(i/2);
+    let col = i % 2, row = Math.floor(i/2);
     semaphore(12 + col*97, y + row*22, s.val, s.meta, s.label, s.display, s.invert);
   });
 
@@ -1270,7 +1270,7 @@ function generarReportePDF({ userProfile, totales, ingresos, gastos, activos, de
   const barY = y + 6;
 
   gastCats.forEach(gc => {
-    const p = (gc.val / totalForBar) * 100;
+    let p = (gc.val / totalForBar) * 100;
     const segW = (p/100) * barW;
     if (segW > 1) {
       rRect(barX + (cumPct/100)*barW, barY, segW, 12, gc.color, 1);
@@ -1350,7 +1350,7 @@ function generarReportePDF({ userProfile, totales, ingresos, gastos, activos, de
     { label:'Bienes Personales',    val: totales.totalBienesPersonales, color:C.purple },
   ];
   actCats.forEach(ac => {
-    const p = actTotal > 0 ? (ac.val / actTotal)*100 : 0;
+    let p = actTotal > 0 ? (ac.val / actTotal)*100 : 0;
     rRect(12, y, W-24, 11, C.offwhite, 2);
     rRect(12, y, 4, 11, ac.color, 1);
     txt(ac.label, 20, y+7.5, 7, C.dark);
@@ -1373,7 +1373,7 @@ function generarReportePDF({ userProfile, totales, ingresos, gastos, activos, de
   ].filter(d => d.val > 0);
   const dTotal = pasTotal || 1;
   dCats.forEach(dc => {
-    const p = (dc.val / dTotal)*100;
+    let p = (dc.val / dTotal)*100;
     rRect(12, y, W-24, 11, [255,250,250], 2);
     rRect(12, y, 4, 11, dc.color, 1);
     txt(dc.label, 20, y+7.5, 7, C.dark);
