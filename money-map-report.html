@@ -601,7 +601,7 @@ function App() {
           </div>
           <div style={{padding:'1rem 1.5rem',borderTop:'1px solid #f1f5f9',display:'flex',gap:'0.75rem',justifyContent:'flex-end',background:'#fafafa'}}>
             <button onClick={()=>window.cerrarReporteModal()} style={{padding:'0.75rem 1.5rem',borderRadius:'10px',border:'2px solid #e2e8f0',background:'white',fontWeight:'700',cursor:'pointer',fontSize:'0.9rem'}}>Cancelar</button>
-            <button id="reporte_generar_btn" onClick={()=>window.generarPDF()} style={{padding:'0.75rem 1.75rem',borderRadius:'10px',border:'none',background:'linear-gradient(135deg,#0f1742,#1e3a8a)',color:'white',fontWeight:'800',cursor:'pointer',fontSize:'0.95rem',display:'flex',alignItems:'center',gap:'0.5rem'}}>📄 Descargar PDF</button>
+            <button id="reporte_generar_btn" onClick={()=>window.generarPDF()} style={{padding:'0.75rem 1.75rem',borderRadius:'10px',border:'none',background:'linear-gradient(135deg,#0f1742,#1e3a8a)',color:'white',fontWeight:'800',cursor:'pointer',fontSize:'0.95rem',display:'flex',alignItems:'center',gap:'0.5rem'}}>🖨️ Imprimir / PDF</button>
           </div>
         </div>
       </div>
@@ -3203,16 +3203,10 @@ window.generarRecos = function() {
 
 window.generarPDF = function() {
   var btn = document.getElementById('reporte_generar_btn');
-  if (btn) { btn.textContent = 'Generando...'; btn.disabled = true; }
-
+  if (btn) { btn.textContent = 'Abriendo...'; btn.disabled = true; }
   setTimeout(function() {
-    try {
-      _generarPDF();
-    } catch(e) {
-      alert('Error al generar PDF: ' + e.message);
-      console.error(e);
-    }
-    if (btn) { btn.innerHTML = '📄 Descargar PDF'; btn.disabled = false; }
+    try { _imprimirReporte(); } catch(e) { alert('Error: ' + e.message); console.error(e); }
+    if (btn) { btn.innerHTML = '🖨️ Imprimir / PDF'; btn.disabled = false; }
   }, 50);
 };
 
@@ -3700,6 +3694,305 @@ function _generarPDF() {
 
   var safeName = nombre.replace(/\s+/g,'_');
   doc.save('MoneyMap_Reporte_' + safeName + '_' + new Date().toISOString().slice(0,10) + '.pdf');
+}
+
+function _imprimirReporte() {
+  var s   = window.mmState || {};
+  var t   = s.totales      || {};
+  var rd  = s.ratiosData   || {};
+  var cr  = s.computedRatios || {};
+  var mrec = s.mesesRecomendados || 6;
+  var p   = s.userProfile  || {};
+  var ing = s.ingresos     || [];
+  var gas = s.gastos       || {};
+  var goals = s.goals      || [];
+  var cur = s.currency     || 'USD';
+  var sym = {USD:'$',EUR:'€',GBP:'£',MXN:'$',COP:'$',ARS:'$',CLP:'$',PEN:'S/',BRL:'R$',CAD:'C$'};
+  var cs  = sym[cur] || '$';
+  var recos = (document.getElementById('reporte_recos')||{}).value || '';
+  var notas = (document.getElementById('reporte_notas')||{}).value || '';
+
+  function fc(v)  { return cs + Number(v||0).toLocaleString('en-US',{maximumFractionDigits:0}); }
+  function pct(v) { return (isNaN(v)||!isFinite(v)) ? 'N/A' : Number(v*100).toFixed(1)+'%'; }
+  function fmtR(v,dec,suf){ return (isNaN(v)||!isFinite(v)||v==null)?'N/A':Number(v).toFixed(dec||1)+(suf||''); }
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  var nombre = ((p.nombre||'') + ' ' + (p.apellido||'')).trim() || 'Cliente';
+  var fecha  = new Date().toLocaleDateString('es-ES',{year:'numeric',month:'long',day:'numeric'});
+  var ingM = (rd.ingresoBruto||0)/12;
+  var gasM = ((rd.gastosAnual||0)+(rd.ahorroAnual||0)+(rd.deudaAnual||0)+(rd.impuestosAnual||0)+(rd.segurosAnual||0))/12;
+  var flujo = ingM - gasM;
+
+  // Semaforo helper
+  function sem(g) { return g===true ? '#10b981' : g===false ? '#ef4444' : '#f59e0b'; }
+  function semIcon(g) { return g===true ? '✓' : g===false ? '!' : '~'; }
+  function semBg(g) { return g===true ? '#f0fdf4' : g===false ? '#fff1f1' : '#fffbeb'; }
+
+  var ratioRows = [
+    {l:'Meses de Reserva',    v:fmtR(cr.mesesReserva,1)+' m',       m:'>='+mrec+' m',  g:cr.mesesReserva>=mrec?true:cr.mesesReserva>=(mrec*0.67)?null:false},
+    {l:'DTI Neto',            v:fmtR((cr.dtiNeto||0)*100,1)+'%',    m:'<= 36%',        g:cr.dtiNeto<=0.36?true:cr.dtiNeto<=0.50?null:false},
+    {l:'Tasa de Ahorro',      v:fmtR((cr.tasaAhorro||0)*100,1)+'%', m:'>= 30%',        g:cr.tasaAhorro>=0.30?true:cr.tasaAhorro>=0.15?null:false},
+    {l:'Cap. Acumulacion',    v:fmtR((cr.capAcum||0)*100,1)+'%',    m:'>= 30%',        g:cr.capAcum>=0.30?true:cr.capAcum>=0.10?null:false},
+    {l:'Razon Corriente',     v:fmtR(cr.razonCorriente,2)+'x',      m:'>= 1.0x',       g:cr.razonCorriente>=1?true:cr.razonCorriente>=0.5?null:false},
+    {l:'Inversion/Ingreso',   v:fmtR(cr.inversionRatio,2)+'x',      m:'benchmark',     g:cr.inversionRatio>=1?true:cr.inversionRatio>=0.5?null:false},
+    {l:'Riqueza Neta',        v:fmtR(cr.riquezaNeta,2)+'x',         m:'benchmark',     g:cr.riquezaNeta>=1?true:cr.riquezaNeta>=0.5?null:false},
+    {l:'Deuda / Activos',     v:fmtR((cr.deudaActivos||0)*100,1)+'%', m:'<= 30%',      g:cr.deudaActivos<=0.30?true:cr.deudaActivos<=0.50?null:false},
+    {l:'Patrimonio/Activos',  v:fmtR((cr.patrimonioActivos||0)*100,1)+'%', m:'>= 70%', g:cr.patrimonioActivos>=0.70?true:cr.patrimonioActivos>=0.50?null:false},
+    {l:'Ahorro para Retiro',  v:fmtR(cr.ahorroRetiro,2)+'x',        m:'benchmark',     g:cr.ahorroRetiro>=1?true:cr.ahorroRetiro>=0.5?null:false},
+  ];
+
+  var ratioHtml = ratioRows.map(function(r){
+    var c = sem(r.g), bg = semBg(r.g), icon = semIcon(r.g);
+    return '<div class="ratio-card" style="background:'+bg+';border-left:4px solid '+c+'">'+
+      '<div class="ratio-label">'+esc(r.l)+'</div>'+
+      '<div class="ratio-value" style="color:'+c+'">'+esc(r.v)+
+        '<span class="ratio-badge" style="background:'+c+'">'+icon+'</span>'+
+      '</div>'+
+      '<div class="ratio-meta">Meta: '+esc(r.m)+'</div>'+
+    '</div>';
+  }).join('');
+
+  // Income donut rows
+  var ingItems = ing.map(function(i,idx){
+    var colors=['#0891b2','#3b82f6','#10b981','#8b5cf6','#f59e0b','#ef4444','#06b6d4','#6366f1'];
+    return {l:i.nombre||i.categoria||'Ingreso', v:parseFloat(i.monto)||0, c:colors[idx%colors.length]};
+  }).filter(function(i){return i.v>0;});
+
+  var gasItems = [
+    {l:'Gastos Diarios', v:(gas.diarios||[]).reduce(function(s,g){return s+parseFloat(g.monto||0);},0), c:'#ef4444'},
+    {l:'Deuda',          v:(gas.deuda||[]).reduce(function(s,g){return s+parseFloat(g.monto||0);},0),   c:'#f59e0b'},
+    {l:'Impuestos',      v:(gas.impuestos||[]).reduce(function(s,g){return s+parseFloat(g.monto||0);},0),c:'#dc2626'},
+    {l:'Seguros',        v:(gas.seguros||[]).reduce(function(s,g){return s+parseFloat(g.monto||0);},0), c:'#8b5cf6'},
+    {l:'Ahorro',         v:(gas.ahorro||[]).reduce(function(s,g){return s+parseFloat(g.monto||0);},0),  c:'#10b981'},
+  ].filter(function(i){return i.v>0;});
+
+  function donutRows(items, total) {
+    return items.map(function(it){
+      var pv = total>0 ? (it.v/total*100) : 0;
+      return '<div class="donut-row">'+
+        '<div class="donut-bar-wrap"><div class="donut-bar-fill" style="width:'+pv.toFixed(0)+'%;background:'+it.c+'"></div></div>'+
+        '<span class="donut-label">'+esc(it.l)+'</span>'+
+        '<span class="donut-pct" style="color:'+it.c+'">'+fc(it.v)+' ('+pv.toFixed(0)+'%)</span>'+
+      '</div>';
+    }).join('');
+  }
+
+  // Goals
+  var fieldLabels = {edadRetiro:'Edad de retiro',ingresoMensual:'Ingreso mensual deseado',edadObjetivo:'Edad objetivo',ingresoPasivo:'Ingresos pasivos actuales',tipo:'Tipo',cuando:'Cuando',precio:'Precio estimado',enganche:'Enganche disponible',numHijos:'Num. hijos',anosInicio:'Anos para inicio',presupuesto:'Presupuesto',destino:'Destino',monto:'Monto objetivo',beneficiarios:'Beneficiarios',plazo:'Plazo',descripcion:'Descripcion'};
+  var curFields  = {ingresoMensual:1,ingresoPasivo:1,precio:1,enganche:1,presupuesto:1,monto:1};
+  var goalLabels = {retiro:'Retiro Comodo',emergencia:'Fondo de Emergencia',casa:'Comprar Casa',educacion:'Educacion de Hijos',deudas:'Pagar Deudas',inversiones:'Crecer Dinero',independencia:'Independencia Financiera',negocio:'Negocio Propio',auto:'Comprar Auto',viaje:'Viaje / Vacaciones',herencia:'Dejar Herencia',otro:'Otra Meta'};
+  var goalColors = {completada:'#10b981','en progreso':'#3b82f6',pendiente:'#f59e0b'};
+
+  var goalsHtml = goals.map(function(g){
+    var gc = goalColors[g.status] || '#f59e0b';
+    var gl = goalLabels[g.key] || g.key;
+    var details = Object.entries(g.details||{}).filter(function(kv){return kv[1]&&!kv[0].startsWith('_');});
+    var detHtml = details.map(function(kv){
+      var lbl = fieldLabels[kv[0]]||kv[0];
+      var val = curFields[kv[0]] ? fc(parseFloat(kv[1])||0) : esc(kv[1]);
+      return '<div class="goal-detail"><span class="goal-detail-key">'+esc(lbl)+':</span><span class="goal-detail-val">'+val+'</span></div>';
+    }).join('');
+    var notesHtml = g.notes ? '<div class="goal-notes"><strong>Notas del Coach:</strong><br>'+esc(g.notes).replace(/\n/g,'<br>')+'</div>' : '';
+    return '<div class="goal-card" style="border-left:5px solid '+gc+'">'+
+      '<div class="goal-header" style="background:'+gc+'">'+
+        '<span class="goal-title">'+esc(gl)+'</span>'+
+        '<span class="goal-status">'+esc((g.status||'pendiente').toUpperCase())+'</span>'+
+      '</div>'+
+      (detHtml ? '<div class="goal-details">'+detHtml+'</div>' : '')+
+      notesHtml+
+    '</div>';
+  }).join('');
+
+  var html = '<!DOCTYPE html><html><head><meta charset="utf-8">'+
+  '<title>Money Map - Reporte '+esc(nombre)+'</title>'+
+  '<style>'+
+  '@page{size:A4;margin:15mm 12mm}'+
+  '*{box-sizing:border-box;margin:0;padding:0}'+
+  'body{font-family:Arial,sans-serif;font-size:10pt;color:#1e293b;background:#fff}'+
+  '.page{page-break-after:always;padding:0}'+
+  '.page:last-child{page-break-after:auto}'+
+
+  /* Cover */
+  '.cover{background:linear-gradient(160deg,#0f1742 0%,#1e3a8a 60%,#1e40af 100%);color:#fff;min-height:270mm;display:flex;flex-direction:column;justify-content:space-between;padding:20mm 15mm}'+
+  '.cover-brand{font-size:9pt;color:#93c5fd;letter-spacing:2px;text-transform:uppercase}'+
+  '.cover-title{margin-top:20mm;font-size:32pt;font-weight:900;line-height:1.1;color:#fff}'+
+  '.cover-subtitle{font-size:18pt;color:#60a5fa;margin-top:4mm}'+
+  '.cover-line{width:60mm;height:2px;background:#10b981;margin:8mm 0}'+
+  '.cover-client{background:rgba(255,255,255,0.08);border-radius:8px;border-left:4px solid #10b981;padding:8mm 10mm;margin-top:auto}'+
+  '.cover-name{font-size:16pt;font-weight:800;color:#fff}'+
+  '.cover-meta{font-size:9pt;color:#93c5fd;margin-top:2mm}'+
+  '.cover-date{font-size:8pt;color:#64748b;margin-top:1mm}'+
+  '.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:4mm;margin-top:8mm}'+
+  '.kpi-box{background:rgba(255,255,255,0.06);border-radius:6px;padding:4mm;border-top:3px solid}'+
+  '.kpi-lbl{font-size:7pt;color:#93c5fd}'+
+  '.kpi-val{font-size:13pt;font-weight:800;margin-top:1mm}'+
+
+  /* Section headers */
+  '.section-header{padding:4mm 0 2mm;border-bottom:2px solid;margin-bottom:5mm}'+
+  '.section-header h2{font-size:14pt;font-weight:800}'+
+  '.section-sub{font-size:8pt;color:#64748b;margin-top:1mm}'+
+
+  /* KPI cards */
+  '.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm;margin-bottom:6mm}'+
+  '.kpi-card{border-radius:8px;padding:5mm;color:#fff}'+
+  '.kpi-card-lbl{font-size:7pt;opacity:.85}'+
+  '.kpi-card-val{font-size:14pt;font-weight:800;margin-top:1mm}'+
+
+  /* Ratios */
+  '.ratio-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3mm;margin-bottom:4mm}'+
+  '.ratio-card{border-radius:6px;padding:4mm;position:relative}'+
+  '.ratio-label{font-size:7pt;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px}'+
+  '.ratio-value{font-size:14pt;font-weight:800;margin:1mm 0;display:flex;align-items:center;gap:2mm}'+
+  '.ratio-badge{font-size:7pt;font-weight:800;color:#fff;border-radius:4px;padding:1px 4px}'+
+  '.ratio-meta{font-size:7pt;color:#94a3b8}'+
+
+  /* Flujo de caja */
+  '.flujo-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm;margin-bottom:6mm}'+
+  '.flujo-card{border-radius:8px;padding:5mm;color:#fff}'+
+  '.flujo-lbl{font-size:7pt;font-weight:700;opacity:.85;text-transform:uppercase}'+
+  '.flujo-val{font-size:14pt;font-weight:800;margin-top:2mm}'+
+  '.donut-panels{display:grid;grid-template-columns:1fr 1fr;gap:6mm}'+
+  '.donut-panel h3{font-size:9pt;font-weight:800;padding:3mm 4mm;border-radius:6px 6px 0 0;color:#fff;margin-bottom:2mm}'+
+  '.donut-row{display:flex;align-items:center;gap:3mm;margin-bottom:2mm;font-size:8pt}'+
+  '.donut-bar-wrap{flex:1;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden}'+
+  '.donut-bar-fill{height:100%;border-radius:3px}'+
+  '.donut-label{min-width:28mm;max-width:28mm;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#475569}'+
+  '.donut-pct{font-weight:700;min-width:22mm;text-align:right}'+
+
+  /* Balance */
+  '.balance-top{display:grid;grid-template-columns:1fr 1fr;gap:4mm;margin-bottom:4mm}'+
+  '.balance-card{border-radius:8px;padding:5mm;color:#fff}'+
+  '.balance-lbl{font-size:7pt;opacity:.85}'+
+  '.balance-val{font-size:15pt;font-weight:800;margin-top:1mm}'+
+  '.pn-row{border-radius:8px;padding:5mm;display:flex;justify-content:space-between;align-items:center;margin-bottom:6mm}'+
+  '.asset-row{display:flex;align-items:center;gap:3mm;padding:2mm 3mm;border-radius:4px;margin-bottom:2mm;font-size:8.5pt}'+
+  '.asset-bar-wrap{flex:1;height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden}'+
+  '.asset-bar-fill{height:100%;border-radius:3px}'+
+  '.asset-lbl{min-width:40mm}'+
+  '.asset-val{font-weight:700;min-width:22mm;text-align:right}'+
+  '.asset-pct{min-width:12mm;text-align:right;color:#94a3b8;font-size:7.5pt}'+
+  '.cols2{display:grid;grid-template-columns:1fr 1fr;gap:6mm}'+
+  '.col-title{font-size:9pt;font-weight:800;margin-bottom:3mm;padding-bottom:2mm;border-bottom:2px solid #e2e8f0}'+
+
+  /* Goals */
+  '.goal-card{border-radius:8px;overflow:hidden;margin-bottom:5mm;border:1px solid #e2e8f0}'+
+  '.goal-header{display:flex;justify-content:space-between;align-items:center;padding:3mm 5mm;color:#fff;font-size:9pt}'+
+  '.goal-title{font-weight:800}'+
+  '.goal-status{font-size:7pt;opacity:.9;background:rgba(255,255,255,.2);padding:1px 5px;border-radius:4px}'+
+  '.goal-details{padding:3mm 5mm;display:grid;grid-template-columns:1fr 1fr;gap:1mm 8mm;background:#f8fafc}'+
+  '.goal-detail{display:flex;justify-content:space-between;font-size:8pt;padding:1mm 0;border-bottom:1px solid #f1f5f9}'+
+  '.goal-detail-key{color:#64748b;font-weight:600}'+
+  '.goal-detail-val{font-weight:700;color:#1e293b}'+
+  '.goal-notes{padding:4mm 5mm;background:#fffbeb;border-top:1px solid #fde68a;font-size:8.5pt;line-height:1.5;color:#334155}'+
+  '.goal-notes strong{color:#92400e;font-size:8pt;text-transform:uppercase;letter-spacing:.5px}'+
+
+  /* Recos */
+  '.reco-box{background:#f0fdf4;border-left:4px solid #10b981;border-radius:6px;padding:5mm 6mm;font-size:9pt;line-height:1.7;color:#1e293b;white-space:pre-wrap}'+
+  '.notas-box{background:#f8fafc;border-left:4px solid #64748b;border-radius:6px;padding:5mm 6mm;font-size:9pt;line-height:1.7;color:#334155;white-space:pre-wrap;margin-top:5mm}'+
+
+  /* Footer */
+  '.footer{text-align:center;font-size:7pt;color:#94a3b8;margin-top:6mm;padding-top:3mm;border-top:1px solid #e2e8f0}'+
+  '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}'+
+  '</style></head><body>';
+
+  // ── PAGE 1: COVER ─────────────────────────────────────────────────────────
+  html += '<div class="page cover">';
+  html += '<div><div class="cover-brand">Xavier Serbia · Money Map</div></div>';
+  html += '<div><div class="cover-title">DIAGNOSTICO<br>FINANCIERO<br>PERSONAL</div>';
+  html += '<div class="cover-line"></div>';
+  html += '<div class="cover-client">';
+  html += '<div style="font-size:7pt;color:#10b981;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:2mm">PREPARADO PARA</div>';
+  html += '<div class="cover-name">'+esc(nombre)+'</div>';
+  if(p.analisisConjunto && p.parejaNombre) html += '<div style="font-size:10pt;color:#93c5fd">& '+esc(p.parejaNombre)+'</div>';
+  var ageParts = [p.edad&&(p.edad+' anos'), p.estadoCivil, p.dependientes>0&&(p.dependientes+' dependiente(s)')].filter(Boolean);
+  html += '<div class="cover-meta">'+esc(ageParts.join(' · '))+'</div>';
+  html += '<div class="cover-date">'+esc(fecha)+'</div>';
+  html += '</div>';
+  html += '<div class="kpi-row">';
+  [{l:'Patrimonio Neto',v:fc(t.patrimonioNeto),c:'#10b981'},{l:'Ingresos / mes',v:fc(ingM),c:'#60a5fa'},{l:'Activos Totales',v:fc(t.activosTotales),c:'#a78bfa'},{l:'Deudas Totales',v:fc(t.pasivosTotales),c:'#fbbf24'}].forEach(function(k){
+    html += '<div class="kpi-box" style="border-top-color:'+k.c+'"><div class="kpi-lbl">'+k.l+'</div><div class="kpi-val" style="color:'+k.c+'">'+k.v+'</div></div>';
+  });
+  html += '</div></div></div>';
+
+  // ── PAGE 2: RESUMEN EJECUTIVO ─────────────────────────────────────────────
+  html += '<div class="page" style="padding:8mm 0">';
+  html += '<div class="section-header" style="border-color:#3b82f6"><h2 style="color:#1e3a8a">RESUMEN EJECUTIVO</h2><div class="section-sub">Metricas clave · Semaforo financiero · '+esc(nombre)+' · '+esc(fecha)+'</div></div>';
+  html += '<div class="kpi-grid">';
+  [{l:'Patrimonio Neto',v:fc(t.patrimonioNeto),c:(t.patrimonioNeto>=0?'#10b981':'#ef4444')},{l:'Ingresos / mes',v:fc(ingM),c:'#3b82f6'},{l:'Activos Totales',v:fc(t.activosTotales),c:'#8b5cf6'},{l:'Deudas Totales',v:fc(t.pasivosTotales),c:'#f59e0b'},{l:'Flujo libre / mes',v:fc(flujo),c:flujo>=0?'#0891b2':'#ef4444'},{l:'Retiro Total',v:fc(t.totalRetiro),c:'#0891b2'}].forEach(function(k){
+    html += '<div class="kpi-card" style="background:'+k.c+'"><div class="kpi-card-lbl">'+k.l+'</div><div class="kpi-card-val">'+k.v+'</div></div>';
+  });
+  html += '</div>';
+  html += '<div class="section-header" style="border-color:#3b82f6;margin-top:4mm"><h2 style="color:#1e3a8a;font-size:11pt">INDICADORES FINANCIEROS</h2></div>';
+  html += '<div class="ratio-grid">'+ratioHtml+'</div>';
+  html += '<div class="footer">Xavier Serbia Money Map · Confidencial · '+esc(fecha)+'</div></div>';
+
+  // ── PAGE 3: FLUJO DE CAJA ─────────────────────────────────────────────────
+  html += '<div class="page" style="padding:8mm 0">';
+  html += '<div class="section-header" style="border-color:#0891b2"><h2 style="color:#0e7490">FLUJO DE CAJA</h2><div class="section-sub">Ingresos · Gastos · Superavit mensual</div></div>';
+  html += '<div class="flujo-cards">';
+  [{l:'INGRESOS / MES',v:fc(ingM),c:'#10b981'},{l:'GASTOS / MES',v:fc(gasM),c:'#ef4444'},{l:'FLUJO LIBRE',v:fc(flujo),c:flujo>=0?'#0891b2':'#ef4444'}].forEach(function(k){
+    html += '<div class="flujo-card" style="background:'+k.c+'"><div class="flujo-lbl">'+k.l+'</div><div class="flujo-val">'+k.v+'</div></div>';
+  });
+  html += '</div>';
+  html += '<div class="donut-panels">';
+  html += '<div><h3 style="background:#0891b2">Detalle de Ingresos — '+fc(ingM)+'/mes</h3>'+donutRows(ingItems,ingM)+'</div>';
+  html += '<div><h3 style="background:#ef4444">Detalle de Gastos — '+fc(gasM)+'/mes</h3>'+donutRows(gasItems,gasM)+'</div>';
+  html += '</div>';
+  html += '<div class="footer">Xavier Serbia Money Map · Confidencial · '+esc(fecha)+'</div></div>';
+
+  // ── PAGE 4: BALANCE GENERAL ───────────────────────────────────────────────
+  html += '<div class="page" style="padding:8mm 0">';
+  html += '<div class="section-header" style="border-color:#8b5cf6"><h2 style="color:#6d28d9">BALANCE GENERAL</h2><div class="section-sub">Activos · Pasivos · Patrimonio Neto</div></div>';
+  html += '<div class="balance-top">';
+  html += '<div class="balance-card" style="background:#8b5cf6"><div class="balance-lbl">ACTIVOS TOTALES</div><div class="balance-val">'+fc(t.activosTotales)+'</div></div>';
+  html += '<div class="balance-card" style="background:#f59e0b"><div class="balance-lbl">PASIVOS TOTALES</div><div class="balance-val">'+fc(t.pasivosTotales)+'</div></div>';
+  html += '</div>';
+  var pnColor = (t.patrimonioNeto||0)>=0?'#10b981':'#ef4444';
+  html += '<div class="pn-row" style="background:'+(t.patrimonioNeto>=0?'#f0fdf4':'#fff1f1')+'"><span style="font-weight:800;font-size:11pt">Patrimonio Neto</span><span style="font-size:16pt;font-weight:900;color:'+pnColor+'">'+fc(t.patrimonioNeto)+'</span></div>';
+  html += '<div class="cols2">';
+  // Assets
+  var actTotal = t.activosTotales||1;
+  html += '<div><div class="col-title">Composicion de Activos</div>';
+  [{l:'Efectivo',v:t.totalEfectivo,c:'#0891b2'},{l:'Inversiones',v:t.totalInversiones,c:'#3b82f6'},{l:'Retiro (401k/IRA)',v:t.totalRetiro,c:'#f59e0b'},{l:'Bienes Raices',v:t.totalBienesRaices,c:'#10b981'},{l:'Bienes Personales',v:t.totalBienesPersonales,c:'#8b5cf6'}].forEach(function(a){
+    if(!a.v||a.v<=0)return;
+    var pv=(a.v/actTotal*100);
+    html += '<div class="asset-row"><span class="asset-lbl">'+a.l+'</span><div class="asset-bar-wrap"><div class="asset-bar-fill" style="width:'+pv.toFixed(0)+'%;background:'+a.c+'"></div></div><span class="asset-pct">'+pv.toFixed(0)+'%</span><span class="asset-val">'+fc(a.v)+'</span></div>';
+  });
+  html += '</div>';
+  // Debts
+  var pasTotal = t.pasivosTotales||1;
+  var dbt = s.deudas||{};
+  html += '<div><div class="col-title">Composicion de Deudas</div>';
+  [{l:'Hipotecas',v:(dbt.casa||[]).reduce(function(s,i){return s+parseFloat(i.balance||0);},0),c:'#f59e0b'},{l:'Tarjetas',v:(dbt.tarjetas||[]).reduce(function(s,i){return s+parseFloat(i.balance||0);},0),c:'#ef4444'},{l:'Auto',v:(dbt.auto||[]).reduce(function(s,i){return s+parseFloat(i.balance||0);},0),c:'#8b5cf6'},{l:'HELOC/Propiedad',v:(dbt.lineaPropiedad||[]).reduce(function(s,i){return s+parseFloat(i.balance||0);},0),c:'#3b82f6'},{l:'Otros',v:(dbt.otros||[]).reduce(function(s,i){return s+parseFloat(i.balance||0);},0),c:'#64748b'}].forEach(function(d){
+    if(!d.v||d.v<=0)return;
+    var pv=(d.v/pasTotal*100);
+    html += '<div class="asset-row"><span class="asset-lbl">'+d.l+'</span><div class="asset-bar-wrap"><div class="asset-bar-fill" style="width:'+pv.toFixed(0)+'%;background:'+d.c+'"></div></div><span class="asset-pct">'+pv.toFixed(0)+'%</span><span class="asset-val">'+fc(d.v)+'</span></div>';
+  });
+  html += '</div></div>';
+  html += '<div class="footer">Xavier Serbia Money Map · Confidencial · '+esc(fecha)+'</div></div>';
+
+  // ── PAGE 5+: METAS ────────────────────────────────────────────────────────
+  if(goals.length>0){
+    html += '<div class="page" style="padding:8mm 0">';
+    html += '<div class="section-header" style="border-color:#10b981"><h2 style="color:#065f46">METAS FINANCIERAS</h2><div class="section-sub">Objetivos · Detalles · Notas del Coach</div></div>';
+    html += goalsHtml;
+    html += '<div class="footer">Xavier Serbia Money Map · Confidencial · '+esc(fecha)+'</div></div>';
+  }
+
+  // ── PAGE RECOMENDACIONES ──────────────────────────────────────────────────
+  html += '<div class="page" style="padding:8mm 0">';
+  html += '<div class="section-header" style="border-color:#10b981"><h2 style="color:#065f46">RECOMENDACIONES DEL COACH</h2><div class="section-sub">Plan de accion personalizado · '+esc(nombre)+'</div></div>';
+  if(recos) html += '<div class="reco-box">'+esc(recos)+'</div>';
+  else html += '<div class="reco-box" style="color:#94a3b8;font-style:italic">Escribe las recomendaciones en el campo del reporte antes de imprimir.</div>';
+  if(notas) html += '<div class="notas-box"><strong>Notas adicionales:</strong><br>'+esc(notas)+'</div>';
+  html += '<div class="footer">Xavier Serbia Money Map · Confidencial · '+esc(fecha)+'</div></div>';
+
+  html += '</body></html>';
+
+  var w = window.open('','_blank','width=900,height=700');
+  w.document.write(html);
+  w.document.close();
+  setTimeout(function(){ w.focus(); w.print(); }, 800);
 }
 </script>
 
