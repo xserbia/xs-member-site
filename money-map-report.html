@@ -2255,6 +2255,14 @@ function RatiosFinancieros({ ratiosData, setRatiosData, totales, currency, ingre
   };
   const ratios = calcRatios();
   const mesesRecomendados = calcMesesRecomendados(userProfile);
+
+  // Expose computed ratios to PDF generator
+  React.useEffect(() => {
+    if (window.mmState) {
+      window.mmState.computedRatios = ratios;
+      window.mmState.mesesRecomendados = mesesRecomendados;
+    }
+  });
   const umbralAmber       = Math.round(mesesRecomendados * 0.67);
 
   const Tip = ({text,children}) => {
@@ -3191,6 +3199,10 @@ function _generarPDF() {
   var fc  = function(v) { return cs + Number(v||0).toLocaleString('en-US',{maximumFractionDigits:0}); };
   var pct = function(v) { return Number(v||0).toFixed(1) + '%'; };
 
+  // Global income/expense monthly figures — used throughout all pages
+  var ingM = (ratios.ingresoBruto||0)/12;
+  var gasM = ((ratios.gastosAnual||0)+(ratios.ahorroAnual||0)+(ratios.deudaAnual||0)+(ratios.impuestosAnual||0)+(ratios.segurosAnual||0))/12;
+
   // Color palette
   var navy   = [15,23,66];
   var blue   = [57,86,232];
@@ -3319,67 +3331,46 @@ function _generarPDF() {
   hline(12, y+2, 72, y+2, blue, 0.5);
   y += 8;
 
-  function semRow(x, ry, label, valueStr, isGood) {
+  // Use computed ratios from RatiosFinancieros component (same as app display)
+  var cr  = state.computedRatios || {};
+  var mrec = state.mesesRecomendados || 6;
+
+  function fmtR(v,dec,suf){ return (isNaN(v)||!isFinite(v)||v==null) ? 'N/A' : Number(v).toFixed(dec||1)+(suf||''); }
+
+  // semRow: label, value, target, traffic light circle
+  function semRow(x, ry, label, valueStr, metaStr, isGood) {
     var sw  = (W-24-10)/3;
     var bg  = isGood === true ? [240,253,244] : isGood === false ? [255,241,241] : [255,251,235];
     var acc = isGood === true ? green : isGood === false ? red : amber;
-    var tag = isGood === true ? 'OK' : isGood === false ? 'ATENCION' : 'REVISAR';
-    rbox(x, ry, sw, 16, 3, bg);
-    box(x, ry, 4, 16, acc);
-    text(label,    x+7, ry+7,  6,   dark, 'left', true);
-    text(valueStr, x+7, ry+13, 7,   acc,  'left', true);
-    rbox(x+sw-26, ry+3, 24, 10, 3, acc);
-    text(tag, x+sw-14, ry+9, 5.5, white, 'center', true);
+    rbox(x, ry, sw, 20, 3, bg);
+    box(x, ry, 4, 20, acc);
+    text(label,            x+7,    ry+6,    5.5, [100,116,139], 'left', true);
+    text(valueStr,         x+7,    ry+13,   8.5, acc,           'left', true);
+    text('Meta: '+metaStr, x+7,    ry+18.5, 5,   [100,116,139], 'left');
+    setFill(acc); doc.circle(x+sw-6, ry+10, 3.5, 'F');
   }
 
-  // Compute ratios directly from flat ratiosData fields
-  var rd = ratios;
-  var rib    = rd.ingresoBruto  || 0;
-  var rinet  = rd.ingresoNeto   || 0;
-  var rah    = rd.ahorroAnual   || 0;
-  var rge    = rd.gastosEsencialesMensuales || 0;
-  var rres   = rd.reserva       || 0;
-  var rpd    = rd.pagoDeudaMensual || 0;
-  var rAT    = totales.activosTotales  || 1;
-  var rLiq   = totales.activosLiquidos || 0;
-  var rPN    = totales.patrimonioNeto  || 0;
-  var rInv   = totales.inversiones     || 0;
-  var rRetiro= totales.totalRetiro     || 0;
-  var rPC    = rd.pasivosCorrientes    || (rge*12);
-
-  var rMesesRes = rge>0   ? rres/rge          : NaN;
-  var rDTI      = rinet>0 ? rpd/(rinet/12)*100: NaN;
-  var rTasaAh   = rib>0   ? rah/rib*100       : NaN;
-  var rRazCor   = rPC>0   ? rLiq/rPC          : NaN;
-  var rInvRat   = rib>0   ? rInv/rib          : NaN;
-  var rRiqNeta  = rib>0   ? rPN/rib           : NaN;
-  var rDeudaAct = rAT>0   ? totales.pasivosTotales/rAT*100 : NaN;
-  var rPatAct   = rAT>0   ? rPN/rAT*100       : NaN;
-  var rAhRet    = rib>0   ? rRetiro/rib        : NaN;
-
-  function fmtR(v,dec,suf){ return (isNaN(v)||!isFinite(v)) ? 'N/A' : v.toFixed(dec||1)+(suf||''); }
-
+  var mRec = mrec;
   var semRows = [
-    {l:'Meses de Reserva',    v:fmtR(rMesesRes,1,' m'),  g:rMesesRes>=6?true:rMesesRes>=4?null:false},
-    {l:'DTI Deuda/Ingreso',   v:fmtR(rDTI,1,'%'),        g:rDTI<=36?true:rDTI<=50?null:false},
-    {l:'Tasa de Ahorro',      v:fmtR(rTasaAh,1,'%'),     g:rTasaAh>=20?true:rTasaAh>=10?null:false},
-    {l:'Razon Corriente',     v:fmtR(rRazCor,2,'x'),     g:rRazCor>=1?true:rRazCor>=0.5?null:false},
-    {l:'Inversion/Ingreso',   v:fmtR(rInvRat,2,'x'),     g:rInvRat>=1?true:rInvRat>=0.5?null:false},
-    {l:'Nivel Riqueza Neta',  v:fmtR(rRiqNeta,2,'x'),    g:rRiqNeta>=1?true:rRiqNeta>=0.5?null:false},
-    {l:'Deuda / Activos',     v:fmtR(rDeudaAct,1,'%'),   g:rDeudaAct<=30?true:rDeudaAct<=50?null:false},
-    {l:'Patrimonio/Activos',  v:fmtR(rPatAct,1,'%'),     g:rPatAct>=70?true:rPatAct>=50?null:false},
-    {l:'Ahorro para Retiro',  v:fmtR(rAhRet,2,'x'),      g:rAhRet>=1?true:rAhRet>=0.5?null:false},
+    {l:'Meses de Reserva',   v:fmtR(cr.mesesReserva,1,' m'),           m:'≥'+mRec+' m',  g:cr.mesesReserva>=mRec?true:cr.mesesReserva>=(mRec*0.67)?null:false},
+    {l:'DTI Neto',           v:fmtR((cr.dtiNeto||0)*100,1,'%'),        m:'≤ 36%',        g:cr.dtiNeto<=0.36?true:cr.dtiNeto<=0.50?null:false},
+    {l:'Tasa de Ahorro',     v:fmtR((cr.tasaAhorro||0)*100,1,'%'),     m:'≥ 30%',        g:cr.tasaAhorro>=0.30?true:cr.tasaAhorro>=0.15?null:false},
+    {l:'Cap. Acumulacion',   v:fmtR((cr.capAcum||0)*100,1,'%'),        m:'≥ 30%',        g:cr.capAcum>=0.30?true:cr.capAcum>=0.10?null:false},
+    {l:'Razon Corriente',    v:fmtR(cr.razonCorriente,2,'x'),          m:'≥ 1.0x',       g:cr.razonCorriente>=1?true:cr.razonCorriente>=0.5?null:false},
+    {l:'Inversion/Ingreso',  v:fmtR(cr.inversionRatio,2,'x'),         m:'ver benchmark', g:cr.inversionRatio>=1?true:cr.inversionRatio>=0.5?null:false},
+    {l:'Riqueza Neta',       v:fmtR(cr.riquezaNeta,2,'x'),            m:'ver benchmark', g:cr.riquezaNeta>=1?true:cr.riquezaNeta>=0.5?null:false},
+    {l:'Deuda / Activos',    v:fmtR((cr.deudaActivos||0)*100,1,'%'),  m:'≤ 30%',        g:cr.deudaActivos<=0.30?true:cr.deudaActivos<=0.50?null:false},
+    {l:'Patrimonio/Activos', v:fmtR((cr.patrimonioActivos||0)*100,1,'%'), m:'≥ 70%',    g:cr.patrimonioActivos>=0.70?true:cr.patrimonioActivos>=0.50?null:false},
+    {l:'Ahorro para Retiro', v:fmtR(cr.ahorroRetiro,2,'x'),           m:'ver benchmark', g:cr.ahorroRetiro>=1?true:cr.ahorroRetiro>=0.5?null:false},
   ];
   var semCols = 3, semW2 = (W-24-10)/3;
   for (var si=0; si<semRows.length; si++) {
-    semRow(12+(si%semCols)*(semW2+5), y+Math.floor(si/semCols)*20, semRows[si].l, semRows[si].v, semRows[si].g);
+    semRow(12+(si%semCols)*(semW2+5), y+Math.floor(si/semCols)*24, semRows[si].l, semRows[si].v, semRows[si].m, semRows[si].g);
   }
-  y += Math.ceil(semRows.length/semCols)*20 + 8;
+  y += Math.ceil(semRows.length/semCols)*24 + 8;
 
   // Savings rate bar
   // ratiosData.ingresoBruto is always annual (sum of ingresos * 12)
-  var ingM = (ratios.ingresoBruto||0)/12;
-  var gasM = ((ratios.gastosAnual||0)+(ratios.ahorroAnual||0)+(ratios.deudaAnual||0)+(ratios.impuestosAnual||0)+(ratios.segurosAnual||0))/12;
   var tasa2 = ingM > 0 ? ((ingM-gasM)/ingM*100) : 0;
   rbox(12, y, W-24, 20, 3, offwh);
   text('TASA DE AHORRO', 18, y+8, 7, dark, 'left', true);
@@ -3410,25 +3401,74 @@ function _generarPDF() {
   }
   y += 38;
 
-  // Income breakdown table
-  text('DETALLE DE INGRESOS', 12, y+8, 8, dark, 'left', true);
-  y += 12;
-  var ingRows = [];
-  for (var ii=0; ii<Math.min(ingresos.length,10); ii++) {
-    var ing2 = ingresos[ii];
-    var monto = parseFloat(ing2.monto)||0;
-    var pctVal = ingM > 0 ? (monto/ingM*100) : 0;
-    ingRows.push([ing2.nombre||'Ingreso', ing2.categoria||'', fc(monto), pct(pctVal)]);
+  // ── Two donut charts: Ingresos & Gastos breakdown ──────────────────────
+  // jsPDF has no native chart — we draw donut slices manually with doc.arc / ellipse
+  // We'll use a horizontal legend-based visual instead (bar rows with %)
+
+  function donutSection(title, items, total, xOff, yStart, accentColor) {
+    var sw = (W-24-10)/2;
+    // Section title
+    rbox(xOff, yStart, sw, 10, 2, accentColor);
+    text(title, xOff+sw/2, yStart+7, 7.5, white, 'center', true);
+    var yy = yStart + 13;
+
+    // Draw manual donut using doc.circle arcs via canvas approach
+    // Since jsPDF arc support is limited, draw a clean segmented bar + legend
+    var barH = 7;
+    var barW = sw - 8;
+    var bx = xOff + 4;
+
+    // Full bar background
+    rbox(bx, yy, barW, barH, 3, [226,232,240]);
+
+    // Draw segments
+    var cx = bx;
+    for (var si2=0; si2<items.length; si2++) {
+      var seg = items[si2];
+      var sw2 = total>0 ? (seg.v/total)*barW : 0;
+      if (sw2 > 0.5) {
+        setFill(seg.c);
+        doc.roundedRect(cx, yy, sw2, barH, 1.5, 1.5, 'F');
+        cx += sw2;
+      }
+    }
+    yy += barH + 4;
+
+    // Legend rows
+    for (var li=0; li<items.length; li++) {
+      var it = items[li];
+      var pv = total>0?(it.v/total*100):0;
+      if (it.v <= 0) continue;
+      rbox(bx, yy, barW, 8, 1, [248,250,252]);
+      setFill(it.c); doc.rect(bx, yy, 3, 8, 'F');
+      text(it.l, bx+6, yy+5.5, 5.5, dark);
+      text(fc(it.v), xOff+sw-4, yy+5.5, 5.5, it.c, 'right', true);
+      text('('+pv.toFixed(0)+'%)', xOff+sw-22, yy+5.5, 5, gray, 'right');
+      yy += 9;
+    }
+    return yy;
   }
-  doc.autoTable({
-    startY: y, head:[['Fuente','Categoria','Mensual','%']],
-    body: ingRows.length ? ingRows : [['Sin ingresos registrados','','','']],
-    theme:'grid', margin:{left:12,right:12},
-    headStyles:{fillColor:[6,182,212],textColor:[255,255,255],fontStyle:'bold',fontSize:7},
-    bodyStyles:{fontSize:7,textColor:[30,41,59]},
-    alternateRowStyles:{fillColor:[240,253,252]},
-    columnStyles:{2:{halign:'right'},3:{halign:'right'}},
-  });
+
+  // Income items
+  var ingItems = ingresos.map(function(i) {
+    return {l:(i.nombre||i.categoria||'Ingreso').substring(0,28), v:parseFloat(i.monto)||0, c:teal};
+  }).filter(function(i){return i.v>0;});
+  var ingColors = [teal,blue,green,purple,amber,[99,102,241],[20,184,166],[245,101,101],[251,146,60],[167,139,250]];
+  ingItems.forEach(function(it,i){it.c=ingColors[i%ingColors.length];});
+
+  // Expense items by category
+  var gastosItems = [
+    {l:'Gastos Diarios',  v:(gastos.diarios||[]).reduce(function(s,g){return s+parseFloat(g.monto||0);},0),   c:red},
+    {l:'Deuda',           v:(gastos.deuda||[]).reduce(function(s,g){return s+parseFloat(g.monto||0);},0),     c:amber},
+    {l:'Impuestos',       v:(gastos.impuestos||[]).reduce(function(s,g){return s+parseFloat(g.monto||0);},0), c:[239,68,68]},
+    {l:'Seguros',         v:(gastos.seguros||[]).reduce(function(s,g){return s+parseFloat(g.monto||0);},0),   c:purple},
+    {l:'Ahorro',          v:(gastos.ahorro||[]).reduce(function(s,g){return s+parseFloat(g.monto||0);},0),    c:green},
+  ].filter(function(i){return i.v>0;});
+
+  var halfW = (W-24-10)/2;
+  var yIngEnd  = donutSection('INGRESOS / MES  ' + fc(ingM),  ingItems,   ingM, 12,         y, teal);
+  var yGasEnd  = donutSection('GASTOS / MES  '  + fc(gasM),   gastosItems, gasM, 12+halfW+10, y, [239,68,68]);
+  y = Math.max(yIngEnd, yGasEnd) + 6;
 
   // ── PAGE 4: BALANCE GENERAL ───────────────────────────────────────────────
   doc.addPage();
