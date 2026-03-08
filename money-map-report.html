@@ -3267,7 +3267,7 @@ function _generarPDF() {
   // Mini KPIs on cover
   var kdata = [
     {l:'Patrimonio Neto', v:fc(totales.patrimonioNeto),    c: totales.patrimonioNeto>=0 ? green : red},
-    {l:'Ingresos / mes',  v:fc((totales.totalIngresos||0)/12), c:blue},
+    {l:'Ingresos / mes',  v:fc((ratios.ingresoBruto||0)/12), c:blue},
     {l:'Activos Totales', v:fc(totales.activosTotales),    c:purple},
     {l:'Deudas Totales',  v:fc(totales.pasivosTotales),    c:amber},
   ];
@@ -3297,10 +3297,10 @@ function _generarPDF() {
   // 6 KPI cards 2x3
   var kpis2 = [
     {l:'Patrimonio Neto',  v:fc(totales.patrimonioNeto),                                     c:totales.patrimonioNeto>=0?green:red},
-    {l:'Ingresos / mes',   v:fc((totales.totalIngresos||0)/12),                               c:blue},
+    {l:'Ingresos / mes',   v:fc((ratios.ingresoBruto||0)/12),                                 c:blue},
     {l:'Activos Totales',  v:fc(totales.activosTotales),                                      c:purple},
     {l:'Deudas Totales',   v:fc(totales.pasivosTotales),                                      c:amber},
-    {l:'Flujo libre / mes',v:fc(((totales.totalIngresos||0)-(totales.totalGastos||0))/12),    c:(totales.totalIngresos||0)>=(totales.totalGastos||0)?green:red},
+    {l:'Flujo libre / mes',v:fc(ingM-gasM),                                                   c:ingM>=gasM?green:red},
     {l:'Retiro total',     v:fc(totales.totalRetiro),                                         c:teal},
   ];
   var kw2 = (W-24-10)/3;
@@ -3377,9 +3377,9 @@ function _generarPDF() {
   y += Math.ceil(semRows.length/semCols)*20 + 8;
 
   // Savings rate bar
-  // ratiosData.ingresoBruto is always annual
+  // ratiosData.ingresoBruto is always annual (sum of ingresos * 12)
   var ingM = (ratios.ingresoBruto||0)/12;
-  var gasM = (ratios.gastosAnualesTotales||0)/12;
+  var gasM = ((ratios.gastosAnual||0)+(ratios.ahorroAnual||0)+(ratios.deudaAnual||0)+(ratios.impuestosAnual||0)+(ratios.segurosAnual||0))/12;
   var tasa2 = ingM > 0 ? ((ingM-gasM)/ingM*100) : 0;
   rbox(12, y, W-24, 20, 3, offwh);
   text('TASA DE AHORRO', 18, y+8, 7, dark, 'left', true);
