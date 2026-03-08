@@ -485,7 +485,45 @@ function App() {
 
   // Expose state to plain-JS PDF generator
   useEffect(() => {
-    window.mmState = { totales, ratiosData, userProfile, ingresos, gastos, activos, deudas, goals, currency };
+    const ib   = ratiosData.ingresoBruto  || 0;
+    const inet = ratiosData.ingresoNeto   || 0;
+    const ah   = ratiosData.ahorroAnual   || 0;
+    const ge   = ratiosData.gastosEsencialesMensuales || 0;
+    const res  = ratiosData.reserva       || 0;
+    const pd   = ratiosData.pagoDeudaMensual || 0;
+    const gd   = ratiosData.gastosAnual   || 0;
+    const da   = ratiosData.deudaAnual    || 0;
+    const imp  = ratiosData.impuestosAnual|| 0;
+    const seg  = ratiosData.segurosAnual  || 0;
+    const AT   = totales.activosTotales   || 1;
+    const liq  = totales.activosLiquidos  || 0;
+    const PN   = totales.patrimonioNeto   || 0;
+    const inv  = totales.inversiones      || 0;
+    const ret  = totales.totalRetiro      || 0;
+    const PT   = totales.pasivosTotales   || 0;
+    // pasivos corrientes: deuda+diarios+seguros annualized (conservative default)
+    const pc   = (gd + da + seg);
+    const sup  = inet - (imp + seg + gd + da + ah);
+    const gastosT = imp + seg + gd + da;
+    const computedRatios = {
+      ingresoBruto: ib, ingresoNeto: inet, ahorroAnual: ah, gastosAnualesTotales: gastosT,
+      superavitAnual: sup,
+      activosTotales: AT, pasivosTotales: PT, patrimonioNeto: PN,
+      mesesReserva:      ge>0       ? res/ge            : NaN,
+      dtiNeto:           (inet/12)>0? pd/(inet/12)      : NaN,
+      tasaAhorro:        ib>0       ? ah/ib             : NaN,
+      capAcum:           inet>0     ? (ah+sup)/inet     : NaN,
+      razonCorriente:    pc>0       ? liq/pc            : NaN,
+      inversionRatio:    ib>0       ? inv/ib            : NaN,
+      riquezaNeta:       ib>0       ? PN/ib             : NaN,
+      deudaActivos:      AT>0       ? PT/AT             : NaN,
+      patrimonioActivos: AT>0       ? PN/AT             : NaN,
+      ahorroRetiro:      ib>0       ? ret/ib            : NaN,
+    };
+    const edadNum = parseInt(userProfile?.edad) || 0;
+    const deps    = parseInt(userProfile?.dependientes) || 0;
+    const mesesRec = edadNum >= 60 ? 18 : edadNum >= 50 ? 12 : deps > 0 ? 9 : 6;
+    window.mmState = { totales, ratiosData, userProfile, ingresos, gastos, activos, deudas, goals, currency, computedRatios, mesesRecomendados: mesesRec };
   }, [totales, ratiosData, userProfile, ingresos, gastos, activos, deudas, goals, currency]);
 
   return (
@@ -3352,16 +3390,16 @@ function _generarPDF() {
 
   var mRec = mrec;
   var semRows = [
-    {l:'Meses de Reserva',   v:fmtR(cr.mesesReserva,1,' m'),           m:'≥'+mRec+' m',  g:cr.mesesReserva>=mRec?true:cr.mesesReserva>=(mRec*0.67)?null:false},
-    {l:'DTI Neto',           v:fmtR((cr.dtiNeto||0)*100,1,'%'),        m:'≤ 36%',        g:cr.dtiNeto<=0.36?true:cr.dtiNeto<=0.50?null:false},
-    {l:'Tasa de Ahorro',     v:fmtR((cr.tasaAhorro||0)*100,1,'%'),     m:'≥ 30%',        g:cr.tasaAhorro>=0.30?true:cr.tasaAhorro>=0.15?null:false},
-    {l:'Cap. Acumulacion',   v:fmtR((cr.capAcum||0)*100,1,'%'),        m:'≥ 30%',        g:cr.capAcum>=0.30?true:cr.capAcum>=0.10?null:false},
-    {l:'Razon Corriente',    v:fmtR(cr.razonCorriente,2,'x'),          m:'≥ 1.0x',       g:cr.razonCorriente>=1?true:cr.razonCorriente>=0.5?null:false},
-    {l:'Inversion/Ingreso',  v:fmtR(cr.inversionRatio,2,'x'),         m:'ver benchmark', g:cr.inversionRatio>=1?true:cr.inversionRatio>=0.5?null:false},
-    {l:'Riqueza Neta',       v:fmtR(cr.riquezaNeta,2,'x'),            m:'ver benchmark', g:cr.riquezaNeta>=1?true:cr.riquezaNeta>=0.5?null:false},
-    {l:'Deuda / Activos',    v:fmtR((cr.deudaActivos||0)*100,1,'%'),  m:'≤ 30%',        g:cr.deudaActivos<=0.30?true:cr.deudaActivos<=0.50?null:false},
-    {l:'Patrimonio/Activos', v:fmtR((cr.patrimonioActivos||0)*100,1,'%'), m:'≥ 70%',    g:cr.patrimonioActivos>=0.70?true:cr.patrimonioActivos>=0.50?null:false},
-    {l:'Ahorro para Retiro', v:fmtR(cr.ahorroRetiro,2,'x'),           m:'ver benchmark', g:cr.ahorroRetiro>=1?true:cr.ahorroRetiro>=0.5?null:false},
+    {l:'Meses de Reserva',   v:fmtR(cr.mesesReserva,1,' m'),               m:'>='+mRec+' m',  g:cr.mesesReserva>=mRec?true:cr.mesesReserva>=(mRec*0.67)?null:false},
+    {l:'DTI Neto',           v:fmtR((cr.dtiNeto||0)*100,1,'%'),            m:'<= 36%',        g:cr.dtiNeto<=0.36?true:cr.dtiNeto<=0.50?null:false},
+    {l:'Tasa de Ahorro',     v:fmtR((cr.tasaAhorro||0)*100,1,'%'),         m:'>= 30%',        g:cr.tasaAhorro>=0.30?true:cr.tasaAhorro>=0.15?null:false},
+    {l:'Cap. Acumulacion',   v:fmtR((cr.capAcum||0)*100,1,'%'),            m:'>= 30%',        g:cr.capAcum>=0.30?true:cr.capAcum>=0.10?null:false},
+    {l:'Razon Corriente',    v:fmtR(cr.razonCorriente,2,'x'),              m:'>= 1.0x',       g:cr.razonCorriente>=1?true:cr.razonCorriente>=0.5?null:false},
+    {l:'Inversion/Ingreso',  v:fmtR(cr.inversionRatio,2,'x'),              m:'benchmark',     g:cr.inversionRatio>=1?true:cr.inversionRatio>=0.5?null:false},
+    {l:'Riqueza Neta',       v:fmtR(cr.riquezaNeta,2,'x'),                 m:'benchmark',     g:cr.riquezaNeta>=1?true:cr.riquezaNeta>=0.5?null:false},
+    {l:'Deuda / Activos',    v:fmtR((cr.deudaActivos||0)*100,1,'%'),       m:'<= 30%',        g:cr.deudaActivos<=0.30?true:cr.deudaActivos<=0.50?null:false},
+    {l:'Patrimonio/Activos', v:fmtR((cr.patrimonioActivos||0)*100,1,'%'),  m:'>= 70%',        g:cr.patrimonioActivos>=0.70?true:cr.patrimonioActivos>=0.50?null:false},
+    {l:'Ahorro para Retiro', v:fmtR(cr.ahorroRetiro,2,'x'),                m:'benchmark',     g:cr.ahorroRetiro>=1?true:cr.ahorroRetiro>=0.5?null:false},
   ];
   var semCols = 3, semW2 = (W-24-10)/3;
   for (var si=0; si<semRows.length; si++) {
