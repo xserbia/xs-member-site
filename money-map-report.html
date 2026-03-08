@@ -116,6 +116,7 @@ tbody tr:hover { background: var(--bg); }
 </style>
 
 
+  <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
 </head>
 <body>
 <div id="root"></div>
@@ -564,6 +565,9 @@ function App() {
 
         <button onClick={() => window.abrirReporteModal()} style={{ padding: '0.35rem 0.85rem', borderRadius: '7px', border: '1.5px solid rgba(255,200,50,0.6)', background: 'rgba(245,158,11,0.3)', color: 'white', fontWeight: '800', fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
           📄 Reporte PDF
+        </button>
+        <button onClick={() => window.exportarWord()} style={{ padding: '0.35rem 0.85rem', borderRadius: '7px', border: '1.5px solid rgba(99,200,255,0.6)', background: 'rgba(14,116,144,0.3)', color: 'white', fontWeight: '800', fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }} title="Exportar template Word editable">
+          📝 Exportar Word
         </button>
         <button onClick={clearAllData} style={{ padding: '0.35rem 0.85rem', borderRadius: '7px', border: '1.5px solid rgba(239,68,68,0.45)', background: 'rgba(239,68,68,0.18)', color: 'white', fontWeight: '600', fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }} title="Borrar todos los datos guardados">
           🗑️ Limpiar Datos
@@ -3993,6 +3997,341 @@ function _imprimirReporte() {
   w.document.write(html);
   w.document.close();
   setTimeout(function(){ w.focus(); w.print(); }, 800);
+}
+
+window.exportarWord = async function() {
+  var btn = [...document.querySelectorAll('button')].find(b=>b.textContent.includes('Exportar Word'));
+  if(btn){btn.textContent='⏳ Generando...';btn.disabled=true;}
+  await new Promise(r=>setTimeout(r,50));
+  try { await _buildWordDoc(); }
+  catch(e){ alert('Error: '+e.message); console.error(e); }
+  if(btn){btn.innerHTML='📝 Exportar Word';btn.disabled=false;}
+};
+
+async function _buildWordDoc() {
+  var docx = window.docx;
+  if(!docx) throw new Error('docx library not loaded');
+  var { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+        AlignmentType, HeadingLevel, BorderStyle, WidthType, ShadingType,
+        VerticalAlign, PageBreak } = docx;
+
+  var st   = window.mmState || {};
+  var t    = st.totales     || {};
+  var rd   = st.ratiosData  || {};
+  var p    = st.userProfile || {};
+  var ing  = st.ingresos    || [];
+  var gas  = st.gastos      || {};
+  var goals= st.goals       || [];
+  var cur  = st.currency    || 'USD';
+  var sym  = {USD:'$',EUR:'€',GBP:'£',MXN:'$',COP:'$',ARS:'$',CLP:'$',PEN:'S/',BRL:'R$',CAD:'C$'};
+  var cs   = sym[cur]||'$';
+
+  var nombre = ((p.nombre||'') + ' ' + (p.apellido||'')).trim() || 'Cliente';
+  var fecha  = new Date().toLocaleDateString('es-ES',{year:'numeric',month:'long',day:'numeric'});
+
+  var ingM = (rd.ingresoBruto||0)/12;
+  var gasM = ((rd.gastosAnual||0)+(rd.ahorroAnual||0)+(rd.deudaAnual||0)+(rd.impuestosAnual||0)+(rd.segurosAnual||0))/12;
+  var flujo = ingM - gasM;
+  function fc(v){ return cs+Number(v||0).toLocaleString('en-US',{maximumFractionDigits:0}); }
+
+  var W = 9360;
+  var brd = {style:BorderStyle.SINGLE,size:1,color:'CCCCCC'};
+  var brds = {top:brd,bottom:brd,left:brd,right:brd};
+  var nob  = {style:BorderStyle.NIL};
+  var nobs = {top:nob,bottom:nob,left:nob,right:nob};
+
+  function cell(children, o={}) {
+    return new TableCell({
+      borders: o.borders||brds,
+      width: o.w?{size:o.w,type:WidthType.DXA}:undefined,
+      shading: o.fill?{fill:o.fill,type:ShadingType.CLEAR}:undefined,
+      margins:{top:80,bottom:80,left:120,right:120},
+      verticalAlign: o.va||VerticalAlign.CENTER,
+      columnSpan: o.span,
+      children: Array.isArray(children)?children:[children]
+    });
+  }
+  function txt(text, o={}) {
+    return new TextRun({text:String(text||''),bold:o.bold,size:o.size||20,color:o.color,font:'Arial',italics:o.italic});
+  }
+  function para(children, o={}) {
+    return new Paragraph({
+      alignment: o.align||AlignmentType.LEFT,
+      spacing:{before:o.before||0,after:o.after||60},
+      children: Array.isArray(children)?children:[children]
+    });
+  }
+  function h1(t2) {
+    return new Paragraph({heading:HeadingLevel.HEADING_1,spacing:{before:300,after:120},
+      children:[new TextRun({text:t2,bold:true,size:36,font:'Arial',color:'1e3a8a'})]});
+  }
+  function divider(color) {
+    return new Paragraph({border:{bottom:{style:BorderStyle.SINGLE,size:6,color:color||'3b82f6',space:1}},
+      spacing:{before:0,after:140},children:[]});
+  }
+
+  var sections_arr = [];
+
+  // ── PORTADA ──
+  sections_arr.push(para([txt('Xavier Serbia · Money Map',{size:18,color:'64748b'})]));
+  sections_arr.push(new Paragraph({spacing:{before:480,after:0},children:[txt('DIAGNOSTICO FINANCIERO PERSONAL',{bold:true,size:52,color:'1e3a8a'})]}));
+  sections_arr.push(new Paragraph({spacing:{before:80,after:80},children:[txt('Plan de Accion · Diagnostico · Recomendaciones',{size:24,color:'0891b2'})]}));
+  sections_arr.push(divider('10b981'));
+  sections_arr.push(new Paragraph({spacing:{before:240,after:0},children:[txt('PREPARADO PARA',{size:16,color:'64748b',bold:true})]}));
+  sections_arr.push(new Paragraph({spacing:{before:40,after:0},children:[txt(nombre,{bold:true,size:44,color:'1e293b'})]}));
+  var ageParts = [p.edad&&(p.edad+' años'), p.estadoCivil, p.dependientes>0&&(p.dependientes+' dependiente(s)')].filter(Boolean);
+  sections_arr.push(new Paragraph({spacing:{before:40,after:0},children:[txt(ageParts.join(' · '),{size:20,color:'64748b'})]}));
+  if(p.analisisConjunto && p.parejaNombre)
+    sections_arr.push(new Paragraph({spacing:{before:20,after:0},children:[txt('Analisis conjunto con '+p.parejaNombre,{size:20,color:'0891b2'})]}));
+  sections_arr.push(new Paragraph({spacing:{before:40,after:360},children:[txt('Fecha: '+fecha,{size:18,color:'94a3b8'})]}));
+
+  // Cover KPI table
+  sections_arr.push(new Table({
+    width:{size:W,type:WidthType.DXA}, columnWidths:[W/4,W/4,W/4,W/4],
+    rows:[new TableRow({children:[
+      cell([para([txt('PATRIMONIO NETO',{size:16,bold:true,color:'065f46'}),txt('\n'),txt(fc(t.patrimonioNeto),{size:28,bold:true,color:'10b981'})])],{fill:'f0fdf4',w:W/4}),
+      cell([para([txt('INGRESOS / MES',{size:16,bold:true,color:'1e40af'}),txt('\n'),txt(fc(ingM),{size:28,bold:true,color:'3b82f6'})])],{fill:'eff6ff',w:W/4}),
+      cell([para([txt('ACTIVOS TOTALES',{size:16,bold:true,color:'4c1d95'}),txt('\n'),txt(fc(t.activosTotales),{size:28,bold:true,color:'8b5cf6'})])],{fill:'f5f3ff',w:W/4}),
+      cell([para([txt('DEUDAS TOTALES',{size:16,bold:true,color:'78350f'}),txt('\n'),txt(fc(t.pasivosTotales),{size:28,bold:true,color:'f59e0b'})])],{fill:'fffbeb',w:W/4}),
+    ]})]
+  }));
+
+  // ── PAGE BREAK ──
+  sections_arr.push(new Paragraph({children:[new PageBreak()]}));
+
+  // ── FLUJO DE CAJA ──
+  sections_arr.push(h1('FLUJO DE CAJA'));
+  sections_arr.push(divider('0891b2'));
+
+  sections_arr.push(new Table({
+    width:{size:W,type:WidthType.DXA}, columnWidths:[W/3,W/3,W/3],
+    rows:[new TableRow({children:[
+      cell([para([txt('INGRESOS / MES',{size:16,bold:true,color:'065f46'}),txt('\n'),txt(fc(ingM),{size:28,bold:true,color:'10b981'})])],{fill:'f0fdf4',w:W/3}),
+      cell([para([txt('GASTOS / MES',{size:16,bold:true,color:'991b1b'}),txt('\n'),txt(fc(gasM),{size:28,bold:true,color:'ef4444'})])],{fill:'fff1f1',w:W/3}),
+      cell([para([txt('FLUJO LIBRE',{size:16,bold:true,color:flujo>=0?'065f46':'991b1b'}),txt('\n'),txt(fc(flujo),{size:28,bold:true,color:flujo>=0?'10b981':'ef4444'})])],{fill:flujo>=0?'f0fdf4':'fff1f1',w:W/3}),
+    ]})]
+  }));
+
+  // Income breakdown
+  var ingRows = ing.filter(i=>parseFloat(i.monto||0)>0);
+  var totalIngAnual = ingRows.reduce((s,i)=>s+parseFloat(i.monto||0),0);
+  sections_arr.push(new Paragraph({spacing:{before:200,after:80},children:[txt('Desglose de Ingresos',{bold:true,size:22,color:'1e293b'})]}));
+  sections_arr.push(new Table({
+    width:{size:W,type:WidthType.DXA}, columnWidths:[5760,1800,1800],
+    rows:[
+      new TableRow({children:[
+        cell([para([txt('Fuente de Ingreso',{bold:true,size:18,color:'ffffff'})])],{fill:'0891b2',w:5760}),
+        cell([para([txt('Mensual',{bold:true,size:18,color:'ffffff'})],{align:AlignmentType.RIGHT})],{fill:'0891b2',w:1800}),
+        cell([para([txt('Anual',{bold:true,size:18,color:'ffffff'})],{align:AlignmentType.RIGHT})],{fill:'0891b2',w:1800}),
+      ]}),
+      ...ingRows.map((i,idx)=>new TableRow({children:[
+        cell([para([txt(i.nombre||i.categoria||'Ingreso',{size:18})])],{fill:idx%2?'f8fafc':'ffffff',w:5760}),
+        cell([para([txt(fc(parseFloat(i.monto||0)),{size:18})],{align:AlignmentType.RIGHT})],{fill:idx%2?'f8fafc':'ffffff',w:1800}),
+        cell([para([txt(fc(parseFloat(i.monto||0)*12),{size:18})],{align:AlignmentType.RIGHT})],{fill:idx%2?'f8fafc':'ffffff',w:1800}),
+      ]})),
+      new TableRow({children:[
+        cell([para([txt('TOTAL',{bold:true,size:18,color:'ffffff'})])],{fill:'1e3a8a',w:5760}),
+        cell([para([txt(fc(totalIngAnual),{bold:true,size:18,color:'ffffff'})],{align:AlignmentType.RIGHT})],{fill:'1e3a8a',w:1800}),
+        cell([para([txt(fc(totalIngAnual*12),{bold:true,size:18,color:'ffffff'})],{align:AlignmentType.RIGHT})],{fill:'1e3a8a',w:1800}),
+      ]}),
+    ]
+  }));
+
+  // Expense breakdown
+  var gasItems = [
+    {cat:'Gastos Diarios',  arr: gas.diarios   ||[], key:'monto'},
+    {cat:'Deuda mensual',   arr: gas.deuda      ||[], key:'monto'},
+    {cat:'Seguros',         arr: gas.seguros    ||[], key:'monto'},
+    {cat:'Ahorro',          arr: gas.ahorro     ||[], key:'monto'},
+    {cat:'Impuestos',       arr: gas.impuestos  ||[], key:'monto'},
+  ].map(g=>({cat:g.cat,v:g.arr.reduce((s,x)=>s+parseFloat(x[g.key]||0),0)})).filter(g=>g.v>0);
+  var totalGasM = gasItems.reduce((s,g)=>s+g.v,0);
+
+  sections_arr.push(new Paragraph({spacing:{before:200,after:80},children:[txt('Desglose de Gastos',{bold:true,size:22,color:'1e293b'})]}));
+  sections_arr.push(new Table({
+    width:{size:W,type:WidthType.DXA}, columnWidths:[5760,1800,1800],
+    rows:[
+      new TableRow({children:[
+        cell([para([txt('Categoria',{bold:true,size:18,color:'ffffff'})])],{fill:'ef4444',w:5760}),
+        cell([para([txt('Mensual',{bold:true,size:18,color:'ffffff'})],{align:AlignmentType.RIGHT})],{fill:'ef4444',w:1800}),
+        cell([para([txt('Anual',{bold:true,size:18,color:'ffffff'})],{align:AlignmentType.RIGHT})],{fill:'ef4444',w:1800}),
+      ]}),
+      ...gasItems.map((g,idx)=>new TableRow({children:[
+        cell([para([txt(g.cat,{size:18})])],{fill:idx%2?'f8fafc':'ffffff',w:5760}),
+        cell([para([txt(fc(g.v),{size:18})],{align:AlignmentType.RIGHT})],{fill:idx%2?'f8fafc':'ffffff',w:1800}),
+        cell([para([txt(fc(g.v*12),{size:18})],{align:AlignmentType.RIGHT})],{fill:idx%2?'f8fafc':'ffffff',w:1800}),
+      ]})),
+      new TableRow({children:[
+        cell([para([txt('TOTAL',{bold:true,size:18,color:'ffffff'})])],{fill:'991b1b',w:5760}),
+        cell([para([txt(fc(totalGasM),{bold:true,size:18,color:'ffffff'})],{align:AlignmentType.RIGHT})],{fill:'991b1b',w:1800}),
+        cell([para([txt(fc(totalGasM*12),{bold:true,size:18,color:'ffffff'})],{align:AlignmentType.RIGHT})],{fill:'991b1b',w:1800}),
+      ]}),
+    ]
+  }));
+
+  // ── PAGE BREAK ──
+  sections_arr.push(new Paragraph({children:[new PageBreak()]}));
+
+  // ── BALANCE GENERAL ──
+  sections_arr.push(h1('BALANCE GENERAL'));
+  sections_arr.push(divider('8b5cf6'));
+  sections_arr.push(new Table({
+    width:{size:W,type:WidthType.DXA}, columnWidths:[W/2,W/2],
+    rows:[new TableRow({children:[
+      cell([para([txt('ACTIVOS TOTALES',{size:16,bold:true,color:'4c1d95'}),txt('\n'),txt(fc(t.activosTotales),{size:28,bold:true,color:'8b5cf6'})])],{fill:'f5f3ff',w:W/2}),
+      cell([para([txt('PASIVOS TOTALES',{size:16,bold:true,color:'78350f'}),txt('\n'),txt(fc(t.pasivosTotales),{size:28,bold:true,color:'f59e0b'})])],{fill:'fffbeb',w:W/2}),
+    ]})]
+  }));
+  sections_arr.push(new Paragraph({spacing:{before:120,after:140},children:[txt('PATRIMONIO NETO:  ',{bold:true,size:24}),txt(fc(t.patrimonioNeto),{bold:true,size:28,color:(t.patrimonioNeto||0)>=0?'10b981':'ef4444'})]}));
+
+  // Assets table
+  var actTotal = t.activosTotales||1;
+  sections_arr.push(new Paragraph({spacing:{before:160,after:80},children:[txt('Composicion de Activos',{bold:true,size:20})]}));
+  sections_arr.push(new Table({
+    width:{size:W,type:WidthType.DXA}, columnWidths:[5760,1800,1800],
+    rows:[
+      new TableRow({children:[cell([para([txt('Categoria',{bold:true,size:18,color:'ffffff'})])],{fill:'8b5cf6',w:5760}),cell([para([txt('Monto',{bold:true,size:18,color:'ffffff'})],{align:AlignmentType.RIGHT})],{fill:'8b5cf6',w:1800}),cell([para([txt('% del Total',{bold:true,size:18,color:'ffffff'})],{align:AlignmentType.RIGHT})],{fill:'8b5cf6',w:1800})]}),
+      ...[['Efectivo / Liquidez',t.totalEfectivo],['Inversiones',t.totalInversiones],['Cuentas de Retiro',t.totalRetiro],['Bienes Raices',t.totalBienesRaices],['Bienes Personales',t.totalBienesPersonales]].filter(r=>r[1]>0).map(([l,v],idx)=>
+        new TableRow({children:[cell([para([txt(l,{size:18})])],{fill:idx%2?'f8fafc':'ffffff',w:5760}),cell([para([txt(fc(v),{size:18})],{align:AlignmentType.RIGHT})],{fill:idx%2?'f8fafc':'ffffff',w:1800}),cell([para([txt((v/actTotal*100).toFixed(1)+'%',{size:18})],{align:AlignmentType.RIGHT})],{fill:idx%2?'f8fafc':'ffffff',w:1800})]})),
+    ]
+  }));
+
+  // Debts table
+  var dbt = st.deudas||{};
+  var debtItems = [
+    ['Hipotecas',(dbt.casa||[]).reduce((s,d)=>s+parseFloat(d.balance||0),0)],
+    ['Tarjetas de Credito',(dbt.tarjetas||[]).reduce((s,d)=>s+parseFloat(d.balance||0),0)],
+    ['Prestamo Auto',(dbt.auto||[]).reduce((s,d)=>s+parseFloat(d.balance||0),0)],
+    ['Linea de Credito',(dbt.lineaPropiedad||[]).reduce((s,d)=>s+parseFloat(d.balance||0),0)],
+    ['Otros',(dbt.otros||[]).reduce((s,d)=>s+parseFloat(d.balance||0),0)],
+  ].filter(r=>r[1]>0);
+  var pasTotal = t.pasivosTotales||1;
+  if(debtItems.length>0){
+    sections_arr.push(new Paragraph({spacing:{before:160,after:80},children:[txt('Composicion de Deudas',{bold:true,size:20})]}));
+    sections_arr.push(new Table({
+      width:{size:W,type:WidthType.DXA}, columnWidths:[5760,1800,1800],
+      rows:[
+        new TableRow({children:[cell([para([txt('Categoria',{bold:true,size:18,color:'ffffff'})])],{fill:'f59e0b',w:5760}),cell([para([txt('Balance',{bold:true,size:18,color:'ffffff'})],{align:AlignmentType.RIGHT})],{fill:'f59e0b',w:1800}),cell([para([txt('% del Total',{bold:true,size:18,color:'ffffff'})],{align:AlignmentType.RIGHT})],{fill:'f59e0b',w:1800})]}),
+        ...debtItems.map(([l,v],idx)=>new TableRow({children:[cell([para([txt(l,{size:18})])],{fill:idx%2?'f8fafc':'ffffff',w:5760}),cell([para([txt(fc(v),{size:18})],{align:AlignmentType.RIGHT})],{fill:idx%2?'f8fafc':'ffffff',w:1800}),cell([para([txt((v/pasTotal*100).toFixed(1)+'%',{size:18})],{align:AlignmentType.RIGHT})],{fill:idx%2?'f8fafc':'ffffff',w:1800})]})),
+      ]
+    }));
+  }
+
+  // ── PAGE BREAK ──
+  sections_arr.push(new Paragraph({children:[new PageBreak()]}));
+
+  // ── INDICADORES FINANCIEROS (EDITABLE BLANK) ──
+  sections_arr.push(h1('INDICADORES FINANCIEROS'));
+  sections_arr.push(divider('3b82f6'));
+  sections_arr.push(new Paragraph({spacing:{before:0,after:120},children:[txt('Completa los valores y estado de cada indicador segun el analisis en la aplicacion.',{size:18,color:'64748b',italic:true})]}));
+
+  var mrec = st.mesesRecomendados || 6;
+  var ratioRows = [
+    {n:'Meses de Reserva',    m:'>='+mrec+' m'},
+    {n:'DTI Neto',            m:'<= 36%'},
+    {n:'Tasa de Ahorro',      m:'>= 30%'},
+    {n:'Cap. Acumulacion',    m:'>= 30%'},
+    {n:'Razon Corriente',     m:'>= 1.0x'},
+    {n:'Inversion / Ingreso', m:'ver benchmark'},
+    {n:'Riqueza Neta',        m:'ver benchmark'},
+    {n:'Deuda / Activos',     m:'<= 30%'},
+    {n:'Patrimonio / Activos',m:'>= 70%'},
+    {n:'Ahorro para Retiro',  m:'ver benchmark'},
+  ];
+  var W4 = [3960,1800,1800,1800];
+  sections_arr.push(new Table({
+    width:{size:W,type:WidthType.DXA}, columnWidths:W4,
+    rows:[
+      new TableRow({children:[
+        cell([para([txt('Indicador',{bold:true,size:18,color:'ffffff'})])],{fill:'1e3a8a',w:W4[0]}),
+        cell([para([txt('Meta',{bold:true,size:18,color:'ffffff'})],{align:AlignmentType.CENTER})],{fill:'1e3a8a',w:W4[1]}),
+        cell([para([txt('Resultado',{bold:true,size:18,color:'ffffff'})],{align:AlignmentType.CENTER})],{fill:'1e3a8a',w:W4[2]}),
+        cell([para([txt('Estado',{bold:true,size:18,color:'ffffff'})],{align:AlignmentType.CENTER})],{fill:'1e3a8a',w:W4[3]}),
+      ]}),
+      ...ratioRows.map((r,i)=>new TableRow({children:[
+        cell([para([txt(r.n,{size:18,bold:true})])],{fill:i%2?'f8fafc':'ffffff',w:W4[0]}),
+        cell([para([txt(r.m,{size:18,color:'64748b'})],{align:AlignmentType.CENTER})],{fill:i%2?'f8fafc':'ffffff',w:W4[1]}),
+        cell([para([txt('',{size:18})])],{fill:'fefce8',w:W4[2]}),
+        cell([para([txt('',{size:18})])],{fill:'fefce8',w:W4[3]}),
+      ]})),
+    ]
+  }));
+  sections_arr.push(new Paragraph({spacing:{before:80,after:0},children:[txt('Las celdas amarillas son editables — escribe el valor calculado en la app y el estado (OK / Atencion / Revisar).',{size:16,color:'92400e',italic:true})]}));
+
+  // ── PAGE BREAK ──
+  sections_arr.push(new Paragraph({children:[new PageBreak()]}));
+
+  // ── METAS ──
+  if(goals.length>0){
+    sections_arr.push(h1('METAS FINANCIERAS'));
+    sections_arr.push(divider('10b981'));
+    var fieldLabels = {edadRetiro:'Edad de retiro',ingresoMensual:'Ingreso mensual deseado',edadObjetivo:'Edad objetivo',ingresoPasivo:'Ingresos pasivos actuales',tipo:'Tipo',cuando:'Cuando',precio:'Precio estimado',enganche:'Enganche',numHijos:'Num. hijos',anosInicio:'Anos para inicio',presupuesto:'Presupuesto',destino:'Destino',monto:'Monto objetivo',beneficiarios:'Beneficiarios',plazo:'Plazo'};
+    var curFields = {ingresoMensual:1,ingresoPasivo:1,precio:1,enganche:1,presupuesto:1,monto:1};
+    var goalLabels = {retiro:'Retiro Comodo',emergencia:'Fondo de Emergencia',casa:'Comprar Casa',educacion:'Educacion de Hijos',deudas:'Pagar Deudas',inversiones:'Crecer Inversiones',independencia:'Independencia Financiera',negocio:'Negocio Propio',auto:'Comprar Auto',viaje:'Viaje / Vacaciones',herencia:'Dejar Herencia',otro:'Otra Meta'};
+
+    goals.forEach(g=>{
+      var gl = goalLabels[g.key]||g.key||'Meta';
+      var statusColor = {completada:'10b981','en progreso':'3b82f6',pendiente:'f59e0b'}[g.status]||'f59e0b';
+      sections_arr.push(new Paragraph({spacing:{before:180,after:60},children:[
+        new TextRun({text:gl,bold:true,size:24,font:'Arial',color:statusColor}),
+        new TextRun({text:'  ['+((g.status||'pendiente').toUpperCase())+']',size:18,font:'Arial',color:'94a3b8'}),
+      ]}));
+      var dets = Object.entries(g.details||{}).filter(([k,v])=>v&&!k.startsWith('_'));
+      if(dets.length>0){
+        sections_arr.push(new Table({
+          width:{size:W,type:WidthType.DXA}, columnWidths:[W/2,W/2],
+          rows: dets.map(([k,v],i)=>new TableRow({children:[
+            cell([para([txt(fieldLabels[k]||k,{size:17,bold:true,color:'64748b'})])],{fill:i%2?'f8fafc':'ffffff',w:W/2}),
+            cell([para([txt(curFields[k]?fc(parseFloat(v)||0):String(v),{size:17})])],{fill:i%2?'f8fafc':'ffffff',w:W/2}),
+          ]}))
+        }));
+      }
+      if(g.notes){
+        sections_arr.push(new Paragraph({spacing:{before:80,after:40},children:[txt('Notas del Coach: ',{bold:true,size:17,color:'92400e'}),txt(g.notes,{size:17})]}));
+      } else {
+        sections_arr.push(new Paragraph({spacing:{before:80,after:40},children:[txt('Notas del Coach: ',{bold:true,size:17,color:'92400e'}),txt('_'.repeat(90),{size:17,color:'d1d5db'})]}));
+      }
+    });
+
+    sections_arr.push(new Paragraph({children:[new PageBreak()]}));
+  }
+
+  // ── RECOMENDACIONES ──
+  sections_arr.push(h1('RECOMENDACIONES DEL COACH'));
+  sections_arr.push(divider('10b981'));
+  for(var i=0;i<12;i++){
+    sections_arr.push(new Paragraph({spacing:{before:60,after:60},children:[
+      txt((i+1)+'.  ',{bold:true,size:20}),
+      txt('_'.repeat(100),{size:20,color:'d1d5db'}),
+    ]}));
+  }
+
+  // ── BUILD + DOWNLOAD ──
+  var doc = new Document({
+    styles:{
+      default:{document:{run:{font:'Arial',size:20}}},
+      paragraphStyles:[
+        {id:'Heading1',name:'Heading 1',basedOn:'Normal',next:'Normal',quickFormat:true,
+          run:{size:36,bold:true,font:'Arial',color:'1e3a8a'},paragraph:{spacing:{before:360,after:120},outlineLevel:0}},
+        {id:'Heading2',name:'Heading 2',basedOn:'Normal',next:'Normal',quickFormat:true,
+          run:{size:26,bold:true,font:'Arial',color:'0e7490'},paragraph:{spacing:{before:240,after:80},outlineLevel:1}},
+      ]
+    },
+    sections:[{
+      properties:{page:{size:{width:12240,height:15840},margin:{top:1080,right:1080,bottom:1080,left:1080}}},
+      children: sections_arr
+    }]
+  });
+
+  var buf = await Packer.toBlob(doc);
+  var url = URL.createObjectURL(buf);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'MoneyMap_' + nombre.replace(/\s+/g,'_') + '_' + new Date().toISOString().slice(0,10) + '.docx';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 </script>
 
