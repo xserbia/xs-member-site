@@ -3320,34 +3320,66 @@ function _generarPDF() {
   y += 8;
 
   function semRow(x, ry, label, valueStr, isGood) {
+    var sw  = (W-24-10)/3;
     var bg  = isGood === true ? [240,253,244] : isGood === false ? [255,241,241] : [255,251,235];
     var acc = isGood === true ? green : isGood === false ? red : amber;
-    var tag = isGood === true ? 'CUMPLIDO' : isGood === false ? 'ATENCION' : 'EN CAMINO';
-    rbox(x, ry, 90, 16, 3, bg);
+    var tag = isGood === true ? 'OK' : isGood === false ? 'ATENCION' : 'REVISAR';
+    rbox(x, ry, sw, 16, 3, bg);
     box(x, ry, 4, 16, acc);
-    text(label,     x+8, ry+7,  7,   dark,  'left', true);
-    text(valueStr,  x+8, ry+13, 8,   acc,   'left', true);
-    rbox(x+62, ry+3, 24, 10, 3, acc);
-    text(tag,  x+74, ry+9, 6, white, 'center', true);
+    text(label,    x+7, ry+7,  6,   dark, 'left', true);
+    text(valueStr, x+7, ry+13, 7,   acc,  'left', true);
+    rbox(x+sw-26, ry+3, 24, 10, 3, acc);
+    text(tag, x+sw-14, ry+9, 5.5, white, 'center', true);
   }
 
-  var r = ratios;
+  // Compute ratios directly from flat ratiosData fields
+  var rd = ratios;
+  var rib    = rd.ingresoBruto  || 0;
+  var rinet  = rd.ingresoNeto   || 0;
+  var rah    = rd.ahorroAnual   || 0;
+  var rge    = rd.gastosEsencialesMensuales || 0;
+  var rres   = rd.reserva       || 0;
+  var rpd    = rd.pagoDeudaMensual || 0;
+  var rAT    = totales.activosTotales  || 1;
+  var rLiq   = totales.activosLiquidos || 0;
+  var rPN    = totales.patrimonioNeto  || 0;
+  var rInv   = totales.inversiones     || 0;
+  var rRetiro= totales.totalRetiro     || 0;
+  var rPC    = rd.pasivosCorrientes    || (rge*12);
+
+  var rMesesRes = rge>0   ? rres/rge          : NaN;
+  var rDTI      = rinet>0 ? rpd/(rinet/12)*100: NaN;
+  var rTasaAh   = rib>0   ? rah/rib*100       : NaN;
+  var rRazCor   = rPC>0   ? rLiq/rPC          : NaN;
+  var rInvRat   = rib>0   ? rInv/rib          : NaN;
+  var rRiqNeta  = rib>0   ? rPN/rib           : NaN;
+  var rDeudaAct = rAT>0   ? totales.pasivosTotales/rAT*100 : NaN;
+  var rPatAct   = rAT>0   ? rPN/rAT*100       : NaN;
+  var rAhRet    = rib>0   ? rRetiro/rib        : NaN;
+
+  function fmtR(v,dec,suf){ return (isNaN(v)||!isFinite(v)) ? 'N/A' : v.toFixed(dec||1)+(suf||''); }
+
   var semRows = [
-    {l:'Reserva Emergencia',   v:(r.reservaEmergencia&&r.reservaEmergencia.valor!=null)?r.reservaEmergencia.valor.toFixed(1)+' meses':'N/A', g: r.reservaEmergencia ? (r.reservaEmergencia.valor>=6 ? true : r.reservaEmergencia.valor>=4 ? null : false) : null},
-    {l:'Deuda / Ingreso',      v:(r.deudaIngreso&&r.deudaIngreso.valor!=null)?pct(r.deudaIngreso.valor):'N/A',                               g: r.deudaIngreso ? (r.deudaIngreso.valor<=36 ? true : r.deudaIngreso.valor<=50 ? null : false) : null},
-    {l:'Tasa de Ahorro',       v:(r.tasaAhorro&&r.tasaAhorro.valor!=null)?pct(r.tasaAhorro.valor):'N/A',                                     g: r.tasaAhorro ? (r.tasaAhorro.valor>=20 ? true : r.tasaAhorro.valor>=10 ? null : false) : null},
-    {l:'Razon Corriente',      v:(r.razonCorriente&&r.razonCorriente.valor!=null)?r.razonCorriente.valor.toFixed(2)+'x':'N/A',                g: r.razonCorriente ? (r.razonCorriente.valor>=1 ? true : r.razonCorriente.valor>=0.5 ? null : false) : null},
-    {l:'Inversion / Ingreso',  v:(r.inversionIngreso&&r.inversionIngreso.valor!=null)?r.inversionIngreso.valor.toFixed(1)+'x':'N/A',         g: r.inversionIngreso ? (r.inversionIngreso.valor>=1 ? true : r.inversionIngreso.valor>=0.5 ? null : false) : null},
-    {l:'Nivel Riqueza Neta',   v:(r.riquezaNeta&&r.riquezaNeta.valor!=null)?r.riquezaNeta.valor.toFixed(1)+'x':'N/A',                        g: r.riquezaNeta ? (r.riquezaNeta.valor>=1 ? true : r.riquezaNeta.valor>=0.5 ? null : false) : null},
+    {l:'Meses de Reserva',    v:fmtR(rMesesRes,1,' m'),  g:rMesesRes>=6?true:rMesesRes>=4?null:false},
+    {l:'DTI Deuda/Ingreso',   v:fmtR(rDTI,1,'%'),        g:rDTI<=36?true:rDTI<=50?null:false},
+    {l:'Tasa de Ahorro',      v:fmtR(rTasaAh,1,'%'),     g:rTasaAh>=20?true:rTasaAh>=10?null:false},
+    {l:'Razon Corriente',     v:fmtR(rRazCor,2,'x'),     g:rRazCor>=1?true:rRazCor>=0.5?null:false},
+    {l:'Inversion/Ingreso',   v:fmtR(rInvRat,2,'x'),     g:rInvRat>=1?true:rInvRat>=0.5?null:false},
+    {l:'Nivel Riqueza Neta',  v:fmtR(rRiqNeta,2,'x'),    g:rRiqNeta>=1?true:rRiqNeta>=0.5?null:false},
+    {l:'Deuda / Activos',     v:fmtR(rDeudaAct,1,'%'),   g:rDeudaAct<=30?true:rDeudaAct<=50?null:false},
+    {l:'Patrimonio/Activos',  v:fmtR(rPatAct,1,'%'),     g:rPatAct>=70?true:rPatAct>=50?null:false},
+    {l:'Ahorro para Retiro',  v:fmtR(rAhRet,2,'x'),      g:rAhRet>=1?true:rAhRet>=0.5?null:false},
   ];
+  var semCols = 3, semW2 = (W-24-10)/3;
   for (var si=0; si<semRows.length; si++) {
-    semRow(12 + (si%2)*97, y + Math.floor(si/2)*20, semRows[si].l, semRows[si].v, semRows[si].g);
+    semRow(12+(si%semCols)*(semW2+5), y+Math.floor(si/semCols)*20, semRows[si].l, semRows[si].v, semRows[si].g);
   }
-  y += 68;
+  y += Math.ceil(semRows.length/semCols)*20 + 8;
 
   // Savings rate bar
-  var ingM = (totales.totalIngresos||0)/12;
-  var gasM = (totales.totalGastos||0)/12;
+  // ratiosData.ingresoBruto is always annual
+  var ingM = (ratios.ingresoBruto||0)/12;
+  var gasM = (ratios.gastosAnualesTotales||0)/12;
   var tasa2 = ingM > 0 ? ((ingM-gasM)/ingM*100) : 0;
   rbox(12, y, W-24, 20, 3, offwh);
   text('TASA DE AHORRO', 18, y+8, 7, dark, 'left', true);
@@ -3470,35 +3502,70 @@ function _generarPDF() {
     y += 12;
   }
 
-  // ── PAGE 5: METAS ─────────────────────────────────────────────────────────
+  // ── PAGE 5+: METAS ────────────────────────────────────────────────────────
   if (goals.length > 0) {
     doc.addPage();
     box(0,0,W,H,offwh);
     box(0,0,W,26,green);
     text('METAS FINANCIERAS', 12, 12, 15, white, 'left', true);
-    text('Objetivos · Estado · Progreso', 12, 21, 8, [200,255,220]);
+    text('Objetivos · Detalles · Notas del Coach', 12, 21, 8, [200,255,220]);
     text(nombre, W-12, 12, 8, [200,255,220], 'right');
-    pageFooter(5);
-
+    var metaPageNum = 5;
+    pageFooter(metaPageNum);
     y = 32;
-    var goalLabels = {retiro:'Retiro comodo',emergencia:'Fondo emergencia',casa:'Comprar casa',educacion:'Educacion hijos',deudas:'Pagar deudas',inversiones:'Crecer dinero',independencia:'Independencia financiera',negocio:'Negocio propio',auto:'Comprar auto',viaje:'Viaje / Vacaciones',herencia:'Dejar herencia',otro:'Otra meta'};
-    var goalColors2 = {completado:green,'en progreso':blue,pendiente:amber,'no aplica':gray};
 
-    for (var gi=0; gi<Math.min(goals.length,10); gi++) {
-      var g = goals[gi];
-      var gc = goalColors2[g.status] || amber;
-      var gl = goalLabels[g.key] || g.key;
-      var gs = ((g.status||'pendiente')).toUpperCase();
-      rbox(12, y, W-24, 18, 3, gi%2===0 ? offwh : [240,242,255]);
-      box(12, y, 4, 18, gc);
-      text(gl, 20, y+8, 9, dark, 'left', true);
-      if (g.notes) {
-        var noteText = g.notes.substring(0,80) + (g.notes.length>80?'...':'');
-        text(noteText, 20, y+14, 6, gray);
+    var goalLabels3 = {retiro:'Retiro Comodo',emergencia:'Fondo de Emergencia',casa:'Comprar Casa',educacion:'Educacion de Hijos',deudas:'Pagar Deudas',inversiones:'Crecer Dinero',independencia:'Independencia Financiera',negocio:'Negocio Propio',auto:'Comprar Auto',viaje:'Viaje / Vacaciones',herencia:'Dejar Herencia',otro:'Otra Meta'};
+    var goalStatusC  = {completada:green,'en progreso':blue,pendiente:amber};
+    var fieldLbls    = {edadRetiro:'Edad de retiro',ingresoMensual:'Ingreso mensual deseado',edadObjetivo:'Edad objetivo',ingresoPasivo:'Ingresos pasivos actuales',tipo:'Tipo',cuando:'Cuando',precio:'Precio estimado',enganche:'Enganche disponible',numHijos:'Num. hijos',anosInicio:'Anos para inicio',presupuesto:'Presupuesto',destino:'Destino',monto:'Monto objetivo',beneficiarios:'Beneficiarios',plazo:'Plazo',descripcion:'Descripcion'};
+    var curFields    = {ingresoMensual:1,ingresoPasivo:1,precio:1,enganche:1,presupuesto:1,monto:1};
+
+    for (var gi=0; gi<goals.length; gi++) {
+      var g   = goals[gi];
+      var gc2 = goalStatusC[g.status] || amber;
+      var gl2 = goalLabels3[g.key] || g.key;
+      var gDet = Object.entries(g.details||{}).filter(function(kv){return kv[1]&&!kv[0].startsWith('_');});
+      var notesW = g.notes ? doc.splitTextToSize(g.notes, W-36) : [];
+      var blockH2 = 14 + (gDet.length>0 ? gDet.length*7+6 : 0) + (notesW.length>0 ? notesW.length*5+12 : 0) + 8;
+
+      if (y + blockH2 > H-16) {
+        doc.addPage(); metaPageNum++;
+        box(0,0,W,H,offwh);
+        box(0,0,W,14,green);
+        text('METAS FINANCIERAS (cont.)', 12, 10, 9, white, 'left', true);
+        pageFooter(metaPageNum);
+        y = 20;
       }
-      rbox(W-46, y+4, 34, 10, 3, gc);
-      text(gs, W-29, y+10, 6, white, 'center', true);
-      y += 21;
+
+      // Header
+      rbox(12, y, W-24, 13, 3, gc2);
+      text(gl2, 18, y+9, 9, white, 'left', true);
+      text((g.status||'pendiente').toUpperCase(), W-16, y+9, 6.5, white, 'right', true);
+      y += 15;
+
+      // Details
+      if (gDet.length > 0) {
+        rbox(12, y, W-24, gDet.length*7+4, 2, [248,250,252]);
+        for (var dii=0; dii<gDet.length; dii++) {
+          var dk=gDet[dii][0], dv2=gDet[dii][1];
+          var dlbl2=fieldLbls[dk]||dk;
+          var dval2=curFields[dk]?fc(parseFloat(dv2)||0):String(dv2);
+          text(dlbl2+':', 18, y+5+dii*7, 6, gray, 'left', true);
+          text(dval2, W-16, y+5+dii*7, 6.5, dark, 'right', true);
+        }
+        y += gDet.length*7+6;
+      }
+
+      // Coach notes
+      if (notesW.length > 0) {
+        rbox(12, y, W-24, notesW.length*5+10, 2, [255,251,235]);
+        box(12, y, 3, notesW.length*5+10, amber);
+        text('NOTAS DEL COACH:', 18, y+7, 6, amber, 'left', true);
+        for (var ni2=0; ni2<notesW.length; ni2++) {
+          text(notesW[ni2], 18, y+12+ni2*5, 6.5, dark);
+        }
+        y += notesW.length*5+12;
+      }
+      y += 8;
     }
   }
 
