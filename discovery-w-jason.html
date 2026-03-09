@@ -2674,18 +2674,21 @@ function exportForMoneyMap(state){
   };
   const diariosCatMap = (cat) => DIARIOS_MAP[cat] || 'Otro';
 
-  // ── Build activos
+  // ── Build activos (incluye beneficiario y titular si existen)
+  const mapActivo = i => ({
+    tipo:      i.type  || 'Otro',
+    ubicacion: i.alias || '',
+    valor:     i.value || 0,
+    titular:   i.owner || '',
+    ...(i.beneficiary ? { beneficiario: i.beneficiary } : {}),
+  });
   const activos = {
-    efectivo:        items.filter(i=>i.category==='banking')
-                         .map(i=>({tipo:i.type||'Otro', ubicacion:i.alias||'', valor:i.value||0})),
-    inversiones:     items.filter(i=>i.category==='investments_nonretirement')
-                         .map(i=>({tipo:i.type||'Otro', ubicacion:i.alias||'', valor:i.value||0})),
-    retiro:          items.filter(i=>i.category==='investments_retirement')
-                         .map(i=>({tipo:i.type||'Otro', ubicacion:i.alias||'', valor:i.value||0})),
-    bienesRaices:    items.filter(i=>i.category==='real_estate')
-                         .map(i=>({tipo:i.type||'Otro', ubicacion:i.alias||'', valor:i.value||0})),
-    bienesPersonales:items.filter(i=>i.category==='other_assets')
-                         .map(i=>({tipo:i.type||'Otro', ubicacion:i.alias||'', valor:i.value||0})),
+    efectivo:        items.filter(i=>i.category==='banking').map(mapActivo),
+    inversiones:     items.filter(i=>i.category==='investments_nonretirement').map(mapActivo),
+    retiro:          items.filter(i=>i.category==='investments_retirement').map(mapActivo),
+    bienesRaices:    items.filter(i=>i.category==='real_estate').map(mapActivo),
+    bienesPersonales:items.filter(i=>i.category==='other_assets').map(mapActivo),
+    negocios:        items.filter(i=>i.category==='business_trust').map(mapActivo),
   };
 
   // ── Build deudas (grouped by category)
