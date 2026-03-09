@@ -1050,22 +1050,41 @@ $('#editWizardBtn').addEventListener('click',()=>{
     .addRow .addBtn{
       flex:0 0 auto;padding:9px 18px;background:linear-gradient(90deg,var(--primary),var(--secondary));
       color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;
-      transition:opacity .15s;
+      transition:opacity .15s,background .2s;
     }
     .addRow .addBtn:hover{opacity:.88;}
+    /* Modo edición — el botón se vuelve naranja y aparece Cancel */
+    .addRow.editing .addBtn{background:linear-gradient(90deg,#f59e0b,#d97706);}
+    .addRow .cancelEditBtn{
+      display:none;flex:0 0 auto;padding:9px 14px;background:#fff;color:var(--muted);
+      border:1px solid var(--border);border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;transition:all .15s;
+    }
+    .addRow.editing .cancelEditBtn{display:block;}
+    .addRow.editing{background:rgba(245,158,11,.05);border:1.5px dashed #f59e0b;border-radius:12px;padding:10px;}
     /* Label pequeño sobre inputs */
     .inputGroup{display:flex;flex-direction:column;gap:3px;flex:1;min-width:80px;}
     .inputGroup label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
     /* Chips mejorados */
-    .itemChip{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:rgba(57,86,232,.03);font-size:13px;margin-bottom:5px;}
+    .itemChip{display:flex;align-items:center;gap:8px;padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:rgba(57,86,232,.03);font-size:13px;margin-bottom:5px;transition:border-color .15s;}
+    .itemChip.editing-this{border-color:#f59e0b;background:rgba(245,158,11,.05);}
     .chipInfo{flex:1;min-width:0;}
     .chipName{font-weight:600;margin-bottom:1px;font-size:13px;}
     .chipDetails{font-size:11px;color:var(--muted);}
-    .chipRemove{width:22px;height:22px;border-radius:5px;border:1px solid var(--border);background:#fff;color:var(--muted);font-weight:900;font-size:12px;cursor:pointer;flex-shrink:0;line-height:1;}
+    .chipActions{display:flex;gap:4px;flex-shrink:0;}
+    .chipEdit{
+      width:24px;height:24px;border-radius:5px;border:1px solid rgba(57,86,232,.25);
+      background:rgba(57,86,232,.06);color:var(--primary);font-size:12px;cursor:pointer;
+      flex-shrink:0;line-height:1;display:flex;align-items:center;justify-content:center;
+    }
+    .chipEdit:hover{background:rgba(57,86,232,.15);border-color:var(--primary);}
+    .chipRemove{width:24px;height:24px;border-radius:5px;border:1px solid var(--border);background:#fff;color:var(--muted);font-weight:900;font-size:13px;cursor:pointer;flex-shrink:0;line-height:1;display:flex;align-items:center;justify-content:center;}
     .chipRemove:hover{background:rgba(220,38,38,.08);color:#dc2626;border-color:rgba(220,38,38,.3);}
     /* Nota de validación inline */
     .addError{font-size:11px;color:var(--bad);margin-top:-8px;margin-bottom:6px;display:none;}
     .addError.show{display:block;}
+    /* Input custom para nueva categoría / subcategoría en gastos */
+    .customCatInput{margin-top:5px;padding:8px 10px;border:1.5px dashed var(--warn);border-radius:8px;font-size:12px;background:rgba(245,158,11,.04);width:100%;display:none;}
+    .customCatInput.visible{display:block;}
   `;
   document.head.appendChild(s);
 })();
@@ -1132,13 +1151,16 @@ function renderCategoriesDetail(){
     else if(catKey==='legal')       wireLegalForm(card, catKey, listEl, errEl, multi);
     else wireStandardForm(card, catKey, listEl, errEl, multi);
 
-    // Cascada de subcategoría para gastos
-    if(catKey==='expenses') wireExpenseCascade(card);
+    // Cascada de subcategoría para gastos (solo expenses usa wireExpenseCascade, ya integrado)
+    // (savings cascade is handled inside wireSavingsForm via wireExpenseCascadeFor)
 
     // Auto-open si no hay items
     if(!hasItems) card.classList.add('open');
   });
 }
+
+// Categorías de ACTIVOS que llevan campo beneficiario
+const CATS_WITH_BENEFICIARY = new Set(['banking','investments_retirement','investments_nonretirement','real_estate','other_assets','business_trust']);
 
 // ══════════════════════════════════════════════════════════
 //  FORMULARIO ESTÁNDAR  (income, banking, investments…)
@@ -1146,7 +1168,10 @@ function renderCategoriesDetail(){
 function buildStandardForm(k, multi){
   const opts=getTypeOpts(k).map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
   const ownerSel = multi ? `<div class="inputGroup"><label for="std_owner_${k}">Titular</label><select id="std_owner_${k}">${ownerOpts('')}</select></div>` : '';
-  return `<div class="addRow">
+  const benField = CATS_WITH_BENEFICIARY.has(k)
+    ? `<div class="inputGroup"><label for="std_ben_${k}">Beneficiario</label><input type="text" id="std_ben_${k}" placeholder="Ej: María, Hijos…"/></div>`
+    : '';
+  return `<div class="addRow" id="std_row_${k}">
     <div class="inputGroup"><label for="std_type_${k}">Tipo *</label>
       <select id="std_type_${k}"><option value="">Selecciona...</option>${opts}</select>
     </div>
@@ -1156,43 +1181,101 @@ function buildStandardForm(k, multi){
     <div class="inputGroup"><label for="std_amt_${k}">Monto USD *</label>
       <input type="number" id="std_amt_${k}" min="0" step="0.01" placeholder="0.00"/>
     </div>
+    ${benField}
     ${ownerSel}
     <button type="button" class="addBtn" id="std_add_${k}">+ Añadir</button>
+    <button type="button" class="cancelEditBtn" id="std_cancel_${k}">✕ Cancelar</button>
   </div>`;
 }
 function wireStandardForm(card, k, listEl, errEl, multi){
-  const typeEl  = card.querySelector(`#std_type_${k}`);
-  const aliasEl = card.querySelector(`#std_alias_${k}`);
-  const amtEl   = card.querySelector(`#std_amt_${k}`);
-  const ownerEl = multi ? card.querySelector(`#std_owner_${k}`) : null;
-  const addBtn  = card.querySelector(`#std_add_${k}`);
+  const typeEl   = card.querySelector(`#std_type_${k}`);
+  const aliasEl  = card.querySelector(`#std_alias_${k}`);
+  const amtEl    = card.querySelector(`#std_amt_${k}`);
+  const benEl    = CATS_WITH_BENEFICIARY.has(k) ? card.querySelector(`#std_ben_${k}`) : null;
+  const ownerEl  = multi ? card.querySelector(`#std_owner_${k}`) : null;
+  const addBtn   = card.querySelector(`#std_add_${k}`);
+  const cancelBtn= card.querySelector(`#std_cancel_${k}`);
+  const rowEl    = card.querySelector(`#std_row_${k}`);
+
+  let editingId = null;
+
+  function resetForm(){
+    typeEl.value=''; aliasEl.value=''; amtEl.value='';
+    if(benEl) benEl.value='';
+    if(ownerEl) ownerEl.value='';
+    editingId=null;
+    addBtn.textContent='+ Añadir';
+    rowEl.classList.remove('editing');
+    card.querySelectorAll('.itemChip').forEach(c=>c.classList.remove('editing-this'));
+  }
+
+  cancelBtn.addEventListener('click', resetForm);
+
   function doAdd(){
     errEl.classList.remove('show');
-    const type = typeEl.value.trim();
+    const type  = typeEl.value.trim();
     const alias = aliasEl.value.trim();
-    const amt = parseFloat(amtEl.value);
+    const amt   = parseFloat(amtEl.value);
     if(!type || isNaN(amt) || amt < 0){ errEl.classList.add('show'); return; }
     const owner = ownerEl ? (ownerEl.value||'household') : (state.people.members[0]?.id||'household');
-    state.financials.items.push({id:uid(k),category:k,type,alias:alias||null,name:alias||type,value:amt,owner});
-    typeEl.value=''; aliasEl.value=''; amtEl.value=''; if(ownerEl) ownerEl.value='';
-    renderItemsList(k,listEl); debouncedSave();
+    const beneficiary = benEl ? (benEl.value.trim()||null) : undefined;
+    if(editingId){
+      // UPDATE existing
+      const idx = state.financials.items.findIndex(it=>it.id===editingId);
+      if(idx!==-1){
+        const existing = state.financials.items[idx];
+        state.financials.items[idx] = {...existing, type, alias:alias||null, name:alias||type, value:amt, owner, ...(beneficiary!==undefined?{beneficiary}:{})};
+      }
+    } else {
+      // NEW item
+      const item = {id:uid(k),category:k,type,alias:alias||null,name:alias||type,value:amt,owner};
+      if(beneficiary!==undefined) item.beneficiary = beneficiary;
+      state.financials.items.push(item);
+    }
+    resetForm();
+    renderItemsList(k, listEl); debouncedSave();
   }
+
+  // expose edit handler for renderItemsList
+  card._editHandler = (itemId) => {
+    const it = state.financials.items.find(x=>x.id===itemId); if(!it) return;
+    editingId = itemId;
+    typeEl.value  = it.type  || '';
+    aliasEl.value = it.alias || '';
+    amtEl.value   = it.value != null ? it.value : '';
+    if(benEl) benEl.value = it.beneficiary||'';
+    if(ownerEl) ownerEl.value = it.owner||'';
+    addBtn.textContent = '💾 Guardar cambios';
+    rowEl.classList.add('editing');
+    // Scroll form into view
+    rowEl.scrollIntoView({behavior:'smooth', block:'nearest'});
+    // Highlight chip
+    card.querySelectorAll('.itemChip').forEach(c=>{
+      c.classList.toggle('editing-this', c.dataset.id===itemId);
+    });
+  };
+
   addBtn.addEventListener('click', doAdd);
   amtEl.addEventListener('keydown', e=>{ if(e.key==='Enter') doAdd(); });
 }
 
 // ══════════════════════════════════════════════════════════
 //  FORMULARIO GASTOS  — cascada categoría → subcategoría
+//  + categoría/subcategoría personalizadas + edición
 // ══════════════════════════════════════════════════════════
 function buildExpensesForm(multi){
   const catOpts = Object.keys(EXPENSES_TAX).map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
   const ownerSel = multi ? `<div class="inputGroup"><label for="exp_owner">Titular</label><select id="exp_owner">${ownerOpts('')}</select></div>` : '';
-  return `<div class="addRow">
-    <div class="inputGroup"><label for="exp_cat">Categoría *</label>
-      <select id="exp_cat"><option value="">Categoría...</option>${catOpts}</select>
+  return `<div class="addRow" id="exp_row">
+    <div class="inputGroup">
+      <label for="exp_cat">Categoría *</label>
+      <select id="exp_cat"><option value="">Categoría...</option>${catOpts}<option value="__new__">➕ Nueva categoría…</option></select>
+      <input type="text" id="exp_cat_custom" class="customCatInput" placeholder="Escribe la categoría…"/>
     </div>
-    <div class="inputGroup"><label for="exp_sub">Subcategoría *</label>
+    <div class="inputGroup">
+      <label for="exp_sub">Subcategoría *</label>
       <select id="exp_sub" disabled><option value="">Primero selecciona categoría</option></select>
+      <input type="text" id="exp_sub_custom" class="customCatInput" placeholder="Escribe la subcategoría…"/>
     </div>
     <div class="inputGroup"><label for="exp_alias">Alias (opcional)</label>
       <input type="text" id="exp_alias" placeholder="Ej: Netflix, Visa BofA"/>
@@ -1202,61 +1285,116 @@ function buildExpensesForm(multi){
     </div>
     ${ownerSel}
     <button type="button" class="addBtn" id="exp_add">+ Añadir</button>
+    <button type="button" class="cancelEditBtn" id="exp_cancel">✕ Cancelar</button>
   </div>`;
 }
 function wireExpenseCascade(card){
-  const catSel = card.querySelector('#exp_cat');
-  const subSel = card.querySelector('#exp_sub');
+  const catSel    = card.querySelector('#exp_cat');
+  const subSel    = card.querySelector('#exp_sub');
+  const catCustom = card.querySelector('#exp_cat_custom');
+  const subCustom = card.querySelector('#exp_sub_custom');
   if(!catSel||!subSel) return;
   catSel.addEventListener('change', ()=>{
     const cat = catSel.value;
     subSel.innerHTML = '';
-    if(!cat){ subSel.disabled=true; subSel.innerHTML='<option value="">Primero selecciona categoría</option>'; return; }
+    subCustom.classList.remove('visible');
+    if(!cat){ subSel.disabled=true; subSel.innerHTML='<option value="">Primero selecciona categoría</option>'; catCustom.classList.remove('visible'); return; }
+    if(cat==='__new__'){ catCustom.classList.add('visible'); subSel.disabled=true; subSel.innerHTML='<option value="">Ingresa categoría arriba</option>'; return; }
+    catCustom.classList.remove('visible');
     const subs = EXPENSES_TAX[cat]||[];
     subSel.disabled = false;
-    subSel.innerHTML = `<option value="">Subcategoría...</option>`+subs.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+    subSel.innerHTML = `<option value="">Subcategoría...</option>`
+      + subs.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('')
+      + `<option value="__new__">➕ Nueva subcategoría…</option>`;
+  });
+  subSel.addEventListener('change', ()=>{
+    subCustom.classList.toggle('visible', subSel.value==='__new__');
   });
 }
 function wireExpensesForm(card, k, listEl, errEl, multi){
-  const catEl   = card.querySelector('#exp_cat');
-  const subEl   = card.querySelector('#exp_sub');
-  const aliasEl = card.querySelector('#exp_alias');
-  const amtEl   = card.querySelector('#exp_amt');
-  const ownerEl = multi ? card.querySelector('#exp_owner') : null;
-  const addBtn  = card.querySelector('#exp_add');
+  const catEl     = card.querySelector('#exp_cat');
+  const subEl     = card.querySelector('#exp_sub');
+  const catCustom = card.querySelector('#exp_cat_custom');
+  const subCustom = card.querySelector('#exp_sub_custom');
+  const aliasEl   = card.querySelector('#exp_alias');
+  const amtEl     = card.querySelector('#exp_amt');
+  const ownerEl   = multi ? card.querySelector('#exp_owner') : null;
+  const addBtn    = card.querySelector('#exp_add');
+  const cancelBtn = card.querySelector('#exp_cancel');
+  const rowEl     = card.querySelector('#exp_row');
+  let editingId = null;
+
+  function getEffectiveCat(){ return catEl.value==='__new__' ? catCustom.value.trim() : catEl.value.trim(); }
+  function getEffectiveSub(){ return subEl.value==='__new__' ? subCustom.value.trim() : subEl.value.trim(); }
+
+  function resetForm(){
+    catEl.value=''; subEl.innerHTML='<option value="">Primero selecciona categoría</option>'; subEl.disabled=true;
+    catCustom.classList.remove('visible'); subCustom.classList.remove('visible');
+    catCustom.value=''; subCustom.value='';
+    aliasEl.value=''; amtEl.value=''; if(ownerEl) ownerEl.value='';
+    editingId=null; addBtn.textContent='+ Añadir';
+    rowEl.classList.remove('editing');
+    card.querySelectorAll('.itemChip').forEach(c=>c.classList.remove('editing-this'));
+  }
+  cancelBtn.addEventListener('click', resetForm);
+
   function doAdd(){
     errEl.classList.remove('show');
-    const cat   = catEl.value.trim();
-    const sub   = subEl.value.trim();
+    const cat   = getEffectiveCat();
+    const sub   = getEffectiveSub();
     const alias = aliasEl.value.trim();
     const amt   = parseFloat(amtEl.value);
     if(!cat||!sub||isNaN(amt)||amt<0){ errEl.classList.add('show'); return; }
     const owner = ownerEl ? (ownerEl.value||'household') : (state.people.members[0]?.id||'household');
-    // Si el usuario puso alias → mostrar como "Alias (Cat – Sub)", sino "Cat – Sub"
     const displayName = alias ? `${alias} (${cat} – ${sub})` : `${cat} – ${sub}`;
-    state.financials.items.push({
-      id:uid(k), category:k,
-      expenseCategory:cat, subcategory:sub,
-      alias: alias||null,
-      name: displayName,
-      value:amt, owner
-    });
-    catEl.value='';
-    subEl.innerHTML='<option value="">Primero selecciona categoría</option>'; subEl.disabled=true;
-    aliasEl.value=''; amtEl.value=''; if(ownerEl) ownerEl.value='';
-    renderItemsList(k,listEl); debouncedSave();
+    if(editingId){
+      const idx = state.financials.items.findIndex(it=>it.id===editingId);
+      if(idx!==-1) state.financials.items[idx] = {...state.financials.items[idx], expenseCategory:cat, subcategory:sub, alias:alias||null, name:displayName, value:amt, owner};
+    } else {
+      state.financials.items.push({id:uid(k),category:k,expenseCategory:cat,subcategory:sub,alias:alias||null,name:displayName,value:amt,owner});
+    }
+    resetForm(); renderItemsList(k,listEl); debouncedSave();
   }
+
+  card._editHandler = (itemId) => {
+    const it = state.financials.items.find(x=>x.id===itemId); if(!it) return;
+    editingId = itemId;
+    // Restore category
+    const savedCat = it.expenseCategory||'';
+    if(EXPENSES_TAX[savedCat]){
+      catEl.value = savedCat;
+      catCustom.classList.remove('visible');
+      const subs = EXPENSES_TAX[savedCat]||[];
+      subEl.disabled=false;
+      subEl.innerHTML=`<option value="">Subcategoría...</option>`+subs.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('')+`<option value="__new__">➕ Nueva subcategoría…</option>`;
+      const savedSub = it.subcategory||'';
+      if(subs.includes(savedSub)){ subEl.value=savedSub; subCustom.classList.remove('visible'); }
+      else { subEl.value='__new__'; subCustom.value=savedSub; subCustom.classList.add('visible'); }
+    } else {
+      catEl.value='__new__'; catCustom.value=savedCat; catCustom.classList.add('visible');
+      subEl.disabled=true; subEl.innerHTML='<option value="">Ingresa categoría arriba</option>';
+      subCustom.value=it.subcategory||''; subCustom.classList.add('visible');
+    }
+    aliasEl.value = it.alias||'';
+    amtEl.value   = it.value != null ? it.value : '';
+    if(ownerEl) ownerEl.value = it.owner||'';
+    addBtn.textContent='💾 Guardar cambios';
+    rowEl.classList.add('editing');
+    rowEl.scrollIntoView({behavior:'smooth', block:'nearest'});
+    card.querySelectorAll('.itemChip').forEach(c=>c.classList.toggle('editing-this', c.dataset.id===itemId));
+  };
+
   addBtn.addEventListener('click', doAdd);
   amtEl.addEventListener('keydown', e=>{ if(e.key==='Enter') doAdd(); });
 }
 
 // ══════════════════════════════════════════════════════════
-//  FORMULARIO AHORRO  — cascada categoría → subcategoría
+//  FORMULARIO AHORRO  — cascada categoría → subcategoría + edición
 // ══════════════════════════════════════════════════════════
 function buildSavingsForm(multi){
   const catOpts = Object.keys(SAVINGS_TAX).map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
   const ownerSel = multi ? `<div class="inputGroup"><label for="sav_owner">Titular</label><select id="sav_owner">${ownerOpts('')}</select></div>` : '';
-  return `<div class="addRow">
+  return `<div class="addRow" id="sav_row">
     <div class="inputGroup"><label for="sav_cat">Categoría *</label>
       <select id="sav_cat"><option value="">Categoría...</option>${catOpts}</select>
     </div>
@@ -1268,6 +1406,7 @@ function buildSavingsForm(multi){
     </div>
     ${ownerSel}
     <button type="button" class="addBtn" id="sav_add">+ Añadir</button>
+    <button type="button" class="cancelEditBtn" id="sav_cancel">✕ Cancelar</button>
   </div>`;
 }
 function wireExpenseCascadeFor(card, catId, subId, tax){
@@ -1289,27 +1428,58 @@ function wireSavingsForm(card, k, listEl, errEl, multi){
   const amtEl   = card.querySelector('#sav_amt');
   const ownerEl = multi ? card.querySelector('#sav_owner') : null;
   const addBtn  = card.querySelector('#sav_add');
+  const cancelBtn = card.querySelector('#sav_cancel');
+  const rowEl   = card.querySelector('#sav_row');
+  let editingId = null;
+
+  function resetForm(){
+    catEl.value=''; subEl.innerHTML='<option value="">Primero selecciona categoría</option>'; subEl.disabled=true;
+    amtEl.value=''; if(ownerEl) ownerEl.value='';
+    editingId=null; addBtn.textContent='+ Añadir';
+    rowEl.classList.remove('editing');
+    card.querySelectorAll('.itemChip').forEach(c=>c.classList.remove('editing-this'));
+  }
+  cancelBtn.addEventListener('click', resetForm);
+
   function doAdd(){
     errEl.classList.remove('show');
     const cat=catEl.value.trim(), sub=subEl.value.trim(), amt=parseFloat(amtEl.value);
     if(!cat||!sub||isNaN(amt)||amt<0){ errEl.classList.add('show'); return; }
     const owner = ownerEl ? (ownerEl.value||'household') : (state.people.members[0]?.id||'household');
-    state.financials.items.push({id:uid(k),category:k,expenseCategory:cat,subcategory:sub,name:`${cat} – ${sub}`,value:amt,owner});
-    catEl.value=''; subEl.innerHTML='<option value="">Primero selecciona categoría</option>'; subEl.disabled=true; amtEl.value=''; if(ownerEl) ownerEl.value='';
-    renderItemsList(k,listEl); debouncedSave();
+    if(editingId){
+      const idx=state.financials.items.findIndex(it=>it.id===editingId);
+      if(idx!==-1) state.financials.items[idx]={...state.financials.items[idx],expenseCategory:cat,subcategory:sub,name:`${cat} – ${sub}`,value:amt,owner};
+    } else {
+      state.financials.items.push({id:uid(k),category:k,expenseCategory:cat,subcategory:sub,name:`${cat} – ${sub}`,value:amt,owner});
+    }
+    resetForm(); renderItemsList(k,listEl); debouncedSave();
   }
+
+  card._editHandler = (itemId) => {
+    const it=state.financials.items.find(x=>x.id===itemId); if(!it) return;
+    editingId=itemId;
+    catEl.value=it.expenseCategory||'';
+    catEl.dispatchEvent(new Event('change'));
+    setTimeout(()=>{ subEl.value=it.subcategory||''; },0);
+    amtEl.value=it.value!=null?it.value:'';
+    if(ownerEl) ownerEl.value=it.owner||'';
+    addBtn.textContent='💾 Guardar cambios';
+    rowEl.classList.add('editing');
+    rowEl.scrollIntoView({behavior:'smooth',block:'nearest'});
+    card.querySelectorAll('.itemChip').forEach(c=>c.classList.toggle('editing-this',c.dataset.id===itemId));
+  };
+
   addBtn.addEventListener('click', doAdd);
   amtEl.addEventListener('keydown', e=>{ if(e.key==='Enter') doAdd(); });
 }
 
 // ══════════════════════════════════════════════════════════
-//  FORMULARIO PASIVOS / DEUDAS
-//  Campos extra: tasa de interés % y meses restantes
+//  FORMULARIO PASIVOS / DEUDAS + edición
 // ══════════════════════════════════════════════════════════
 function buildLiabilitiesForm(multi){
   const opts=DEBT_TYPES.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
   const ownerSel = multi ? `<div class="inputGroup"><label for="liab_owner">Titular</label><select id="liab_owner">${ownerOpts('')}</select></div>` : '';
-  return `<div class="addRow">
+  return `<div class="addRow" id="liab_row">
     <div class="inputGroup"><label for="liab_type">Tipo de deuda *</label>
       <select id="liab_type"><option value="">Selecciona...</option>${opts}</select>
     </div>
@@ -1327,6 +1497,7 @@ function buildLiabilitiesForm(multi){
     </div>
     ${ownerSel}
     <button type="button" class="addBtn" id="liab_add">+ Añadir</button>
+    <button type="button" class="cancelEditBtn" id="liab_cancel">✕ Cancelar</button>
   </div>
   <p class="hint" style="margin-top:0;margin-bottom:10px;">💡 Ingresa la tasa anual y los meses que faltan para liquidar cada deuda.</p>`;
 }
@@ -1338,6 +1509,19 @@ function wireLiabilitiesForm(card, k, listEl, errEl, multi){
   const monthsEl = card.querySelector('#liab_months');
   const ownerEl  = multi ? card.querySelector('#liab_owner') : null;
   const addBtn   = card.querySelector('#liab_add');
+  const cancelBtn= card.querySelector('#liab_cancel');
+  const rowEl    = card.querySelector('#liab_row');
+  let editingId  = null;
+
+  function resetForm(){
+    typeEl.value=''; aliasEl.value=''; amtEl.value=''; rateEl.value=''; monthsEl.value='';
+    if(ownerEl) ownerEl.value='';
+    editingId=null; addBtn.textContent='+ Añadir';
+    rowEl.classList.remove('editing');
+    card.querySelectorAll('.itemChip').forEach(c=>c.classList.remove('editing-this'));
+  }
+  cancelBtn.addEventListener('click', resetForm);
+
   function doAdd(){
     errEl.classList.remove('show');
     const type  = typeEl.value.trim();
@@ -1347,26 +1531,39 @@ function wireLiabilitiesForm(card, k, listEl, errEl, multi){
     const months= monthsEl.value !== '' ? parseInt(monthsEl.value) : null;
     if(!type || isNaN(amt) || amt < 0){ errEl.classList.add('show'); return; }
     const owner = ownerEl ? (ownerEl.value||'household') : (state.people.members[0]?.id||'household');
-    state.financials.items.push({
-      id:uid(k), category:k, type, alias:alias||null,
-      name:alias||type, value:amt,
-      interestRate: rate, monthsRemaining: months,
-      owner
-    });
-    typeEl.value=''; aliasEl.value=''; amtEl.value=''; rateEl.value=''; monthsEl.value=''; if(ownerEl) ownerEl.value='';
-    renderItemsList(k,listEl); debouncedSave();
+    if(editingId){
+      const idx=state.financials.items.findIndex(it=>it.id===editingId);
+      if(idx!==-1) state.financials.items[idx]={...state.financials.items[idx],type,alias:alias||null,name:alias||type,value:amt,interestRate:rate,monthsRemaining:months,owner};
+    } else {
+      state.financials.items.push({id:uid(k),category:k,type,alias:alias||null,name:alias||type,value:amt,interestRate:rate,monthsRemaining:months,owner});
+    }
+    resetForm(); renderItemsList(k,listEl); debouncedSave();
   }
+
+  card._editHandler = (itemId) => {
+    const it=state.financials.items.find(x=>x.id===itemId); if(!it) return;
+    editingId=itemId;
+    typeEl.value=it.type||''; aliasEl.value=it.alias||''; amtEl.value=it.value!=null?it.value:'';
+    rateEl.value=it.interestRate!=null?it.interestRate:'';
+    monthsEl.value=it.monthsRemaining!=null?it.monthsRemaining:'';
+    if(ownerEl) ownerEl.value=it.owner||'';
+    addBtn.textContent='💾 Guardar cambios';
+    rowEl.classList.add('editing');
+    rowEl.scrollIntoView({behavior:'smooth',block:'nearest'});
+    card.querySelectorAll('.itemChip').forEach(c=>c.classList.toggle('editing-this',c.dataset.id===itemId));
+  };
+
   addBtn.addEventListener('click', doAdd);
   amtEl.addEventListener('keydown', e=>{ if(e.key==='Enter') doAdd(); });
 }
 
 // ══════════════════════════════════════════════════════════
-//  FORMULARIO SEGUROS
+//  FORMULARIO SEGUROS + edición
 // ══════════════════════════════════════════════════════════
 function buildInsuranceForm(multi){
   const opts=INSURANCE_TYPES.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
   const ownerSel=multi?`<div class="inputGroup"><label for="ins_owner">Titular</label><select id="ins_owner">${ownerOpts('')}</select></div>`:'';
-  return `<div class="addRow">
+  return `<div class="addRow" id="ins_row">
     <div class="inputGroup"><label for="ins_type">Tipo de seguro *</label>
       <select id="ins_type"><option value="">Selecciona...</option>${opts}</select>
     </div>
@@ -1390,19 +1587,33 @@ function buildInsuranceForm(multi){
     </div>
     ${ownerSel}
     <button type="button" class="addBtn" id="ins_add">+ Añadir</button>
+    <button type="button" class="cancelEditBtn" id="ins_cancel">✕ Cancelar</button>
   </div>
   <p class="hint" style="margin-top:0;margin-bottom:10px;">💡 El monto de cobertura es la suma asegurada, no el valor en efectivo.</p>`;
 }
 function wireInsuranceForm(card, k, listEl, errEl, multi){
-  const typeEl    = card.querySelector('#ins_type');
-  const aliasEl   = card.querySelector('#ins_alias');
-  const cobEl     = card.querySelector('#ins_cobertura');
-  const primaEl   = card.querySelector('#ins_prima');
-  const dedEl     = card.querySelector('#ins_deducible');
-  const benEl     = card.querySelector('#ins_beneficiario');
-  const polizaEl  = card.querySelector('#ins_poliza');
-  const ownerEl   = multi ? card.querySelector('#ins_owner') : null;
-  const addBtn    = card.querySelector('#ins_add');
+  const typeEl   = card.querySelector('#ins_type');
+  const aliasEl  = card.querySelector('#ins_alias');
+  const cobEl    = card.querySelector('#ins_cobertura');
+  const primaEl  = card.querySelector('#ins_prima');
+  const dedEl    = card.querySelector('#ins_deducible');
+  const benEl    = card.querySelector('#ins_beneficiario');
+  const polizaEl = card.querySelector('#ins_poliza');
+  const ownerEl  = multi ? card.querySelector('#ins_owner') : null;
+  const addBtn   = card.querySelector('#ins_add');
+  const cancelBtn= card.querySelector('#ins_cancel');
+  const rowEl    = card.querySelector('#ins_row');
+  let editingId  = null;
+
+  function resetForm(){
+    typeEl.value=''; aliasEl.value=''; cobEl.value=''; primaEl.value=''; dedEl.value=''; benEl.value=''; polizaEl.value='';
+    if(ownerEl) ownerEl.value='';
+    editingId=null; addBtn.textContent='+ Añadir';
+    rowEl.classList.remove('editing');
+    card.querySelectorAll('.itemChip').forEach(c=>c.classList.remove('editing-this'));
+  }
+  cancelBtn.addEventListener('click', resetForm);
+
   function doAdd(){
     errEl.classList.remove('show');
     const type = typeEl.value.trim();
@@ -1411,8 +1622,8 @@ function wireInsuranceForm(card, k, listEl, errEl, multi){
     const prima     = primaEl.value !== '' ? parseFloat(primaEl.value) : null;
     const deducible = dedEl.value !== '' ? parseFloat(dedEl.value) : null;
     const owner = ownerEl ? (ownerEl.value||'household') : (state.people.members[0]?.id||'household');
-    state.financials.items.push({
-      id: uid(k), category: k, type,
+    const newData = {
+      category:k, type,
       alias:       aliasEl.value.trim() || null,
       name:        aliasEl.value.trim() || type,
       value:       cobertura || 0,
@@ -1423,21 +1634,41 @@ function wireInsuranceForm(card, k, listEl, errEl, multi){
       beneficiary:    benEl.value.trim() || null,
       policyNumber:   polizaEl.value.trim() || null,
       owner
-    });
-    typeEl.value=''; aliasEl.value=''; cobEl.value=''; primaEl.value=''; dedEl.value=''; benEl.value=''; polizaEl.value='';
-    if(ownerEl) ownerEl.value='';
-    renderItemsList(k, listEl); debouncedSave();
+    };
+    if(editingId){
+      const idx=state.financials.items.findIndex(it=>it.id===editingId);
+      if(idx!==-1) state.financials.items[idx]={...state.financials.items[idx],...newData};
+    } else {
+      state.financials.items.push({id:uid(k),...newData});
+    }
+    resetForm(); renderItemsList(k,listEl); debouncedSave();
   }
+
+  card._editHandler = (itemId) => {
+    const it=state.financials.items.find(x=>x.id===itemId); if(!it) return;
+    editingId=itemId;
+    typeEl.value=it.type||''; aliasEl.value=it.alias||'';
+    cobEl.value=it.coverageAmount!=null?it.coverageAmount:'';
+    primaEl.value=it.premium!=null?it.premium:'';
+    dedEl.value=it.deductible!=null?it.deductible:'';
+    benEl.value=it.beneficiary||''; polizaEl.value=it.policyNumber||'';
+    if(ownerEl) ownerEl.value=it.owner||'';
+    addBtn.textContent='💾 Guardar cambios';
+    rowEl.classList.add('editing');
+    rowEl.scrollIntoView({behavior:'smooth',block:'nearest'});
+    card.querySelectorAll('.itemChip').forEach(c=>c.classList.toggle('editing-this',c.dataset.id===itemId));
+  };
+
   addBtn.addEventListener('click', doAdd);
 }
 
 // ══════════════════════════════════════════════════════════
-//  FORMULARIO DOCUMENTOS LEGALES
+//  FORMULARIO DOCUMENTOS LEGALES + edición
 // ══════════════════════════════════════════════════════════
 function buildLegalForm(multi){
   const opts=LEGAL_TYPES.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
   const ownerSel=multi?`<div class="inputGroup"><label for="leg_owner">Titular</label><select id="leg_owner">${ownerOpts('')}</select></div>`:'';
-  return `<div class="addRow">
+  return `<div class="addRow" id="leg_row">
     <div class="inputGroup"><label for="leg_type">Tipo de documento *</label>
       <select id="leg_type"><option value="">Selecciona...</option>${opts}</select>
     </div>
@@ -1459,6 +1690,7 @@ function buildLegalForm(multi){
     </div>
     ${ownerSel}
     <button type="button" class="addBtn" id="leg_add">+ Añadir</button>
+    <button type="button" class="cancelEditBtn" id="leg_cancel">✕ Cancelar</button>
   </div>
   <p class="hint" style="margin-top:0;margin-bottom:10px;">💡 Documenta cada instrumento legal por separado para mayor precisión.</p>`;
 }
@@ -1470,30 +1702,51 @@ function wireLegalForm(card, k, listEl, errEl, multi){
   const notasEl  = card.querySelector('#leg_notas');
   const ownerEl  = multi ? card.querySelector('#leg_owner') : null;
   const addBtn   = card.querySelector('#leg_add');
+  const cancelBtn= card.querySelector('#leg_cancel');
+  const rowEl    = card.querySelector('#leg_row');
+  let editingId  = null;
+
+  function resetForm(){
+    typeEl.value=''; aliasEl.value=''; fechaEl.value=''; estadoEl.value='vigente'; notasEl.value='';
+    if(ownerEl) ownerEl.value='';
+    editingId=null; addBtn.textContent='+ Añadir';
+    rowEl.classList.remove('editing');
+    card.querySelectorAll('.itemChip').forEach(c=>c.classList.remove('editing-this'));
+  }
+  cancelBtn.addEventListener('click', resetForm);
+
   function doAdd(){
     errEl.classList.remove('show');
     const type = typeEl.value.trim();
     if(!type){ errEl.classList.add('show'); return; }
     const owner = ownerEl ? (ownerEl.value||'household') : (state.people.members[0]?.id||'household');
-    state.financials.items.push({
-      id: uid(k), category: k, type,
-      alias: aliasEl.value.trim() || null,
-      name:  aliasEl.value.trim() || type,
-      value: 0,
-      date:  fechaEl.value || null,
-      status: estadoEl.value,
-      notes: notasEl.value.trim() || null,
-      owner
-    });
-    typeEl.value=''; aliasEl.value=''; fechaEl.value=''; estadoEl.value='vigente'; notasEl.value='';
-    if(ownerEl) ownerEl.value='';
-    renderItemsList(k, listEl); debouncedSave();
+    const newData = {category:k,type,alias:aliasEl.value.trim()||null,name:aliasEl.value.trim()||type,value:0,date:fechaEl.value||null,status:estadoEl.value,notes:notasEl.value.trim()||null,owner};
+    if(editingId){
+      const idx=state.financials.items.findIndex(it=>it.id===editingId);
+      if(idx!==-1) state.financials.items[idx]={...state.financials.items[idx],...newData};
+    } else {
+      state.financials.items.push({id:uid(k),...newData});
+    }
+    resetForm(); renderItemsList(k,listEl); debouncedSave();
   }
+
+  card._editHandler = (itemId) => {
+    const it=state.financials.items.find(x=>x.id===itemId); if(!it) return;
+    editingId=itemId;
+    typeEl.value=it.type||''; aliasEl.value=it.alias||''; fechaEl.value=it.date||'';
+    estadoEl.value=it.status||'vigente'; notasEl.value=it.notes||'';
+    if(ownerEl) ownerEl.value=it.owner||'';
+    addBtn.textContent='💾 Guardar cambios';
+    rowEl.classList.add('editing');
+    rowEl.scrollIntoView({behavior:'smooth',block:'nearest'});
+    card.querySelectorAll('.itemChip').forEach(c=>c.classList.toggle('editing-this',c.dataset.id===itemId));
+  };
+
   addBtn.addEventListener('click', doAdd);
 }
 
 // ══════════════════════════════════════════════════════════
-//  RENDER LISTA DE ITEMS AÑADIDOS
+//  RENDER LISTA DE ITEMS AÑADIDOS  (con botón ✏️ editar)
 // ══════════════════════════════════════════════════════════
 function renderItemsList(catKey, container){
   if(!container) return;
@@ -1505,12 +1758,12 @@ function renderItemsList(catKey, container){
   container.innerHTML = items.length === 0
     ? `<p style="font-size:12px;color:var(--muted);text-align:center;padding:10px 0;">Aún no hay items añadidos.</p>`
     : items.map(it=>{
-        // Línea 1 — siempre: Categoría / Tipo
+        // Línea 1
         const topLabel = isCascade
           ? `${it.expenseCategory||''} – ${it.subcategory||''}`
           : (it.type || '—');
 
-        // Línea 2 — alias · monto · titular (+ extras por categoría)
+        // Línea 2 — detalles
         const parts = [];
         if(it.alias) parts.push(it.alias);
         if(catKey !== 'insurance' || it.value > 0) parts.push(fmtUSD(it.value) + (isMonthly ? '/mes' : ''));
@@ -1523,6 +1776,8 @@ function renderItemsList(catKey, container){
           if(it.deductible     != null) parts.push(`Ded: ${fmtUSD(it.deductible)}`);
           if(it.beneficiary)            parts.push(`Ben: ${it.beneficiary}`);
         }
+        // Beneficiario en activos (banking, inversiones, bienes raíces, otros activos, negocio)
+        if(CATS_WITH_BENEFICIARY.has(catKey) && it.beneficiary) parts.push(`Ben: ${it.beneficiary}`);
         if(catKey==='legal'){
           if(it.date)   parts.push(it.date);
           if(it.status) parts.push(it.status==='vigente'?'✅ Vigente':it.status==='desactualizado'?'⚠️ Desactualizado':'⏳ Pendiente');
@@ -1534,15 +1789,31 @@ function renderItemsList(catKey, container){
             <div class="chipName">${escapeHtml(topLabel)}</div>
             <div class="chipDetails">${parts.map(p=>escapeHtml(String(p))).join(' · ')}</div>
           </div>
-          <button class="chipRemove" type="button" title="Eliminar">×</button>
+          <div class="chipActions">
+            <button class="chipEdit" type="button" title="Editar" data-edit="${it.id}">✏️</button>
+            <button class="chipRemove" type="button" title="Eliminar" data-remove="${it.id}">×</button>
+          </div>
         </div>`;
       }).join('');
 
+  // Find the parent card (catInlineCard) to access _editHandler
+  const parentCard = container.closest('.catInlineCard');
+
   container.onclick = e => {
-    const btn = e.target.closest('.chipRemove'); if(!btn) return;
-    const id  = btn.closest('.itemChip').dataset.id;
-    state.financials.items = state.financials.items.filter(it=>it.id!==id);
-    renderItemsList(catKey, container); debouncedSave();
+    // Delete
+    const removeBtn = e.target.closest('[data-remove]');
+    if(removeBtn){
+      const id = removeBtn.dataset.remove;
+      state.financials.items = state.financials.items.filter(it=>it.id!==id);
+      renderItemsList(catKey, container); debouncedSave(); return;
+    }
+    // Edit
+    const editBtn = e.target.closest('[data-edit]');
+    if(editBtn && parentCard && parentCard._editHandler){
+      // Make sure card is open
+      parentCard.classList.add('open');
+      parentCard._editHandler(editBtn.dataset.edit);
+    }
   };
 }
 
