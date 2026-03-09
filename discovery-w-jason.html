@@ -1167,13 +1167,16 @@ const CATS_WITH_BENEFICIARY = new Set(['banking','investments_retirement','inves
 // ══════════════════════════════════════════════════════════
 function buildStandardForm(k, multi){
   const opts=getTypeOpts(k).map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+  const customTypeOpt = k==='income' ? `<option value="__new__">➕ Otro tipo…</option>` : '';
+  const customTypeInput = k==='income' ? `<input type="text" id="std_type_custom_${k}" class="customCatInput" placeholder="Ej: Freelance, Renta Airbnb…"/>` : '';
   const ownerSel = multi ? `<div class="inputGroup"><label for="std_owner_${k}">Titular</label><select id="std_owner_${k}">${ownerOpts('')}</select></div>` : '';
   const benField = CATS_WITH_BENEFICIARY.has(k)
     ? `<div class="inputGroup"><label for="std_ben_${k}">Beneficiario</label><input type="text" id="std_ben_${k}" placeholder="Ej: María, Hijos…"/></div>`
     : '';
   return `<div class="addRow" id="std_row_${k}">
     <div class="inputGroup"><label for="std_type_${k}">Tipo *</label>
-      <select id="std_type_${k}"><option value="">Selecciona...</option>${opts}</select>
+      <select id="std_type_${k}"><option value="">Selecciona...</option>${opts}${customTypeOpt}</select>
+      ${customTypeInput}
     </div>
     <div class="inputGroup"><label for="std_alias_${k}">Alias (opcional)</label>
       <input type="text" id="std_alias_${k}" placeholder="Ej: Checking BofA"/>
@@ -1188,19 +1191,30 @@ function buildStandardForm(k, multi){
   </div>`;
 }
 function wireStandardForm(card, k, listEl, errEl, multi){
-  const typeEl   = card.querySelector(`#std_type_${k}`);
-  const aliasEl  = card.querySelector(`#std_alias_${k}`);
-  const amtEl    = card.querySelector(`#std_amt_${k}`);
-  const benEl    = CATS_WITH_BENEFICIARY.has(k) ? card.querySelector(`#std_ben_${k}`) : null;
-  const ownerEl  = multi ? card.querySelector(`#std_owner_${k}`) : null;
-  const addBtn   = card.querySelector(`#std_add_${k}`);
-  const cancelBtn= card.querySelector(`#std_cancel_${k}`);
-  const rowEl    = card.querySelector(`#std_row_${k}`);
+  const typeEl    = card.querySelector(`#std_type_${k}`);
+  const typeCustom= k==='income' ? card.querySelector(`#std_type_custom_${k}`) : null;
+  const aliasEl   = card.querySelector(`#std_alias_${k}`);
+  const amtEl     = card.querySelector(`#std_amt_${k}`);
+  const benEl     = CATS_WITH_BENEFICIARY.has(k) ? card.querySelector(`#std_ben_${k}`) : null;
+  const ownerEl   = multi ? card.querySelector(`#std_owner_${k}`) : null;
+  const addBtn    = card.querySelector(`#std_add_${k}`);
+  const cancelBtn = card.querySelector(`#std_cancel_${k}`);
+  const rowEl     = card.querySelector(`#std_row_${k}`);
+
+  if(typeCustom){
+    typeEl.addEventListener('change', ()=>{
+      typeCustom.classList.toggle('visible', typeEl.value==='__new__');
+    });
+  }
+
+  function getEffectiveType(){ return typeEl.value==='__new__' ? (typeCustom?.value.trim()||'') : typeEl.value.trim(); }
 
   let editingId = null;
 
   function resetForm(){
-    typeEl.value=''; aliasEl.value=''; amtEl.value='';
+    typeEl.value='';
+    if(typeCustom){ typeCustom.value=''; typeCustom.classList.remove('visible'); }
+    aliasEl.value=''; amtEl.value='';
     if(benEl) benEl.value='';
     if(ownerEl) ownerEl.value='';
     editingId=null;
@@ -1213,21 +1227,18 @@ function wireStandardForm(card, k, listEl, errEl, multi){
 
   function doAdd(){
     errEl.classList.remove('show');
-    const type  = typeEl.value.trim();
+    const type  = getEffectiveType();
     const alias = aliasEl.value.trim();
     const amt   = parseFloat(amtEl.value);
     if(!type || isNaN(amt) || amt < 0){ errEl.classList.add('show'); return; }
     const owner = ownerEl ? (ownerEl.value||'household') : (state.people.members[0]?.id||'household');
     const beneficiary = benEl ? (benEl.value.trim()||null) : undefined;
     if(editingId){
-      // UPDATE existing
       const idx = state.financials.items.findIndex(it=>it.id===editingId);
       if(idx!==-1){
-        const existing = state.financials.items[idx];
-        state.financials.items[idx] = {...existing, type, alias:alias||null, name:alias||type, value:amt, owner, ...(beneficiary!==undefined?{beneficiary}:{})};
+        state.financials.items[idx] = {...state.financials.items[idx], type, alias:alias||null, name:alias||type, value:amt, owner, ...(beneficiary!==undefined?{beneficiary}:{})};
       }
     } else {
-      // NEW item
       const item = {id:uid(k),category:k,type,alias:alias||null,name:alias||type,value:amt,owner};
       if(beneficiary!==undefined) item.beneficiary = beneficiary;
       state.financials.items.push(item);
@@ -1236,23 +1247,25 @@ function wireStandardForm(card, k, listEl, errEl, multi){
     renderItemsList(k, listEl); debouncedSave();
   }
 
-  // expose edit handler for renderItemsList
   card._editHandler = (itemId) => {
     const it = state.financials.items.find(x=>x.id===itemId); if(!it) return;
     editingId = itemId;
-    typeEl.value  = it.type  || '';
+    const knownTypes = getTypeOpts(k);
+    if(knownTypes.includes(it.type||'')){
+      typeEl.value = it.type;
+      if(typeCustom){ typeCustom.classList.remove('visible'); }
+    } else {
+      typeEl.value = '__new__';
+      if(typeCustom){ typeCustom.value = it.type||''; typeCustom.classList.add('visible'); }
+    }
     aliasEl.value = it.alias || '';
     amtEl.value   = it.value != null ? it.value : '';
     if(benEl) benEl.value = it.beneficiary||'';
     if(ownerEl) ownerEl.value = it.owner||'';
     addBtn.textContent = '💾 Guardar cambios';
     rowEl.classList.add('editing');
-    // Scroll form into view
     rowEl.scrollIntoView({behavior:'smooth', block:'nearest'});
-    // Highlight chip
-    card.querySelectorAll('.itemChip').forEach(c=>{
-      c.classList.toggle('editing-this', c.dataset.id===itemId);
-    });
+    card.querySelectorAll('.itemChip').forEach(c=>c.classList.toggle('editing-this', c.dataset.id===itemId));
   };
 
   addBtn.addEventListener('click', doAdd);
@@ -1312,6 +1325,7 @@ function wireExpenseCascade(card){
   });
 }
 function wireExpensesForm(card, k, listEl, errEl, multi){
+  wireExpenseCascade(card); // ← activa la cascada categoría→subcategoría
   const catEl     = card.querySelector('#exp_cat');
   const subEl     = card.querySelector('#exp_sub');
   const catCustom = card.querySelector('#exp_cat_custom');
@@ -1390,16 +1404,22 @@ function wireExpensesForm(card, k, listEl, errEl, multi){
 
 // ══════════════════════════════════════════════════════════
 //  FORMULARIO AHORRO  — cascada categoría → subcategoría + edición
+//  + subcategoría personalizada
 // ══════════════════════════════════════════════════════════
 function buildSavingsForm(multi){
   const catOpts = Object.keys(SAVINGS_TAX).map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
   const ownerSel = multi ? `<div class="inputGroup"><label for="sav_owner">Titular</label><select id="sav_owner">${ownerOpts('')}</select></div>` : '';
   return `<div class="addRow" id="sav_row">
     <div class="inputGroup"><label for="sav_cat">Categoría *</label>
-      <select id="sav_cat"><option value="">Categoría...</option>${catOpts}</select>
+      <select id="sav_cat"><option value="">Categoría...</option>${catOpts}<option value="__new__">➕ Nueva categoría…</option></select>
+      <input type="text" id="sav_cat_custom" class="customCatInput" placeholder="Ej: Educación, Negocio…"/>
     </div>
     <div class="inputGroup"><label for="sav_sub">Subcategoría *</label>
       <select id="sav_sub" disabled><option value="">Primero selecciona categoría</option></select>
+      <input type="text" id="sav_sub_custom" class="customCatInput" placeholder="Ej: HSA, Renta…"/>
+    </div>
+    <div class="inputGroup"><label for="sav_alias">Alias (opcional)</label>
+      <input type="text" id="sav_alias" placeholder="Ej: Marcus HYSA, Fidelity…"/>
     </div>
     <div class="inputGroup"><label for="sav_amt">Monto /mes *</label>
       <input type="number" id="sav_amt" min="0" step="0.01" placeholder="0.00"/>
@@ -1412,28 +1432,56 @@ function buildSavingsForm(multi){
 function wireExpenseCascadeFor(card, catId, subId, tax){
   const catSel = card.querySelector(`#${catId}`);
   const subSel = card.querySelector(`#${subId}`);
+  const catCustom = card.querySelector(`#${catId}_custom`);
+  const subCustom = card.querySelector(`#${subId}_custom`);
   if(!catSel||!subSel) return;
   catSel.addEventListener('change', ()=>{
     const cat=catSel.value; subSel.innerHTML='';
-    if(!cat){ subSel.disabled=true; subSel.innerHTML='<option value="">Primero selecciona categoría</option>'; return; }
+    if(subCustom) subCustom.classList.remove('visible');
+    if(!cat){
+      subSel.disabled=true; subSel.innerHTML='<option value="">Primero selecciona categoría</option>';
+      if(catCustom) catCustom.classList.remove('visible'); return;
+    }
+    if(cat==='__new__'){
+      if(catCustom) catCustom.classList.add('visible');
+      subSel.disabled=true; subSel.innerHTML='<option value="">Ingresa categoría arriba</option>';
+      if(subCustom) subCustom.classList.add('visible'); return;
+    }
+    if(catCustom) catCustom.classList.remove('visible');
     const subs=tax[cat]||[];
     subSel.disabled=false;
-    subSel.innerHTML=`<option value="">Subcategoría...</option>`+subs.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+    subSel.innerHTML=`<option value="">Subcategoría...</option>`
+      +subs.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('')
+      +`<option value="__new__">➕ Nueva subcategoría…</option>`;
   });
+  if(subCustom){
+    subSel.addEventListener('change', ()=>{
+      subCustom.classList.toggle('visible', subSel.value==='__new__');
+    });
+  }
 }
 function wireSavingsForm(card, k, listEl, errEl, multi){
   wireExpenseCascadeFor(card,'sav_cat','sav_sub',SAVINGS_TAX);
-  const catEl   = card.querySelector('#sav_cat');
-  const subEl   = card.querySelector('#sav_sub');
-  const amtEl   = card.querySelector('#sav_amt');
-  const ownerEl = multi ? card.querySelector('#sav_owner') : null;
-  const addBtn  = card.querySelector('#sav_add');
+  const catEl     = card.querySelector('#sav_cat');
+  const subEl     = card.querySelector('#sav_sub');
+  const catCustom = card.querySelector('#sav_cat_custom');
+  const subCustom = card.querySelector('#sav_sub_custom');
+  const aliasEl   = card.querySelector('#sav_alias');
+  const amtEl     = card.querySelector('#sav_amt');
+  const ownerEl   = multi ? card.querySelector('#sav_owner') : null;
+  const addBtn    = card.querySelector('#sav_add');
   const cancelBtn = card.querySelector('#sav_cancel');
-  const rowEl   = card.querySelector('#sav_row');
+  const rowEl     = card.querySelector('#sav_row');
   let editingId = null;
+
+  function getEffectiveCat(){ return catEl.value==='__new__' ? (catCustom?.value.trim()||'') : catEl.value.trim(); }
+  function getEffectiveSub(){ return subEl.value==='__new__' ? (subCustom?.value.trim()||'') : subEl.value.trim(); }
 
   function resetForm(){
     catEl.value=''; subEl.innerHTML='<option value="">Primero selecciona categoría</option>'; subEl.disabled=true;
+    if(catCustom){ catCustom.value=''; catCustom.classList.remove('visible'); }
+    if(subCustom){ subCustom.value=''; subCustom.classList.remove('visible'); }
+    if(aliasEl) aliasEl.value='';
     amtEl.value=''; if(ownerEl) ownerEl.value='';
     editingId=null; addBtn.textContent='+ Añadir';
     rowEl.classList.remove('editing');
@@ -1443,14 +1491,16 @@ function wireSavingsForm(card, k, listEl, errEl, multi){
 
   function doAdd(){
     errEl.classList.remove('show');
-    const cat=catEl.value.trim(), sub=subEl.value.trim(), amt=parseFloat(amtEl.value);
+    const cat=getEffectiveCat(), sub=getEffectiveSub(), amt=parseFloat(amtEl.value);
+    const alias=(aliasEl?.value||'').trim();
     if(!cat||!sub||isNaN(amt)||amt<0){ errEl.classList.add('show'); return; }
     const owner = ownerEl ? (ownerEl.value||'household') : (state.people.members[0]?.id||'household');
+    const displayName = alias ? `${alias} (${cat} – ${sub})` : `${cat} – ${sub}`;
     if(editingId){
       const idx=state.financials.items.findIndex(it=>it.id===editingId);
-      if(idx!==-1) state.financials.items[idx]={...state.financials.items[idx],expenseCategory:cat,subcategory:sub,name:`${cat} – ${sub}`,value:amt,owner};
+      if(idx!==-1) state.financials.items[idx]={...state.financials.items[idx],expenseCategory:cat,subcategory:sub,alias:alias||null,name:displayName,value:amt,owner};
     } else {
-      state.financials.items.push({id:uid(k),category:k,expenseCategory:cat,subcategory:sub,name:`${cat} – ${sub}`,value:amt,owner});
+      state.financials.items.push({id:uid(k),category:k,expenseCategory:cat,subcategory:sub,alias:alias||null,name:displayName,value:amt,owner});
     }
     resetForm(); renderItemsList(k,listEl); debouncedSave();
   }
@@ -1458,9 +1508,21 @@ function wireSavingsForm(card, k, listEl, errEl, multi){
   card._editHandler = (itemId) => {
     const it=state.financials.items.find(x=>x.id===itemId); if(!it) return;
     editingId=itemId;
-    catEl.value=it.expenseCategory||'';
-    catEl.dispatchEvent(new Event('change'));
-    setTimeout(()=>{ subEl.value=it.subcategory||''; },0);
+    const savedCat=it.expenseCategory||'';
+    if(SAVINGS_TAX[savedCat]){
+      catEl.value=savedCat; if(catCustom) catCustom.classList.remove('visible');
+      const subs=SAVINGS_TAX[savedCat]||[];
+      subEl.disabled=false;
+      subEl.innerHTML=`<option value="">Subcategoría...</option>`+subs.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('')+`<option value="__new__">➕ Nueva subcategoría…</option>`;
+      const savedSub=it.subcategory||'';
+      if(subs.includes(savedSub)){ subEl.value=savedSub; if(subCustom) subCustom.classList.remove('visible'); }
+      else { subEl.value='__new__'; if(subCustom){ subCustom.value=savedSub; subCustom.classList.add('visible'); } }
+    } else {
+      catEl.value='__new__'; if(catCustom){ catCustom.value=savedCat; catCustom.classList.add('visible'); }
+      subEl.disabled=true; subEl.innerHTML='<option value="">Ingresa categoría arriba</option>';
+      if(subCustom){ subCustom.value=it.subcategory||''; subCustom.classList.add('visible'); }
+    }
+    if(aliasEl) aliasEl.value=it.alias||'';
     amtEl.value=it.value!=null?it.value:'';
     if(ownerEl) ownerEl.value=it.owner||'';
     addBtn.textContent='💾 Guardar cambios';
