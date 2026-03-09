@@ -1386,44 +1386,6 @@ function Proteccion({ proteccion, setProteccion, activos, setActivos, currency }
         </div>
       </div>
 
-      {/* ── Resumen Patrimonial ── */}
-      <div className="category-section">
-        <div className="category-header"><h3 className="category-title">🗂️ Resumen de Transferencia Patrimonial</h3></div>
-
-        {sinDesignacion.length > 0 && (
-          <div style={{background:'#fef2f2',border:'2px solid #ef4444',borderRadius:'12px',padding:'1rem',marginBottom:'1.25rem'}}>
-            <div style={{fontWeight:'700',color:'#dc2626',marginBottom:'0.75rem'}}>⚠️ {sinDesignacion.length} activo(s) sin designación de transferencia</div>
-            {sinDesignacion.map((a,i) => (
-              <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'0.5rem 0.75rem',background:'white',borderRadius:'8px',marginBottom:'0.4rem',fontSize:'0.875rem'}}>
-                <span>{CAT_LABELS[a.cat]} — {a.tipo||'Sin tipo'} {a.ubicacion?`(${a.ubicacion})`:''}</span>
-                <span style={{fontWeight:'700',color:'#dc2626'}}>{formatCurrency(parseNumber(a.valor), currency)}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {TRANSFER_OPTS.filter(o=>o).map(metodo => {
-          const grupo = conDesignacion.filter(a => a.transferencia === metodo);
-          if (grupo.length === 0) return null;
-          const total = grupo.reduce((s,a) => s+parseNumber(a.valor), 0);
-          return (
-            <div key={metodo} style={{marginBottom:'0.875rem'}}>
-              <div style={{fontWeight:'700',fontSize:'0.875rem',color:'#475569',marginBottom:'0.4rem',display:'flex',justifyContent:'space-between'}}>
-                <span>{metodo}</span>
-                <span style={{color:'#059669'}}>{formatCurrency(total,currency)}</span>
-              </div>
-              {grupo.map((a,i) => (
-                <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'0.5rem 0.75rem',background:'#f8fafc',borderRadius:'8px',marginBottom:'0.3rem',fontSize:'0.875rem',borderLeft:'3px solid #10b981'}}>
-                  <span>{CAT_LABELS[a.cat]} — {a.tipo||'Sin tipo'} {a.ubicacion?`(${a.ubicacion})`:''}</span>
-                  <span style={{fontWeight:'700'}}>{formatCurrency(parseNumber(a.valor), currency)}</span>
-                </div>
-              ))}
-            </div>
-          );
-        })}
-
-        {todosActivos.length === 0 && <p className="text-muted">Agrega activos en la pestaña Activos para ver el resumen de transferencia.</p>}
-      </div>
     </div>
   );
 }
