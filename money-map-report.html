@@ -3130,11 +3130,11 @@ window._generarPDF = function() {
   var jsPDF = window.jspdf && window.jspdf.jsPDF;
   if (!jsPDF) { alert('jsPDF no disponible. Verifica la conexión a internet.'); return; }
 
-  var s   = window.mmState || {};
-  var t   = s.totales || {};
-  var r   = s.ratiosData || {};
+  var s    = window.mmState || {};
+  var t    = s.totales || {};
+  var r    = s.ratiosData || {};
   var prof = s.userProfile || {};
-  var cur = s.currency || 'USD';
+  var cur  = s.currency || 'USD';
   var ingresos = s.ingresos || [];
   var gastos   = s.gastos || {};
   var activos  = s.activos || {};
@@ -3142,289 +3142,570 @@ window._generarPDF = function() {
   var goals    = s.goals || [];
 
   var doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  var PW = 210, PH = 297, M = 18;
-  var blue = [57, 86, 232], dark = [24, 24, 27], teal = [16, 185, 129];
-  var nombre = prof.nombre ? prof.nombre + ' ' + (prof.apellido||'') : 'Cliente';
-  var today = new Date().toLocaleDateString('es', {year:'numeric', month:'long', day:'numeric'});
+  var PW = 210, PH = 297, M = 14;
 
-  // ── Lee valores del modal ──
+  // Color palette
+  var NAVY   = [15, 23, 60];
+  var BLUE   = [57, 86, 232];
+  var TEAL   = [16, 185, 129];
+  var RED    = [239, 68, 68];
+  var AMBER  = [245, 158, 11];
+  var DARK   = [15, 23, 42];
+  var GRAY   = [100, 116, 139];
+  var LGRAY  = [241, 245, 249];
+  var WHITE  = [255, 255, 255];
+
+  var nombre = ((prof.nombre || '') + ' ' + (prof.apellido || '')).trim() || 'Cliente';
+  var today  = new Date().toLocaleDateString('es', {year:'numeric', month:'long', day:'numeric'});
+
+  function fmtC(n) { return _fmtC(n, cur); }
+
   var gV = function(id) {
     var el = document.getElementById('ratio_' + id);
     return el ? (el.value || '—') : '—';
   };
-  var recos  = (document.getElementById('reporte_recos') || {}).value || '';
-  var notas  = (document.getElementById('reporte_notas') || {}).value || '';
+  var recos = (document.getElementById('reporte_recos') || {}).value || '';
+  var notas = (document.getElementById('reporte_notas') || {}).value || '';
 
-  // ── Helper: header de página ──
-  function pageHeader(doc, title, pageNum) {
-    doc.setFillColor(blue[0], blue[1], blue[2]);
-    doc.rect(0, 0, PW, 22, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11); doc.setTextColor(255, 255, 255);
-    doc.text('Xavier Serbia Money Map', M, 9);
-    doc.setFontSize(9); doc.setFont('helvetica', 'normal');
-    doc.text(nombre + '  ·  ' + today, M, 16);
-    doc.text('Página ' + pageNum, PW - M, 16, { align: 'right' });
-    doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(dark[0], dark[1], dark[2]);
-    doc.text(title, M, 32);
-    doc.setDrawColor(blue[0], blue[1], blue[2]);
-    doc.setLineWidth(0.6); doc.line(M, 35, PW - M, 35);
+  // ─────────────────────────────────────────────────────────────────────
+  // HELPERS
+  // ─────────────────────────────────────────────────────────────────────
+  function setFont(style, size, color) {
+    doc.setFont('helvetica', style || 'normal');
+    doc.setFontSize(size || 9);
+    if (color) doc.setTextColor(color[0], color[1], color[2]);
+    else doc.setTextColor(DARK[0], DARK[1], DARK[2]);
   }
 
-  function fmtC(n) { return _fmtC(n, cur); }
-  function section(doc, title, y) {
-    doc.setFillColor(57, 86, 232, 0.08);
-    doc.setFillColor(240, 243, 255);
-    doc.rect(M, y, PW - M*2, 7, 'F');
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
-    doc.setTextColor(blue[0], blue[1], blue[2]);
-    doc.text(title.toUpperCase(), M + 2, y + 5);
-    doc.setTextColor(dark[0], dark[1], dark[2]);
-    return y + 10;
+  function drawRect(x, y, w, h, color, rounded) {
+    doc.setFillColor(color[0], color[1], color[2]);
+    if (rounded) doc.roundedRect(x, y, w, h, 2, 2, 'F');
+    else doc.rect(x, y, w, h, 'F');
   }
-  function kv(doc, label, value, x1, x2, y, color) {
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
-    doc.setTextColor(100, 116, 139); doc.text(label, x1, y);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
-    doc.setTextColor(color ? color[0] : dark[0], color ? color[1] : dark[1], color ? color[2] : dark[2]);
-    doc.text(String(value), x2, y, { align: 'right' });
-    doc.setTextColor(dark[0], dark[1], dark[2]);
+
+  function drawBorder(x, y, w, h, color, lw) {
+    doc.setDrawColor(color[0], color[1], color[2]);
+    doc.setLineWidth(lw || 0.3);
+    doc.rect(x, y, w, h);
+  }
+
+  // Page header (pages 2+)
+  function pageHeader(title, subtitle, pageNum) {
+    drawRect(0, 0, PW, 18, NAVY);
+    setFont('bold', 8, WHITE);
+    doc.text('Xavier Serbia · Money Map', M, 7);
+    setFont('normal', 7, [180, 190, 220]);
+    doc.text(today, M, 13);
+    setFont('bold', 9, WHITE);
+    doc.text(title.toUpperCase(), PW/2, 8, {align:'center'});
+    if (subtitle) { setFont('normal', 7, [180, 190, 220]); doc.text(subtitle, PW/2, 13, {align:'center'}); }
+    setFont('bold', 7.5, WHITE);
+    doc.text('Pág. ' + pageNum, PW - M - 14, 8, {align:'right'});
+    setFont('normal', 6.5, [180, 190, 220]);
+    doc.text('Confidencial', PW - M, 13, {align:'right'});
+    // client name below header
+    setFont('bold', 9, DARK);
+    doc.text(nombre, M, 26);
+    setFont('normal', 7.5, GRAY);
+    doc.text(today, PW - M, 26, {align:'right'});
+    doc.setDrawColor(BLUE[0], BLUE[1], BLUE[2]);
+    doc.setLineWidth(0.4); doc.line(M, 28, PW - M, 28);
+  }
+
+  // KPI box
+  function kpiBox(x, y, w, h, label, value, valColor) {
+    drawBorder(x, y, w, h, [220, 228, 240], 0.4);
+    drawRect(x, y, w, 5, LGRAY);
+    setFont('bold', 6.5, GRAY);
+    doc.text(label.toUpperCase(), x + w/2, y + 3.5, {align:'center'});
+    setFont('bold', 11, valColor || BLUE);
+    doc.text(value, x + w/2, y + h - 3, {align:'center'});
+  }
+
+  // Semaforo badge
+  function semBadge(x, y, status) {
+    var cfg = {
+      'OK':      { bg: [220, 252, 231], txt: [21, 128, 61], label: 'OK' },
+      'REVISAR': { bg: [254, 243, 199], txt: [146, 64, 14], label: 'REVISAR' },
+      'CRITICO': { bg: [254, 226, 226], txt: [185, 28, 28], label: 'CRÍTICO' },
+    }[status] || { bg: LGRAY, txt: GRAY, label: status || '—' };
+    drawRect(x, y - 3, 16, 4.5, cfg.bg, true);
+    setFont('bold', 6, cfg.txt);
+    doc.text(cfg.label, x + 8, y + 0.5, {align:'center'});
+  }
+
+  // Section heading band
+  function sectionBand(label, y) {
+    drawRect(M, y, PW - M*2, 6, [232, 237, 252]);
+    setFont('bold', 7.5, BLUE);
+    doc.text(label.toUpperCase(), M + 3, y + 4.2);
+    return y + 8;
   }
 
   // ─────────────────────────────────────────────────────────────────────
   // PÁG 1: PORTADA
   // ─────────────────────────────────────────────────────────────────────
-  doc.setFillColor(blue[0], blue[1], blue[2]);
-  doc.rect(0, 0, PW, PH, 'F');
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(28); doc.setTextColor(255,255,255);
-  doc.text('Money Map', PW/2, 80, {align:'center'});
-  doc.setFontSize(14); doc.setFont('helvetica','normal');
-  doc.text('Reporte Financiero Personalizado', PW/2, 92, {align:'center'});
-  doc.setFillColor(255,255,255,0.15); doc.setFillColor(255,255,255);
-  doc.roundedRect(M+10, 115, PW-M*2-20, 60, 5, 5, 'F');
-  doc.setTextColor(dark[0], dark[1], dark[2]);
-  doc.setFont('helvetica','bold'); doc.setFontSize(20);
-  doc.text(nombre.trim(), PW/2, 136, {align:'center'});
-  if (prof.edad) { doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(100,116,139); doc.text(prof.edad + ' años  ·  ' + (prof.estadoCivil||''), PW/2, 148, {align:'center'}); }
-  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(100,116,139);
-  doc.text(today, PW/2, 162, {align:'center'});
-  // Patrimonio neto en portada
-  doc.setFillColor(16,185,129);
-  doc.roundedRect(M+10, 190, PW-M*2-20, 36, 5, 5, 'F');
-  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(11);
-  doc.text('Patrimonio Neto', PW/2, 203, {align:'center'});
-  doc.setFontSize(22);
-  doc.text(fmtC(t.patrimonioNeto||0), PW/2, 218, {align:'center'});
-  doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(200,240,220);
-  doc.text('Preparado por Xavier Serbia · Asesor Financiero', PW/2, PH-12, {align:'center'});
+  // Dark background
+  drawRect(0, 0, PW, PH, NAVY);
+
+  // Decorative circle top-right
+  doc.setDrawColor(57, 86, 232, 0.4);
+  doc.setFillColor(30, 45, 100);
+  doc.circle(PW - 30, 60, 55, 'F');
+  doc.setFillColor(45, 65, 140);
+  doc.circle(PW - 30, 60, 42, 'F');
+  doc.setFillColor(57, 86, 232);
+  doc.circle(PW - 30, 60, 30, 'F');
+
+  // Brand text inside circle
+  setFont('bold', 7, WHITE);
+  doc.text('XAVIER SERBIA', PW - 30, 53, {align:'center'});
+  setFont('bold', 9, [163, 218, 255]);
+  doc.text('MONEY MAP', PW - 30, 60, {align:'center'});
+  setFont('normal', 6, [180, 210, 240]);
+  doc.text('DIAGNÓSTICO', PW - 30, 66, {align:'center'});
+  doc.text('FINANCIERO', PW - 30, 71, {align:'center'});
+
+  // Title block left
+  setFont('bold', 22, WHITE);
+  doc.text('XAVIER SERBIA', M, 42);
+  setFont('bold', 28, [99, 161, 255]);
+  doc.text('MONEY MAP', M, 58);
+  setFont('normal', 11, [180, 210, 240]);
+  doc.text('DIAGNÓSTICO FINANCIERO PERSONAL', M, 70);
+
+  // Divider line
+  doc.setDrawColor(57, 86, 232);
+  doc.setLineWidth(1); doc.line(M, 76, PW/2 + 10, 76);
+
+  // "PREPARADO PARA:" box
+  drawRect(M, 86, 120, 50, [25, 35, 80], true);
+  setFont('normal', 7.5, [163, 200, 255]);
+  doc.text('PREPARADO PARA:', M + 6, 96);
+  setFont('bold', 16, WHITE);
+  var nomWords = nombre.split(' ');
+  var displayName = nomWords.length > 2 ? nomWords[0] + ' ' + nomWords[nomWords.length-1] : nombre;
+  doc.text(displayName, M + 6, 108);
+  if (prof.nombre && prof.apellido && nombre !== displayName) {
+    setFont('bold', 12, WHITE);
+    doc.text(nombre, M + 6, 108);
+  }
+  var infoLine = [];
+  if (prof.edad) infoLine.push(prof.edad + ' años');
+  if (prof.estadoCivil) infoLine.push(prof.estadoCivil);
+  if (prof.dependientes) infoLine.push(prof.dependientes + ' dep.');
+  setFont('normal', 8, [163, 200, 255]);
+  doc.text(infoLine.join(' | '), M + 6, 116);
+  setFont('normal', 7.5, [130, 160, 210]);
+  doc.text(today, M + 6, 124);
+
+  // 4 KPI boxes at bottom
+  var kpiData = [
+    ['Patrimonio Neto', fmtC(t.patrimonioNeto || 0), (t.patrimonioNeto || 0) >= 0 ? TEAL : RED],
+    ['Ingresos / mes',  fmtC((ingresos||[]).reduce(function(s,i){return s+(parseFloat(i.monto)||0);},0)), [99, 161, 255]],
+    ['Activos Totales', fmtC(t.activosTotales || 0), [99, 161, 255]],
+    ['Deudas Totales',  fmtC(t.pasivosTotales || 0), RED],
+  ];
+  var kW = (PW - M*2) / 4 - 2;
+  kpiData.forEach(function(k, i) {
+    var kx = M + i * (kW + 2.7);
+    drawRect(kx, PH - 52, kW, 32, [25, 35, 80], true);
+    drawRect(kx, PH - 52, kW, 7, [35, 50, 110], true);
+    setFont('bold', 6, [163, 200, 255]);
+    doc.text(k[0].toUpperCase(), kx + kW/2, PH - 47, {align:'center'});
+    setFont('bold', 10, k[2]);
+    doc.text(k[1], kx + kW/2, PH - 30, {align:'center'});
+  });
+
+  // Footer
+  setFont('normal', 7, [100, 130, 180]);
+  doc.text('Generado con Xavier Serbia Money Map', PW/2, PH - 8, {align:'center'});
 
   // ─────────────────────────────────────────────────────────────────────
   // PÁG 2: RESUMEN EJECUTIVO
   // ─────────────────────────────────────────────────────────────────────
   doc.addPage();
-  pageHeader(doc, 'Resumen Ejecutivo', 2);
-  var y = 42;
+  pageHeader('Resumen Ejecutivo', 'Métricas clave · Semáforo financiero', 2);
+  var y = 32;
 
-  // Flujo de Caja
-  y = section(doc, '💵 Flujo de Caja Anual', y);
-  var ingA = (ingresos||[]).reduce(function(s,i){return s+(parseFloat(i.monto)||0);},0)*12;
-  var gstA = Object.values(gastos||{}).flat().reduce(function(s,i){return s+(parseFloat(i.monto)||0);},0)*12;
-  var ahA  = (gastos.ahorro||[]).reduce(function(s,i){return s+(parseFloat(i.monto)||0);},0)*12;
-  var mid  = PW/2;
-  kv(doc,'Ingresos Anuales',         fmtC(ingA),       M+2, mid-4, y, teal);   y+=7;
-  kv(doc,'Gastos Anuales',           fmtC(gstA),       M+2, mid-4, y, [239,68,68]); y+=7;
-  kv(doc,'Ahorro Anual',             fmtC(ahA),        M+2, mid-4, y, teal);   y+=7;
-  var sup = ingA - gstA - ahA;
-  kv(doc, sup>=0?'Superávit':'Déficit', fmtC(Math.abs(sup)), M+2, mid-4, y, sup>=0?teal:[239,68,68]); y+=12;
+  // 6 KPI cards (2 rows × 3)
+  var ingMes = (ingresos||[]).reduce(function(s,i){return s+(parseFloat(i.monto)||0);},0);
+  var gstMes = Object.values(gastos||{}).flat().reduce(function(s,i){return s+(parseFloat(i.monto)||0);},0);
+  var ahoMes = (gastos.ahorro||[]).reduce(function(s,i){return s+(parseFloat(i.monto)||0);},0);
+  var fluMes = ingMes - gstMes;
+  var retTot = (activos.retiro||[]).reduce(function(s,i){return s+(parseFloat(i.valor)||0);},0);
 
-  // Balance General
-  y = section(doc, '⚖️ Balance General', y);
-  kv(doc,'Total Activos',    fmtC(t.activosTotales||0),  M+2, mid-4, y, teal);        y+=7;
-  kv(doc,'Total Pasivos',    fmtC(t.pasivosTotales||0),  M+2, mid-4, y, [239,68,68]); y+=7;
-  kv(doc,'Patrimonio Neto',  fmtC(t.patrimonioNeto||0),  M+2, mid-4, y, (t.patrimonioNeto||0)>=0?teal:[239,68,68]); y+=12;
-
-  // Ratios del modal (col derecha)
-  var rx = mid + 4, ry = 42;
-  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(blue[0],blue[1],blue[2]);
-  doc.text('RATIOS FINANCIEROS CLAVE', rx, ry-2);
-  ry += 2;
-  doc.setDrawColor(blue[0],blue[1],blue[2]); doc.setLineWidth(0.4); doc.line(rx, ry, PW-M, ry); ry+=4;
-  var ratioRows = [
-    ['Meses de Reserva', gV('meses_reserva') + ' m'],
-    ['DTI Neto',         gV('dti') + '%'],
-    ['Tasa de Ahorro',   gV('tasa_ahorro') + '%'],
-    ['Patrimonio/Activos', gV('patrimonio_activos') + '%'],
-    ['Pasivos/Activos',  gV('deuda_activos') + '%'],
-    ['Razón Corriente',  gV('razon_corriente') + 'x'],
-    ['Inversión/Ingreso',gV('inversion_ingreso') + 'x'],
-    ['Riqueza Neta',     gV('riqueza_neta') + 'x'],
+  var kpis2 = [
+    ['Patrimonio Neto', fmtC(t.patrimonioNeto||0), (t.patrimonioNeto||0)>=0?TEAL:RED],
+    ['Ingresos / mes',  fmtC(ingMes),   BLUE],
+    ['Activos Totales', fmtC(t.activosTotales||0), BLUE],
+    ['Deudas Totales',  fmtC(t.pasivosTotales||0), RED],
+    ['Flujo libre / mes', fmtC(fluMes), fluMes>=0?TEAL:RED],
+    ['Retiro total',    fmtC(retTot),   BLUE],
   ];
-  ratioRows.forEach(function(row) {
-    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(100,116,139);
-    doc.text(row[0], rx, ry);
-    doc.setFont('helvetica','bold'); doc.setTextColor(dark[0],dark[1],dark[2]);
-    doc.text(row[1], PW-M, ry, {align:'right'});
-    ry += 7;
+  var kW2 = (PW - M*2 - 4) / 3;
+  kpis2.forEach(function(k, i) {
+    var col = i % 3, row = Math.floor(i / 3);
+    var kx = M + col * (kW2 + 2), ky = y + row * 18;
+    drawBorder(kx, ky, kW2, 15, [210, 218, 240], 0.3);
+    drawRect(kx, ky, kW2, 5.5, [232, 237, 252]);
+    setFont('bold', 6.5, GRAY);
+    doc.text(k[0].toUpperCase(), kx + kW2/2, ky + 4, {align:'center'});
+    setFont('bold', 10, k[2]);
+    doc.text(k[1], kx + kW2/2, ky + 12.5, {align:'center'});
   });
+  y += 40;
+
+  // Indicators table
+  y = sectionBand('INDICADORES FINANCIEROS', y);
+
+  var indicators = [
+    ['Meses de Reserva',   gV('meses_reserva') + ' m',  gV('meses_reserva')],
+    ['DTI Deuda/Ingreso',  gV('dti') + '%',              gV('dti')],
+    ['Tasa de Ahorro',     gV('tasa_ahorro') + '%',       gV('tasa_ahorro')],
+    ['Razón Corriente',    gV('razon_corriente') + 'x',  gV('razon_corriente')],
+    ['Inversión/Ingreso',  gV('inversion_ingreso') + 'x',gV('inversion_ingreso')],
+    ['Nivel Riqueza Neta', gV('riqueza_neta') + 'x',     gV('riqueza_neta')],
+    ['Deuda / Activos',    gV('deuda_activos') + '%',    gV('deuda_activos')],
+    ['Patrimonio/Activos', gV('patrimonio_activos') + '%',gV('patrimonio_activos')],
+  ];
+
+  var colW = (PW - M*2) / 2 - 1;
+  indicators.forEach(function(ind, i) {
+    var col = i % 2, row = Math.floor(i / 2);
+    var ix = M + col * (colW + 2), iy = y + row * 9;
+    var bg = row % 2 === 0 ? WHITE : LGRAY;
+    drawRect(ix, iy, colW, 8, bg);
+    drawBorder(ix, iy, colW, 8, [210, 218, 240], 0.2);
+    setFont('normal', 8, DARK);
+    doc.text(ind[0], ix + 3, iy + 5.5);
+    setFont('bold', 8.5, BLUE);
+    doc.text(ind[1], ix + colW - 22, iy + 5.5);
+    // Semaforo - derive status from ratio value
+    var raw = parseFloat(ind[2]);
+    var sts = '—';
+    if (ind[0].includes('Meses')) sts = raw >= 6 ? 'OK' : raw >= 3 ? 'REVISAR' : 'CRITICO';
+    else if (ind[0].includes('DTI')) sts = raw <= 36 ? 'OK' : raw <= 50 ? 'REVISAR' : 'CRITICO';
+    else if (ind[0].includes('Ahorro')) sts = raw >= 20 ? 'OK' : raw >= 10 ? 'REVISAR' : 'CRITICO';
+    else if (ind[0].includes('Corriente')) sts = raw >= 1 ? 'OK' : raw >= 0.5 ? 'REVISAR' : 'CRITICO';
+    else if (ind[0].includes('Inver')) sts = raw >= 2 ? 'OK' : raw >= 1 ? 'REVISAR' : 'CRITICO';
+    else if (ind[0].includes('Riqueza')) sts = raw >= 3 ? 'OK' : raw >= 1 ? 'REVISAR' : 'CRITICO';
+    else if (ind[0].includes('Deuda')) sts = raw <= 40 ? 'OK' : raw <= 60 ? 'REVISAR' : 'CRITICO';
+    else if (ind[0].includes('Patrimonio')) sts = raw >= 60 ? 'OK' : raw >= 40 ? 'REVISAR' : 'CRITICO';
+    if (sts !== '—') semBadge(ix + colW - 20, iy + 2, sts);
+  });
+  y += (Math.ceil(indicators.length / 2)) * 9 + 6;
+
+  // Tasa de ahorro bar visual
+  if (y < PH - 30) {
+    var tasaPct = parseFloat(gV('tasa_ahorro')) || 0;
+    y = sectionBand('TASA DE AHORRO', y);
+    drawRect(M, y, PW - M*2, 10, LGRAY, true);
+    var barW = Math.min(tasaPct / 100, 1) * (PW - M*2);
+    var barColor = tasaPct >= 20 ? TEAL : tasaPct >= 10 ? AMBER : RED;
+    drawRect(M, y, barW, 10, barColor, true);
+    setFont('bold', 8, WHITE);
+    doc.text(tasaPct.toFixed(1) + '%', M + barW/2, y + 7, {align:'center'});
+    y += 16;
+  }
 
   // ─────────────────────────────────────────────────────────────────────
-  // PÁG 3: FLUJO DE CAJA DETALLADO
+  // PÁG 3: FLUJO DE CAJA
   // ─────────────────────────────────────────────────────────────────────
   doc.addPage();
-  pageHeader(doc, 'Flujo de Caja Detallado', 3);
-  y = 42;
+  pageHeader('Flujo de Caja', 'Ingresos · Gastos · Ahorro mensual', 3);
+  y = 32;
 
-  var ingrHead = [['Categoría','Descripción','Mensual','Anual']];
-  var ingrBody = (ingresos||[]).map(function(i){
-    var m = parseFloat(i.monto)||0;
-    return [i.categoria||'', i.nombre||'', fmtC(m), fmtC(m*12)];
+  // 3 summary boxes
+  var fcBoxes = [
+    ['INGRESOS / MES', fmtC(ingMes), TEAL],
+    ['GASTOS / MES',   fmtC(gstMes), RED],
+    ['FLUJO LIBRE',    fmtC(fluMes), fluMes >= 0 ? TEAL : RED],
+  ];
+  var fW = (PW - M*2 - 4) / 3;
+  fcBoxes.forEach(function(b, i) {
+    var bx = M + i * (fW + 2);
+    drawRect(bx, y, fW, 22, i === 0 ? [220, 252, 231] : i === 1 ? [254, 226, 226] : fluMes >= 0 ? [220, 252, 231] : [254, 226, 226], true);
+    drawBorder(bx, y, fW, 22, b[2], 0.5);
+    setFont('bold', 6.5, b[2]);
+    doc.text(b[0], bx + fW/2, y + 7, {align:'center'});
+    setFont('bold', 12, b[2]);
+    doc.text(b[1], bx + fW/2, y + 18, {align:'center'});
   });
-  if (ingrBody.length) {
-    ingrBody.push(['','TOTAL', fmtC(ingA/12), fmtC(ingA)]);
-    doc.autoTable({ head: ingrHead, body: ingrBody, startY: y,
-      headStyles: {fillColor: blue, textColor: 255, fontSize: 8},
-      bodyStyles: {fontSize: 7.5}, margin: {left: M, right: M},
-      columnStyles: {2:{halign:'right'}, 3:{halign:'right'}},
+  y += 28;
+
+  // Income table
+  if ((ingresos||[]).length) {
+    y = sectionBand('DETALLE DE INGRESOS', y);
+    var ingTotal = ingMes;
+    var ingrHead = [['Fuente', 'Categoría', 'Mensual', '%']];
+    var ingrBody = (ingresos||[]).map(function(i) {
+      var m = parseFloat(i.monto) || 0;
+      var pct = ingTotal > 0 ? (m / ingTotal * 100).toFixed(1) + '%' : '—';
+      return [i.nombre || '—', i.categoria || '—', fmtC(m), pct];
+    });
+    ingrBody.push(['', 'TOTAL', fmtC(ingTotal), '100%']);
+    doc.autoTable({
+      head: ingrHead, body: ingrBody, startY: y,
+      headStyles: { fillColor: NAVY, textColor: 255, fontSize: 8, fontStyle: 'bold' },
+      bodyStyles: { fontSize: 8 }, margin: { left: M, right: M },
+      columnStyles: { 0:{cellWidth:65}, 1:{cellWidth:35}, 2:{halign:'right', cellWidth:32}, 3:{halign:'right', cellWidth:20} },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
       didParseCell: function(d) {
-        if (d.row.index === ingrBody.length-1) { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = [240,253,244]; }
+        if (d.row.index === ingrBody.length - 1) {
+          d.cell.styles.fontStyle = 'bold';
+          d.cell.styles.fillColor = [220, 252, 231];
+        }
       }
     });
     y = doc.lastAutoTable.finalY + 8;
   }
 
-  var catNames = {ahorro:'Ahorro',deuda:'Pago de Deuda',diarios:'Gastos Diarios',seguros:'Seguros',impuestos:'Impuestos'};
+  // Expenses by category
+  var catNames = {ahorro:'Ahorro / Inversión', deuda:'Pago de Deudas', diarios:'Gastos del Hogar', seguros:'Seguros', impuestos:'Impuestos'};
   Object.keys(gastos||{}).forEach(function(cat) {
     var items = gastos[cat] || [];
     if (!items.length) return;
-    if (y > PH - 40) { doc.addPage(); pageHeader(doc, 'Flujo de Caja (cont.)', 3); y = 42; }
-    var body = items.map(function(i){ var m=parseFloat(i.monto)||0; return [i.categoria||'', i.nombre||'', fmtC(m), fmtC(m*12)]; });
-    var tot = items.reduce(function(s,i){return s+(parseFloat(i.monto)||0);},0);
-    body.push(['','TOTAL ' + (catNames[cat]||cat).toUpperCase(), fmtC(tot), fmtC(tot*12)]);
-    doc.autoTable({ head: [['Categoría','Descripción','Mensual','Anual']], body: body, startY: y,
-      headStyles: {fillColor: [30,30,35], textColor: 255, fontSize: 8},
-      bodyStyles: {fontSize: 7.5}, margin: {left: M, right: M},
-      columnStyles: {2:{halign:'right'}, 3:{halign:'right'}},
+    if (y > PH - 40) { doc.addPage(); pageHeader('Flujo de Caja (cont.)', '', 3); y = 32; }
+    y = sectionBand(catNames[cat] || cat, y);
+    var body = items.map(function(i) {
+      var m = parseFloat(i.monto) || 0;
+      return [i.nombre || '—', i.categoria || '', fmtC(m), fmtC(m * 12)];
+    });
+    var tot = items.reduce(function(s, i) { return s + (parseFloat(i.monto) || 0); }, 0);
+    body.push(['', 'SUBTOTAL', fmtC(tot), fmtC(tot * 12)]);
+    doc.autoTable({
+      head: [['Descripción', 'Detalle', 'Mensual', 'Anual']], body: body, startY: y,
+      headStyles: { fillColor: [30, 30, 35], textColor: 255, fontSize: 8 },
+      bodyStyles: { fontSize: 8 }, margin: { left: M, right: M },
+      columnStyles: { 2:{halign:'right'}, 3:{halign:'right'} },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
       didParseCell: function(d) {
-        if (d.row.index === body.length-1) { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = [254,242,242]; }
+        if (d.row.index === body.length - 1) { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = [254, 242, 242]; }
       }
     });
     y = doc.lastAutoTable.finalY + 6;
   });
 
   // ─────────────────────────────────────────────────────────────────────
-  // PÁG 4: BALANCE GENERAL (ACTIVOS & DEUDAS)
+  // PÁG 4: BALANCE GENERAL
   // ─────────────────────────────────────────────────────────────────────
   doc.addPage();
-  pageHeader(doc, 'Balance General', 4);
-  y = 42;
+  pageHeader('Balance General', 'Activos · Pasivos · Patrimonio neto', 4);
+  y = 32;
 
+  // 3 summary boxes
+  var balBoxes = [
+    ['ACTIVOS TOTALES',  fmtC(t.activosTotales || 0),  TEAL],
+    ['PASIVOS TOTALES',  fmtC(t.pasivosTotales || 0),  RED],
+    ['PATRIMONIO NETO',  fmtC(t.patrimonioNeto || 0),  (t.patrimonioNeto||0) >= 0 ? BLUE : RED],
+  ];
+  balBoxes.forEach(function(b, i) {
+    var bx = M + i * (fW + 2);
+    drawRect(bx, y, fW, 22, i === 0 ? [220, 252, 231] : i === 1 ? [254, 226, 226] : [232, 237, 252], true);
+    drawBorder(bx, y, fW, 22, b[2], 0.5);
+    setFont('bold', 6.5, b[2]);
+    doc.text(b[0], bx + fW/2, y + 7, {align:'center'});
+    setFont('bold', 12, b[2]);
+    doc.text(b[1], bx + fW/2, y + 18, {align:'center'});
+  });
+  y += 28;
+
+  // Assets composition
+  y = sectionBand('COMPOSICIÓN DE ACTIVOS', y);
   var actCats = [
-    ['efectivo','Efectivo y Equivalentes'],['inversiones','Inversiones'],
-    ['retiro','Cuentas de Retiro'],['bienesRaices','Bienes Raíces'],['bienesPersonales','Bienes Personales']
+    ['efectivo',       'Efectivo / Liquidez'],
+    ['inversiones',    'Inversiones'],
+    ['retiro',         'Retiro (401k/IRA)'],
+    ['bienesRaices',   'Bienes Raíces'],
+    ['bienesPersonales','Bienes Personales'],
   ];
   var actBody = [];
   actCats.forEach(function(c) {
     var items = (activos||{})[c[0]] || [];
-    items.forEach(function(i){
-      actBody.push([c[1], i.tipo||'', i.ubicacion||'', fmtC(parseFloat(i.valor)||0)]);
+    items.forEach(function(i) {
+      var v = parseFloat(i.valor) || 0;
+      var pct = (t.activosTotales || 0) > 0 ? (v / t.activosTotales * 100).toFixed(1) + '%' : '—';
+      actBody.push([c[1], i.tipo || '', i.ubicacion || '', pct, fmtC(v)]);
     });
   });
-  actBody.push(['','','TOTAL ACTIVOS', fmtC(t.activosTotales||0)]);
-  doc.autoTable({ head:[['Categoría','Tipo','Institución','Valor']], body: actBody, startY: y,
-    headStyles:{fillColor:teal, textColor:255, fontSize:8},
-    bodyStyles:{fontSize:7.5}, margin:{left:M, right:M},
-    columnStyles:{3:{halign:'right'}},
-    didParseCell:function(d){if(d.row.index===actBody.length-1){d.cell.styles.fontStyle='bold';d.cell.styles.fillColor=[240,253,244];}}
+  if (!actBody.length) actBody.push([['Sin activos registrados', '', '', '', '']]);
+  actBody.push(['', '', '', 'TOTAL ACTIVOS', fmtC(t.activosTotales || 0)]);
+  doc.autoTable({
+    head: [['Categoría', 'Tipo', 'Institución', '%', 'Valor']], body: actBody, startY: y,
+    headStyles: { fillColor: [16, 100, 80], textColor: 255, fontSize: 8 },
+    bodyStyles: { fontSize: 8 }, margin: { left: M, right: M },
+    columnStyles: { 3:{halign:'right'}, 4:{halign:'right'} },
+    alternateRowStyles: { fillColor: [240, 253, 244] },
+    didParseCell: function(d) {
+      if (d.row.index === actBody.length - 1) { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = [220, 252, 231]; }
+    }
   });
   y = doc.lastAutoTable.finalY + 8;
 
+  if (y > PH - 60) { doc.addPage(); pageHeader('Balance General (cont.)', '', 4); y = 32; }
+
+  // Debts composition
+  y = sectionBand('COMPOSICIÓN DE DEUDAS', y);
   var deuCats = [
-    ['tarjetas','Tarjetas'],['lineaPersonal','Línea Personal'],['lineaPropiedad','HELOC'],
-    ['casa','Hipoteca'],['auto','Auto'],['educacion','Educación'],['otros','Otros']
+    ['tarjetas',      'Tarjetas de Crédito'],
+    ['lineaPersonal', 'Línea Personal'],
+    ['lineaPropiedad','HELOC / Propiedad'],
+    ['casa',          'Hipoteca'],
+    ['auto',          'Auto'],
+    ['educacion',     'Educación'],
+    ['otros',         'Otros'],
   ];
   var deuBody = [];
-  deuCats.forEach(function(c){
+  deuCats.forEach(function(c) {
     var items = (deudas||{})[c[0]] || [];
-    items.forEach(function(i){
-      deuBody.push([c[1], i.compania||'', (i.apr||'0')+'%', fmtC(parseFloat(i.balance)||0)]);
+    items.forEach(function(i) {
+      var v = parseFloat(i.balance) || 0;
+      var pct = (t.pasivosTotales || 0) > 0 ? (v / t.pasivosTotales * 100).toFixed(1) + '%' : '—';
+      deuBody.push([c[1], i.compania || '', (i.apr || '0') + '%', pct, fmtC(v)]);
     });
   });
-  deuBody.push(['','','TOTAL PASIVOS', fmtC(t.pasivosTotales||0)]);
-  if (y > PH-40) { doc.addPage(); pageHeader(doc,'Balance (cont.)',4); y=42; }
-  doc.autoTable({ head:[['Categoría','Compañía','APR','Balance']], body: deuBody, startY: y,
-    headStyles:{fillColor:[239,68,68], textColor:255, fontSize:8},
-    bodyStyles:{fontSize:7.5}, margin:{left:M, right:M},
-    columnStyles:{3:{halign:'right'}},
-    didParseCell:function(d){if(d.row.index===deuBody.length-1){d.cell.styles.fontStyle='bold';d.cell.styles.fillColor=[254,242,242];}}
+  if (!deuBody.length) deuBody.push(['Sin deudas registradas', '', '', '', '']);
+  deuBody.push(['', '', '', 'TOTAL PASIVOS', fmtC(t.pasivosTotales || 0)]);
+  doc.autoTable({
+    head: [['Categoría', 'Compañía', 'APR', '%', 'Balance']], body: deuBody, startY: y,
+    headStyles: { fillColor: [185, 28, 28], textColor: 255, fontSize: 8 },
+    bodyStyles: { fontSize: 8 }, margin: { left: M, right: M },
+    columnStyles: { 2:{halign:'center'}, 3:{halign:'right'}, 4:{halign:'right'} },
+    alternateRowStyles: { fillColor: [254, 242, 242] },
+    didParseCell: function(d) {
+      if (d.row.index === deuBody.length - 1) { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = [254, 226, 226]; }
+    }
   });
 
   // ─────────────────────────────────────────────────────────────────────
-  // PÁG 5: METAS
+  // PÁG 5: METAS FINANCIERAS
   // ─────────────────────────────────────────────────────────────────────
   doc.addPage();
-  pageHeader(doc, 'Metas Financieras', 5);
-  y = 42;
-  var GOAL_LABELS = {casa:'Comprar Casa',retiro:'Retiro',emergencia:'Fondo de Emergencia',educacion:'Educación de Hijos',viaje:'Viaje',deudas:'Pagar Deudas',negocio:'Negocio',auto:'Auto',inversiones:'Inversiones',independencia:'Independencia Financiera',herencia:'Herencia',otro:'Otra Meta'};
-  var goalsBody = (goals||[]).map(function(g){
-    var st = g.status==='completada'?'✅ Completada':g.status==='en_progreso'?'⏳ En Progreso':'⬜ Pendiente';
-    var det = Object.entries(g.details||{}).filter(function(e){return e[1];}).map(function(e){return e[0]+': '+e[1];}).join(' | ');
-    return [GOAL_LABELS[g.key]||g.key, st, det.substring(0,60)||(g.notes||'').substring(0,60)];
-  });
-  if (goalsBody.length) {
-    doc.autoTable({ head:[['Meta','Estado','Detalles']], body: goalsBody, startY: y,
-      headStyles:{fillColor:blue, textColor:255, fontSize:8},
-      bodyStyles:{fontSize:7.5}, margin:{left:M, right:M},
+  pageHeader('Metas Financieras', 'Objetivos · Detalles · Notas del Coach', 5);
+  y = 32;
+
+  var GOAL_LABELS = {
+    casa:'Comprar Casa', retiro:'Retiro Cómodo', emergencia:'Fondo de Emergencia',
+    educacion:'Educación de Hijos', viaje:'Viaje / Vacaciones', deudas:'Pagar Deudas',
+    negocio:'Negocio', auto:'Auto', inversiones:'Inversiones',
+    independencia:'Independencia Financiera', herencia:'Dejar Herencia', otro:'Otra Meta'
+  };
+  var STATUS_CFG = {
+    completada:  { bg:[220,252,231], bdr:TEAL,  txt:TEAL,  label:'✅  COMPLETADA' },
+    en_progreso: { bg:[219,234,254], bdr:BLUE,  txt:BLUE,  label:'⏳  EN PROGRESO' },
+    pendiente:   { bg:[254,243,199], bdr:AMBER, txt:AMBER, label:'⬜  PENDIENTE' },
+  };
+
+  (goals||[]).forEach(function(g) {
+    var cfg = STATUS_CFG[g.status] || STATUS_CFG.pendiente;
+    var label = GOAL_LABELS[g.key] || g.key || 'Meta';
+    var details = Object.entries(g.details || {}).filter(function(e){return e[1];}).map(function(e){
+      var k = e[0].replace(/([A-Z])/g,' $1').replace(/_/g,' ').toLowerCase();
+      return k.charAt(0).toUpperCase() + k.slice(1) + ': ' + e[1];
     });
-    y = doc.lastAutoTable.finalY + 8;
-  } else {
-    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(100,116,139);
-    doc.text('Sin metas registradas.', M, y); y += 10;
+    if (g.notes) details.push('Notas: ' + g.notes);
+
+    var cardH = 10 + Math.ceil(details.length / 2) * 6 + 4;
+    if (y + cardH > PH - 20) { doc.addPage(); pageHeader('Metas Financieras (cont.)', '', 5); y = 32; }
+
+    drawRect(M, y, PW - M*2, cardH, cfg.bg, true);
+    drawBorder(M, y, PW - M*2, cardH, cfg.bdr, 0.5);
+
+    // Goal title
+    setFont('bold', 10, DARK);
+    doc.text(label, M + 4, y + 7);
+
+    // Status badge
+    drawRect(PW - M - 30, y + 2, 28, 5.5, cfg.bdr, true);
+    setFont('bold', 6.5, WHITE);
+    doc.text(cfg.label, PW - M - 16, y + 6, {align:'center'});
+
+    // Details in 2 columns
+    var dy = y + 13;
+    details.forEach(function(d, di) {
+      var col = di % 2, drow = Math.floor(di / 2);
+      var dx = M + 4 + col * ((PW - M*2) / 2);
+      setFont('normal', 7.5, GRAY);
+      doc.text(String(d).substring(0, 55), dx, dy + drow * 6);
+    });
+
+    y += cardH + 4;
+  });
+
+  if (!(goals||[]).length) {
+    setFont('normal', 9, GRAY);
+    doc.text('Sin metas registradas.', M, y + 8);
   }
 
   // ─────────────────────────────────────────────────────────────────────
   // PÁG 6: RECOMENDACIONES
   // ─────────────────────────────────────────────────────────────────────
   doc.addPage();
-  pageHeader(doc, 'Recomendaciones del Coach', 6);
-  y = 42;
+  pageHeader('Recomendaciones del Coach', 'Plan de acción personalizado', 6);
+  y = 32;
 
   if (recos) {
-    var lines = doc.splitTextToSize(recos, PW - M*2);
-    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(dark[0],dark[1],dark[2]);
+    y = sectionBand('RECOMENDACIONES DEL COACH', y);
+    var lines = doc.splitTextToSize(recos, PW - M*2 - 4);
     lines.forEach(function(line) {
-      if (y > PH - 20) { doc.addPage(); pageHeader(doc,'Recomendaciones (cont.)',6); y=42; }
-      if (line.startsWith('🚨')||line.startsWith('⚠️')||line.startsWith('✅')||line.startsWith('📊')) {
-        doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
-      } else if (line.toUpperCase()===line && line.trim().length > 2) {
-        doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(blue[0],blue[1],blue[2]);
+      if (y > PH - 30) { doc.addPage(); pageHeader('Recomendaciones (cont.)', '', 6); y = 32; }
+      var isBullet = line.trim().startsWith('🚨') || line.trim().startsWith('⚠️') || line.trim().startsWith('✅') || line.trim().startsWith('📊') || line.trim().startsWith('-');
+      var isTitle  = line === line.toUpperCase() && line.trim().length > 3;
+      if (isTitle) {
+        setFont('bold', 9, BLUE);
+        doc.text(line, M + 2, y); y += 6;
+      } else if (isBullet) {
+        setFont('normal', 8, DARK);
+        doc.text(line, M + 4, y); y += 5.5;
       } else {
-        doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(dark[0],dark[1],dark[2]);
+        setFont('normal', 8, DARK);
+        doc.text(line, M + 2, y); y += 5.5;
       }
-      doc.text(line, M, y); y += 6;
     });
+    y += 4;
+  } else {
+    drawRect(M, y, PW - M*2, 18, LGRAY, true);
+    setFont('normal', 8.5, GRAY);
+    doc.text('Complete el campo de Recomendaciones en el modal antes de generar el PDF.', PW/2, y + 10, {align:'center'});
+    y += 24;
   }
 
   if (notas) {
-    y += 4;
-    if (y > PH - 40) { doc.addPage(); pageHeader(doc,'Notas',6); y=42; }
-    y = section(doc, '📝 Notas del Asesor', y);
-    var nlines = doc.splitTextToSize(notas, PW - M*2);
-    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(dark[0],dark[1],dark[2]);
-    nlines.forEach(function(line){
-      if (y > PH-20){doc.addPage();pageHeader(doc,'Notas',6);y=42;}
-      doc.text(line, M, y); y+=6;
+    if (y > PH - 40) { doc.addPage(); pageHeader('Notas del Asesor', '', 6); y = 32; }
+    y = sectionBand('NOTAS ADICIONALES DEL ASESOR', y);
+    var nlines = doc.splitTextToSize(notas, PW - M*2 - 4);
+    nlines.forEach(function(line) {
+      if (y > PH - 30) { doc.addPage(); pageHeader('Notas (cont.)', '', 6); y = 32; }
+      setFont('normal', 8, DARK); doc.text(line, M + 2, y); y += 5.5;
     });
+    y += 6;
   }
 
-  // ── Disclaimer en última página ──
-  doc.setFont('helvetica','italic'); doc.setFontSize(7); doc.setTextColor(150,150,150);
-  doc.text('Este reporte es de carácter educativo e informativo. No constituye asesoramiento financiero, legal o fiscal profesional.', M, PH-8);
+  // Signature block
+  if (y > PH - 38) { doc.addPage(); pageHeader('Firmas', '', 6); y = 32; }
+  y = Math.max(y, PH - 50);
 
-  // ── Guardar ──
-  var filename = 'MoneyMap_' + nombre.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'') + '_' + new Date().toISOString().slice(0,10) + '.pdf';
+  drawRect(M, y, PW - M*2, 28, LGRAY, true);
+  // Two signature lines
+  var sigW = (PW - M*2 - 20) / 2;
+  doc.setDrawColor(100, 116, 139); doc.setLineWidth(0.5);
+  doc.line(M + 8, y + 18, M + 8 + sigW, y + 18);
+  doc.line(PW - M - 8 - sigW, y + 18, PW - M - 8, y + 18);
+  setFont('bold', 7.5, GRAY);
+  doc.text('Firma del Coach / Asesor', M + 8 + sigW/2, y + 23, {align:'center'});
+  doc.text('Firma del Cliente', PW - M - 8 - sigW/2, y + 23, {align:'center'});
+
+  // Disclaimer
+  setFont('italic', 6.5, GRAY);
+  doc.text('Este reporte es de carácter educativo e informativo. No constituye asesoramiento financiero, legal o fiscal profesional.', PW/2, PH - 5, {align:'center'});
+
+  // Save
+  var filename = 'MoneyMap_Reporte_' + nombre.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'') + '_' + new Date().toISOString().slice(0,10) + '.pdf';
   doc.save(filename);
   window.cerrarReporteModal();
 };
+
 
 </script>
 
