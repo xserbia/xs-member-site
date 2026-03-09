@@ -588,23 +588,34 @@ function App() {
             <button onClick={() => window.cerrarReporteModal()} style={{background:'rgba(255,255,255,0.2)',border:'none',width:'32px',height:'32px',borderRadius:'50%',fontSize:'20px',cursor:'pointer',color:'white'}}>×</button>
           </div>
           <div className="rm-body">
-            <div style={{fontWeight:'700',fontSize:'0.8rem',color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'0.65rem'}}>Ratios Financieros (editables)</div>
-            <div className="rm-ratio-grid">
+            <div style={{fontWeight:'700',fontSize:'0.8rem',color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'0.65rem'}}>Ratios Financieros — Actual vs. Benchmark</div>
+            <div className="rm-ratio-grid" id="rm-ratio-grid">
               {[
-                ['meses_reserva','Meses de Reserva',''],
-                ['dti','DTI Neto','%'],
-                ['tasa_ahorro','Tasa de Ahorro','%'],
-                ['patrimonio_activos','Patrimonio / Activos','%'],
-                ['deuda_activos','Pasivos / Activos','%'],
-                ['razon_corriente','Razón Corriente',''],
-                ['inversion_ingreso','Inversión / Ingreso','x'],
-                ['riqueza_neta','Riqueza Neta','x'],
-              ].map(([id, label, unit]) => (
-                <div key={id} className="rm-ratio-item">
-                  <div className="rm-ratio-label">{label}</div>
-                  <div style={{display:'flex',alignItems:'center',gap:'4px'}}>
-                    <input id={'ratio_'+id} className="rm-ratio-input" type="text" placeholder="—" />
-                    {unit && <span style={{fontSize:'0.85rem',color:'var(--text-muted)',fontWeight:'600'}}>{unit}</span>}
+                ['meses_reserva','Meses de Reserva','m',  '≥ 6'],
+                ['dti',          'DTI Neto',         '%',  '≤ 36'],
+                ['tasa_ahorro',  'Tasa de Ahorro',   '%',  '≥ 20'],
+                ['patrimonio_activos','Patrimonio / Activos','%','≥ 60'],
+                ['deuda_activos','Pasivos / Activos', '%',  '≤ 40'],
+                ['razon_corriente','Razón Corriente', 'x',  '≥ 1.0'],
+                ['inversion_ingreso','Inversión / Ingreso','x','≥ 2.0'],
+                ['riqueza_neta', 'Riqueza Neta',     'x',  '≥ 3.0'],
+              ].map(([id, label, unit, bm]) => (
+                <div key={id} className="rm-ratio-item" id={'card_'+id}>
+                  <div className="rm-ratio-label">
+                    <span>{label}</span>
+                    <span className="rm-sem-badge neutral" id={'badge_'+id}>—</span>
+                  </div>
+                  <div className="rm-ratio-row">
+                    <span className="rm-ratio-row-label">Actual</span>
+                    <input id={'ratio_'+id} className="rm-ratio-input" type="text" placeholder="—"
+                      onChange={() => window.updateRatioSem && window.updateRatioSem(id)} />
+                    <span className="rm-ratio-unit">{unit}</span>
+                    <span className="rm-sem-dot neutral" id={'dot_'+id} style={{marginLeft:'2px'}}></span>
+                  </div>
+                  <div className="rm-ratio-row">
+                    <span className="rm-ratio-row-label">Meta</span>
+                    <input id={'bm_'+id} className="rm-ratio-input bm-input" type="text" defaultValue={bm} placeholder={bm} />
+                    <span className="rm-ratio-unit">{unit}</span>
                   </div>
                 </div>
               ))}
@@ -2946,10 +2957,27 @@ ReactDOM.render(<App />, document.getElementById('root'));
       background: #f8fafc;
     }
     .rm-ratio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 1.25rem; }
-    .rm-ratio-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.75rem 0.9rem; }
-    .rm-ratio-label { font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.35rem; }
-    .rm-ratio-input { width: 100%; border: 1.5px solid #e2e8f0; border-radius: 7px; padding: 0.45rem 0.65rem; font-size: 0.92rem; font-weight: 700; font-family: 'DM Sans', sans-serif; background: white; }
+    .rm-ratio-item { background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 0.8rem 0.9rem; position: relative; transition: border-color 0.2s; }
+    .rm-ratio-item.sem-ok   { border-color: #86efac; background: #f0fdf4; }
+    .rm-ratio-item.sem-warn { border-color: #fcd34d; background: #fffbeb; }
+    .rm-ratio-item.sem-bad  { border-color: #fca5a5; background: #fff5f5; }
+    .rm-ratio-label { font-size: 0.70rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.55rem; display: flex; justify-content: space-between; align-items: center; }
+    .rm-sem-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .rm-sem-dot.ok      { background: #22c55e; box-shadow: 0 0 5px #86efac; }
+    .rm-sem-dot.warn    { background: #f59e0b; box-shadow: 0 0 5px #fcd34d; }
+    .rm-sem-dot.bad     { background: #ef4444; box-shadow: 0 0 5px #fca5a5; }
+    .rm-sem-dot.neutral { background: #cbd5e1; }
+    .rm-ratio-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+    .rm-ratio-row-label { font-size: 0.67rem; font-weight: 700; color: #94a3b8; width: 42px; flex-shrink: 0; text-transform: uppercase; letter-spacing: 0.04em; }
+    .rm-ratio-input { flex: 1; border: 1.5px solid #e2e8f0; border-radius: 7px; padding: 0.35rem 0.55rem; font-size: 0.88rem; font-weight: 700; font-family: 'DM Sans', sans-serif; background: white; min-width: 0; }
+    .rm-ratio-input.bm-input { background: #f1f5f9; font-weight: 600; font-size: 0.82rem; color: #475569; border-style: dashed; }
     .rm-ratio-input:focus { outline: none; border-color: #3956E8; }
+    .rm-ratio-unit { font-size: 0.78rem; color: #94a3b8; font-weight: 600; flex-shrink: 0; min-width: 12px; }
+    .rm-sem-badge { font-size: 0.60rem; font-weight: 800; letter-spacing: 0.05em; padding: 2px 7px; border-radius: 20px; }
+    .rm-sem-badge.ok      { background: #dcfce7; color: #15803d; }
+    .rm-sem-badge.warn    { background: #fef3c7; color: #92400e; }
+    .rm-sem-badge.bad     { background: #fee2e2; color: #b91c1c; }
+    .rm-sem-badge.neutral { background: #f1f5f9; color: #64748b; }
   `;
   var styleEl = document.createElement('style');
   styleEl.textContent = css;
@@ -2978,6 +3006,38 @@ function _x(v)   { return isFinite(v) ? v.toFixed(2) + 'x' : '—'; }
 function _m(v)   { return isFinite(v) ? v.toFixed(1) + ' m' : '—'; }
 
 // ── Abrir modal ───────────────────────────────────────────────────────────────
+// ── Benchmark defaults ──────────────────────────────────────────────────────
+window._RATIO_CONFIG = {
+  meses_reserva:      { bm: '≥ 6',   unit: 'm',  ok: function(v,b){ var bv=parseFloat(b.replace(/[^0-9.]/g,''));return v>=bv?'ok':v>=bv*0.5?'warn':'bad'; } },
+  dti:                { bm: '≤ 36',  unit: '%',  ok: function(v,b){ var bv=parseFloat(b.replace(/[^0-9.]/g,''));return v<=bv?'ok':v<=bv*1.38?'warn':'bad'; } },
+  tasa_ahorro:        { bm: '≥ 20',  unit: '%',  ok: function(v,b){ var bv=parseFloat(b.replace(/[^0-9.]/g,''));return v>=bv?'ok':v>=bv*0.5?'warn':'bad'; } },
+  patrimonio_activos: { bm: '≥ 60',  unit: '%',  ok: function(v,b){ var bv=parseFloat(b.replace(/[^0-9.]/g,''));return v>=bv?'ok':v>=bv*0.66?'warn':'bad'; } },
+  deuda_activos:      { bm: '≤ 40',  unit: '%',  ok: function(v,b){ var bv=parseFloat(b.replace(/[^0-9.]/g,''));return v<=bv?'ok':v<=bv*1.5?'warn':'bad'; } },
+  razon_corriente:    { bm: '≥ 1.0', unit: 'x',  ok: function(v,b){ var bv=parseFloat(b.replace(/[^0-9.]/g,''));return v>=bv?'ok':v>=bv*0.5?'warn':'bad'; } },
+  inversion_ingreso:  { bm: '≥ 2.0', unit: 'x',  ok: function(v,b){ var bv=parseFloat(b.replace(/[^0-9.]/g,''));return v>=bv?'ok':v>=bv*0.5?'warn':'bad'; } },
+  riqueza_neta:       { bm: '≥ 3.0', unit: 'x',  ok: function(v,b){ var bv=parseFloat(b.replace(/[^0-9.]/g,''));return v>=bv?'ok':v>=bv*0.33?'warn':'bad'; } },
+};
+var _SEM_LABELS = { ok: 'OK', warn: 'REVISAR', bad: 'CRÍTICO', neutral: '—' };
+var _SEM_CARD   = { ok: 'sem-ok', warn: 'sem-warn', bad: 'sem-bad', neutral: '' };
+
+// Update semáforo for a single ratio card
+window.updateRatioSem = function(id) {
+  var cfg = window._RATIO_CONFIG[id]; if (!cfg) return;
+  var valEl = document.getElementById('ratio_' + id);
+  var bmEl  = document.getElementById('bm_' + id);
+  var dot   = document.getElementById('dot_' + id);
+  var badge = document.getElementById('badge_' + id);
+  var card  = document.getElementById('card_' + id);
+  if (!valEl || !bmEl || !dot || !badge || !card) return;
+  var v = parseFloat(valEl.value);
+  var b = bmEl.value || cfg.bm;
+  var sem = isFinite(v) ? cfg.ok(v, b) : 'neutral';
+  dot.className   = 'rm-sem-dot ' + sem;
+  badge.className = 'rm-sem-badge ' + sem;
+  badge.textContent = _SEM_LABELS[sem];
+  card.className  = 'rm-ratio-item ' + (sem !== 'neutral' ? _SEM_CARD[sem] : '');
+};
+
 window.abrirReporteModal = function() {
   var el = document.getElementById('reporteModalOverlay');
   if (!el) return;
@@ -3006,7 +3066,7 @@ window.abrirReporteModal = function() {
 
   var setV = function(id, val) {
     var el = document.getElementById('ratio_' + id);
-    if (el) el.value = val;
+    if (el) { el.value = val; window.updateRatioSem(id); }
   };
   setV('meses_reserva',      isFinite(meses) ? meses.toFixed(1) : '');
   setV('dti',                isFinite(dti)   ? (dti*100).toFixed(1) : '');
@@ -3016,6 +3076,23 @@ window.abrirReporteModal = function() {
   setV('razon_corriente',    isFinite(razonC) ? razonC.toFixed(2) : '');
   setV('inversion_ingreso',  isFinite(invIng) ? invIng.toFixed(2) : '');
   setV('riqueza_neta',       isFinite(riqNet) ? riqNet.toFixed(2) : '');
+
+  // Set benchmark defaults if empty
+  Object.keys(window._RATIO_CONFIG).forEach(function(id) {
+    var bm = document.getElementById('bm_' + id);
+    if (bm && !bm.value) bm.value = window._RATIO_CONFIG[id].bm;
+    window.updateRatioSem(id);
+    // Attach live listener
+    var ratioEl = document.getElementById('ratio_' + id);
+    if (ratioEl && !ratioEl._semBound) {
+      ratioEl.addEventListener('input', function() { window.updateRatioSem(id); });
+      ratioEl._semBound = true;
+    }
+    if (bm && !bm._semBound) {
+      bm.addEventListener('input', function() { window.updateRatioSem(id); });
+      bm._semBound = true;
+    }
+  });
 
   // Auto-fill recomendaciones
   var recos = window.generarRecos();
@@ -3163,6 +3240,18 @@ window._generarPDF = function() {
   var gV = function(id) {
     var el = document.getElementById('ratio_' + id);
     return el ? (el.value || '—') : '—';
+  };
+  var gBM = function(id) {
+    var el = document.getElementById('bm_' + id);
+    var cfg = window._RATIO_CONFIG && window._RATIO_CONFIG[id];
+    return el ? (el.value || (cfg ? cfg.bm : '—')) : (cfg ? cfg.bm : '—');
+  };
+  var getSem = function(id) {
+    var cfg = window._RATIO_CONFIG && window._RATIO_CONFIG[id];
+    if (!cfg) return 'neutral';
+    var v = parseFloat(gV(id));
+    var b = gBM(id);
+    return isFinite(v) ? cfg.ok(v, b) : 'neutral';
   };
   var recos = (document.getElementById('reporte_recos') || {}).value || '';
   var notas = (document.getElementById('reporte_notas') || {}).value || '';
@@ -3359,42 +3448,55 @@ window._generarPDF = function() {
   // Indicators table
   y = sectionBand('INDICADORES FINANCIEROS', y);
 
-  var indicators = [
-    ['Meses de Reserva',   gV('meses_reserva') + ' m',  gV('meses_reserva')],
-    ['DTI Deuda/Ingreso',  gV('dti') + '%',              gV('dti')],
-    ['Tasa de Ahorro',     gV('tasa_ahorro') + '%',       gV('tasa_ahorro')],
-    ['Razón Corriente',    gV('razon_corriente') + 'x',  gV('razon_corriente')],
-    ['Inversión/Ingreso',  gV('inversion_ingreso') + 'x',gV('inversion_ingreso')],
-    ['Nivel Riqueza Neta', gV('riqueza_neta') + 'x',     gV('riqueza_neta')],
-    ['Deuda / Activos',    gV('deuda_activos') + '%',    gV('deuda_activos')],
-    ['Patrimonio/Activos', gV('patrimonio_activos') + '%',gV('patrimonio_activos')],
+  // Build indicators with actual, benchmark, and semaforo
+  var IND_IDS = [
+    ['meses_reserva',      'Meses de Reserva',    'm'],
+    ['dti',                'DTI Deuda/Ingreso',   '%'],
+    ['tasa_ahorro',        'Tasa de Ahorro',      '%'],
+    ['razon_corriente',    'Razón Corriente',     'x'],
+    ['inversion_ingreso',  'Inversión/Ingreso',   'x'],
+    ['riqueza_neta',       'Nivel Riqueza Neta',  'x'],
+    ['deuda_activos',      'Deuda / Activos',     '%'],
+    ['patrimonio_activos', 'Patrimonio/Activos',  '%'],
   ];
 
-  var colW = (PW - M*2) / 2 - 1;
-  indicators.forEach(function(ind, i) {
-    var col = i % 2, row = Math.floor(i / 2);
-    var ix = M + col * (colW + 2), iy = y + row * 9;
-    var bg = row % 2 === 0 ? WHITE : LGRAY;
-    drawRect(ix, iy, colW, 8, bg);
-    drawBorder(ix, iy, colW, 8, [210, 218, 240], 0.2);
-    setFont('normal', 8, DARK);
-    doc.text(ind[0], ix + 3, iy + 5.5);
-    setFont('bold', 8.5, BLUE);
-    doc.text(ind[1], ix + colW - 22, iy + 5.5);
-    // Semaforo - derive status from ratio value
-    var raw = parseFloat(ind[2]);
-    var sts = '—';
-    if (ind[0].includes('Meses')) sts = raw >= 6 ? 'OK' : raw >= 3 ? 'REVISAR' : 'CRITICO';
-    else if (ind[0].includes('DTI')) sts = raw <= 36 ? 'OK' : raw <= 50 ? 'REVISAR' : 'CRITICO';
-    else if (ind[0].includes('Ahorro')) sts = raw >= 20 ? 'OK' : raw >= 10 ? 'REVISAR' : 'CRITICO';
-    else if (ind[0].includes('Corriente')) sts = raw >= 1 ? 'OK' : raw >= 0.5 ? 'REVISAR' : 'CRITICO';
-    else if (ind[0].includes('Inver')) sts = raw >= 2 ? 'OK' : raw >= 1 ? 'REVISAR' : 'CRITICO';
-    else if (ind[0].includes('Riqueza')) sts = raw >= 3 ? 'OK' : raw >= 1 ? 'REVISAR' : 'CRITICO';
-    else if (ind[0].includes('Deuda')) sts = raw <= 40 ? 'OK' : raw <= 60 ? 'REVISAR' : 'CRITICO';
-    else if (ind[0].includes('Patrimonio')) sts = raw >= 60 ? 'OK' : raw >= 40 ? 'REVISAR' : 'CRITICO';
-    if (sts !== '—') semBadge(ix + colW - 20, iy + 2, sts);
+  // Header row for the indicators table
+  var indTableHead = [['Indicador', 'Valor Actual', 'Benchmark', 'Estado']];
+  var indTableBody = IND_IDS.map(function(row) {
+    var id = row[0], label = row[1], unit = row[2];
+    var actual = gV(id);
+    var bm     = gBM(id);
+    var sem    = getSem(id);
+    var semLabel = { ok:'✅  OK', warn:'⚠️  REVISAR', bad:'🚨  CRÍTICO', neutral:'—' }[sem] || '—';
+    var actualStr = actual !== '—' ? actual + ' ' + unit : '—';
+    var bmStr     = bm + ' ' + unit;
+    return [label, actualStr, bmStr, semLabel];
   });
-  y += (Math.ceil(indicators.length / 2)) * 9 + 6;
+
+  doc.autoTable({
+    head: indTableHead,
+    body: indTableBody,
+    startY: y,
+    headStyles: { fillColor: NAVY, textColor: 255, fontSize: 8, fontStyle: 'bold' },
+    bodyStyles: { fontSize: 8.5 },
+    margin: { left: M, right: M },
+    columnStyles: {
+      0: { cellWidth: 58 },
+      1: { halign: 'center', cellWidth: 32, fontStyle: 'bold' },
+      2: { halign: 'center', cellWidth: 38, textColor: [100, 116, 139] },
+      3: { halign: 'center', cellWidth: 38 },
+    },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    didParseCell: function(d) {
+      if (d.section === 'body' && d.column.index === 3) {
+        var val = d.cell.text.join('');
+        if (val.includes('OK'))      { d.cell.styles.textColor = [21, 128, 61];  d.cell.styles.fontStyle = 'bold'; }
+        if (val.includes('REVISAR')) { d.cell.styles.textColor = [146, 64, 14];  d.cell.styles.fontStyle = 'bold'; }
+        if (val.includes('CRÍTICO')) { d.cell.styles.textColor = [185, 28, 28];  d.cell.styles.fontStyle = 'bold'; }
+      }
+    }
+  });
+  y = doc.lastAutoTable.finalY + 6;
 
   // Tasa de ahorro bar visual
   if (y < PH - 30) {
