@@ -480,7 +480,18 @@
               <p class="hint" id="categoriesDetailHint" style="margin:0;">Agrega al menos un ítem en cada área seleccionada.</p>
               <button class="btn ghost" id="editWizardBtn" type="button" style="padding:8px 14px;font-size:13px;">← Editar respuestas</button>
             </div>
+            <!-- ── Importador de transacciones ── -->
+            <div id="txImportBanner" style="display:flex;align-items:center;gap:12px;padding:14px 18px;background:linear-gradient(135deg,#eff6ff,#dbeafe);border:2px dashed #3b82f6;border-radius:14px;margin-bottom:16px;cursor:pointer;" onclick="document.getElementById('txFileInput').click()">
+              <span style="font-size:1.6rem">📂</span>
+              <div style="flex:1">
+                <div style="font-weight:700;color:#1d4ed8;font-size:0.93rem">¿Tienes el Excel o CSV con tus transacciones de Cada Menudo?</div>
+                <div style="font-size:0.78rem;color:#3b82f6;margin-top:2px">Súbelo y se pre-llenarán tus gastos automáticamente — Formato: Categoría · Monto · Fecha</div>
+              </div>
+              <button type="button" onclick="event.stopPropagation();document.getElementById('txFileInput').click();" style="padding:8px 16px;background:#3956E8;color:white;border:none;border-radius:10px;font-weight:700;font-size:0.83rem;cursor:pointer;white-space:nowrap">📤 Subir archivo</button>
+              <input id="txFileInput" type="file" accept=".xlsx,.csv" style="display:none" onchange="txHandleFile(this)"/>
+            </div>
             <div class="categoriesInline" id="categoriesInline"></div>
+
           </div>
         </div>
       </section>
@@ -3355,7 +3366,352 @@ wireHeaderInputs();   // conectar inputs del header al state
 syncHeaderInputs();   // mostrar valores guardados (si volvió de localStorage)
 setStep(state.step);
 
+
+// ══════════════════════════════════════════════════════════
+//  IMPORTADOR DE TRANSACCIONES (Discovery)
+// ══════════════════════════════════════════════════════════
+
+  // ── Mapeo sector raw → clave interna ──────────────────
+  function normTx(s){ return (s||'').toString().toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+
+  function detectSector(raw){
+    const s = normTx(raw);
+    if(s.includes('ingreso') || s.includes('income'))  return 'ingresos';
+    if(s.includes('ahorro')  || s.includes('saving'))  return 'savings';
+    if(s.includes('gasto')   || s.includes('expense')) return 'expenses';
+    return 'expenses'; // fallback
+  }
+
+  // ── Categorías válidas por sección (para subcategory dropdowns) ─
+  const TX_CATS = {
+    expenses: {
+      'Alimentación':       ['Supermercado','Comidas fuera','Otro'],
+      'Casa':               ['Renta','Servicios','Mantenimiento','Otro'],
+      'Transportación':     ['Gasolina','Parking','Mantenimiento auto','Transporte público','Otro'],
+      'Telecomunicaciones': ['Celular','Internet','Cable','Otro'],
+      'Entretenimiento':    ['Streaming','Suscripciones','Salidas','Otro'],
+      'Gastos Médicos':     ['Copagos','Medicamentos','Procedimientos','Otro'],
+      'Cuidado Personal':   ['Personal','Ropa','Otro'],
+      'Dependientes':       ['Educación','Cuidado de niños','Otro'],
+      'Deuda':              ['Hipoteca','Préstamo de auto','Tarjeta de crédito','Préstamo personal','Otro'],
+      'Seguros':            ['Salud','Auto','Vida - Term','Vida - Whole','Hogar','Otro'],
+      'Impuestos':          ['Federales','Estatales','Propiedad','Otro'],
+      'Otro':               ['Otro'],
+    },
+    savings: {
+      'Reserva de emergencia': ['General','Otro'],
+      'Retiro':                ['401(k)','Roth IRA','IRA','SEP IRA','Otro'],
+      'Inversiones':           ['Brokerage','ETF','Cripto','Otro'],
+      'Otro':                  ['Otro'],
+    },
+    ingresos: {
+      'Salario':        ['Principal','Secundario','Otro'],
+      'Negocio propio': ['Otro'],
+      'Bono':           ['Otro'],
+      'Comisión':       ['Otro'],
+      'Dividendos':     ['Otro'],
+      'Renta inmueble': ['Otro'],
+      'Otro':           ['Otro'],
+    },
+    omitir: {},
+  };
+
+  const TX_SECTOR_LABELS = {
+    ingresos: 'Ingresos',
+    expenses: 'Gastos Mensuales',
+    savings:  'Ahorro',
+    omitir:   '⏭ Omitir',
+  };
+
+  function esc2(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  let txRows = [];
+
+  // ── Build modal once and attach to body ────────────────
+  function getModal(){
+    let m = document.getElementById('txModal');
+    if(m) return m;
+    m = document.createElement('div');
+    m.id = 'txModal';
+    m.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:99999;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;';
+    m.innerHTML = `
+      <div style="background:white;border-radius:20px;padding:28px;width:100%;max-width:920px;box-shadow:0 25px 60px rgba(0,0,0,0.3);margin:20px auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div>
+            <h2 style="font-size:1.3rem;font-weight:800;margin:0;font-family:inherit">📊 Vista Previa — Transacciones</h2>
+            <p style="color:#64748b;font-size:0.82rem;margin:4px 0 0">Revisa el mapeo y ajusta si es necesario antes de importar</p>
+          </div>
+          <button onclick="document.getElementById('txModal').style.display='none'" style="background:#f1f5f9;border:none;border-radius:50%;width:34px;height:34px;cursor:pointer;font-size:1rem;flex-shrink:0">✕</button>
+        </div>
+        <div id="txSummaryPills" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;"></div>
+        <div style="overflow-x:auto;max-height:440px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:12px;">
+          <table style="width:100%;border-collapse:separate;border-spacing:0;">
+            <thead style="position:sticky;top:0;background:#f8fafc;z-index:1;">
+              <tr>
+                <th style="padding:10px 12px;text-align:left;font-size:0.73rem;color:#64748b;text-transform:uppercase;letter-spacing:0.04em;border-bottom:2px solid #e2e8f0;white-space:nowrap">Sector</th>
+                <th style="padding:10px 12px;text-align:left;font-size:0.73rem;color:#64748b;text-transform:uppercase;border-bottom:2px solid #e2e8f0">Categoría</th>
+                <th style="padding:10px 12px;text-align:left;font-size:0.73rem;color:#64748b;text-transform:uppercase;border-bottom:2px solid #e2e8f0">Subcategoría</th>
+                <th style="padding:10px 12px;text-align:right;font-size:0.73rem;color:#64748b;text-transform:uppercase;border-bottom:2px solid #e2e8f0">Mensual</th>
+                <th style="padding:10px 12px;text-align:right;font-size:0.73rem;color:#64748b;text-transform:uppercase;border-bottom:2px solid #e2e8f0">Anual (×12)</th>
+                <th style="padding:10px 12px;text-align:center;font-size:0.73rem;color:#64748b;text-transform:uppercase;border-bottom:2px solid #e2e8f0">✓</th>
+              </tr>
+            </thead>
+            <tbody id="txPreviewBody"></tbody>
+          </table>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid #e2e8f0">
+          <button onclick="document.getElementById('txModal').style.display='none'" style="padding:10px 20px;background:#f1f5f9;color:#475569;border:none;border-radius:10px;font-weight:600;cursor:pointer">Cancelar</button>
+          <button id="txImportBtn" onclick="txDoImport()" style="padding:10px 22px;background:#3956E8;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer">📥 Importar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(m);
+    return m;
+  }
+
+  window.txHandleFile = function(input){
+    const file = input.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = async e => {
+      let rawRows = [];
+      try {
+        if(file.name.toLowerCase().endsWith('.csv')){
+          const text = new TextDecoder().decode(e.target.result);
+          const lines = text.split('\n').filter(l=>l.trim());
+          const headers = lines[0].split(',').map(h=>h.trim().replace(/"/g,''));
+          rawRows = lines.slice(1).map(line=>{
+            const cols = line.split(',').map(c=>c.trim().replace(/"/g,''));
+            return Object.fromEntries(headers.map((h,i)=>[h,cols[i]||'']));
+          });
+        } else {
+          const wb = XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          rawRows = XLSX.utils.sheet_to_json(ws,{defval:''});
+        }
+      } catch(err){ alert('Error leyendo archivo: '+err.message); return; }
+
+      if(!rawRows.length){ alert('El archivo está vacío.'); return; }
+
+      // ── Detect columns flexibly ──────────────────────────
+      const keys = Object.keys(rawRows[0]);
+      const sectorKey = keys.find(k=>/sector/i.test(k))   || null;
+      const catKey    = keys.find(k=>/^cat/i.test(k))     || keys[sectorKey ? 1 : 0];
+      const subKey    = keys.find(k=>/sub/i.test(k))      || null;
+      const montoKey  = keys.find(k=>/mont|amount|valor|total/i.test(k)) || keys[subKey ? 3 : 1];
+      const fechaKey  = keys.find(k=>/fecha|date/i.test(k)) || null;
+
+      // ── Detect months and extract only the LAST closed month ──
+      const MONTH_NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      function parseMonthKey(f){
+        const s = (f||'').toString().trim();
+        let m;
+        m = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+        if(m) return `${m[3]}-${m[2].padStart(2,'0')}`;
+        m = s.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+        if(m) return `${m[1]}-${m[2].padStart(2,'0')}`;
+        return null;
+      }
+
+      const rowsByMonth = {};
+      rawRows.forEach(r=>{
+        const mk = fechaKey ? parseMonthKey(r[fechaKey]) : null;
+        const key = mk || 'sin-fecha';
+        if(!rowsByMonth[key]) rowsByMonth[key] = [];
+        rowsByMonth[key].push(r);
+      });
+
+      const mesesDisponibles = Object.keys(rowsByMonth).filter(k=>k!=='sin-fecha').sort();
+      const ultimoMes = mesesDisponibles.length ? mesesDisponibles[mesesDisponibles.length-1] : null;
+      const filasFiltradas = ultimoMes ? rowsByMonth[ultimoMes] : rawRows;
+      const multiMes = mesesDisponibles.length > 1;
+
+      // Format label for last month
+      let mesLabel = '';
+      if(ultimoMes){
+        const [y,mo] = ultimoMes.split('-');
+        mesLabel = `${MONTH_NAMES[parseInt(mo)-1]} ${y}`;
+      }
+
+      // ── Aggregate only from the last month ───────────────
+      const agg = {};
+      filasFiltradas.forEach(r=>{
+        const sector  = sectorKey ? (r[sectorKey]||'').toString().trim() : 'Gasto';
+        const cat     = (r[catKey]||'').toString().trim();
+        const sub     = subKey ? (r[subKey]||'').toString().trim() : '';
+        const monto   = parseFloat((r[montoKey]||0).toString().replace(',','.'));
+        if(!cat || isNaN(monto) || monto <= 0) return;
+        const key = `${sector}|||${cat}|||${sub}`;
+        if(!agg[key]) agg[key] = { sector, cat, sub, total:0 };
+        agg[key].total += monto;
+      });
+
+      if(!Object.keys(agg).length){ alert('No se encontraron filas con datos válidos.'); return; }
+
+      txRows = Object.entries(agg).map(([,v])=>{
+        const sectorKey2 = detectSector(v.sector);
+        const catList = Object.keys(TX_CATS[sectorKey2]||{});
+        const matchedCat = catList.find(c => normTx(c)===normTx(v.cat)) || (catList.length ? v.cat : 'Otro');
+        const subList = (TX_CATS[sectorKey2]||{})[matchedCat]||[];
+        const matchedSub = subList.find(s => normTx(s)===normTx(v.sub)) || (v.sub || (subList[0]||'Otro'));
+        const mensual = Math.round(v.total*100)/100;
+        const anual   = Math.round(mensual*12*100)/100;
+        return {
+          sectorRaw: v.sector,
+          catRaw:    v.cat,
+          subRaw:    v.sub,
+          mensual,
+          total:     anual,   // stored as annual for income; monthly for expenses/savings
+          sector:    sectorKey2,
+          cat:       matchedCat,
+          sub:       matchedSub,
+          include:   true,
+        };
+      }).sort((a,b)=>{
+        const order = {ingresos:0,savings:1,expenses:2,omitir:3};
+        return (order[a.sector]??2)-(order[b.sector]??2) || b.total-a.total;
+      });
+
+      txRenderPreview(mesLabel, multiMes, mesesDisponibles.length);
+      getModal().style.display = 'flex';
+    };
+    reader.readAsArrayBuffer(file);
+    input.value = '';
+  };
+
+  function txRenderPreview(mesLabel, multiMes, totalMeses){
+    const modal = getModal();
+    const inc = txRows.filter(r=>r.include&&r.sector!=='omitir');
+    const omit = txRows.filter(r=>!r.include||r.sector==='omitir');
+    const byS = { ingresos:0, savings:0, expenses:0 };
+    inc.forEach(r=>{ if(byS[r.sector]!==undefined) byS[r.sector]++; });
+
+    const pills = modal.querySelector('#txSummaryPills');
+    const COLORS = { ingresos:'#059669', savings:'#3b82f6', expenses:'#ef4444' };
+    const LABELS = { ingresos:'Ingresos', savings:'Ahorro', expenses:'Gastos' };
+    const pillsHtml = Object.entries(byS).filter(([,n])=>n>0).map(([s,n])=>
+      `<span style="background:${COLORS[s]}15;color:${COLORS[s]};padding:4px 12px;border-radius:999px;font-weight:700;font-size:0.8rem">✅ ${n} ${LABELS[s]}</span>`
+    ).join('') + (omit.length ? `<span style="background:#f1f5f9;color:#64748b;padding:4px 12px;border-radius:999px;font-weight:700;font-size:0.8rem">⏭ ${omit.length} omitidas</span>` : '');
+
+    // Month info banner — always shown, persisted across re-renders
+    if(mesLabel !== undefined) txRows._mesLabel = mesLabel;
+    if(multiMes !== undefined) txRows._multiMes = multiMes;
+    if(typeof totalMeses !== 'undefined') txRows._totalMeses = totalMeses;
+    const stored   = txRows._mesLabel || '';
+    const wasMulti = txRows._multiMes;
+    const nMeses   = txRows._totalMeses || '';
+    const monthBanner = stored ? `
+      <div style="background:${wasMulti?'#fffbeb':'#eff6ff'};border:1.5px solid ${wasMulti?'#f59e0b':'#3b82f6'};border-radius:10px;padding:11px 16px;margin-bottom:12px;font-size:0.83rem;line-height:1.6;color:#374151;display:flex;align-items:flex-start;gap:10px">
+        <span style="font-size:1.3rem;flex-shrink:0">📅</span>
+        <div>
+          ${wasMulti
+            ? `Tu archivo tenía <strong>${nMeses} meses</strong>. Usamos solo el último mes cerrado: <strong>${stored}</strong>.`
+            : `Mes importado: <strong>${stored}</strong>.`
+          }
+          Los montos se <strong>anualizaron (×12)</strong>. Puedes ajustar el monto mensual de cualquier ítem directamente en la tabla.
+        </div>
+      </div>` : '';
+    pills.innerHTML = monthBanner + pillsHtml;
+
+    const SECTOR_COLORS = { ingresos:'#059669', savings:'#3b82f6', expenses:'#ef4444', omitir:'#94a3b8' };
+
+    const tbody = modal.querySelector('#txPreviewBody');
+    tbody.innerHTML = txRows.map((r,idx)=>{
+      const omitRow = !r.include;
+      const sc = SECTOR_COLORS[r.sector]||'#64748b';
+      const sectorLabel = TX_SECTOR_LABELS[r.sector]||r.sectorRaw||'—';
+      return `<tr style="opacity:${omitRow?0.35:1};background:${idx%2===0?'white':'#fafafa'}">
+        <td style="padding:8px 12px">
+          <span style="display:inline-block;padding:3px 10px;border:2px solid ${sc};border-radius:20px;font-size:0.78rem;font-weight:700;color:${sc};white-space:nowrap">${esc2(sectorLabel)}</span>
+        </td>
+        <td style="padding:8px 12px;font-size:0.875rem;color:#0f172a;font-weight:600">${esc2(r.catRaw||r.cat)}</td>
+        <td style="padding:8px 12px;font-size:0.875rem;color:#475569">${esc2(r.subRaw||r.sub||'—')}</td>
+        <td style="padding:8px 12px;text-align:right">
+          <input type="number" value="${r.mensual}" min="0" step="0.01"
+            onchange="txUpdateRow(${idx},'mensual',parseFloat(this.value)||0)"
+            style="width:90px;padding:4px 6px;border:2px solid #e2e8f0;border-radius:8px;font-size:0.85rem;text-align:right;font-family:inherit;color:#0f172a"
+            onfocus="this.style.borderColor='#3956E8'" onblur="this.style.borderColor='#e2e8f0'"/>
+        </td>
+        <td style="padding:8px 12px;text-align:right;font-weight:800;color:#059669;white-space:nowrap;font-size:0.925rem">
+          $${r.total.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
+        </td>
+        <td style="padding:8px 12px;text-align:center">
+          <input type="checkbox" ${r.include?'checked':''} onchange="txUpdateRow(${idx},'include',this.checked)"
+            style="width:16px;height:16px;cursor:pointer;accent-color:#3956E8"/>
+        </td>
+      </tr>`;
+    }).join('');
+
+    const btn = modal.querySelector('#txImportBtn');
+    if(btn) btn.textContent = `📥 Importar ${inc.length} ítems`;
+  }
+
+  window.txUpdateRow = function(idx, field, val){
+    if(field==='include') txRows[idx].include = val;
+    else txRows[idx][field] = val;
+    if(field==='mensual'){
+      txRows[idx].mensual = val;
+      txRows[idx].total   = Math.round(val * 12 * 100) / 100;
+      // Update just the anual cell without full re-render (avoid losing focus)
+      const tbody = document.querySelector('#txPreviewBody');
+      if(tbody){
+        const row = tbody.rows[idx];
+        if(row) row.cells[4].textContent = '$' + txRows[idx].total.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+      }
+      return; // skip full re-render
+    }
+    txRenderPreview();
+  };
+
+  window.txDoImport = function(){
+    const toImport = txRows.filter(r=>r.include&&r.sector!=='omitir');
+    if(!toImport.length){ alert('No hay ítems seleccionados.'); return; }
+
+    toImport.forEach(r=>{
+      const id = 'tx_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+      if(r.sector==='ingresos'){
+        if(!state.financials.categoriesSelected.includes('income'))
+          state.financials.categoriesSelected.push('income');
+        state.financials.items.push({
+          id, category:'income',
+          type:  r.cat||'Otro',
+          alias: r.subRaw||r.sub||'',
+          name:  r.cat||'Otro',
+          value: r.total,
+          owner: 'household'
+        });
+      } else {
+        const cat = r.sector==='savings' ? 'savings' : 'expenses';
+        if(!state.financials.categoriesSelected.includes(cat))
+          state.financials.categoriesSelected.push(cat);
+        state.financials.items.push({
+          id, category: cat,
+          expenseCategory: r.cat||'Otro',
+          subcategory:     r.sub||'Otro',
+          alias:           r.subRaw||'',
+          name:            `${r.cat||'Otro'} – ${r.sub||'Otro'}`,
+          value:           r.total,
+          owner:           'household'
+        });
+      }
+    });
+
+    debouncedSave();
+    renderCategoriesDetail();
+    getModal().style.display = 'none';
+
+    const banner = document.getElementById('txImportBanner');
+    if(banner){
+      const divs = banner.querySelectorAll('div > div');
+      if(divs[0]) divs[0].textContent = `✅ ${toImport.length} ítems importados`;
+      if(divs[1]) divs[1].textContent = 'Puedes editar cualquier ítem en las tarjetas de abajo';
+      banner.style.background  = 'linear-gradient(135deg,#f0fdf4,#dcfce7)';
+      banner.style.borderColor = '#10b981';
+      setTimeout(()=>{ banner.style.background=''; banner.style.borderColor=''; }, 5000);
+    }
+  };
+
+
 })();
+
 </script>
 </body>
 </html>
