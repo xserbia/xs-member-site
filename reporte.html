@@ -850,7 +850,7 @@ function _gPDF(){
 
   // ═══ PÁG 2: RESUMEN EJECUTIVO ═══
   doc.addPage();hdr('Resumen Ejecutivo','Métricas clave · Semáforo financiero',2);let y=32;
-  const kpis2=[['Patrimonio Neto',fp(T.patNet),T.patNet>=0?C.TEAL:C.RED],['Ingresos/mes',fp(T.ingMes),C.BLUE],['Activos',fp(T.actTot),C.BLUE],['Deudas',fp(T.pasTot),C.RED],['Flujo libre/mes',fp(T.flujoMes),T.flujoMes>=0?C.TEAL:C.RED],['Retiro total',fp(T.ret),C.BLUE]];
+  const kpis2=[['Patrimonio Neto',fp(T.patNet),T.patNet>=0?C.TEAL:C.RED],['Ingresos/mes',fp(T.ingMes),C.BLUE],['Gastos/mes',fp(T.gstMes),C.RED],['Flujo Libre/mes',fp(T.flujoMes),T.flujoMes>=0?C.TEAL:C.RED],['Activos Totales',fp(T.actTot),[165,180,252]],['Pasivos Totales',fp(T.pasTot),[252,165,165]]];
   const kW2=(PW-M*2-4)/3;
   kpis2.forEach((k,i)=>{const col=i%3,row=Math.floor(i/3),kx=M+col*(kW2+2),ky=y+row*18;db(kx,ky,kW2,15,[210,218,240],0.3);dr(kx,ky,kW2,5.5,[232,237,252]);sf('bold',6.5,C.GRAY);doc.text(k[0].toUpperCase(),kx+kW2/2,ky+4,{align:'center'});sf('bold',10,k[2]);doc.text(k[1],kx+kW2/2,ky+12.5,{align:'center'});});y+=42;
   // Patrimonio bar visual
@@ -869,10 +869,18 @@ function _gPDF(){
   const ingMes=T.ingMes,gstMes=T.gstMes,fluMes=T.flujoMes;
   const fcB=[['INGRESOS/MES',fp(ingMes),C.TEAL],['GASTOS/MES',fp(gstMes),C.RED],['FLUJO LIBRE',fp(fluMes),fluMes>=0?C.TEAL:C.RED]];
   fcB.forEach((b,i)=>{const bx=M+i*(fW+2);dr(bx,y,fW,22,i===0?[220,252,231]:i===1?[254,226,226]:fluMes>=0?[220,252,231]:[254,226,226],true);db(bx,y,fW,22,b[2],0.5);sf('bold',6.5,b[2]);doc.text(b[0],bx+fW/2,y+7,{align:'center'});sf('bold',12,b[2]);doc.text(b[1],bx+fW/2,y+18,{align:'center'});});y+=28;
-  const ings=d.ingresos||[];
-  if(ings.length){y=secB('DETALLE DE INGRESOS',y);const iT=ingMes;const iH=[['Fuente','Categoría','Mensual','%']];const iB=ings.map(i=>{const m=pn(i.monto);return[i.nombre||'—',i.categoria||'—',fp(m),iT>0?(m/iT*100).toFixed(1)+'%':'—'];});iB.push(['','TOTAL',fp(iT),'100%']);doc.autoTable({head:iH,body:iB,startY:y,headStyles:{fillColor:C.NAVY,textColor:255,fontSize:8,fontStyle:'bold'},bodyStyles:{fontSize:8},margin:{left:M,right:M},columnStyles:{0:{cellWidth:65},1:{cellWidth:35},2:{halign:'right',cellWidth:32},3:{halign:'right',cellWidth:20}},alternateRowStyles:{fillColor:[248,250,252]},didParseCell:dt=>{if(dt.row.index===iB.length-1){dt.cell.styles.fontStyle='bold';dt.cell.styles.fillColor=[220,252,231];}}}); y=doc.lastAutoTable.finalY+8;}
-  const catN={ahorro:'Ahorro / Inversión',deuda:'Pago de Deudas',diarios:'Gastos del Hogar',seguros:'Seguros',impuestos:'Impuestos'};
-  Object.keys(d.gastos||{}).forEach(cat=>{const items=(d.gastos||{})[cat]||[];if(!items.length)return;if(y>PH-40){doc.addPage();hdr('Flujo de Caja (cont.)','',3);y=32;}y=secB(catN[cat]||cat,y);const b=items.map(i=>{const m=pn(i.monto);return[i.nombre||'—',i.categoria||'',fp(m),fp(m*12)];});const tot=items.reduce((s,i)=>s+pn(i.monto),0);b.push(['','SUBTOTAL',fp(tot),fp(tot*12)]);doc.autoTable({head:[['Descripción','Detalle','Mensual','Anual']],body:b,startY:y,headStyles:{fillColor:[30,30,35],textColor:255,fontSize:8},bodyStyles:{fontSize:8},margin:{left:M,right:M},columnStyles:{2:{halign:'right'},3:{halign:'right'}},alternateRowStyles:{fillColor:[248,250,252]},didParseCell:dt=>{if(dt.row.index===b.length-1){dt.cell.styles.fontStyle='bold';dt.cell.styles.fillColor=[254,242,242];}}}); y=doc.lastAutoTable.finalY+6;});
+  // Ingresos — por categoría
+  const ingCatMap={};(d.ingresos||[]).forEach(i=>{const c=i.categoria||'Otro';ingCatMap[c]=(ingCatMap[c]||0)+pn(i.monto);});
+  y=secB('DETALLE DE INGRESOS',y);
+  const ingRows=Object.entries(ingCatMap).map(([c,v])=>[c,fp(v),fp(v*12),ingMes>0?(v/ingMes*100).toFixed(1)+'%':'—']);
+  ingRows.push(['TOTAL',fp(ingMes),fp(ingMes*12),'100%']);
+  doc.autoTable({head:[['Categoría','Mensual','Anual','% Ingreso']],body:ingRows,startY:y,headStyles:{fillColor:C.NAVY,textColor:255,fontSize:8,fontStyle:'bold'},bodyStyles:{fontSize:8.5},margin:{left:M,right:M},columnStyles:{1:{halign:'right'},2:{halign:'right'},3:{halign:'right',cellWidth:28}},alternateRowStyles:{fillColor:[248,250,252]},didParseCell:dt=>{if(dt.row.index===ingRows.length-1){dt.cell.styles.fontStyle='bold';dt.cell.styles.fillColor=[220,252,231];}}}); y=doc.lastAutoTable.finalY+10;
+  // Gastos — sólo categorías resumen (igual que HTML)
+  const cfCats=[['Ahorro / Inversión',T.ahoMes,[16,185,129]],['Pago de Deudas',T.deuMes,[239,68,68]],['Gastos del Hogar',T.diarMes,[57,86,232]],['Seguros',T.segMes,[167,139,250]],['Impuestos',T.impMes,[245,158,11]]].filter(x=>x[1]>0);
+  y=secB('COMPOSICIÓN DE GASTOS',y);
+  const gstRows=cfCats.map(([l,v])=>[l,fp(v),fp(v*12),gstMes>0?(v/gstMes*100).toFixed(1)+'%':'—']);
+  gstRows.push(['TOTAL GASTOS',fp(gstMes),fp(gstMes*12),'100%']);
+  doc.autoTable({head:[['Categoría','Mensual','Anual','% Gasto']],body:gstRows,startY:y,headStyles:{fillColor:[30,30,35],textColor:255,fontSize:8,fontStyle:'bold'},bodyStyles:{fontSize:8.5},margin:{left:M,right:M},columnStyles:{1:{halign:'right'},2:{halign:'right'},3:{halign:'right',cellWidth:28}},alternateRowStyles:{fillColor:[248,250,252]},didParseCell:dt=>{if(dt.section==='body'){const col=cfCats[dt.row.index]?.[2];if(col&&dt.column.index===0){dt.cell.styles.textColor=col;dt.cell.styles.fontStyle='bold';}}if(dt.row.index===gstRows.length-1){dt.cell.styles.fontStyle='bold';dt.cell.styles.fillColor=[254,242,242];}}}); y=doc.lastAutoTable.finalY+6;
 
   // ═══ PÁG 4: HOJA DE BALANCE ═══
   doc.addPage();hdr('Hoja de Balance','Activos · Pasivos · Patrimonio neto',4);y=32;
@@ -894,8 +902,11 @@ function _gPDF(){
   doc.addPage();hdr('Financial Ratios','Indicadores clave · Semáforo financiero',5);y=32;
   const IND=[['meses_reserva','Meses de Reserva','m'],['dti','DTI Deuda/Ingreso','%'],['tasa_ahorro','Tasa de Ahorro','%'],['razon_corriente','Razón Corriente','x'],['inversion_ingreso','Inversión/Ingreso','x'],['riqueza_neta','Nivel Riqueza Neta','x'],['deuda_activos','Deuda/Activos','%'],['patrimonio_activos','Patrimonio/Activos','%']];
   const SL={ok:'✅  OK',warn:'⚠️  REVISAR',bad:'🚨  CRÍTICO',neutral:'—'};
-  const indB=IND.map(([id,lbl,unit])=>{const v=_rv[id];const bm=_rb[id]||RCFG[id].bm;const sem=getSem(id);return [lbl,isFinite(v)?(RCFG[id].unit==='%'?v.toFixed(1):v.toFixed(2))+' '+unit:'—',bm+' '+unit,SL[sem]||'—'];});
-  doc.autoTable({head:[['Indicador','Valor Actual','Benchmark','Estado']],body:indB,startY:y,headStyles:{fillColor:C.NAVY,textColor:255,fontSize:8,fontStyle:'bold'},bodyStyles:{fontSize:8.5},margin:{left:M,right:M},columnStyles:{0:{cellWidth:58},1:{halign:'center',cellWidth:32,fontStyle:'bold'},2:{halign:'center',cellWidth:38,textColor:C.GRAY},3:{halign:'center',cellWidth:38}},alternateRowStyles:{fillColor:[248,250,252]},didParseCell:dt=>{if(dt.section==='body'&&dt.column.index===3){const v=dt.cell.text.join('');if(v.includes('OK')){dt.cell.styles.textColor=[21,128,61];dt.cell.styles.fontStyle='bold';}if(v.includes('REVISAR')){dt.cell.styles.textColor=[146,64,14];dt.cell.styles.fontStyle='bold';}if(v.includes('CRÍTICO')){dt.cell.styles.textColor=[185,28,28];dt.cell.styles.fontStyle='bold';}}}}); y=doc.lastAutoTable.finalY+8;
+  const indB=IND.map(([id,lbl,unit])=>{const v=_rv[id];const bm=_rb[id]||RCFG[id].bm;const sem=getSem(id);return [lbl,isFinite(v)?(RCFG[id].unit==='%'?v.toFixed(1):v.toFixed(2))+' '+unit:'—',bm+' '+unit,SL[sem]||'—',sem];});
+  const semBg={ok:[240,253,244],warn:[255,251,235],bad:[255,245,245],neutral:[248,250,252]};
+  const semTxt={ok:[21,128,61],warn:[146,64,14],bad:[185,28,28],neutral:[100,116,139]};
+  const semValCol={ok:[16,185,129],warn:[245,158,11],bad:[239,68,68],neutral:[100,116,139]};
+  doc.autoTable({head:[['Indicador','Valor Actual','Benchmark','Estado']],body:indB.map(r=>r.slice(0,4)),startY:y,headStyles:{fillColor:C.NAVY,textColor:255,fontSize:8,fontStyle:'bold'},bodyStyles:{fontSize:8.5},margin:{left:M,right:M},columnStyles:{0:{cellWidth:60},1:{halign:'center',cellWidth:35,fontStyle:'bold'},2:{halign:'center',cellWidth:38,textColor:C.GRAY},3:{halign:'center',cellWidth:35}},didParseCell:dt=>{if(dt.section==='body'){const sem=indB[dt.row.index]?.[4]||'neutral';dt.cell.styles.fillColor=semBg[sem]||[248,250,252];if(dt.column.index===1){dt.cell.styles.textColor=semValCol[sem];dt.cell.styles.fontStyle='bold';}if(dt.column.index===3){dt.cell.styles.textColor=semTxt[sem];dt.cell.styles.fontStyle='bold';}}}});  y=doc.lastAutoTable.finalY+8;
   // Tasa ahorro bar
   if(y<PH-30){const tp=isFinite(_rv.tasa_ahorro)?_rv.tasa_ahorro:0;y=secB('TASA DE AHORRO',y);dr(M,y,PW-M*2,10,C.LGRAY,true);const bW2=Math.min(tp/100,1)*(PW-M*2);dr(M,y,bW2,10,tp>=20?C.TEAL:tp>=10?C.AMBER:C.RED,true);sf('bold',8,C.WHITE);doc.text(tp.toFixed(1)+'%',M+bW2/2,y+7,{align:'center'});y+=16;}
 
@@ -905,8 +916,8 @@ function _gPDF(){
   const docs=(prot.documentos||[]);
   if(docs.length){
     y=secB('DOCUMENTOS LEGALES',y);
-    const docB=docs.map(doc=>[doc.tipo||'—',doc.tiene==='si'?'✓ Completo':doc.tiene==='parcial'?'~ Parcial':'✗ Pendiente',doc.fecha||'—',doc.contacto||'—',doc.notas||'—']);
-    doc.autoTable({head:[['Documento','Estado','Fecha','Contacto','Notas']],body:docB,startY:y,headStyles:{fillColor:[30,80,60],textColor:255,fontSize:8,fontStyle:'bold'},bodyStyles:{fontSize:7.5},margin:{left:M,right:M},columnStyles:{0:{cellWidth:42},1:{cellWidth:22,halign:'center'},2:{cellWidth:22},3:{cellWidth:35},4:{cellWidth:35}},alternateRowStyles:{fillColor:[240,253,244]},didParseCell:dt=>{if(dt.section==='body'&&dt.column.index===1){const v=dt.cell.text.join('');if(v.includes('✓')){dt.cell.styles.textColor=[21,128,61];dt.cell.styles.fontStyle='bold';}if(v.includes('✗')){dt.cell.styles.textColor=[185,28,28];dt.cell.styles.fontStyle='bold';}}}}); y=doc.lastAutoTable.finalY+8;
+    const docB=docs.map(doc=>[doc.tipo||'—',doc.tiene==='si'?'✓ Completado':doc.tiene==='parcial'?'~ Parcial':'✗ Pendiente',doc.fecha||'—',doc.contacto||'—',doc.notas||'—',doc.tiene||'no']);
+    doc.autoTable({head:[['Documento','Estado','Fecha','Contacto','Notas']],body:docB.map(r=>r.slice(0,5)),startY:y,headStyles:{fillColor:[30,80,60],textColor:255,fontSize:8,fontStyle:'bold'},bodyStyles:{fontSize:7.5},margin:{left:M,right:M},columnStyles:{0:{cellWidth:42},1:{cellWidth:24,halign:'center'},2:{cellWidth:22},3:{cellWidth:34},4:{cellWidth:34}},didParseCell:dt=>{if(dt.section==='body'){const st=docB[dt.row.index]?.[5]||'no';const bg=st==='si'?[240,253,244]:st==='parcial'?[255,251,235]:[255,245,245];dt.cell.styles.fillColor=bg;if(dt.column.index===1){dt.cell.styles.fontStyle='bold';dt.cell.styles.textColor=st==='si'?[21,128,61]:st==='parcial'?[146,64,14]:[185,28,28];}}}}); y=doc.lastAutoTable.finalY+8;
   }
   const polizas=(prot.polizas||[]);
   if(polizas.length){
