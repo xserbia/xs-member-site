@@ -135,167 +135,6 @@
         }
 
         /* Demo Controls */
-        .demo-controls {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            background: white;
-            border: 2px solid #5B4CE2;
-            border-radius: 1rem;
-            padding: 1rem;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-            z-index: 100;
-            max-width: 280px;
-            max-height: 70vh;
-            overflow-y: auto;
-        }
-
-        .demo-controls.hidden {
-            display: none;
-        }
-
-        .demo-controls.minimized {
-            max-height: 60px;
-            overflow: hidden;
-        }
-
-        .demo-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 0.75rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid #5B4CE2;
-        }
-
-        .demo-title {
-            font-size: 0.75rem;
-            font-weight: bold;
-            color: #5B4CE2;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .demo-header-actions {
-            display: flex;
-            gap: 0.25rem;
-        }
-
-        .btn-toggle-demo {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 0.25rem;
-            color: #78716c;
-            display: flex;
-            align-items: center;
-        }
-
-        .btn-toggle-demo:hover {
-            color: #5B4CE2;
-        }
-
-        .demo-section {
-            margin-bottom: 0.75rem;
-        }
-
-        .demo-label {
-            font-size: 0.65rem;
-            font-weight: 600;
-            color: #44403c;
-            margin-bottom: 0.5rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .demo-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .btn-demo-step {
-            padding: 0.4rem 0.6rem;
-            background: #f5f5f4;
-            border: 1px solid #e7e5e4;
-            border-radius: 0.5rem;
-            font-size: 0.7rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: #44403c;
-        }
-
-        .btn-demo-step:hover {
-            background: #5B4CE2;
-            color: white;
-            border-color: #5B4CE2;
-        }
-
-        .btn-demo-step.active {
-            background: #5B4CE2;
-            color: white;
-            border-color: #5B4CE2;
-        }
-
-        .btn-demo-action {
-            width: 100%;
-            padding: 0.6rem;
-            background: linear-gradient(to right, #5B4CE2, #4A3BB8);
-            color: white;
-            border: none;
-            border-radius: 0.5rem;
-            font-size: 0.7rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .btn-demo-action:hover {
-            background: linear-gradient(to right, #4A3BB8, #3D2F9E);
-            transform: translateY(-1px);
-        }
-
-        .demo-fab {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            width: 56px;
-            height: 56px;
-            background: linear-gradient(to right, #5B4CE2, #4A3BB8);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 10px 15px -3px rgba(91, 76, 226, 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            z-index: 99;
-        }
-
-        .demo-fab:hover {
-            transform: scale(1.1);
-            box-shadow: 0 20px 25px -5px rgba(91, 76, 226, 0.4);
-        }
-
-        .demo-fab.hidden {
-            display: none;
-        }
-
-        .demo-info {
-            font-size: 0.65rem;
-            color: #78716c;
-            margin-top: 0.5rem;
-            padding: 0.5rem;
-            background: #fafaf9;
-            border-radius: 0.5rem;
-            text-align: center;
-        }
-
         /* Discovery Status Section */
         .discovery-status-section {
             background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
@@ -798,6 +637,132 @@
         }
 
         /* keep .videocall-info-alert for other potential uses */
+
+        /* Presentation pending state */
+        .presentation-pending {
+            background: white;
+            border: 1.5px solid #e7e5e4;
+            border-radius: 1rem;
+            padding: 2rem;
+            display: flex;
+            gap: 1.5rem;
+            align-items: flex-start;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+
+        .pp-icon-wrap {
+            width: 56px;
+            height: 56px;
+            background: #f0f0ff;
+            border: 2px solid #e0e0ff;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .pp-content { flex: 1; }
+
+        .pp-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #5B4CE2;
+            margin-bottom: 0.4rem;
+        }
+
+        .pp-title {
+            font-family: 'Fraunces', serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1c1917;
+            margin-bottom: 0.6rem;
+        }
+
+        .pp-text {
+            font-size: 0.85rem;
+            color: #78716c;
+            line-height: 1.6;
+            margin-bottom: 1.25rem;
+        }
+
+        .pp-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .pp-step {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.8rem;
+            color: #a8a29e;
+        }
+
+        .pp-step.done { color: #16a34a; }
+        .pp-step.active { color: #1c1917; font-weight: 600; }
+
+        .pp-step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #e7e5e4;
+            flex-shrink: 0;
+        }
+
+        .pp-step-dot.done { background: #22c55e; }
+        .pp-step-dot.active {
+            background: #5B4CE2;
+            box-shadow: 0 0 0 3px rgba(91,76,226,0.2);
+            animation: pulse-dot 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { box-shadow: 0 0 0 3px rgba(91,76,226,0.2); }
+            50% { box-shadow: 0 0 0 6px rgba(91,76,226,0.1); }
+        }
+
+        /* Locked video overlay */
+        .video-locked-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #1c1917 0%, #292524 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .video-locked-icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(255,255,255,0.08);
+            border: 2px solid rgba(255,255,255,0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-locked-text {
+            text-align: center;
+        }
+
+        .video-locked-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 0.25rem;
+        }
+
+        .video-locked-sub {
+            font-size: 0.72rem;
+            color: rgba(255,255,255,0.35);
+        }
 
         /* Next Meeting Banner */
         .next-meeting-banner {
@@ -1741,6 +1706,16 @@
 </head>
 <body>
     <div class="container">
+        <!-- Dev bar (remove in production) -->
+        <div style="background:#1c1917;border-radius:0.75rem;padding:0.6rem 1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+            <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-weight:600;text-transform:uppercase;letter-spacing:0.08em;">🛠 Dev Preview</span>
+            <button id="devToggleBtn" onclick="toggleVideoReady()"
+                style="padding:0.35rem 0.875rem;background:rgba(255,255,255,0.1);color:white;border:1px solid rgba(255,255,255,0.2);border-radius:0.5rem;font-size:0.72rem;font-weight:600;cursor:pointer;transition:background 0.2s;"
+                onmouseover="this.style.background='rgba(255,255,255,0.18)'"
+                onmouseout="this.style.background='rgba(255,255,255,0.1)'">
+                ▶️ Simular: video publicado
+            </button>
+        </div>
         <!-- Progress Bar on Top -->
         <aside class="sidebar">
             <div class="progress-header">
@@ -1875,83 +1850,12 @@
     </div>
 
     <!-- Demo Controls Panel -->
-    <div class="demo-controls hidden" id="demoControls">
-        <div class="demo-header">
-            <span class="demo-title">🎮 Demo Panel</span>
-            <div class="demo-header-actions">
-                <button class="btn-toggle-demo" onclick="toggleMinimizeDemo()" title="Minimizar">
-                    <i data-lucide="minimize-2" style="width: 16px; height: 16px;"></i>
-                </button>
-                <button class="btn-toggle-demo" onclick="toggleDemoPanel()" title="Cerrar">
-                    <i data-lucide="x" style="width: 16px; height: 16px;"></i>
-                </button>
-            </div>
-        </div>
-
-        <div id="demoContent">
-            <div class="demo-section">
-                <div class="demo-label">Paso actual:</div>
-                <div class="demo-buttons">
-                    <button class="btn-demo-step active" onclick="setDemoStep('discovery')">Discovery</button>
-                    <button class="btn-demo-step" onclick="setDemoStep('videocall')">Video</button>
-                    <button class="btn-demo-step" onclick="setDemoStep('cerrado')">Cerrado</button>
-                </div>
-            </div>
-
-            <div class="demo-section">
-                <button class="btn-demo-action" onclick="completeCurrentStep()">
-                    ✓ Completar paso
-                </button>
-            </div>
-
-            <div class="demo-section">
-                <button class="btn-demo-action" onclick="simulateChecklist()">
-                    📋 Toggle checklist
-                </button>
-            </div>
-
-            <div class="demo-section">
-                <div class="demo-label">Discovery:</div>
-                <button class="btn-demo-action" onclick="simulateDiscoveryProgress()">
-                    ⏩ Avanzar progreso
-                </button>
-            </div>
-
-            <div class="demo-section">
-                <div class="demo-label">Video Results:</div>
-                <button class="btn-demo-action" onclick="markVideoWatched()">
-                    ▶️ Marcar video visto
-                </button>
-            </div>
-
-            <div class="demo-section">
-                <div class="demo-label">Cerrado:</div>
-                <button class="btn-demo-action" onclick="simulateFinalDocsAvailable()">
-                    📄 Hacer docs disponibles
-                </button>
-            </div>
-
-            <div class="demo-section">
-                <button class="btn-demo-action" onclick="resetProgress()">
-                    🔄 Reiniciar todo
-                </button>
-            </div>
-
-            <div class="demo-info">Panel de pruebas</div>
-        </div>
-    </div>
-
-    <!-- Demo FAB -->
-    <button class="demo-fab" id="demoFab" onclick="toggleDemoPanel()">
-        <i data-lucide="settings" style="width: 24px; height: 24px;"></i>
-    </button>
-
     <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
     <script>
         // ===== DATA =====
         const steps = [
             { id: 'discovery', name: 'Discovery',  icon: 'message-square', order: 1 },
-            { id: 'videocall', name: 'Video Call',  icon: 'video',          order: 2 },
+            { id: 'videocall', name: 'Presentación', icon: 'video',          order: 2 },
             { id: 'cerrado',   name: 'Cerrado',     icon: 'award',          order: 3 }
         ];
 
@@ -1974,14 +1878,15 @@
                 }
             },
             videocall: {
-                title: 'Tu presentación de resultados',
+                title: 'Tu Presentación de Resultados',
                 description: 'Hemos preparado un video personalizado con el análisis completo de tu negocio. Míralo a tu ritmo y si tienes preguntas, escríbenos por WhatsApp.',
                 checklist: [
-                    { item: 'Video de resultados disponible', done: true },
+                    { item: 'Presentación lista', done: false },
                     { item: 'Video visto', done: false },
                     { item: 'Preguntas resueltas', done: false }
                 ],
                 cta: null,
+                videoReady: false,
                 videoUrl: '',
                 whatsappNumber: '15551234567',
                 whatsappMessage: 'Hola, acabo de ver mi presentación de resultados y tengo una pregunta:'
@@ -2016,87 +1921,6 @@
             updateProgress();
             updateContent();
             lucide.createIcons();
-        }
-
-        // ===== DEMO CONTROLS =====
-        function toggleDemoPanel() {
-            const panel = document.getElementById('demoControls');
-            const fab = document.getElementById('demoFab');
-            panel.classList.toggle('hidden');
-            fab.classList.toggle('hidden');
-            panel.classList.remove('minimized');
-            lucide.createIcons();
-        }
-
-        function toggleMinimizeDemo() {
-            document.getElementById('demoControls').classList.toggle('minimized');
-            lucide.createIcons();
-        }
-
-        function setDemoStep(stepId) {
-            currentStep = stepId;
-            selectedStep = stepId;
-            document.querySelectorAll('.btn-demo-step').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            renderTimeline();
-            updateProgress();
-            updateContent();
-            document.getElementById('notesTextarea').value = notes[selectedStep] || '';
-        }
-
-        function completeCurrentStep() {
-            const currentIndex = steps.findIndex(s => s.id === currentStep);
-            if (currentIndex < steps.length - 1) {
-                currentStep = steps[currentIndex + 1].id;
-                selectedStep = currentStep;
-                updateDemoButtons();
-                renderTimeline();
-                updateProgress();
-                updateContent();
-                document.getElementById('notesTextarea').value = notes[selectedStep] || '';
-                showNotification('¡Paso completado! Avanzando al siguiente paso');
-            } else {
-                showNotification('¡Proceso completado! 🎉');
-            }
-        }
-
-        function simulateChecklist() {
-            const content = stepContent[selectedStep];
-            content.checklist.forEach(item => { item.done = !item.done; });
-            updateContent();
-            showNotification('Checklist actualizado');
-        }
-
-        function resetProgress() {
-            if (!confirm('¿Estás seguro de reiniciar todo el progreso?')) return;
-            currentStep = 'discovery';
-            selectedStep = 'discovery';
-
-            Object.keys(stepContent).forEach(key => {
-                stepContent[key].checklist.forEach(item => { item.done = false; });
-            });
-
-            const ds = stepContent.discovery.discoveryStatus;
-            ds.status = 'not_started'; ds.progress = 0; ds.lastUpdated = null;
-            ds.summary = { businessName: '', industry: '', currentRevenue: '', goals: '' };
-
-            stepContent.cerrado.finalDocuments.forEach(doc => { doc.status = 'pending'; });
-
-            updateDemoButtons();
-            renderTimeline();
-            updateProgress();
-            updateContent();
-            document.getElementById('notesTextarea').value = notes[selectedStep] || '';
-            showNotification('Progreso reiniciado');
-        }
-
-        function updateDemoButtons() {
-            document.querySelectorAll('.btn-demo-step').forEach(btn => {
-                btn.classList.remove('active');
-                const stepName = btn.textContent.toLowerCase().trim();
-                const stepMatch = steps.find(s => s.name.toLowerCase() === stepName);
-                if (stepMatch && stepMatch.id === currentStep) btn.classList.add('active');
-            });
         }
 
         function showNotification(message) {
@@ -2172,15 +1996,17 @@
             } else {
                 showNotification('▶️ En producción aquí se reproducirá el video personalizado');
             }
-            // Mark as watched after playing
             setTimeout(() => {
+                vc.checklist[0].done = true;
                 vc.checklist[1].done = true;
                 updateContent();
             }, 1500);
         }
 
         function markVideoWatched() {
-            stepContent.videocall.checklist[1].done = true;
+            const vc = stepContent.videocall;
+            vc.checklist[0].done = true;
+            vc.checklist[1].done = true;
             updateContent();
             showNotification('✅ ¡Video marcado como visto!');
         }
@@ -2301,7 +2127,29 @@
             // Clear next meeting banner (no longer used)
             document.getElementById('nextMeetingBanner').innerHTML = '';
 
-            document.getElementById('videoText').textContent = `Video explicativo - ${content.title}`;
+            // Update video area based on state
+
+            const videoPlaceholder = document.querySelector('.video-placeholder');
+            if (selectedStep === 'videocall' && !content.videoReady) {
+                videoPlaceholder.innerHTML = `
+                    <div class="video-locked-overlay">
+                        <div class="video-locked-icon">
+                            <i data-lucide="lock" style="width:24px;height:24px;color:rgba(255,255,255,0.6);"></i>
+                        </div>
+                        <div class="video-locked-text">
+                            <div class="video-locked-title">Presentación en preparación</div>
+                            <div class="video-locked-sub">Disponible pronto</div>
+                        </div>
+                    </div>`;
+            } else {
+                videoPlaceholder.innerHTML = `
+                    <div class="video-content">
+                        <button class="play-button" onclick="${selectedStep === 'videocall' ? 'handlePlayVideo()' : ''}">
+                            <i data-lucide="play" style="width: 36px; height: 36px; color: white; margin-left: 4px;"></i>
+                        </button>
+                        <p class="video-text" id="videoText">Video explicativo - ${content.title}</p>
+                    </div>`;
+            }
             document.getElementById('contentTitle').textContent = content.title;
             document.getElementById('contentDescription').textContent = content.description;
             document.getElementById('notesStepName').textContent = stepName;
@@ -2319,6 +2167,23 @@
                     <span class="checklist-text ${item.done ? 'done' : 'pending'}">${item.item}</span>`;
                 checklist.appendChild(div);
             });
+
+            // Auto-advance to next step when checklist is fully complete
+            const allDone = content.checklist.every(item => item.done);
+            const currentIdx = steps.findIndex(s => s.id === selectedStep);
+            const nextStep = steps[currentIdx + 1];
+            if (allDone && nextStep && currentStep === selectedStep) {
+                setTimeout(() => {
+                    currentStep = nextStep.id;
+                    selectedStep = nextStep.id;
+                    renderTimeline();
+                    updateProgress();
+                    updateContent();
+                    document.getElementById('notesTextarea').value = notes[selectedStep] || '';
+                    showNotification(`✅ ¡Listo! Avanzando a ${nextStep.name}`);
+                }, 600);
+                return;
+            }
 
             // Remove old dynamic sections
             document.querySelectorAll('.discovery-status-section, .videocall-section, .final-documents-section').forEach(el => el.remove());
@@ -2435,9 +2300,37 @@
 
         function buildVideocallHTML() {
             const vc = stepContent.videocall;
+
+            if (!vc.videoReady) {
+                return `
+                <div class="presentation-pending">
+                    <div class="pp-icon-wrap">
+                        <i data-lucide="film" style="width:32px;height:32px;color:#5B4CE2;"></i>
+                    </div>
+                    <div class="pp-content">
+                        <div class="pp-label">En preparación</div>
+                        <h3 class="pp-title">Estamos editando tu presentación personalizada</h3>
+                        <p class="pp-text">Con base en tu Discovery, estamos preparando un video con los hallazgos y recomendaciones específicos para tu negocio. Recibirás una notificación cuando esté lista.</p>
+                        <div class="pp-steps">
+                            <div class="pp-step done">
+                                <div class="pp-step-dot done"></div>
+                                <span>Discovery completado y analizado</span>
+                            </div>
+                            <div class="pp-step active">
+                                <div class="pp-step-dot active"></div>
+                                <span>Grabando tu presentación personalizada</span>
+                            </div>
+                            <div class="pp-step">
+                                <div class="pp-step-dot"></div>
+                                <span>Presentación lista para ver</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }
+
             const waMsg = encodeURIComponent(vc.whatsappMessage);
             const waUrl = `https://wa.me/${vc.whatsappNumber}?text=${waMsg}`;
-
             return `
             <div class="wa-support-card">
                 <div class="wa-support-header">
@@ -2551,6 +2444,26 @@
                     </div>
                 </div>
                 `}
+
+                <!-- WhatsApp support -->
+                <div class="wa-support-card" style="margin-top:1.25rem;">
+                    <div class="wa-support-header">
+                        <div class="wa-icon-wrap">
+                            <svg viewBox="0 0 24 24" width="28" height="28" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.532 5.849L.054 23.5a.5.5 0 0 0 .613.613l5.72-1.497A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.892 9.892 0 0 1-5.031-1.375l-.361-.214-3.741.979.999-3.645-.235-.374A9.858 9.858 0 0 1 2.1 12C2.1 6.534 6.534 2.1 12 2.1c5.466 0 9.9 4.434 9.9 9.9 0 5.466-4.434 9.9-9.9 9.9z"/></svg>
+                        </div>
+                        <div class="wa-support-text">
+                            <div class="wa-support-title">¿Tienes preguntas?</div>
+                            <div class="wa-support-sub">Soporte en tiempo real vía WhatsApp</div>
+                        </div>
+                        <div class="wa-status-dot"></div>
+                    </div>
+                    <p class="wa-support-desc">Si tienes dudas sobre tu resumen final, los próximos pasos o quieres hablar sobre seguimiento, escríbenos directamente.</p>
+                    <a href="https://wa.me/${stepContent.videocall.whatsappNumber}?text=${encodeURIComponent('Hola, tengo una pregunta sobre mi resumen final:')}" target="_blank" class="btn-whatsapp">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.532 5.849L.054 23.5a.5.5 0 0 0 .613.613l5.72-1.497A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.892 9.892 0 0 1-5.031-1.375l-.361-.214-3.741.979.999-3.645-.235-.374A9.858 9.858 0 0 1 2.1 12C2.1 6.534 6.534 2.1 12 2.1c5.466 0 9.9 4.434 9.9 9.9 0 5.466-4.434 9.9-9.9 9.9z"/></svg>
+                        Escribir por WhatsApp
+                    </a>
+                    <p class="wa-availability">🟢 Disponible lun–vie 9am–6pm EST</p>
+                </div>
             </div>`;
         }
 
@@ -2565,6 +2478,24 @@
         }
 
         window.addEventListener('DOMContentLoaded', init);
+
+        // ===== DEV TOGGLE (remove in production) =====
+        function toggleVideoReady() {
+            const vc = stepContent.videocall;
+            vc.videoReady = !vc.videoReady;
+            if (vc.videoReady) {
+                vc.checklist[0].done = true;
+                vc.checklist[1].done = true;
+                vc.checklist[2].done = true;
+            } else {
+                vc.checklist[0].done = false;
+                vc.checklist[1].done = false;
+                vc.checklist[2].done = false;
+            }
+            if (selectedStep === 'videocall') updateContent();
+            const btn = document.getElementById('devToggleBtn');
+            btn.textContent = vc.videoReady ? '🔒 Simular: video en preparación' : '▶️ Simular: video publicado';
+        }
     </script>
 </body>
 </html>
