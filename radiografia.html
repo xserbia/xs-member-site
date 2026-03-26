@@ -498,6 +498,7 @@
           <label class="qLabel">¿Tu ingreso mensual cubre todos tus gastos?</label>
           <div class="options">
             <div class="option" data-value="no">No, uso crédito o préstamos</div>
+            <div class="option" data-value="ahorros">No, estoy usando mis ahorros / patrimonio</div>
             <div class="option" data-value="justo">Sí, apenas alcanza</div>
             <div class="option" data-value="sobra">Sí, me sobra dinero</div>
           </div>
@@ -961,18 +962,24 @@ function showResults() {
   let progress = 0;
   let issues = []; // { text, critical }
 
-  if(cashFlow === 'no' || emergency < 1 || debt > 50 || debtRatio >= 60 || !hasAdequateInsurance) {
+  // "ahorros" = viviendo de patrimonio/ahorros acumulados.
+  // Solo es crítico de Etapa 1 si el patrimonio no es suficiente para sostenerlo.
+  // Si ya tiene patrimonio alto (wealthyEnough), es pre-retiro o retiro legítimo.
+  const cashFlowCritical = cashFlow === 'no' || (cashFlow === 'ahorros' && !wealthyEnough);
+
+  if(cashFlowCritical || emergency < 1 || debt > 50 || debtRatio >= 60 || !hasAdequateInsurance) {
     // ── ETAPA 1: Supervivencia ──
     stage = 1;
     progress = Math.min(100,
-      (cashFlow !== 'no' ? 20 : 0) +
+      (!cashFlowCritical ? 20 : 0) +
       (emergency >= 1 ? 20 : emergency / 1 * 20) +
       (debt <= 50 ? 20 : 0) +
       (debtRatio < 60 ? 15 : 0) +
       (save >= 5 ? 15 : 0) +
       (insuranceScore / 8)
     );
-    if(cashFlow === 'no')          issues.push({ text:'Dependes del crédito para cubrir gastos básicos', critical:true });
+    if(cashFlow === 'no')                        issues.push({ text:'Dependes del crédito para cubrir gastos básicos', critical:true });
+    if(cashFlow === 'ahorros' && !wealthyEnough) issues.push({ text:'Estás consumiendo ahorros sin patrimonio suficiente para sostenerlo', critical:true });
     if(emergency < 1)              issues.push({ text:'No tienes ni un mes de reserva de emergencia', critical:true });
     if(debt > 50)                  issues.push({ text:'Más de la mitad de tu ingreso va a pagar deudas', critical:true });
     if(debtRatio >= 60)            issues.push({ text:'Nivel de endeudamiento muy alto (>60% pasivos/activos)', critical:true });
@@ -1034,6 +1041,10 @@ function showResults() {
       issues.push({ text:`Tu patrimonio (${netWorth}× ingreso anual) no genera flujo pasivo — dinero subutilizado`, critical:true });
     } else if(passive < 20) {
       issues.push({ text:'Empieza a construir fuentes de ingreso pasivo', critical:false });
+    }
+    // Viviendo de ahorros con patrimonio alto pero sin estructura de flujo
+    if(cashFlow === 'ahorros' && wealthyEnough && passive === 0) {
+      issues.push({ text:'Estás consumiendo capital directamente — convierte parte en flujo pasivo estructurado', critical:true });
     }
 
     if(debtRatio >= 35)
