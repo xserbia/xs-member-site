@@ -13,7 +13,7 @@
     --ok:#10b981;
     --warn:#f59e0b;
     --bad:#ef4444;
-    --bg:#ffffff;
+    --bg:#f8fafc;
     --card:#ffffff;
     --text:#0f172a;
     --muted:#64748b;
@@ -22,12 +22,19 @@
   
   *{box-sizing:border-box;margin:0;padding:0}
   
+  html{
+    -webkit-text-size-adjust:100%;
+    -webkit-tap-highlight-color:transparent;
+  }
+  
   body{
     font-family:'Inter',system-ui,sans-serif;
     background:var(--bg);
     color:var(--text);
     line-height:1.6;
     padding:20px;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
   }
   
   .container{
@@ -122,6 +129,12 @@
     transition:all 0.2s ease;
     font-weight:600;
     font-size:15px;
+    min-height:48px;
+    display:flex;
+    align-items:center;
+    user-select:none;
+    -webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;
   }
   
   .option:hover{
@@ -135,6 +148,17 @@
     color:white;
   }
   
+  .optMulti.selected{
+    background:linear-gradient(135deg,var(--primary),#7c3aed);
+    color:white;
+    border-color:var(--primary);
+  }
+  
+  .optMulti.selected::before{
+    content:"✓ ";
+    font-weight:900;
+  }
+  
   .input{
     width:100%;
     padding:16px 20px;
@@ -144,6 +168,9 @@
     font-size:16px;
     font-weight:600;
     transition:all 0.2s ease;
+    min-height:56px;
+    -webkit-appearance:none;
+    appearance:none;
   }
   
   .input:focus{
@@ -162,7 +189,7 @@
     width:100%;
     margin-top:12px;
     padding:12px 20px;
-    background:#f8fafc;
+    background:#ffffff;
     border:2px dashed var(--border);
     border-radius:12px;
     font-family:inherit;
@@ -171,6 +198,13 @@
     color:var(--muted);
     cursor:pointer;
     transition:all 0.2s ease;
+    min-height:48px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    user-select:none;
+    -webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;
   }
   
   .noSe:hover{
@@ -201,6 +235,10 @@
     font-size:15px;
     cursor:pointer;
     transition:all 0.2s ease;
+    min-height:48px;
+    user-select:none;
+    -webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;
   }
   
   .btnPrimary{
@@ -316,6 +354,14 @@
     position:absolute;
     left:0;
   }
+
+  .issues li.critical{
+    color:#7f1d1d;
+  }
+
+  .issues li.critical::before{
+    content:"🚨";
+  }
   
   .nextSteps{
     background:#dcfce7;
@@ -355,10 +401,45 @@
     font-weight:700;
     cursor:pointer;
     transition:all 0.2s ease;
+    min-height:48px;
+    width:100%;
+    user-select:none;
+    -webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;
   }
   
   .retry:hover{
     background:var(--bg);
+  }
+  
+  /* RESPONSIVE - MOBILE */
+  @media (max-width: 640px) {
+    body{ padding:12px; }
+    .card{ padding:20px; border-radius:12px; }
+    .header h1{ font-size:24px; }
+    .header p{ font-size:14px; }
+    .qNumber{ font-size:11px; padding:3px 10px; }
+    .qLabel{ font-size:17px; margin-bottom:16px; }
+    .option{ padding:14px 16px; font-size:15px; min-height:52px; }
+    .input{ padding:14px 16px; font-size:16px; min-height:52px; }
+    .helper{ font-size:13px; }
+    .noSe{ padding:12px 16px; font-size:14px; min-height:52px; }
+    .actions{ gap:10px; margin-top:24px; }
+    .btn{ width:100%; padding:14px 20px; font-size:16px; min-height:52px; }
+    .stageIcon{ font-size:64px; }
+    .stageName{ font-size:26px; }
+    .stageDesc{ font-size:15px; }
+    .scoreCard{ padding:16px; }
+    .scoreValue{ font-size:40px; }
+    .issues, .nextSteps{ padding:16px; }
+    .issues h3, .nextSteps h3{ font-size:15px; }
+    .issues li, .nextSteps li{ font-size:13px; }
+    .retry{ min-height:52px; font-size:16px; }
+  }
+  
+  @media (max-width: 640px) and (orientation: landscape) {
+    .stageIcon{ font-size:48px; margin-bottom:12px; }
+    .stageName{ font-size:22px; }
   }
 </style>
 </head>
@@ -368,7 +449,7 @@
     <div class="card">
       <div class="header">
         <h1>¿En qué etapa financiera estás?</h1>
-        <p>11 preguntas para un diagnóstico personalizado</p>
+        <p>14 preguntas para un diagnóstico personalizado</p>
       </div>
 
       <div class="progress">
@@ -377,9 +458,8 @@
 
       <!-- PREGUNTAS -->
       <div id="questions">
-        <!-- CONTEXTO PERSONAL -->
         <div class="question active" data-q="1">
-          <span class="qNumber">Pregunta 1 de 11</span>
+          <span class="qNumber">Pregunta 1 de 14</span>
           <label class="qLabel">¿Cuál es tu edad?</label>
           <div class="options">
             <div class="option" data-value="25">18-30 años</div>
@@ -390,7 +470,7 @@
         </div>
 
         <div class="question" data-q="2">
-          <span class="qNumber">Pregunta 2 de 11</span>
+          <span class="qNumber">Pregunta 2 de 14</span>
           <label class="qLabel">¿Tienes personas que dependen económicamente de ti?</label>
           <div class="options">
             <div class="option" data-value="0">No, solo yo</div>
@@ -402,7 +482,7 @@
         </div>
 
         <div class="question" data-q="3">
-          <span class="qNumber">Pregunta 3 de 11</span>
+          <span class="qNumber">Pregunta 3 de 14</span>
           <label class="qLabel">¿Cuál describe mejor tu situación laboral?</label>
           <div class="options">
             <div class="option" data-value="6">Empleo estable y seguro</div>
@@ -413,9 +493,8 @@
           </div>
         </div>
 
-        <!-- SITUACIÓN FINANCIERA -->
         <div class="question" data-q="4">
-          <span class="qNumber">Pregunta 4 de 11</span>
+          <span class="qNumber">Pregunta 4 de 14</span>
           <label class="qLabel">¿Tu ingreso mensual cubre todos tus gastos?</label>
           <div class="options">
             <div class="option" data-value="no">No, uso crédito o préstamos</div>
@@ -425,7 +504,7 @@
         </div>
 
         <div class="question" data-q="5">
-          <span class="qNumber">Pregunta 5 de 11</span>
+          <span class="qNumber">Pregunta 5 de 14</span>
           <label class="qLabel">¿Cuántos meses de gastos tienes ahorrados en efectivo?</label>
           <div class="options">
             <div class="option" data-value="0">Menos de 1 mes</div>
@@ -441,7 +520,7 @@
         </div>
 
         <div class="question" data-q="6">
-          <span class="qNumber">Pregunta 6 de 11</span>
+          <span class="qNumber">Pregunta 6 de 14</span>
           <label class="qLabel">¿Qué porcentaje de tu ingreso va a pagar deudas?</label>
           <input type="number" class="input" id="debtInput" placeholder="Ejemplo: 30" min="0" max="100">
           <div class="helper">Incluye tarjetas, préstamos, hipoteca, auto... todo</div>
@@ -449,7 +528,7 @@
         </div>
 
         <div class="question" data-q="7">
-          <span class="qNumber">Pregunta 7 de 11</span>
+          <span class="qNumber">Pregunta 7 de 14</span>
           <label class="qLabel">¿Qué porcentaje de tus activos son pasivos/deudas?</label>
           <div class="options">
             <div class="option" data-value="10">Menos del 20% (bajo)</div>
@@ -462,7 +541,7 @@
         </div>
 
         <div class="question" data-q="8">
-          <span class="qNumber">Pregunta 8 de 11</span>
+          <span class="qNumber">Pregunta 8 de 14</span>
           <label class="qLabel">¿Qué porcentaje de tu ingreso ahorras o inviertes?</label>
           <input type="number" class="input" id="saveInput" placeholder="Ejemplo: 15" min="0" max="100">
           <div class="helper">Todo lo que guardas cada mes para tu futuro</div>
@@ -470,7 +549,7 @@
         </div>
 
         <div class="question" data-q="9">
-          <span class="qNumber">Pregunta 9 de 11</span>
+          <span class="qNumber">Pregunta 9 de 14</span>
           <label class="qLabel">¿Cuánto tienes acumulado para el retiro vs tu ingreso anual?</label>
           <div class="options">
             <div class="option" data-value="0">Nada o casi nada</div>
@@ -484,7 +563,7 @@
         </div>
 
         <div class="question" data-q="10">
-          <span class="qNumber">Pregunta 10 de 11</span>
+          <span class="qNumber">Pregunta 10 de 14</span>
           <label class="qLabel">Tu patrimonio neto total (todo lo que tienes - deudas):</label>
           <div class="options">
             <div class="option" data-value="-1">Es negativo (debo más de lo que tengo)</div>
@@ -497,7 +576,7 @@
         </div>
 
         <div class="question" data-q="11">
-          <span class="qNumber">Pregunta 11 de 11</span>
+          <span class="qNumber">Pregunta 11 de 14</span>
           <label class="qLabel">¿Tienes ingresos que lleguen sin trabajar?</label>
           <div class="options">
             <div class="option" data-value="0">No, solo gano cuando trabajo</div>
@@ -507,6 +586,48 @@
             <div class="option" data-value="120">Sí, cubren MÁS del 100% de mis gastos</div>
           </div>
           <div class="helper">Rentas, dividendos, intereses, negocios automatizados...</div>
+        </div>
+
+        <div class="question" data-q="12">
+          <span class="qNumber">Pregunta 12 de 14</span>
+          <label class="qLabel">¿Cuáles de estos aplican a tu situación?</label>
+          <div class="helper" style="margin-bottom:12px">Selecciona todo lo que tengas (puedes elegir varios)</div>
+          <div class="options">
+            <div class="option optMulti" data-value="auto">Tengo auto</div>
+            <div class="option optMulti" data-value="propiedad">Tengo casa/propiedad</div>
+            <div class="option optMulti" data-value="dependientes">Tengo dependientes económicos</div>
+            <div class="option optMulti" data-value="bienes">Tengo bienes valiosos (>$10k)</div>
+            <div class="option optMulti" data-value="ninguno">Ninguno de los anteriores</div>
+          </div>
+        </div>
+
+        <div class="question" data-q="13">
+          <span class="qNumber">Pregunta 13 de 14</span>
+          <label class="qLabel">¿Qué seguros tienes actualmente?</label>
+          <div class="helper" style="margin-bottom:12px">Selecciona todo lo que tengas (puedes elegir varios)</div>
+          <div class="options">
+            <div class="option optMulti" data-value="salud">Salud</div>
+            <div class="option optMulti" data-value="auto">Auto</div>
+            <div class="option optMulti" data-value="propiedad">Casa/Propiedad</div>
+            <div class="option optMulti" data-value="vida">Vida</div>
+            <div class="option optMulti" data-value="umbrella">Umbrella/Responsabilidad Civil</div>
+            <div class="option optMulti" data-value="otros">Discapacidad/Otros</div>
+            <div class="option optMulti" data-value="ninguno">Ninguno</div>
+          </div>
+        </div>
+
+        <div class="question" data-q="14">
+          <span class="qNumber">Pregunta 14 de 14</span>
+          <label class="qLabel">¿Tienes estos documentos de planificación patrimonial?</label>
+          <div class="helper" style="margin-bottom:12px">Selecciona todo lo que tengas actualizado (puedes elegir varios)</div>
+          <div class="options">
+            <div class="option optMulti" data-value="beneficiarios">Beneficiarios en cuentas de retiro/inversión</div>
+            <div class="option optMulti" data-value="testamento">Testamento/Will</div>
+            <div class="option optMulti" data-value="directivas">Directivas médicas (living will, POA salud)</div>
+            <div class="option optMulti" data-value="poa">Poder legal/POA financiero</div>
+            <div class="option optMulti" data-value="trust">Trust o estructuras patrimoniales</div>
+            <div class="option optMulti" data-value="ninguno">Ninguno de estos</div>
+          </div>
         </div>
       </div>
 
@@ -610,29 +731,34 @@ const questions = document.querySelectorAll('.question');
 const results = document.getElementById('results');
 const actionsDiv = document.getElementById('actions');
 
-// Event listeners para opciones
 document.querySelectorAll('.option').forEach(opt => {
   opt.addEventListener('click', function() {
-    this.closest('.options').querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
-    this.classList.add('selected');
+    if(this.classList.contains('optMulti')) {
+      if(this.dataset.value === 'ninguno') {
+        this.closest('.options').querySelectorAll('.optMulti').forEach(o => o.classList.remove('selected'));
+        this.classList.add('selected');
+      } else {
+        const ningunoOpt = this.closest('.options').querySelector('.optMulti[data-value="ninguno"]');
+        if(ningunoOpt) ningunoOpt.classList.remove('selected');
+        this.classList.toggle('selected');
+      }
+    } else {
+      this.closest('.options').querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+      this.classList.add('selected');
+    }
   });
 });
 
-// Event listeners para botones "No sé"
 document.getElementById('noSeDebt').addEventListener('click', function(e) {
   e.preventDefault();
   const input = document.getElementById('debtInput');
-  const btn = this;
-  
-  if(btn.classList.contains('selected')) {
-    // Deseleccionar
-    btn.classList.remove('selected');
+  if(this.classList.contains('selected')) {
+    this.classList.remove('selected');
     input.value = '';
     input.disabled = false;
     input.style.opacity = '1';
   } else {
-    // Seleccionar
-    btn.classList.add('selected');
+    this.classList.add('selected');
     input.value = '36';
     input.disabled = true;
     input.style.opacity = '0.6';
@@ -642,17 +768,13 @@ document.getElementById('noSeDebt').addEventListener('click', function(e) {
 document.getElementById('noSeSave').addEventListener('click', function(e) {
   e.preventDefault();
   const input = document.getElementById('saveInput');
-  const btn = this;
-  
-  if(btn.classList.contains('selected')) {
-    // Deseleccionar
-    btn.classList.remove('selected');
+  if(this.classList.contains('selected')) {
+    this.classList.remove('selected');
     input.value = '';
     input.disabled = false;
     input.style.opacity = '1';
   } else {
-    // Seleccionar
-    btn.classList.add('selected');
+    this.classList.add('selected');
     input.value = '0';
     input.disabled = true;
     input.style.opacity = '0.6';
@@ -663,25 +785,18 @@ document.getElementById('noSeDebtRatio').addEventListener('click', function(e) {
   e.preventDefault();
   const question = this.closest('.question');
   const options = question.querySelectorAll('.option');
-  const btn = this;
-  
-  if(btn.classList.contains('selected')) {
-    // Deseleccionar
-    btn.classList.remove('selected');
+  if(this.classList.contains('selected')) {
+    this.classList.remove('selected');
     options.forEach(opt => opt.classList.remove('selected'));
   } else {
-    // Seleccionar - auto-selecciona la opción de 50-60% (alto)
-    btn.classList.add('selected');
+    this.classList.add('selected');
     options.forEach(opt => opt.classList.remove('selected'));
-    options[2].classList.add('selected'); // 50-60% (alto)
+    options[2].classList.add('selected');
   }
 });
 
-// Navegación
 btnNext.addEventListener('click', () => {
   const currentQuestion = document.querySelector(`.question[data-q="${currentQ}"]`);
-  
-  // Validar respuesta
   if(currentQ === 6) {
     const val = document.getElementById('debtInput').value;
     const noSeBtn = document.getElementById('noSeDebt');
@@ -698,6 +813,13 @@ btnNext.addEventListener('click', () => {
       return;
     }
     answers.save = parseFloat(val);
+  } else if(currentQ === 12 || currentQ === 13 || currentQ === 14) {
+    const selected = currentQuestion.querySelectorAll('.optMulti.selected');
+    if(selected.length === 0) {
+      alert('Por favor selecciona al menos una opción');
+      return;
+    }
+    answers[`q${currentQ}`] = Array.from(selected).map(opt => opt.dataset.value);
   } else {
     const selected = currentQuestion.querySelector('.option.selected');
     if(!selected) {
@@ -706,8 +828,7 @@ btnNext.addEventListener('click', () => {
     }
     answers[`q${currentQ}`] = selected.dataset.value;
   }
-  
-  if(currentQ < 11) {
+  if(currentQ < 14) {
     currentQ++;
     updateUI();
   } else {
@@ -716,189 +837,268 @@ btnNext.addEventListener('click', () => {
 });
 
 btnBack.addEventListener('click', () => {
-  if(currentQ > 1) {
-    currentQ--;
-    updateUI();
-  }
+  if(currentQ > 1) { currentQ--; updateUI(); }
 });
 
 function updateUI() {
-  // Progress
-  progressBar.style.width = ((currentQ - 1) / 11 * 100) + '%';
-  
-  // Questions
+  progressBar.style.width = ((currentQ - 1) / 14 * 100) + '%';
   questions.forEach(q => q.classList.remove('active'));
   document.querySelector(`.question[data-q="${currentQ}"]`).classList.add('active');
-  
-  // Buttons
   btnBack.style.display = currentQ > 1 ? 'block' : 'none';
-  btnNext.textContent = currentQ === 11 ? 'Ver mi resultado →' : 'Siguiente →';
+  btnNext.textContent = currentQ === 14 ? 'Ver mi resultado →' : 'Siguiente →';
 }
 
 function showResults() {
-  // Contexto personal
-  const age = parseFloat(answers.q1); // 25, 37, 52, 65
-  const dependents = parseFloat(answers.q2); // 0, 1, 2, 3
-  const employmentType = parseFloat(answers.q3); // 6, 12, 18, 24, 36 (meses base de reserva)
-  
-  // Calcular reserva ideal personalizada
-  let idealEmergency = employmentType;
-  if(dependents > 0) {
-    idealEmergency += 3; // +3 meses si tienes dependientes
-  }
-  
-  // Situación financiera
-  const cashFlow = answers.q4; // no, justo, sobra
-  const emergency = parseFloat(answers.q5); // meses actuales
-  const debt = answers.debt; // % servicio de deuda
-  const debtRatio = parseFloat(answers.q7); // % pasivos/activos
-  const save = answers.save; // %
-  const retirement = parseFloat(answers.q9); // años de ingreso
-  const netWorth = parseFloat(answers.q10); // años de ingreso
-  const passive = parseFloat(answers.q11); // % cobertura
-  
-  // Calcular expectativas según edad
-  let expectedRetirement = 0;
-  let expectedNetWorth = 0;
-  
-  if(age <= 30) {
-    expectedRetirement = 1; // Mínimo 1× ingreso anual a los 30
-    expectedNetWorth = 1;   // Mínimo 1× ingreso anual
-  } else if(age <= 45) {
-    expectedRetirement = 3; // 3× ingreso anual a los 40
-    expectedNetWorth = 3;
-  } else if(age <= 60) {
-    expectedRetirement = 8; // 8× ingreso anual a los 55
-    expectedNetWorth = 10;
-  } else {
-    expectedRetirement = 12; // 12×+ cerca del retiro
-    expectedNetWorth = 20;
-  }
-  
+  const age        = parseFloat(answers.q1);
+  const dependents = parseFloat(answers.q2);
+  const empType    = parseFloat(answers.q3);
+  const cashFlow   = answers.q4;
+  const emergency  = parseFloat(answers.q5);
+  const debt       = answers.debt;
+  const debtRatio  = parseFloat(answers.q7);
+  const save       = answers.save;
+  const retirement = parseFloat(answers.q9);
+  const netWorth   = parseFloat(answers.q10);
+  const passive    = parseFloat(answers.q11);
+  const needsProtection = answers.q12 || [];
+  const hasInsurance    = answers.q13 || [];
+  const estateDocs      = answers.q14 || [];
+
+  // Reserva ideal personalizada
+  let idealEmergency = empType;
+  if(dependents > 0) idealEmergency += 3;
+
+  // Flags de contexto
+  const hasDependents     = needsProtection.includes('dependientes') || dependents > 0;
+  const hasAuto           = needsProtection.includes('auto');
+  const hasProperty       = needsProtection.includes('propiedad');
+  const hasValuableAssets = needsProtection.includes('bienes');
+
+  const hasHealthIns   = hasInsurance.includes('salud');
+  const hasLifeIns     = hasInsurance.includes('vida');
+  const hasAutoIns     = hasInsurance.includes('auto');
+  const hasPropertyIns = hasInsurance.includes('propiedad');
+  const hasUmbrellaIns = hasInsurance.includes('umbrella');
+
+  const hasBeneficiaries = estateDocs.includes('beneficiarios');
+  const hasWill          = estateDocs.includes('testamento');
+  const hasDirectives    = estateDocs.includes('directivas');
+  const hasTrust         = estateDocs.includes('trust');
+
+  // Expectativas por edad
+  let expectedRetirement, expectedNetWorth;
+  if(age <= 30)      { expectedRetirement = 1;  expectedNetWorth = 1; }
+  else if(age <= 45) { expectedRetirement = 3;  expectedNetWorth = 3; }
+  else if(age <= 60) { expectedRetirement = 8;  expectedNetWorth = 10; }
+  else               { expectedRetirement = 12; expectedNetWorth = 20; }
+
+  // ─────────────────────────────────────────────────────────────────
+  // FIX CLAVE: Si patrimonio >= expectativa para su edad Y retiro >=
+  // expectativa, el ahorro mensual 0% no lo penaliza a etapas bajas.
+  // Alguien que ya acumuló no debe caer a Etapa 2 por no "ahorrar".
+  // ─────────────────────────────────────────────────────────────────
+  const wealthyEnough = (netWorth >= expectedNetWorth) && (retirement >= expectedRetirement);
+
+  // Score de seguros
+  let insuranceScore = 0;
+  let missingInsurance = [];
+
+  if(hasHealthIns) insuranceScore += 30;
+  else missingInsurance.push('Seguro de Salud (esencial para todos)');
+
+  if(hasDependents) {
+    if(hasLifeIns) insuranceScore += 25;
+    else missingInsurance.push('Seguro de Vida (tienes dependientes)');
+  } else insuranceScore += 25;
+
+  if(hasAuto) {
+    if(hasAutoIns) insuranceScore += 15;
+    else missingInsurance.push('Seguro de Auto (tienes vehículo)');
+  } else insuranceScore += 15;
+
+  if(hasProperty) {
+    if(hasPropertyIns) insuranceScore += 15;
+    else missingInsurance.push('Seguro de Propiedad (tienes casa)');
+  } else insuranceScore += 15;
+
+  if(netWorth >= 7 || hasProperty || hasValuableAssets) {
+    if(hasUmbrellaIns) insuranceScore += 15;
+    else missingInsurance.push('Seguro Umbrella (patrimonio alto necesita más cobertura)');
+  } else insuranceScore += 15;
+
+  const hasAdequateInsurance = insuranceScore >= 85;
+
+  // Score de planificación patrimonial
+  let estateScore = 0;
+  let missingEstateDocs = [];
+
+  if(retirement > 0 || netWorth > 2) {
+    if(hasBeneficiaries) estateScore += 25;
+    else missingEstateDocs.push('Beneficiarios en cuentas (esencial)');
+  } else estateScore += 25;
+
+  if(netWorth > 1 || hasDependents) {
+    if(hasWill) estateScore += 25;
+    else missingEstateDocs.push('Testamento/Will (necesario)');
+  } else estateScore += 25;
+
+  if(age >= 37) {
+    if(hasDirectives) estateScore += 25;
+    else missingEstateDocs.push('Directivas médicas (recomendado)');
+  } else estateScore += 25;
+
+  if(netWorth >= 15) {
+    if(hasTrust) estateScore += 25;
+    else missingEstateDocs.push('Trust o estructuras (para optimizar)');
+  } else estateScore += 25;
+
+  const hasAdequateEstatePlanning = estateScore >= 75;
+
+  // ─────────────────────────────────────────────────────────────────
+  // DETERMINACIÓN DE ETAPA — CORREGIDA
+  // ─────────────────────────────────────────────────────────────────
   let stage = 1;
   let progress = 0;
-  let issues = [];
-  
-  // Determinar etapa
-  if(cashFlow === 'no' || emergency < 1 || debt > 50 || debtRatio >= 60) {
+  let issues = []; // { text, critical }
+
+  if(cashFlow === 'no' || emergency < 1 || debt > 50 || debtRatio >= 60 || !hasAdequateInsurance) {
+    // ── ETAPA 1: Supervivencia ──
     stage = 1;
-    progress = Math.min(100, 
-      (cashFlow !== 'no' ? 25 : 0) +
+    progress = Math.min(100,
+      (cashFlow !== 'no' ? 20 : 0) +
       (emergency >= 1 ? 20 : emergency / 1 * 20) +
       (debt <= 50 ? 20 : 0) +
       (debtRatio < 60 ? 15 : 0) +
-      (save >= 5 ? 20 : 0)
+      (save >= 5 ? 15 : 0) +
+      (insuranceScore / 8)
     );
-    
-    if(cashFlow === 'no') issues.push('Dependes del crédito para cubrir gastos básicos');
-    if(emergency < 1) issues.push('No tienes ni un mes de reserva de emergencia');
-    if(debt > 50) issues.push('Más de la mitad de tu ingreso va a pagar deudas');
-    if(debtRatio >= 60) issues.push('Nivel de endeudamiento muy alto (>60% pasivos/activos)');
-    if(save < 5) issues.push('No estás ahorrando casi nada para tu futuro');
-    
-  } else if(emergency < idealEmergency || debt > 30 || debtRatio >= 50 || save < 15) {
+    if(cashFlow === 'no')          issues.push({ text:'Dependes del crédito para cubrir gastos básicos', critical:true });
+    if(emergency < 1)              issues.push({ text:'No tienes ni un mes de reserva de emergencia', critical:true });
+    if(debt > 50)                  issues.push({ text:'Más de la mitad de tu ingreso va a pagar deudas', critical:true });
+    if(debtRatio >= 60)            issues.push({ text:'Nivel de endeudamiento muy alto (>60% pasivos/activos)', critical:true });
+    if(save < 5 && !wealthyEnough) issues.push({ text:'No estás ahorrando casi nada para tu futuro', critical:false });
+    missingInsurance.forEach(i => issues.push({ text: i, critical:false }));
+
+  } else if(
+    emergency < idealEmergency ||
+    debt > 30 ||
+    debtRatio >= 50 ||
+    (!wealthyEnough && save < 15) ||  // ← FIX: no penalizar si ya acumuló
+    insuranceScore < 100
+  ) {
+    // ── ETAPA 2: Seguridad ──
     stage = 2;
-    
     const emergencyScore = Math.min(100, (emergency / idealEmergency) * 100);
-    const debtScore = debt <= 30 ? 100 : Math.max(0, 100 - (debt - 30) * 3);
+    const debtScore      = debt <= 30 ? 100 : Math.max(0, 100 - (debt - 30) * 3);
     const debtRatioScore = debtRatio < 50 ? 100 : Math.max(0, 100 - (debtRatio - 50) * 2);
-    const saveScore = Math.min(100, (save / 15) * 100);
-    
-    progress = Math.round((emergencyScore + debtScore + debtRatioScore + saveScore) / 4);
-    
-    if(emergency < idealEmergency) {
-      issues.push(`Tu reserva ideal es ${idealEmergency} meses (tienes ${emergency})`);
-    }
-    if(debt > 30) issues.push('Nivel de deuda todavía alto (>30% del ingreso)');
-    if(debtRatio >= 50) issues.push('⚠️ CRÍTICO: Ratio de endeudamiento ≥50% (pasivos/activos)');
-    if(save < 15) issues.push('Deberías ahorrar al menos 15% mensual');
-    if(retirement < expectedRetirement) {
-      issues.push(`Para tu edad deberías tener al menos ${expectedRetirement}× tu ingreso anual en retiro`);
-    }
-    
-  } else if(netWorth < expectedNetWorth || save < 25 || passive < 20 || debtRatio >= 35) {
+    const saveScore      = wealthyEnough ? 100 : Math.min(100, (save / 15) * 100); // ← FIX
+    progress = Math.round((emergencyScore + debtScore + debtRatioScore + saveScore + insuranceScore) / 5);
+
+    if(emergency < idealEmergency)
+      issues.push({ text:`Tu reserva ideal es ${idealEmergency} meses (tienes ${emergency})`, critical:false });
+    if(debt > 30)
+      issues.push({ text:'Nivel de deuda todavía alto (>30% del ingreso)', critical:false });
+    if(debtRatio >= 50)
+      issues.push({ text:'⚠️ CRÍTICO: Ratio de endeudamiento ≥50% (pasivos/activos)', critical:true });
+    if(save < 15 && !wealthyEnough)
+      issues.push({ text:'Deberías ahorrar al menos 15% mensual', critical:false });
+    if(retirement < expectedRetirement)
+      issues.push({ text:`Para tu edad deberías tener al menos ${expectedRetirement}× tu ingreso anual en retiro`, critical:false });
+    missingInsurance.forEach(i => issues.push({ text: i, critical:false }));
+    if(netWorth > 2 && !hasBeneficiaries)
+      issues.push({ text:'Establece beneficiarios en tus cuentas', critical:false });
+    if((netWorth > 2 || hasDependents) && !hasWill)
+      issues.push({ text:'Necesitas un testamento básico', critical:false });
+
+  } else if(
+    netWorth < expectedNetWorth ||
+    (!wealthyEnough && save < 25) ||  // ← FIX
+    passive < 20 ||
+    debtRatio >= 35
+  ) {
+    // ── ETAPA 3: Acumulación ──
     stage = 3;
-    
-    const networthScore = Math.min(100, (netWorth / expectedNetWorth) * 100);
-    const saveScore = Math.min(100, (save / 25) * 100);
-    const passiveScore = Math.min(100, (passive / 20) * 100);
+    const networthScore  = Math.min(100, (netWorth / expectedNetWorth) * 100);
+    const saveScore      = wealthyEnough ? 100 : Math.min(100, (save / 25) * 100); // ← FIX
+    const passiveScore   = Math.min(100, (passive / 20) * 100);
     const debtRatioScore = debtRatio < 35 ? 100 : Math.max(0, 100 - (debtRatio - 35) * 2);
-    
-    progress = Math.round((networthScore + saveScore + passiveScore + debtRatioScore) / 4);
-    
-    if(netWorth < expectedNetWorth) {
-      issues.push(`Tu patrimonio debería ser ${expectedNetWorth}× tu ingreso anual (tienes ${netWorth}×)`);
+    progress = Math.round((networthScore + saveScore + passiveScore + debtRatioScore + estateScore) / 5);
+
+    if(netWorth < expectedNetWorth)
+      issues.push({ text:`Tu patrimonio debería ser ${expectedNetWorth}× tu ingreso anual (tienes ${netWorth}×)`, critical:false });
+    if(save < 25 && !wealthyEnough)
+      issues.push({ text:'En esta etapa deberías ahorrar 25-30% para acelerar', critical:false });
+
+    // ── FIX NUEVO: Patrimonio alto sin flujo pasivo = dinero dormido ──
+    if(passive === 0 && netWorth >= 7) {
+      issues.push({ text:`Tu patrimonio (${netWorth}× ingreso anual) no genera flujo pasivo — dinero subutilizado`, critical:true });
+    } else if(passive < 20) {
+      issues.push({ text:'Empieza a construir fuentes de ingreso pasivo', critical:false });
     }
-    if(save < 25) issues.push('En esta etapa deberías ahorrar 25-30% para acelerar');
-    if(passive < 20) issues.push('Empieza a construir fuentes de ingreso pasivo');
-    if(debtRatio >= 35) issues.push('Reduce tu ratio de endeudamiento a <35%');
-    if(retirement < expectedRetirement) {
-      issues.push(`Deberías tener ${expectedRetirement}× tu ingreso anual en retiro`);
-    }
-    
-  } else if(passive < 100 || netWorth < 25 || debtRatio >= 20) {
+
+    if(debtRatio >= 35)
+      issues.push({ text:'Reduce tu ratio de endeudamiento a <35%', critical:false });
+    if(retirement < expectedRetirement)
+      issues.push({ text:`Deberías tener ${expectedRetirement}× tu ingreso anual en retiro`, critical:false });
+    missingEstateDocs.forEach(d => issues.push({ text: d, critical:false }));
+
+  } else if(passive < 100 || netWorth < 25 || debtRatio >= 20 || !hasAdequateEstatePlanning) {
+    // ── ETAPA 4: Independencia ──
     stage = 4;
-    
-    const passiveScore = Math.min(100, (passive / 100) * 100);
-    const networthScore = Math.min(100, (netWorth / 25) * 100);
+    const passiveScore   = Math.min(100, (passive / 100) * 100);
+    const networthScore  = Math.min(100, (netWorth / 25) * 100);
     const debtRatioScore = debtRatio < 20 ? 100 : Math.max(0, 100 - (debtRatio - 20) * 5);
-    
-    progress = Math.round((passiveScore + networthScore + debtRatioScore) / 3);
-    
-    if(passive < 100) issues.push('Tus ingresos pasivos aún no cubren todos tus gastos');
-    if(netWorth < 25) issues.push('Aumenta tu patrimonio a 25× gastos anuales');
-    if(debt > 10) issues.push('Reduce deuda a menos del 10% del ingreso');
-    if(debtRatio >= 20) issues.push('Optimiza ratio de endeudamiento a <20%');
-    
+    progress = Math.round((passiveScore + networthScore + debtRatioScore + estateScore) / 4);
+
+    if(passive < 100) issues.push({ text:'Tus ingresos pasivos aún no cubren todos tus gastos', critical:false });
+    if(netWorth < 25) issues.push({ text:'Aumenta tu patrimonio a 25× gastos anuales', critical:false });
+    if(debt > 10)     issues.push({ text:'Reduce deuda a menos del 10% del ingreso', critical:false });
+    if(debtRatio >= 20) issues.push({ text:'Optimiza ratio de endeudamiento a <20%', critical:false });
+    missingEstateDocs.forEach(d => issues.push({ text: d, critical:false }));
+
   } else {
+    // ── ETAPA 5: Libertad ──
     stage = 5;
     progress = 100;
-    issues = ['¡Felicidades! Has alcanzado independencia financiera'];
   }
-  
-  // Personalizar descripción de etapa según edad
+
+  // Descripción personalizada según edad
   const stageData = STAGES[stage];
   let personalizedDesc = stageData.desc;
-  
-  if(stage === 1 && age >= 52) {
-    personalizedDesc = 'A tu edad esto es crítico - necesitas acción urgente';
-  } else if(stage === 2 && age <= 30) {
-    personalizedDesc = 'Vas por buen camino - aprovecha tu edad para crecer más';
-  } else if(stage === 3 && age >= 52) {
-    personalizedDesc = 'Estás acumulando bien pero debes acelerar para el retiro';
+  if(stage === 1 && age >= 52) personalizedDesc = 'A tu edad esto es crítico - necesitas acción urgente';
+  else if(stage === 2 && age <= 30) personalizedDesc = 'Vas por buen camino - aprovecha tu edad para crecer más';
+  else if(stage === 3 && age >= 52) personalizedDesc = 'Estás acumulando bien pero debes acelerar para el retiro';
+
+  // Pasos personalizados
+  let steps = [...stageData.steps];
+  if(passive === 0 && netWorth >= 7 && stage === 3) {
+    steps.unshift('Activa tu patrimonio: investiga rentas, dividendos o fondos indexados que generen flujo mensual');
   }
-  
-  // Mostrar resultados
+  if(emergency < idealEmergency && stage <= 2) {
+    steps.unshift(`Construye reserva de ${idealEmergency} meses (te faltan ${Math.round(idealEmergency - emergency)} meses)`);
+  }
+  if(debtRatio >= 50 && stage <= 2) {
+    steps.unshift('🚨 URGENTE: Reduce ratio de endeudamiento bajo 50% (pasivos/activos)');
+  }
+
+  // Render resultados
   document.getElementById('stageIcon').textContent = stageData.icon;
   document.getElementById('stageName').textContent = stageData.name;
   document.getElementById('stageDesc').textContent = personalizedDesc;
   document.getElementById('scoreValue').textContent = Math.round(progress) + '%';
-  
-  // Issues
+
   const issuesList = document.getElementById('issuesList');
-  if(issues.length === 0 || stage === 5) {
+  if(stage === 5) {
     document.getElementById('issuesBox').style.display = 'none';
   } else {
-    issuesList.innerHTML = issues.map(i => `<li>${i}</li>`).join('');
+    issuesList.innerHTML = issues.map(i =>
+      `<li class="${i.critical ? 'critical' : ''}">${i.text}</li>`
+    ).join('');
   }
-  
-  // Steps personalizados
-  let steps = [...stageData.steps];
-  
-  // Agregar step específico de reserva si no la tiene completa
-  if(emergency < idealEmergency && stage <= 2) {
-    steps.unshift(`Construye reserva de ${idealEmergency} meses (te faltan ${Math.round(idealEmergency - emergency)} meses)`);
-  }
-  
-  // Agregar step de reducir endeudamiento si es ≥50% (CRÍTICO)
-  if(debtRatio >= 50 && stage <= 2) {
-    steps.unshift('🚨 URGENTE: Reduce ratio de endeudamiento bajo 50% (pasivos/activos)');
-  }
-  
+
   const stepsList = document.getElementById('stepsList');
   stepsList.innerHTML = steps.slice(0, 4).map(s => `<li>${s}</li>`).join('');
-  
-  // Show results
+
   document.getElementById('questions').style.display = 'none';
   actionsDiv.style.display = 'none';
   results.classList.add('show');
@@ -909,6 +1109,7 @@ function restart() {
   currentQ = 1;
   answers = {};
   document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+  document.querySelectorAll('.optMulti').forEach(o => o.classList.remove('selected'));
   document.querySelectorAll('.noSe').forEach(btn => btn.classList.remove('selected'));
   document.getElementById('debtInput').value = '';
   document.getElementById('debtInput').disabled = false;
@@ -916,12 +1117,10 @@ function restart() {
   document.getElementById('saveInput').value = '';
   document.getElementById('saveInput').disabled = false;
   document.getElementById('saveInput').style.opacity = '1';
-  
   document.getElementById('questions').style.display = 'block';
   actionsDiv.style.display = 'flex';
   results.classList.remove('show');
   document.getElementById('issuesBox').style.display = 'block';
-  
   updateUI();
 }
 
