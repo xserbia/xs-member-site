@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Discovery · Diagnóstico Financiero</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:linear-gradient(135deg,#1a237e 0%,#283593 40%,#3949ab 100%);
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:2rem 1rem;
+}
+.phone-wrap{display:flex;flex-direction:column;align-items:center;gap:1.5rem}
+.phone-label{color:rgba(255,255,255,.7);font-size:.85rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase}
+.phone{
+  width:390px;height:780px;background:#f6f7ff;border-radius:44px;
+  box-shadow:0 0 0 2px #1a237e,0 0 0 4px #3949ab,0 0 0 10px #1a237e,0 30px 80px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.08);
+  overflow:hidden;position:relative;display:flex;flex-direction:column;
+}
+.phone::before{
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:120px;height:30px;background:#0d0d0d;border-radius:0 0 18px 18px;z-index:100;
+}
+.status-bar{
+  height:44px;background:linear-gradient(135deg,#3956E8 0%,#2845d9 100%);
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding:0 1.5rem 6px;font-size:12px;font-weight:700;color:white;flex-shrink:0;
+  position:relative;z-index:10;
+}
+.phone-content{
+  flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  background:#f6f7ff;scroll-behavior:smooth;
+}
+.phone-content::-webkit-scrollbar{display:none}
+.phone-bottom{
+  height:34px;background:#f6f7ff;display:flex;align-items:center;
+  justify-content:center;flex-shrink:0;border-top:1px solid rgba(0,0,0,.06);
+}
+.home-indicator{width:120px;height:5px;background:#1a1a1a;border-radius:99px;opacity:.2}
+.desktop-hint{color:rgba(255,255,255,.6);font-size:.8rem;text-align:center;max-width:400px}
+@media(max-width:430px){
+  .phone{width:100%;height:100vh;border-radius:0;box-shadow:none}
+  body{padding:0;align-items:flex-start;background:#f6f7ff}
+  .phone-label,.desktop-hint{display:none}
+  .phone-wrap{gap:0}
+}
+/* toast */
+.toast-el{
+  position:fixed;bottom:60px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:#0f172a;color:#fff;padding:10px 18px;border-radius:12px;font-size:13px;
+  font-weight:700;opacity:0;transition:all .3s ease;z-index:9999;white-space:nowrap;pointer-events:none;
+}
+.toast-el.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div class="phone-wrap">
+  <div class="phone-label">📱 Discovery · Vista Móvil</div>
+  <div class="phone">
+    <div class="status-bar">
+      <span>9:41</span>
+      <div style={{width:'120px',height:'30px'}}></div>
+      <span style="display:flex;gap:4px;align-items:center">●●● WiFi 🔋</span>
+    </div>
+    <div class="phone-content" id="app-root"></div>
+    <div class="phone-bottom"><div class="home-indicator"></div></div>
+  </div>
+  <div class="desktop-hint">Tu progreso se guarda automáticamente en el dispositivo.</div>
+</div>
+<div class="toast-el" id="globalToast"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// ─── CURRENCIES ───────────────────────────────────────────────────────────
+const CURRENCIES = {
+  USD:{symbol:'$',  code:'USD',locale:'en-US',name:'Dólar americano (USD)'},
+  MXN:{symbol:'$',  code:'MXN',locale:'es-MX',name:'Peso mexicano (MXN)'},
+  GTQ:{symbol:'Q',  code:'GTQ',locale:'es-GT',name:'Quetzal guatemalteco (GTQ)'},
+  HNL:{symbol:'L',  code:'HNL',locale:'es-HN',name:'Lempira hondureño (HNL)'},
+  NIO:{symbol:'C$', code:'NIO',locale:'es-NI',name:'Córdoba nicaragüense (NIO)'},
+  CRC:{symbol:'₡',  code:'CRC',locale:'es-CR',name:'Colón costarricense (CRC)'},
+  PAB:{symbol:'B/.',code:'PAB',locale:'es-PA',name:'Balboa panameño (PAB)'},
+  DOP:{symbol:'RD$',code:'DOP',locale:'es-DO',name:'Peso dominicano (DOP)'},
+  CUP:{symbol:'$',  code:'CUP',locale:'es-CU',name:'Peso cubano (CUP)'},
+  COP:{symbol:'$',  code:'COP',locale:'es-CO',name:'Peso colombiano (COP)'},
+  VES:{symbol:'Bs.',code:'VES',locale:'es-VE',name:'Bolívar venezolano (VES)'},
+  BRL:{symbol:'R$', code:'BRL',locale:'pt-BR',name:'Real brasileño (BRL)'},
+  PEN:{symbol:'S/', code:'PEN',locale:'es-PE',name:'Sol peruano (PEN)'},
+  BOB:{symbol:'Bs.',code:'BOB',locale:'es-BO',name:'Boliviano (BOB)'},
+  PYG:{symbol:'₲',  code:'PYG',locale:'es-PY',name:'Guaraní paraguayo (PYG)'},
+  UYU:{symbol:'$U', code:'UYU',locale:'es-UY',name:'Peso uruguayo (UYU)'},
+  ARS:{symbol:'$',  code:'ARS',locale:'es-AR',name:'Peso argentino (ARS)'},
+  CLP:{symbol:'$',  code:'CLP',locale:'es-CL',name:'Peso chileno (CLP)'},
+  EUR:{symbol:'€',  code:'EUR',locale:'es-ES',name:'Euro (EUR)'},
+  GBP:{symbol:'£',  code:'GBP',locale:'en-GB',name:'Libra esterlina (GBP)'},
+  CAD:{symbol:'$',  code:'CAD',locale:'en-CA',name:'Dólar canadiense (CAD)'},
+};
+window._currency = CURRENCIES['USD'];
+
+// ─── FINANCE CONFIG ────────────────────────────────────────────────────────
+const CAT_SUGGESTIONS = {
+  '0-50k':    ['income','expenses','banking','liabilities','other_assets'],
+  '50-100k':  ['income','expenses','savings','banking','liabilities','investments_retirement','other_assets'],
+  '100-200k': ['income','expenses','savings','banking','investments_retirement','investments_nonretirement','real_estate','insurance','other_assets'],
+  '200k+':    ['income','expenses','savings','banking','investments_retirement','investments_nonretirement','real_estate','insurance','business_trust','legal','other_assets'],
+};
+const FIN_CATS = [
+  {key:'income',               icon:'💵',label:'Ingresos',       color:'#059669',hint:'Salario, negocio, renta…',monthly:false},
+  {key:'expenses',             icon:'🏠',label:'Gastos',         color:'#d97706',hint:'Desglose mensual de gastos',monthly:true},
+  {key:'savings',              icon:'🐷',label:'Ahorro',         color:'#3b82f6',hint:'401k, IRA, HYSA…',monthly:true},
+  {key:'banking',              icon:'🏦',label:'Cuentas',        color:'#0891b2',hint:'Corriente, ahorro, efectivo',monthly:false},
+  {key:'investments_retirement',icon:'🏛️',label:'Retiro',        color:'#f59e0b',hint:'401k, IRA, Roth, pensión',monthly:false},
+  {key:'investments_nonretirement',icon:'📈',label:'Inversiones', color:'#7c3aed',hint:'Acciones, ETFs, cripto',monthly:false},
+  {key:'real_estate',          icon:'🏘️',label:'Bienes raíces',  color:'#16a34a',hint:'Casa, propiedades de renta',monthly:false},
+  {key:'liabilities',          icon:'💳',label:'Deudas',         color:'#dc2626',hint:'Tarjetas, hipoteca, préstamos',monthly:false},
+  {key:'insurance',            icon:'🛡️',label:'Seguros',        color:'#8b5cf6',hint:'Vida, salud, auto, hogar',monthly:false},
+  {key:'business_trust',       icon:'💼',label:'Negocios',       color:'#0f172a',hint:'LLC, S-Corp, Trust',monthly:false},
+  {key:'legal',                icon:'📄',label:'Legal',          color:'#6366f1',hint:'Testamento, poderes notariales',monthly:false},
+  {key:'other_assets',         icon:'🚗',label:'Otros activos',  color:'#64748b',hint:'Vehículos, joyas, arte',monthly:false},
+];
+const EXPENSE_CATS = {
+  'Alimentación':['Supermercado','Comidas fuera','Pedido a domicilio'],
+  'Casa':['Alquiler','Servicios básicos','Mantenimiento'],
+  'Impuestos':['Seguro social','Propiedad','Federales','Estatales'],
+  'Transportación':['Gasolina','Mantenimiento','Transporte público'],
+  'Seguros':['Salud','Auto','Vida - Term','Vida - Whole','Hogar','Disability','Umbrella','Otro'],
+  'Dependientes':['Cuidado de niños','Cuidado de mayores','Educación'],
+  'Deuda':['Tarjeta de crédito','Préstamo de auto','Préstamo estudiantil','Hipoteca','HELOC','Préstamo personal','Otro'],
+  'Entretenimiento':['Cine / Conciertos','Streaming','Vacaciones'],
+  'Telecomunicaciones':['Teléfono','Internet','TV / Cable'],
+  'Gastos Médicos':['Consultas','Medicamentos','Procedimientos'],
+  'Cuidado Personal':['Peluquería','Cosméticos','Spa'],
+  'Regalos':['Familia','Amigos','Donaciones'],
+};
+const SAVINGS_CATS = {
+  'Reserva de emergencia':['Aporte mensual'],
+  'Retiro':['401(k)','IRA/Roth'],
+  'Inversión':['Brokerage','ETF','Cripto'],
+};
+const TYPE_LISTS = {
+  income:['Salario','Pago por hora','Bono','Comisión','Negocio propio','Dividendos','Renta inmueble','Pensión','Seguro Social','Otro'],
+  liabilities:['Tarjeta de crédito','Préstamo de auto','Préstamo estudiantil','Hipoteca','HELOC','Préstamo personal','Otro'],
+  banking:['Checking','Savings','Money Market','CD','Efectivo','Otro'],
+  investments_retirement:['401(k)','403(b)','IRA Tradicional','Roth IRA','SEP IRA','Pensión','Anualidad','Otro'],
+  investments_nonretirement:['Brokerage account','Acciones','ETF/Fondos mutuos','Bonos','Criptomonedas','Otro'],
+  real_estate:['Casa principal','Casa vacacional','Propiedad de renta','Apartamento','Terreno','Otro'],
+  insurance:['Vida - Term','Vida - Whole','Salud','Auto','Hogar','Disability','Umbrella','Otro'],
+  business_trust:['Negocio propio','LLC','S-Corp','C-Corp','Partnership','Trust','Otro'],
+  legal:['Testamento','Living Trust','Power of Attorney','Healthcare Directive','Beneficiarios','Otro'],
+  other_assets:['Vehículo','Bote','RV','Joyas','Arte','Coleccionables','Otro'],
+};
+
+const BLANK = {
+  step:1, finSub:'currency', wizStep:1,
+  currency:'USD', userName:'', userEmail:'',
+  people:{ template:'', householdRole:'', members:[] },
+  financials:{ incomeRange:'', hasDebts:null, hasInvestments:null, hasRealEstate:null, hasInsurance:null, hasBusiness:null, hasLegal:null, hasOtherAssets:null, hasSavings:null, categoriesSelected:[], items:[] },
+  notes:'',
+};
+
+const WIZARD_QS = [
+  { n:2, q:'¿Cuál es tu ingreso anual aproximado (hogar)?', opts:[{a:'0-50k',l:'💵 Menos de 50,000'},{a:'50-100k',l:'💰 50,000 – 100,000'},{a:'100-200k',l:'💎 100,000 – 200,000'},{a:'200k+',l:'🏆 Más de 200,000'}] },
+  { n:3, q:'¿Tienes deudas activas?', opts:[{a:'yes',l:'✓ Sí, tengo deudas'},{a:'no',l:'✗ No, sin deudas'}] },
+  { n:4, q:'¿Tienes inversiones o cuentas de retiro?', opts:[{a:'retirement',l:'🏦 Solo retiro (401k/IRA)'},{a:'both',l:'📈 Retiro + otras inversiones'},{a:'none',l:'➖ No tengo inversiones'}] },
+  { n:5, q:'¿Tienes propiedades?', opts:[{a:'yes',l:'🏠 Sí, tengo propiedad(es)'},{a:'no',l:'✗ No, rento/vivo con familia'}] },
+  { n:6, q:'¿Tienes seguros activos?', sub:'Vida, salud, auto, hogar, disability…', opts:[{a:'yes',l:'🛡️ Sí, tengo uno o más'},{a:'partial',l:'🤔 Solo los básicos'},{a:'no',l:'✗ No tengo seguros de vida'}] },
+  { n:7, q:'¿Tienes un negocio o trust?', opts:[{a:'yes',l:'💼 Sí, tengo negocio/trust'},{a:'no',l:'✗ No tengo'}] },
+  { n:8, q:'¿Tienes documentos de planificación patrimonial?', sub:'Testamento, Trust, Power of Attorney…', opts:[{a:'yes',l:'📄 Sí, tengo documentos'},{a:'no',l:'✗ No tengo / No estoy seguro'}] },
+  { n:9, q:'¿Tienes otros activos importantes?', opts:[{a:'yes',l:'🚗 Sí, tengo otros activos'},{a:'no',l:'✗ No / Nada significativo'}] },
+  { n:10, q:'¿Tienes ahorro activo?', opts:[{a:'yes',l:'💰 Sí, estoy ahorrando'},{a:'no',l:'✗ No ahorro actualmente'}] },
+];
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────
+const uid = () => Math.random().toString(36).slice(2,10);
+const fmtN = (v, c) => {
+  const cur = c || window._currency;
+  return cur.symbol + Math.round(v||0).toLocaleString(cur.locale,{maximumFractionDigits:0});
+};
+const showToast = msg => {
+  const el = document.getElementById('globalToast');
+  if(!el) return;
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(el._t); el._t = setTimeout(()=>el.classList.remove('show'), 2200);
+};
+const pName = (pid, members) => {
+  if(pid==='household') return 'Hogar';
+  const m = members.find(p=>p.id===pid);
+  return m ? `${m.firstName||''} ${m.lastName||''}`.trim() || m.id : pid;
+};
+
+// ─── MAIN APP ─────────────────────────────────────────────────────────────
+function DiscoveryApp() {
+  const [d, setD] = useState(() => {
+    try { const s = localStorage.getItem('discovery_mobile_v2'); return s ? {...BLANK,...JSON.parse(s)} : BLANK; } catch { return BLANK; }
+  });
+  const [modal, setModal] = useState(null); // { cat, editItem? }
+  const [saved, setSaved] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const rootRef = useRef(null);
+
+  // Sync global currency
+  useEffect(() => { window._currency = CURRENCIES[d.currency] || CURRENCIES['USD']; }, [d.currency]);
+
+  // Auto-save
+  useEffect(() => {
+    try { localStorage.setItem('discovery_mobile_v2', JSON.stringify(d)); } catch {}
+    setSaved(true);
+    const t = setTimeout(()=>setSaved(false), 1200);
+    return ()=>clearTimeout(t);
+  }, [d]);
+
+  const goStep = n => { setD(p=>({...p, step:n})); document.getElementById('app-root').scrollTop = 0; };
+
+  const setFin = (key, val) => setD(p=>({ ...p, financials:{...p.financials, [key]:val} }));
+
+  const answerWizard = (q, answer) => {
+    const f = d.financials;
+    let sel = [...f.categoriesSelected];
+    const add = k => { if(!sel.includes(k)) sel.push(k); };
+    if(q===2){ f.incomeRange=answer; sel=[...CAT_SUGGESTIONS[answer]||[]]; }
+    if(q===3){ if(answer==='yes') add('liabilities'); }
+    if(q===4){ if(answer==='retirement') add('investments_retirement'); if(answer==='both'){add('investments_retirement');add('investments_nonretirement');} }
+    if(q===5){ if(answer==='yes') add('real_estate'); }
+    if(q===6){ add('insurance'); }
+    if(q===7){ if(answer==='yes') add('business_trust'); }
+    if(q===8){ add('legal'); }
+    if(q===9){ if(answer==='yes') add('other_assets'); }
+    if(q===10){ if(answer==='yes') add('savings'); }
+    const updates = { incomeRange: q===2?answer:f.incomeRange, hasDebts:q===3?(answer==='yes'):f.hasDebts, hasInvestments:q===4?answer:f.hasInvestments, hasRealEstate:q===5?(answer==='yes'):f.hasRealEstate, hasInsurance:q===6?(answer!=='no'):f.hasInsurance, hasBusiness:q===7?(answer==='yes'):f.hasBusiness, hasLegal:q===8?(answer==='yes'):f.hasLegal, hasOtherAssets:q===9?(answer==='yes'):f.hasOtherAssets, hasSavings:q===10?(answer==='yes'):f.hasSavings, categoriesSelected:sel, items:f.items };
+    setD(p=>({ ...p, financials:{...p.financials,...updates} }));
+    if(q < 10) setD(p=>({...p, wizStep:q+1}));
+    else setD(p=>({...p, finSub:'categories', wizStep:1}));
+  };
+
+  const addItem = item => setD(p=>({ ...p, financials:{...p.financials, items:[...p.financials.items, item]} }));
+  const removeItem = id => setD(p=>({ ...p, financials:{...p.financials, items:p.financials.items.filter(i=>i.id!==id)} }));
+
+  const handleSubmit = async () => {
+    setGenerating(true);
+    await new Promise(r=>setTimeout(r,100));
+    try { generateCoachPDF(d); } catch(e){ console.error(e); }
+    await new Promise(r=>setTimeout(r,400));
+    try { generateCoachExcel(d); } catch(e){ console.error(e); }
+    await new Promise(r=>setTimeout(r,300));
+    try { exportForMoneyMap(d); } catch(e){ console.error(e); }
+    localStorage.removeItem('discovery_mobile_v2');
+    setGenerating(false);
+    setSubmitted(true);
+    document.getElementById('app-root').scrollTop = 0;
+  };
+
+  // ── Shared styles
+  const V = { // variables
+    primary:'#3956E8', ok:'#16a34a', muted:'#64748b', bg:'#f6f7ff',
+  };
+  const card = {background:'#fff',borderRadius:'18px',padding:'1.1rem',boxShadow:'0 2px 12px rgba(0,0,0,.07)',marginBottom:'.75rem',border:'1px solid #f1f5f9'};
+  const inp  = {width:'100%',padding:'.65rem .875rem',border:'2px solid #e2e8f0',borderRadius:'11px',fontSize:'16px',fontFamily:'inherit',outline:'none',background:'#fafafa',boxSizing:'border-box'};
+  const lbl  = {display:'block',fontWeight:'700',fontSize:'.7rem',color:V.muted,marginBottom:'.3rem',textTransform:'uppercase',letterSpacing:'.04em'};
+  const btn  = {padding:'.75rem 1.1rem',borderRadius:'12px',fontWeight:'700',fontSize:'.9rem',cursor:'pointer',border:'none',fontFamily:'inherit',transition:'all .2s'};
+
+  // ── HEADER ──
+  const Hdr = () => {
+    const STEPS = [{n:1,icon:'👋',l:'Inicio'},{n:2,icon:'👥',l:'Personas'},{n:3,icon:'💰',l:'Finanzas'},{n:4,icon:'✅',l:'Final'}];
+    const pct = ((d.step-1)/3)*100;
+    const cur = CURRENCIES[d.currency];
+    return (
+      <div style={{background:'linear-gradient(135deg,#3956E8 0%,#2845d9 100%)',padding:'.75rem 1rem 0',boxShadow:'0 4px 16px rgba(40,69,217,.3)'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.5rem'}}>
+          <div style={{color:'white',fontWeight:'800',fontSize:'.95rem'}}>📋 Discovery</div>
+          <div style={{display:'flex',alignItems:'center',gap:'.4rem'}}>
+            {d.currency && d.finSub!=='currency' && (
+              <button onClick={()=>setD(p=>({...p,step:3,finSub:'currency'}))} style={{background:'rgba(255,255,255,.18)',border:'none',borderRadius:'8px',padding:'3px 9px',color:'white',fontSize:'.72rem',cursor:'pointer',fontWeight:'700'}}>{cur.symbol} {d.currency}</button>
+            )}
+            {saved && <span style={{color:'#86efac',fontSize:'.68rem',fontWeight:'700'}}>✓ Guardado</span>}
+            <button onClick={()=>{if(confirm('¿Reiniciar?')){setD(BLANK);localStorage.removeItem('discovery_mobile_v2');}}} style={{background:'rgba(255,255,255,.15)',border:'none',borderRadius:'8px',padding:'3px 8px',color:'white',fontSize:'.7rem',cursor:'pointer',fontWeight:'600'}}>🔄</button>
+          </div>
+        </div>
+        <div style={{background:'rgba(255,255,255,.2)',borderRadius:'99px',height:'4px',marginBottom:'.75rem',overflow:'hidden'}}>
+          <div style={{height:'100%',borderRadius:'99px',background:'linear-gradient(90deg,#34d399,#10b981)',width:`${pct}%`,transition:'width .5s cubic-bezier(.34,1.56,.64,1)'}}/>
+        </div>
+        <div style={{display:'flex',gap:'.2rem',paddingBottom:'.75rem',overflowX:'auto',scrollbarWidth:'none'}}>
+          {STEPS.map(s=>(
+            <button key={s.n} onClick={()=>goStep(s.n)} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'3px',padding:'.4rem .55rem',borderRadius:'10px',border:'none',cursor:'pointer',minWidth:'52px',flexShrink:0,transition:'all .2s',background:d.step===s.n?'rgba(255,255,255,.25)':d.step>s.n?'rgba(52,211,153,.2)':'rgba(255,255,255,.07)',outline:d.step===s.n?'2px solid rgba(255,255,255,.4)':'none'}}>
+              <span style={{fontSize:'.95rem'}}>{d.step>s.n?'✅':s.icon}</span>
+              <span style={{fontSize:'.58rem',fontWeight:'700',color:d.step===s.n?'white':'rgba(255,255,255,.65)'}}>{s.l}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const Nav = ({onNext, nextLabel='Continuar →', canNext=true}) => (
+    <div style={{display:'flex',gap:'.5rem',padding:'.75rem 1rem .5rem'}}>
+      {d.step>1 && <button style={{...btn,flex:1,background:'#f1f5f9',color:'#475569',fontSize:'.85rem'}} onClick={()=>goStep(d.step-1)}>← Atrás</button>}
+      <button style={{...btn,flex:2,background:canNext?'linear-gradient(135deg,#3956E8,#2845d9)':'#e2e8f0',color:canNext?'white':'#94a3b8',fontSize:'.9rem',boxShadow:canNext?'0 4px 14px rgba(57,86,232,.35)':'none'}} onClick={canNext?(onNext||(() =>goStep(d.step+1))):undefined}>{nextLabel}</button>
+    </div>
+  );
+
+  // ── STEP 1: WELCOME ──
+  if(d.step===1) return (
+    <div>
+      <Hdr/>
+      <div style={{padding:'0 1rem'}}>
+        <div style={{...card,textAlign:'center',padding:'1.25rem 1rem 1rem'}}>
+          <div style={{fontSize:'3rem',marginBottom:'.5rem'}}>👋</div>
+          <h2 style={{margin:'0 0 .5rem',fontSize:'1.2rem',fontWeight:'900',color:'#0f172a',lineHeight:'1.2'}}>¡Hola! Empecemos tu diagnóstico financiero</h2>
+          <p style={{color:V.muted,margin:0,lineHeight:'1.6',fontSize:'.875rem'}}>Esto toma <b style={{color:V.primary}}>5–10 minutos</b>. Todo se guarda automáticamente.</p>
+        </div>
+        <div style={{...card,background:'#f0fdf4',border:'2px solid #86efac'}}>
+          <div style={{fontWeight:'800',fontSize:'.82rem',color:'#166534',marginBottom:'.5rem'}}>💡 Ten a mano (opcional)</div>
+          {['💰 Ingresos mensuales aproximados','🏦 Cuentas bancarias e inversiones','🏠 Propiedades o préstamos activos','👥 Info de familia / pareja'].map(t=>(
+            <div key={t} style={{padding:'.35rem 0',color:'#166534',fontSize:'.82rem',borderBottom:'1px solid rgba(134,239,172,.3)',display:'flex',alignItems:'center',gap:'.5rem'}}>{t}</div>
+          ))}
+        </div>
+        <div style={{...card,background:'#eff6ff',border:'1px solid #bfdbfe',fontSize:'.82rem',color:'#1d4ed8',lineHeight:'1.5'}}>
+          ℹ️ <b>Navegación libre:</b> puedes tocar cualquier paso arriba sin perder tu progreso.
+        </div>
+      </div>
+      <Nav nextLabel="¡Empezar! 🚀"/>
+    </div>
+  );
+
+  // ── STEP 2: PERSONAS ──
+  if(d.step===2) {
+    const p = d.people;
+    const templates = [{id:'single',l:'👤 Solo yo'},{id:'couple',l:'👥 Pareja'},{id:'family',l:'👨‍👩‍👧‍👦 Familia'},{id:'custom',l:'✏️ Personalizado'}];
+    const applyTemplate = id => {
+      const TPLS = {
+        single: { members:[{id:'p1',role:'primary',firstName:'',lastName:'',age:null,gender:''}], householdRole:'primary_provider' },
+        couple: { members:[{id:'p1',role:'primary',firstName:'',lastName:'',age:null,gender:''},{id:'p2',role:'additional',firstName:'',lastName:'',age:null,gender:'',relationshipToPrimary:'spouse'}], householdRole:'shared' },
+        family: { members:[{id:'p1',role:'primary',firstName:'',lastName:'',age:null,gender:''},{id:'p2',role:'additional',firstName:'',lastName:'',age:null,gender:'',relationshipToPrimary:'spouse'},{id:'p3',role:'additional',firstName:'',lastName:'',age:null,gender:'',relationshipToPrimary:'child'}], householdRole:'shared' },
+      };
+      if(id==='custom') setD(p=>({...p,people:{...p.people,template:'custom'}}));
+      else setD(p=>({...p,people:{...TPLS[id],template:id}}));
+    };
+    const updMember = (idx, k, v) => setD(p=>{
+      const m=[...p.people.members]; m[idx]={...m[idx],[k]:v};
+      return {...p,people:{...p.people,members:m}};
+    });
+    const addMember = () => setD(p=>({ ...p, people:{...p.people, members:[...p.people.members,{id:'p'+Date.now(),role:'additional',firstName:'',lastName:'',age:null,gender:'',relationshipToPrimary:''}]} }));
+    const removeMember = idx => setD(p=>({ ...p, people:{...p.people, members:p.people.members.filter((_,i)=>i!==idx)} }));
+    const canContinue = p.members.length>0 && !!p.members[0].firstName;
+
+    return (
+      <div>
+        <Hdr/>
+        <div style={{padding:'0 1rem'}}>
+          <div style={card}>
+            <div style={{fontWeight:'900',fontSize:'1.05rem',color:'#0f172a',marginBottom:'.875rem'}}>👥 Estructura familiar / financiera</div>
+            <div style={{fontSize:'.78rem',color:V.muted,marginBottom:'.625rem',fontWeight:'700'}}>Plantilla rápida</div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'.4rem',marginBottom:'1rem'}}>
+              {templates.map(t=>(
+                <button key={t.id} onClick={()=>applyTemplate(t.id)} style={{padding:'.6rem .5rem',borderRadius:'10px',border:`2px solid ${p.template===t.id?V.primary:'#e2e8f0'}`,background:p.template===t.id?'#eff6ff':'#fafafa',fontSize:'.82rem',fontWeight:'700',cursor:'pointer',color:p.template===t.id?V.primary:'#475569'}}>{t.l}</button>
+              ))}
+            </div>
+            <div style={{marginBottom:'1rem'}}>
+              <label style={lbl}>¿Eres el principal proveedor económico?</label>
+              <select style={{...inp,height:'auto'}} value={p.householdRole||''} onChange={e=>setD(prev=>({...prev,people:{...prev.people,householdRole:e.target.value}}))}>
+                <option value="">Selecciona…</option>
+                <option value="primary_provider">Sí, principalmente yo</option>
+                <option value="shared">Compartido</option>
+                <option value="not_primary">No, principalmente otra persona</option>
+              </select>
+            </div>
+            {p.members.map((m,idx)=>(
+              <div key={m.id} style={{background:'#f8fafc',borderRadius:'14px',padding:'.875rem',marginBottom:'.5rem',border:'1px solid #e2e8f0'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.625rem'}}>
+                  <span style={{fontSize:'.72rem',fontWeight:'800',color:V.primary,background:'rgba(57,86,232,.1)',padding:'3px 10px',borderRadius:'999px'}}>{idx===0?'Persona principal':'Persona adicional'}</span>
+                  {idx>0&&<button onClick={()=>removeMember(idx)} style={{background:'#fee2e2',border:'none',borderRadius:'8px',width:'28px',height:'28px',cursor:'pointer',color:'#ef4444',fontWeight:'900',fontSize:'1rem',display:'flex',alignItems:'center',justifyContent:'center'}}>×</button>}
+                </div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'.4rem',marginBottom:'.4rem'}}>
+                  <div><label style={lbl}>Nombre *</label><input style={inp} value={m.firstName||''} onChange={e=>updMember(idx,'firstName',e.target.value)} placeholder="Nombre"/></div>
+                  <div><label style={lbl}>Apellido</label><input style={inp} value={m.lastName||''} onChange={e=>updMember(idx,'lastName',e.target.value)} placeholder="Apellido"/></div>
+                </div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'.4rem'}}>
+                  <div><label style={lbl}>Edad</label><input style={inp} type="number" value={m.age||''} onChange={e=>updMember(idx,'age',parseInt(e.target.value)||null)} placeholder="35" inputMode="numeric"/></div>
+                  <div><label style={lbl}>Género</label>
+                    <select style={{...inp,height:'auto'}} value={m.gender||''} onChange={e=>updMember(idx,'gender',e.target.value)}>
+                      <option value="">Sel…</option><option value="male">Masc.</option><option value="female">Fem.</option><option value="prefer_not_to_say">N/D</option>
+                    </select>
+                  </div>
+                </div>
+                {idx>0&&<div style={{marginTop:'.4rem'}}><label style={lbl}>Relación</label>
+                  <select style={{...inp,height:'auto'}} value={m.relationshipToPrimary||''} onChange={e=>updMember(idx,'relationshipToPrimary',e.target.value)}>
+                    <option value="">Selecciona…</option><option value="spouse">Cónyuge</option><option value="partner">Pareja</option><option value="child">Hijo/a</option><option value="family">Familiar</option><option value="other">Otro</option>
+                  </select>
+                </div>}
+              </div>
+            ))}
+            <button onClick={addMember} style={{...btn,width:'100%',background:'rgba(57,86,232,.07)',color:V.primary,border:'2px dashed rgba(57,86,232,.25)',fontSize:'.875rem',padding:'.7rem'}}>➕ Agregar otra persona</button>
+          </div>
+          {!canContinue && p.members.length>0 && <div style={{color:'#f59e0b',fontSize:'.8rem',textAlign:'center',marginBottom:'.5rem'}}>⚠ Ingresa al menos el nombre de la persona principal</div>}
+        </div>
+        <Nav canNext={p.members.length>0}/>
+      </div>
+    );
+  }
+
+  // ── STEP 3: FINANZAS ──
+  if(d.step===3) {
+    const { finSub, wizStep, financials: f } = d;
+
+    // 3a: CURRENCY PICKER
+    if(finSub==='currency') return (
+      <div>
+        <Hdr/>
+        <div style={{padding:'0 1rem'}}>
+          <div style={card}>
+            <div style={{textAlign:'center',marginBottom:'1rem'}}>
+              <div style={{fontSize:'2rem',marginBottom:'.4rem'}}>🌎</div>
+              <div style={{fontWeight:'900',fontSize:'1.05rem',color:'#0f172a',marginBottom:'.25rem'}}>¿En qué moneda registras tus finanzas?</div>
+              <div style={{fontSize:'.8rem',color:V.muted}}>Selecciona la moneda de tu país o la que usas habitualmente</div>
+            </div>
+            <select
+              value={d.currency||'USD'}
+              onChange={e=>setD(p=>({...p,currency:e.target.value}))}
+              style={{...inp,fontSize:'15px',fontWeight:'700',appearance:'none',backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%233956E8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,backgroundRepeat:'no-repeat',backgroundPosition:'right 12px center',paddingRight:'40px',cursor:'pointer',marginBottom:'.5rem'}}
+            >
+              <optgroup label="── América del Norte ──">
+                <option value="USD">🇺🇸 USD — Dólar americano ($)</option>
+                <option value="MXN">🇲🇽 MXN — Peso mexicano ($)</option>
+              </optgroup>
+              <optgroup label="── América Central ──">
+                <option value="GTQ">🇬🇹 GTQ — Quetzal guatemalteco (Q)</option>
+                <option value="HNL">🇭🇳 HNL — Lempira hondureño (L)</option>
+                <option value="NIO">🇳🇮 NIO — Córdoba nicaragüense (C$)</option>
+                <option value="CRC">🇨🇷 CRC — Colón costarricense (₡)</option>
+                <option value="PAB">🇵🇦 PAB — Balboa panameño (B/.)</option>
+              </optgroup>
+              <optgroup label="── Caribe ──">
+                <option value="DOP">🇩🇴 DOP — Peso dominicano (RD$)</option>
+                <option value="CUP">🇨🇺 CUP — Peso cubano ($)</option>
+              </optgroup>
+              <optgroup label="── América del Sur ──">
+                <option value="COP">🇨🇴 COP — Peso colombiano ($)</option>
+                <option value="VES">🇻🇪 VES — Bolívar venezolano (Bs.)</option>
+                <option value="BRL">🇧🇷 BRL — Real brasileño (R$)</option>
+                <option value="PEN">🇵🇪 PEN — Sol peruano (S/)</option>
+                <option value="BOB">🇧🇴 BOB — Boliviano (Bs.)</option>
+                <option value="PYG">🇵🇾 PYG — Guaraní paraguayo (₲)</option>
+                <option value="UYU">🇺🇾 UYU — Peso uruguayo ($U)</option>
+                <option value="ARS">🇦🇷 ARS — Peso argentino ($)</option>
+                <option value="CLP">🇨🇱 CLP — Peso chileno ($)</option>
+              </optgroup>
+              <optgroup label="── Europa ──">
+                <option value="EUR">🇪🇺 EUR — Euro (€)</option>
+                <option value="GBP">🇬🇧 GBP — Libra esterlina (£)</option>
+              </optgroup>
+              <optgroup label="── Otra ──">
+                <option value="CAD">🇨🇦 CAD — Dólar canadiense ($)</option>
+              </optgroup>
+            </select>
+            <p style={{fontSize:'.75rem',color:V.muted,textAlign:'center',marginTop:'.5rem'}}>💡 El símbolo aparecerá en todos los montos, el PDF y las exportaciones</p>
+          </div>
+        </div>
+        <Nav onNext={()=>setD(p=>({...p,finSub:'wizard',wizStep:2}))} nextLabel="Continuar →"/>
+      </div>
+    );
+
+    // 3b: WIZARD QUESTIONS
+    if(finSub==='wizard') {
+      const qData = WIZARD_QS.find(q=>q.n===wizStep);
+      if(!qData) { setD(p=>({...p,finSub:'categories'})); return null; }
+      return (
+        <div>
+          <Hdr/>
+          <div style={{padding:'0 1rem'}}>
+            <div style={card}>
+              <div style={{textAlign:'center',marginBottom:'1.25rem'}}>
+                <div style={{fontSize:'.72rem',fontWeight:'800',color:V.muted,letterSpacing:'.06em',textTransform:'uppercase',marginBottom:'.5rem'}}>Pregunta {wizStep} de 10</div>
+                <h3 style={{fontSize:'1.1rem',fontWeight:'900',color:'#0f172a',lineHeight:'1.3',margin:'0 0 .25rem'}}>{qData.q}</h3>
+                {qData.sub && <p style={{fontSize:'.8rem',color:V.muted,margin:0}}>{qData.sub}</p>}
+              </div>
+              <div style={{display:'flex',flexDirection:'column',gap:'.5rem'}}>
+                {qData.opts.map(o=>(
+                  <button key={o.a} onClick={()=>answerWizard(wizStep,o.a)} style={{padding:'1rem',borderRadius:'13px',border:'2px solid #e2e8f0',background:'#fafafa',textAlign:'left',cursor:'pointer',fontSize:'.9rem',fontWeight:'700',color:'#0f172a',transition:'all .15s',display:'flex',alignItems:'center',gap:'.75rem'}} onMouseOver={e=>{e.currentTarget.style.borderColor='rgba(57,86,232,.4)';e.currentTarget.style.background='rgba(57,86,232,.04)'}} onMouseOut={e=>{e.currentTarget.style.borderColor='#e2e8f0';e.currentTarget.style.background='#fafafa'}}>{o.l}</button>
+                ))}
+              </div>
+            </div>
+            {wizStep>2 && (
+              <button onClick={()=>setD(p=>({...p,wizStep:wizStep-1}))} style={{...btn,width:'100%',background:'#f1f5f9',color:'#475569',fontSize:'.875rem'}}>← Pregunta anterior</button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // 3c: CATEGORY DETAIL
+    const selCats = FIN_CATS.filter(c=>f.categoriesSelected.includes(c.key));
+    return (
+      <div>
+        <Hdr/>
+        <div style={{padding:'0 1rem'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.75rem'}}>
+            <div style={{fontWeight:'800',fontSize:'.95rem',color:'#0f172a'}}>Agrega tus datos financieros</div>
+            <button onClick={()=>setD(p=>({...p,finSub:'wizard',wizStep:2}))} style={{...btn,padding:'5px 10px',background:'rgba(57,86,232,.08)',color:V.primary,fontSize:'.75rem',border:'1px solid rgba(57,86,232,.2)'}}>← Editar respuestas</button>
+          </div>
+          {selCats.map(cat=>{
+            const items = f.items.filter(i=>i.category===cat.key);
+            const total = items.reduce((s,i)=>s+(i.value||0),0);
+            return (
+              <div key={cat.key} style={{...card,borderLeft:`4px solid ${cat.color}`}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:items.length?'.625rem':0}}>
+                  <div>
+                    <div style={{fontSize:'.95rem',fontWeight:'800',color:'#0f172a'}}><span style={{marginRight:'5px'}}>{cat.icon}</span>{cat.label}</div>
+                    <div style={{fontSize:'.72rem',color:V.muted,marginTop:'2px'}}>{cat.hint}</div>
+                  </div>
+                  <div style={{display:'flex',alignItems:'center',gap:'.4rem'}}>
+                    {total>0&&<span style={{fontSize:'.8rem',fontWeight:'800',color:cat.color}}>{fmtN(total)}</span>}
+                    <button onClick={()=>setModal({cat:cat.key})} style={{...btn,background:`linear-gradient(135deg,${cat.color},${cat.color}cc)`,color:'white',padding:'.45rem .75rem',fontSize:'.78rem',borderRadius:'9px',boxShadow:`0 2px 8px ${cat.color}40`}}>+ Agregar</button>
+                  </div>
+                </div>
+                {items.map(it=>{
+                  const isMonthly = cat.key==='expenses'||cat.key==='savings';
+                  const label = (it.expenseCategory&&it.subcategory) ? `${it.expenseCategory} – ${it.subcategory}` : (it.alias||it.type||'—');
+                  return (
+                    <div key={it.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'.45rem .625rem',background:'#f8fafc',borderRadius:'9px',marginBottom:'.3rem',gap:'.5rem'}}>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:'.82rem',fontWeight:'700',color:'#0f172a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{label}</div>
+                        <div style={{fontSize:'.72rem',color:V.muted}}>{fmtN(it.value)}{isMonthly?'/mes':''} · {pName(it.owner,d.people.members)}</div>
+                      </div>
+                      <button onClick={()=>removeItem(it.id)} style={{background:'#fee2e2',border:'none',borderRadius:'7px',width:'26px',height:'26px',cursor:'pointer',color:'#ef4444',fontWeight:'900',fontSize:'.95rem',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>×</button>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+          {f.items.length===0 && <div style={{textAlign:'center',padding:'1.5rem',color:V.muted,fontSize:'.875rem'}}>⬆ Agrega al menos un ítem en cualquier categoría</div>}
+        </div>
+        <Nav canNext={f.items.length>0} nextLabel="Revisar →"/>
+        {modal && <ItemModal cat={modal.cat} members={d.people.members} currency={d.currency} onSave={addItem} onClose={()=>setModal(null)} inp={inp} lbl={lbl} btn={btn}/>}
+      </div>
+    );
+  }
+
+  // ── STEP 4: FINAL ──
+  const f = d.financials;
+  const sum = cat => f.items.filter(i=>i.category===cat).reduce((s,i)=>s+(i.value||0),0);
+  const totalItems = f.items.length;
+  const cur = CURRENCIES[d.currency] || CURRENCIES['USD'];
+  const fmt = v => cur.symbol + Math.round(v||0).toLocaleString(cur.locale,{maximumFractionDigits:0});
+  const totalAssets = sum('banking')+sum('investments_retirement')+sum('investments_nonretirement')+sum('real_estate')+sum('other_assets');
+  const netWorth = totalAssets - sum('liabilities');
+
+  if(submitted) return (
+    <div>
+      <Hdr/>
+      <div style={{padding:'0 1rem'}}>
+        <div style={{...card,textAlign:'center',padding:'2rem 1.5rem',background:'linear-gradient(135deg,#f0fdf4,#dcfce7)',border:'2px solid #86efac'}}>
+          <div style={{fontSize:'3.5rem',marginBottom:'.75rem'}}>🎉</div>
+          <h3 style={{fontSize:'1.2rem',fontWeight:'900',color:'#166534',margin:'0 0 .5rem'}}>¡Discovery completado!</h3>
+          <p style={{color:'#166534',fontSize:'.875rem',lineHeight:'1.6',margin:'0 0 1.5rem'}}>El PDF, Excel y JSON del coach fueron descargados automáticamente.</p>
+          <button onClick={()=>{setSubmitted(false);setD(BLANK);}} style={{...btn,background:V.primary,color:'white',width:'100%',padding:'.875rem'}}>← Nuevo Discovery</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div>
+      <Hdr/>
+      <div style={{padding:'0 1rem'}}>
+        {/* Profile summary */}
+        {d.people.members.length>0 && (
+          <div style={{...card,display:'flex',alignItems:'center',gap:'.875rem',background:'#eff6ff',border:'2px solid #bfdbfe'}}>
+            <div style={{fontSize:'2.5rem'}}>👤</div>
+            <div style={{flex:1}}>
+              <div style={{fontWeight:'900',fontSize:'1rem',color:'#1e40af'}}>{d.people.members[0].firstName||'Sin nombre'} {d.people.members[0].lastName||''}</div>
+              <div style={{fontSize:'.75rem',color:'#3b82f6',marginTop:'2px'}}>{d.people.members[0].age&&`${d.people.members[0].age} años · `}{d.people.members.length} persona{d.people.members.length>1?'s':''} · {cur.code}</div>
+            </div>
+            <button onClick={()=>goStep(2)} style={{background:'#dbeafe',border:'none',borderRadius:'8px',padding:'4px 8px',color:'#1d4ed8',fontSize:'.72rem',cursor:'pointer',fontWeight:'700'}}>✏️ Editar</button>
+          </div>
+        )}
+
+        {/* KPI grid */}
+        <div style={card}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.75rem'}}>
+            <div style={{fontWeight:'800',fontSize:'.9rem',color:'#0f172a'}}>💰 Resumen financiero ({totalItems} ítems)</div>
+            <button onClick={()=>goStep(3)} style={{background:'#f1f5f9',border:'none',borderRadius:'8px',padding:'4px 8px',color:'#475569',fontSize:'.72rem',cursor:'pointer',fontWeight:'700'}}>✏️ Editar</button>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'.35rem'}}>
+            {[
+              {l:'Ingresos/año', v:fmt(sum('income')),       c:'#059669', icon:'💵'},
+              {l:'Gastos/mes',   v:fmt(sum('expenses')),     c:'#d97706', icon:'🏠'},
+              {l:'Ahorro/mes',   v:fmt(sum('savings')),      c:'#3b82f6', icon:'🐷'},
+              {l:'Efectivo',     v:fmt(sum('banking')),      c:'#0891b2', icon:'🏦'},
+              {l:'Inv. retiro',  v:fmt(sum('investments_retirement')), c:'#f59e0b', icon:'🏛️'},
+              {l:'Inversiones',  v:fmt(sum('investments_nonretirement')),c:'#7c3aed', icon:'📈'},
+              {l:'Bienes raíces',v:fmt(sum('real_estate')),  c:'#16a34a', icon:'🏘️'},
+              {l:'Deudas',       v:fmt(sum('liabilities')),  c:'#dc2626', icon:'💳'},
+            ].map(({l,v,c,icon})=>(
+              <div key={l} style={{background:'#fafafa',borderRadius:'10px',padding:'.5rem .6rem',border:'1px solid #f1f5f9'}}>
+                <div style={{fontSize:'.62rem',color:'#94a3b8',fontWeight:'700',textTransform:'uppercase',marginBottom:'2px'}}>{icon} {l}</div>
+                <div style={{fontSize:'.95rem',fontWeight:'900',color:c}}>{v}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{marginTop:'.5rem',padding:'.5rem .75rem',background:'rgba(57,86,232,.06)',borderRadius:'10px',display:'flex',justifyContent:'space-between',fontSize:'.85rem'}}>
+            <span style={{fontWeight:'700',color:'#0f172a'}}>Patrimonio neto</span>
+            <span style={{fontWeight:'900',color:netWorth>=0?'#059669':'#dc2626'}}>{fmt(netWorth)}</span>
+          </div>
+        </div>
+
+        {/* Notes */}
+        <div style={card}>
+          <label style={lbl}>Notas para el coach (opcional)</label>
+          <textarea value={d.notes||''} onChange={e=>setD(p=>({...p,notes:e.target.value}))} placeholder="Ej: Quiero revisar cobertura de vida, tenemos metas de retiro a los 62..." style={{...inp,minHeight:'80px',resize:'vertical'}}/>
+        </div>
+
+        {/* Validation */}
+        {d.people.members.length===0 && <div style={{...card,background:'#fff7ed',border:'2px solid #fed7aa',color:'#c2410c',fontSize:'.82rem',fontWeight:'700',cursor:'pointer'}} onClick={()=>goStep(2)}>⚠ Falta agregar información de personas → Paso 2</div>}
+        {f.items.length===0 && <div style={{...card,background:'#fff7ed',border:'2px solid #fed7aa',color:'#c2410c',fontSize:'.82rem',fontWeight:'700',cursor:'pointer'}} onClick={()=>goStep(3)}>⚠ Falta agregar información financiera → Paso 3</div>}
+
+        {/* Submit */}
+        {!generating ? (
+          <button
+            onClick={handleSubmit}
+            disabled={d.people.members.length===0||f.items.length===0}
+            style={{...btn,width:'100%',background:d.people.members.length>0&&f.items.length>0?'linear-gradient(135deg,#059669,#10b981)':'#e2e8f0',color:d.people.members.length>0&&f.items.length>0?'white':'#94a3b8',fontSize:'.95rem',padding:'.95rem',marginBottom:'.5rem',boxShadow:d.people.members.length>0&&f.items.length>0?'0 4px 20px rgba(16,185,129,.4)':'none',borderRadius:'15px'}}
+          >✅ Generar archivos del coach (PDF + Excel + JSON)</button>
+        ) : (
+          <div style={{textAlign:'center',padding:'1.25rem',color:V.muted}}>
+            <div style={{fontSize:'1.5rem',marginBottom:'.4rem',animation:'spin 1s linear infinite',display:'inline-block'}}>⏳</div>
+            <div style={{fontWeight:'700',fontSize:'.9rem'}}>Generando archivos…</div>
+          </div>
+        )}
+        <p style={{textAlign:'center',fontSize:'.72rem',color:'#94a3b8',lineHeight:'1.4',marginBottom:'1rem'}}>Se descargarán automáticamente 3 archivos:<br/>Reporte PDF · Excel · JSON para Money Map</p>
+      </div>
+      {d.step>1&&<div style={{height:'.5rem'}}/>}
+    </div>
+  );
+}
+
+// ─── ITEM MODAL ────────────────────────────────────────────────────────────
+function ItemModal({ cat, members, currency, onSave, onClose, inp, lbl, btn }) {
+  const cur = CURRENCIES[currency] || CURRENCIES['USD'];
+  const catMeta = FIN_CATS.find(c=>c.key===cat) || {};
+  const [form, setForm] = useState({
+    type:'', alias:'', value:'', owner: members[0]?.id||'household',
+    expenseCategory:'', subcategory:'',
+    interestRate:'', monthsRemaining:'',
+    coverageAmount:'', premium:'', deductible:'', beneficiary:'', policyNumber:'',
+    date:'', status:'vigente', notes:'',
+  });
+
+  const set = (k,v) => setForm(p=>({...p,[k]:v}));
+  const isExpense = cat==='expenses';
+  const isSavings = cat==='savings';
+  const isDebt    = cat==='liabilities';
+  const isIns     = cat==='insurance';
+  const isLegal   = cat==='legal';
+  const hasCascade = isExpense || isSavings;
+  const cascadeCats = isExpense ? EXPENSE_CATS : SAVINGS_CATS;
+  const typeOpts = TYPE_LISTS[cat] || [];
+  const hasOwner = members.length > 1;
+
+  const validate = () => {
+    if(hasCascade) return form.expenseCategory && form.subcategory && parseFloat(form.value)>=0;
+    if(isLegal)   return !!form.type;
+    return !!form.type && parseFloat(form.value)>=0;
+  };
+
+  const save = () => {
+    if(!validate()) return;
+    const id = uid();
+    const val = parseFloat(form.value)||0;
+    let item = { id, category: cat, owner: form.owner||'household' };
+    if(hasCascade){
+      const displayName = form.alias ? `${form.alias} (${form.expenseCategory} – ${form.subcategory})` : `${form.expenseCategory} – ${form.subcategory}`;
+      item = {...item, expenseCategory:form.expenseCategory, subcategory:form.subcategory, alias:form.alias||null, name:displayName, value:val };
+    } else if(isDebt){
+      item = {...item, type:form.type, alias:form.alias||null, name:form.alias||form.type, value:val, interestRate:form.interestRate?parseFloat(form.interestRate):null, monthsRemaining:form.monthsRemaining?parseInt(form.monthsRemaining):null };
+    } else if(isIns){
+      item = {...item, type:form.type, alias:form.alias||null, name:form.alias||form.type, value:parseFloat(form.coverageAmount)||0, coverageAmount:parseFloat(form.coverageAmount)||null, premium:parseFloat(form.premium)||null, premiumFrequency:'mensual', deductible:parseFloat(form.deductible)||null, beneficiary:form.beneficiary||null, policyNumber:form.policyNumber||null };
+    } else if(isLegal){
+      item = {...item, type:form.type, alias:form.alias||null, name:form.alias||form.type, value:0, date:form.date||null, status:form.status||'vigente', notes:form.notes||null };
+    } else {
+      item = {...item, type:form.type, alias:form.alias||null, name:form.alias||form.type, value:val };
+    }
+    onSave(item);
+    onClose();
+  };
+
+  return (
+    <div onClick={onClose} style={{position:'fixed',inset:0,background:'rgba(15,23,42,.6)',zIndex:1000,display:'flex',alignItems:'flex-end',backdropFilter:'blur(4px)'}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:'#fff',borderRadius:'22px 22px 0 0',padding:'1.25rem',width:'100%',maxHeight:'80vh',overflowY:'auto',boxShadow:'0 -8px 40px rgba(0,0,0,.2)'}}>
+        <div onClick={onClose} style={{width:'40px',height:'5px',background:'#e2e8f0',borderRadius:'99px',margin:'0 auto .875rem',cursor:'pointer'}}/>
+        <div style={{display:'flex',alignItems:'center',gap:'.6rem',marginBottom:'1rem'}}>
+          <span style={{fontSize:'1.5rem'}}>{catMeta.icon}</span>
+          <div>
+            <div style={{fontWeight:'900',fontSize:'1rem',color:'#0f172a'}}>{catMeta.label}</div>
+            <div style={{fontSize:'.75rem',color:'#94a3b8'}}>{catMeta.hint}</div>
+          </div>
+        </div>
+
+        {/* CASCADE: expenses & savings */}
+        {hasCascade && <>
+          <div style={{marginBottom:'.625rem'}}>
+            <label style={lbl}>Categoría *</label>
+            <select style={{...inp,height:'auto'}} value={form.expenseCategory} onChange={e=>set('expenseCategory',e.target.value)}>
+              <option value="">Selecciona…</option>
+              {Object.keys(cascadeCats).map(k=><option key={k} value={k}>{k}</option>)}
+            </select>
+          </div>
+          {form.expenseCategory && <div style={{marginBottom:'.625rem'}}>
+            <label style={lbl}>Subcategoría *</label>
+            <select style={{...inp,height:'auto'}} value={form.subcategory} onChange={e=>set('subcategory',e.target.value)}>
+              <option value="">Selecciona…</option>
+              {(cascadeCats[form.expenseCategory]||[]).map(s=><option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>}
+        </>}
+
+        {/* STANDARD type selector */}
+        {!hasCascade && !isLegal && <div style={{marginBottom:'.625rem'}}>
+          <label style={lbl}>Tipo *</label>
+          <select style={{...inp,height:'auto'}} value={form.type} onChange={e=>set('type',e.target.value)}>
+            <option value="">Selecciona…</option>
+            {typeOpts.map(t=><option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>}
+
+        {/* LEGAL */}
+        {isLegal && <>
+          <div style={{marginBottom:'.625rem'}}>
+            <label style={lbl}>Tipo de documento *</label>
+            <select style={{...inp,height:'auto'}} value={form.type} onChange={e=>set('type',e.target.value)}>
+              <option value="">Selecciona…</option>
+              {TYPE_LISTS.legal.map(t=><option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+          <div style={{marginBottom:'.625rem'}}><label style={lbl}>Fecha del documento</label><input style={inp} type="date" value={form.date} onChange={e=>set('date',e.target.value)}/></div>
+          <div style={{marginBottom:'.625rem'}}>
+            <label style={lbl}>Estado</label>
+            <select style={{...inp,height:'auto'}} value={form.status} onChange={e=>set('status',e.target.value)}>
+              <option value="vigente">✅ Vigente</option><option value="desactualizado">⚠️ Desactualizado</option><option value="pendiente">⏳ Pendiente</option>
+            </select>
+          </div>
+          <div style={{marginBottom:'.625rem'}}><label style={lbl}>Abogado / Notas</label><input style={inp} value={form.notes} onChange={e=>set('notes',e.target.value)} placeholder="Abogado, notas adicionales…"/></div>
+        </>}
+
+        {/* INSURANCE specific */}
+        {isIns && <>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'.4rem',marginBottom:'.4rem'}}>
+            <div><label style={lbl}>Cobertura ({cur.symbol})</label><input style={inp} type="number" value={form.coverageAmount} onChange={e=>set('coverageAmount',e.target.value)} placeholder="500000" inputMode="decimal"/></div>
+            <div><label style={lbl}>Prima /mes ({cur.symbol})</label><input style={inp} type="number" value={form.premium} onChange={e=>set('premium',e.target.value)} placeholder="150" inputMode="decimal"/></div>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'.4rem',marginBottom:'.4rem'}}>
+            <div><label style={lbl}>Deducible ({cur.symbol})</label><input style={inp} type="number" value={form.deductible} onChange={e=>set('deductible',e.target.value)} placeholder="1000" inputMode="decimal"/></div>
+            <div><label style={lbl}>Beneficiario</label><input style={inp} value={form.beneficiary} onChange={e=>set('beneficiary',e.target.value)} placeholder="Esposa, hijos…"/></div>
+          </div>
+        </>}
+
+        {/* ALIAS */}
+        {!isLegal && <div style={{marginBottom:'.625rem'}}><label style={lbl}>Descripción / Alias (opcional)</label><input style={inp} value={form.alias} onChange={e=>set('alias',e.target.value)} placeholder={isDebt?'Ej: Chase Sapphire':isIns?'Aseguradora':'Ej: Chase Checking'}/></div>}
+
+        {/* AMOUNT — not for insurance or legal */}
+        {!isIns && !isLegal && <div style={{marginBottom:'.625rem'}}>
+          <label style={lbl}>{isDebt?`Saldo pendiente (${cur.symbol})`:`Monto (${cur.symbol})`} *</label>
+          <input style={inp} type="number" value={form.value} onChange={e=>set('value',e.target.value)} placeholder="0" inputMode="decimal"/>
+        </div>}
+
+        {/* DEBT extras */}
+        {isDebt && <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'.4rem',marginBottom:'.625rem'}}>
+          <div><label style={lbl}>Tasa interés %</label><input style={inp} type="number" value={form.interestRate} onChange={e=>set('interestRate',e.target.value)} placeholder="18.5" inputMode="decimal"/></div>
+          <div><label style={lbl}>Meses restantes</label><input style={inp} type="number" value={form.monthsRemaining} onChange={e=>set('monthsRemaining',e.target.value)} placeholder="48" inputMode="numeric"/></div>
+        </div>}
+
+        {/* OWNER */}
+        {hasOwner && <div style={{marginBottom:'.875rem'}}>
+          <label style={lbl}>Titular</label>
+          <select style={{...inp,height:'auto'}} value={form.owner} onChange={e=>set('owner',e.target.value)}>
+            {members.map(m=><option key={m.id} value={m.id}>{`${m.firstName||''} ${m.lastName||''}`.trim()||m.id}</option>)}
+            <option value="household">Hogar (compartido)</option>
+          </select>
+        </div>}
+
+        <div style={{display:'flex',gap:'.5rem'}}>
+          <button onClick={onClose} style={{...btn,flex:1,background:'#f1f5f9',color:'#475569',fontSize:'.875rem'}}>Cancelar</button>
+          <button onClick={save} disabled={!validate()} style={{...btn,flex:2,background:validate()?'linear-gradient(135deg,#3956E8,#2845d9)':'#e2e8f0',color:validate()?'white':'#94a3b8',fontSize:'.875rem',boxShadow:validate()?'0 4px 14px rgba(57,86,232,.35)':'none'}}>Guardar ✓</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('app-root')).render(<DiscoveryApp/>);
+</script>
+
+<script>
+// ─── EXPORT FUNCTIONS (Vanilla JS, access window._currency) ───────────────
+function showToast(msg){ const el=document.getElementById('globalToast');if(!el)return;el.textContent=msg;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),2200); }
+
+function generateCoachPDF(state){
+  const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'letter'});
+  const C={primary:[57,86,232],secondary:[116,89,217],dark:[15,23,42],muted:[100,116,139],light:[246,247,255],ok:[22,163,74],warn:[245,158,11],bad:[220,38,38],white:[255,255,255],border:[229,231,235],section:[238,241,253]};
+  const W=215.9,MARG=14,CW=W-MARG*2;let Y=0;
+  const cc=window._currency||{symbol:'$',code:'USD',locale:'en-US'};
+  const members=state.people.members||[];const items=state.financials.items||[];
+  const sum=cat=>items.filter(i=>i.category===cat).reduce((a,b)=>a+b.value,0);
+  const totalIncome=sum('income'),totalExpenses=sum('expenses'),totalSavings=sum('savings'),totalBanking=sum('banking'),totalRetInv=sum('investments_retirement'),totalNonRet=sum('investments_nonretirement'),totalDebt=sum('liabilities'),totalRealEstate=sum('real_estate'),totalOtherAssets=sum('other_assets');
+  const totalAssets=totalBanking+totalRetInv+totalNonRet+totalRealEstate+totalOtherAssets;const netWorth=totalAssets-totalDebt;
+  const CAT_LBL={income:"Ingresos",expenses:"Gastos Mensuales",savings:"Ahorro",banking:"Cuentas Bancarias",investments_retirement:"Inv. Retiro",investments_nonretirement:"Otras Inversiones",liabilities:"Deudas",insurance:"Seguros",real_estate:"Bienes Raices",business_trust:"Negocios/Trust",legal:"Legal",other_assets:"Otros Activos"};
+  const fUSD=v=>cc.symbol+Number(v||0).toLocaleString(cc.locale,{minimumFractionDigits:0,maximumFractionDigits:0});
+  const pn=pid=>{if(pid==='household')return 'Hogar';const m=members.find(p=>p.id===pid);return m?`${m.firstName||''} ${m.lastName||''}`.trim():pid;};
+  function sf(bold,size,colorArr){doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);doc.setTextColor(...(colorArr||C.dark));}
+  function fr(x,y,w,h,color,radius=0){doc.setFillColor(...color);if(radius>0)doc.roundedRect(x,y,w,h,radius,radius,'F');else doc.rect(x,y,w,h,'F');}
+  function np(h=10){if(Y+h>270){doc.addPage();Y=MARG;}}
+  function sb(label){np(12);fr(MARG,Y,CW,9,C.primary,3);sf(true,9,C.white);doc.text(label,MARG+4,Y+6);Y+=13;}
+
+  fr(0,0,W,36,C.dark);sf(true,18,C.white);doc.text('REPORTE DE DISCOVERY',MARG,14);sf(false,8,[148,163,184]);doc.text('USO INTERNO · CONFIDENCIAL',W-MARG,14,{align:'right'});
+  fr(0,36,W,14,[30,41,59]);sf(false,9,[148,163,184]);doc.text('Cliente: ',MARG,44);sf(true,9,C.white);doc.text(state.userName||'—',MARG+14,44);
+  const now=new Date().toLocaleDateString('es',{day:'2-digit',month:'2-digit',year:'numeric'});sf(false,9,[148,163,184]);doc.text(`Generado: ${now}  |  Moneda: ${cc.code} (${cc.symbol})`,W-MARG,44,{align:'right'});
+  Y=58;
+  sb('INFORMACIÓN PERSONAL DEL CLIENTE');
+  const primary=members[0]||{};const primaryName=`${primary.firstName||''} ${primary.lastName||''}`.trim()||'—';
+  fr(MARG,Y,CW,28,C.section,4);doc.setDrawColor(...C.primary);doc.setLineWidth(0.3);doc.roundedRect(MARG,Y,CW,28,4,4,'S');doc.setLineWidth(0.1);
+  sf(false,7.5,C.muted);doc.text('NOMBRE COMPLETO',MARG+6,Y+6);sf(true,11,C.dark);doc.text(primaryName,MARG+6,Y+13);
+  const colEmail=MARG+CW*0.36;sf(false,7.5,C.muted);doc.text('EMAIL',colEmail,Y+6);sf(false,9,C.dark);doc.text(state.userEmail||'—',colEmail,Y+13);
+  const colMid=MARG+CW*0.64;sf(false,7.5,C.muted);doc.text('EDAD',colMid,Y+6);sf(true,11,C.dark);doc.text(String(primary.age||'—'),colMid,Y+13);
+  const colRight=MARG+CW*0.80;sf(false,7.5,C.muted);doc.text('MONEDA',colRight,Y+6);sf(true,9,C.primary);doc.text(`${cc.code} (${cc.symbol})`,colRight,Y+13);
+  Y+=32;
+  if(members.length>1){np(20);sf(true,8,C.muted);doc.text('NÚCLEO FAMILIAR',MARG,Y+4);doc.setDrawColor(...C.border);doc.line(MARG,Y+6,W-MARG,Y+6);Y+=8;
+    doc.autoTable({startY:Y,margin:{left:MARG,right:MARG},head:[['Nombre','Relación','Edad']],body:members.slice(1).map(m=>[`${m.firstName||''} ${m.lastName||''}`.trim()||'—',({spouse:'Cónyuge',partner:'Pareja',child:'Hijo/a',family:'Familiar',other:'Otro'})[m.relationshipToPrimary]||'—',String(m.age||'—')]),styles:{fontSize:8.5,cellPadding:3},headStyles:{fillColor:C.secondary,textColor:C.white,fontStyle:'bold'},alternateRowStyles:{fillColor:C.section}});
+    Y=doc.lastAutoTable.finalY+8;}else{Y+=4;}
+  sb('A) RESUMEN EJECUTIVO');
+  const kpis=[['Ingreso Anual (hogar)',fUSD(totalIncome)],['Gasto Mensual',fUSD(totalExpenses)],['Ahorro Mensual',fUSD(totalSavings)],['Liquidez (Banco)',fUSD(totalBanking)],['Inv. Retiro',fUSD(totalRetInv)],['Deuda Total',fUSD(totalDebt)],['Total Activos',fUSD(totalAssets)],['Patrimonio Neto',fUSD(netWorth)],['Rango Ingreso',({'0-50k':'< 50k','50-100k':'50k–100k','100-200k':'100k–200k','200k+':'> 200k'})[state.financials.incomeRange]||'—']];
+  const cols=3,cellW=CW/cols,cellH=16;
+  kpis.forEach(([k,v],i)=>{const col=i%cols,row=Math.floor(i/cols),cx=MARG+col*cellW,cy=Y+row*cellH;fr(cx,cy,cellW,cellH,row%2===0?C.light:C.white);doc.setDrawColor(...C.border);doc.rect(cx,cy,cellW,cellH,'S');sf(false,7.5,C.muted);doc.text(k,cx+4,cy+5.5);sf(true,10,C.dark);doc.text(String(v),cx+4,cy+12);});
+  Y+=Math.ceil(kpis.length/cols)*cellH+6;
+  if(state.notes?.trim()){np(22);sb('NOTA DEL CLIENTE');const noteLines=doc.splitTextToSize(`"${state.notes}"`,CW-12);const noteH=Math.min(noteLines.length,5)*5+6;fr(MARG,Y,CW,noteH,[238,241,253]);doc.setDrawColor(...C.primary);doc.setLineWidth(1);doc.line(MARG,Y,MARG,Y+noteH);doc.setLineWidth(0.1);sf(false,8.5,[30,58,95]);noteLines.slice(0,5).forEach((ln,i)=>doc.text(ln,MARG+5,Y+5+(i*5)));Y+=noteH+6;}
+  doc.addPage();Y=MARG;sb('B) SNAPSHOT FINANCIERO');
+  const CATS_ORDER=['income','expenses','savings','banking','investments_retirement','investments_nonretirement','liabilities','insurance','real_estate','business_trust','legal','other_assets'];
+  const selected=state.financials.categoriesSelected||[];const isMonthlyF=k=>k==='expenses'||k==='savings';
+  CATS_ORDER.filter(k=>selected.includes(k)).forEach(catKey=>{const catItems=items.filter(i=>i.category===catKey);if(!catItems.length)return;const catTotal=catItems.reduce((a,b)=>a+b.value,0);const period=isMonthlyF(catKey)?'/mes':'';np(20);sf(true,9,C.primary);doc.text(`${CAT_LBL[catKey]||catKey}`,MARG,Y+4);doc.text(`Total: ${fUSD(catTotal)}${period}`,W-MARG,Y+4,{align:'right'});doc.setDrawColor(...C.primary);doc.setLineWidth(0.5);doc.line(MARG,Y+6,W-MARG,Y+6);doc.setLineWidth(0.1);Y+=8;const isDebtCat=catKey==='liabilities';doc.autoTable({startY:Y,margin:{left:MARG,right:MARG},head:isDebtCat?[['Tipo','Descripción','Saldo','Tasa','Meses']]:[['Categoría / Tipo','Descripción','Titular','Monto']],body:isDebtCat?catItems.map(it=>[it.type||'—',it.alias||'—',fUSD(it.value)+period,it.interestRate!=null?`${it.interestRate}%`:'—',it.monthsRemaining!=null?String(it.monthsRemaining):'—']):catItems.map(it=>{const typeLabel=(it.expenseCategory&&it.subcategory)?`${it.expenseCategory} – ${it.subcategory}`:(it.type||'—');return[typeLabel,it.alias||'—',pn(it.owner),fUSD(it.value)+period];}),styles:{fontSize:8,cellPadding:2.5},headStyles:{fillColor:C.primary,textColor:C.white,fontStyle:'bold',fontSize:8},alternateRowStyles:{fillColor:C.section}});Y=doc.lastAutoTable.finalY+4;});
+  const totalPages=doc.internal.getNumberOfPages();for(let i=1;i<=totalPages;i++){doc.setPage(i);sf(false,7.5,[148,163,184]);doc.text('Documento interno · Solo para el coach',W/2,275,{align:'center'});doc.text(`Pag. ${i} de ${totalPages}`,W-MARG,275,{align:'right'});doc.setDrawColor(...C.border);doc.setLineWidth(0.3);doc.line(MARG,271,W-MARG,271);}
+  const safeName=(state.userName||'cliente').replace(/\s+/g,'_');const dateStr=new Date().toISOString().slice(0,10);
+  doc.save(`Discovery_Coach_${safeName}_${dateStr}.pdf`);
+}
+
+function exportForMoneyMap(state){
+  const cc=window._currency||{symbol:'$',code:'USD'};
+  const members=state.people.members||[];const items=state.financials.items||[];const primary=members[0]||{};
+  const DEBT_MAP={'Tarjeta de crédito':'tarjetas','Préstamo de auto':'auto','Préstamo estudiantil':'educacion','Hipoteca':'casa','HELOC':'lineaPropiedad','Préstamo personal':'lineaPersonal','Otro':'otros'};
+  const INCOME_MAP={'Salario':'Salario','Pago por hora':'Salario','Bono':'Bono','Comisión':'Comisión','Negocio propio':'Negocio propio','Dividendos':'Dividendos','Renta inmueble':'Renta inmueble','Pensión':'Pensión','Seguro Social':'Seguro Social','Otro':'Otro'};
+  const mapActivo=i=>({tipo:i.type||'Otro',ubicacion:i.alias||'',valor:i.value||0,titular:i.owner||'',...(i.beneficiary?{beneficiario:i.beneficiary}:{})});
+  const activos={efectivo:items.filter(i=>i.category==='banking').map(mapActivo),inversiones:items.filter(i=>i.category==='investments_nonretirement').map(mapActivo),retiro:items.filter(i=>i.category==='investments_retirement').map(mapActivo),bienesRaices:items.filter(i=>i.category==='real_estate').map(mapActivo),bienesPersonales:items.filter(i=>i.category==='other_assets').map(mapActivo),negocios:items.filter(i=>i.category==='business_trust').map(mapActivo)};
+  const deudas={tarjetas:[],lineaPersonal:[],lineaPropiedad:[],casa:[],auto:[],educacion:[],otros:[]};
+  const calcMensual=(bal,apr,meses)=>{const P=parseFloat(bal)||0,n=parseFloat(meses)||0,r=(parseFloat(apr)||0)/100/12;if(P<=0||n<=0)return 0;if(r===0)return Math.round(P/n);return Math.round(P*r/(1-Math.pow(1+r,-n)));};
+  items.filter(i=>i.category==='liabilities').forEach(i=>{const cat=(DEBT_MAP[i.type]||'otros');const m=calcMensual(i.value,i.interestRate,i.monthsRemaining);deudas[cat].push({compania:i.alias||i.type||'',apr:i.interestRate!=null?String(i.interestRate):'',meses:i.monthsRemaining!=null?String(i.monthsRemaining):'',mensual:m>0?String(m):'',balance:String(i.value||0)});});
+  const ingresos=items.filter(i=>i.category==='income').map(i=>({categoria:INCOME_MAP[i.type]||'Otro',nombre:i.alias||i.type||'',monto:String(Math.round((i.value||0)/12))}));
+  const gastos={diarios:[],deuda:[],ahorro:[],impuestos:[],seguros:[]};
+  const DIARIOS={'Alimentación':'Alimentación','Casa':'Casa','Transportación':'Transportación','Entretenimiento':'Entretenimiento','Telecomunicaciones':'Telecomunicaciones','Gastos Médicos':'Gastos Médicos','Cuidado Personal':'Cuidado Personal','Dependientes':'Dependientes','Regalos':'Regalos'};
+  items.filter(i=>i.category==='expenses').forEach(i=>{const cat=(i.expenseCategory||'').toLowerCase();const item={categoria:'',nombre:i.alias||`${i.expenseCategory||''} – ${i.subcategory||''}`,monto:String(i.value||0)};if(cat==='impuestos'){item.categoria=i.subcategory||'Otro';gastos.impuestos.push(item);}else if(cat==='seguros'){item.categoria=i.subcategory||'Otro';gastos.seguros.push(item);}else if(cat==='deuda'){item.categoria=i.subcategory||'Otro';gastos.deuda.push(item);}else{item.categoria=DIARIOS[i.expenseCategory]||'Otro';gastos.diarios.push(item);}});
+  const AHORRO_MAP={'Reserva de emergencia':'Reserva de emergencia','401(k)':'401(k)','IRA/Roth':'IRA/Roth','Brokerage':'Brokerage','ETF':'ETF','Cripto':'Cripto'};
+  items.filter(i=>i.category==='savings').forEach(i=>{gastos.ahorro.push({categoria:AHORRO_MAP[i.subcategory]||AHORRO_MAP[i.expenseCategory]||'Otro',nombre:i.alias||`${i.expenseCategory||''} – ${i.subcategory||''}`,monto:String(i.value||0)});});
+  const spouse=members.find(m=>m.relationshipToPrimary==='spouse'||m.relationshipToPrimary==='partner');
+  const kids=members.filter(m=>m.relationshipToPrimary==='child').length;
+  const legalItems=items.filter(i=>i.category==='legal');
+  const DOC_TIPOS=['Testamento','Living Trust','Power of Attorney','Healthcare Directive','Beneficiarios actualizados'];
+  const documentos=DOC_TIPOS.map(tipo=>{const match=legalItems.find(i=>i.type&&i.type.toLowerCase().includes(tipo.toLowerCase().split(' ')[0].toLowerCase()));return{tipo,tiene:match?'si':'no',fecha:match?(match.date||''):'',contacto:match?(match.alias||''):'',notas:match?(match.notes||''):''}});
+  const polizas=items.filter(i=>i.category==='insurance').map(i=>({tipo:i.type||'Otro',aseguradora:i.alias||'',cobertura:String(i.coverageAmount||i.value||0),prima:String(i.premium||''),deducible:String(i.deductible||''),beneficiario:i.beneficiary||''}));
+  const payload={_version:'1.0',_currency:cc.code,_currencySymbol:cc.symbol,_exportDate:new Date().toISOString().slice(0,10),_clientName:state.userName||`${primary.firstName||''} ${primary.lastName||''}`.trim(),userProfile:{nombre:primary.firstName||'',apellido:primary.lastName||'',edad:primary.age||'',estadoCivil:spouse?(spouse.relationshipToPrimary==='spouse'?'casado':'pareja'):'soltero',dependientes:kids,avatar:'👤',analisisConjunto:!!spouse,parejaNombre:spouse?(spouse.firstName||''):''},goals:[],activos,deudas,ingresos,gastos,proteccion:{documentos,polizas}};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;
+  const safeName=(state.userName||'cliente').replace(/\s+/g,'_');
+  a.download=`MoneyMap_${safeName}_${new Date().toISOString().slice(0,10)}.moneymap.json`;
+  document.body.appendChild(a);a.click();setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},1000);
+  showToast('✅ JSON Money Map exportado');
+}
+
+function generateCoachExcel(state){
+  const WB=XLSX.utils.book_new();const cc=window._currency||{symbol:'$',code:'USD',name:'USD'};
+  const members=state.people.members||[];const items=state.financials.items||[];
+  const sum=cat=>items.filter(i=>i.category===cat).reduce((a,b)=>a+b.value,0);
+  const pn=pid=>{if(pid==='household')return 'Hogar';const m=members.find(p=>p.id===pid);return m?`${m.firstName||''} ${m.lastName||''}`.trim():pid;};
+  const CAT_LBL={income:"Ingresos",expenses:"Gastos Mensuales",savings:"Ahorro",banking:"Cuentas Bancarias",investments_retirement:"Inv. Retiro",investments_nonretirement:"Otras Inversiones",liabilities:"Deudas",insurance:"Seguros",real_estate:"Bienes Raices",business_trust:"Negocios/Trust",legal:"Legal",other_assets:"Otros Activos"};
+  const totalIncome=sum('income'),totalExpenses=sum('expenses'),totalSavings=sum('savings'),totalBanking=sum('banking'),totalRetInv=sum('investments_retirement'),totalNonRet=sum('investments_nonretirement'),totalDebt=sum('liabilities'),totalRealEst=sum('real_estate'),totalOther=sum('other_assets');
+  const totalAssets=totalBanking+totalRetInv+totalNonRet+totalRealEst+totalOther;const netWorth=totalAssets-totalDebt;
+  const savingsRate=totalIncome?(totalSavings/(totalIncome/12))*100:0;const dti=totalIncome?(totalDebt/totalIncome)*100:0;
+  const now=new Date().toLocaleDateString('es',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const primaryMember=members[0]||{};const primaryName2=`${primaryMember.firstName||''} ${primaryMember.lastName||''}`.trim()||'—';
+  const ws1=[
+    [`REPORTE DISCOVERY | Moneda: ${cc.code} (${cc.name})`,'','',''],
+    [],['─── INFORMACIÓN PERSONAL ───','','',''],
+    ['Nombre completo',primaryName2,'Email',state.userEmail||'—'],
+    ['Edad',primaryMember.age||'—','Moneda',`${cc.code} (${cc.symbol})`],
+    ['Miembros del hogar',String(members.length),'Fecha',now],
+    [],
+    ...(members.length>1?[['─── NÚCLEO FAMILIAR ───','','',''],['Nombre','Relación','Edad',''],
+      ...members.slice(1).map(m=>[`${m.firstName||''} ${m.lastName||''}`.trim()||'—',({spouse:'Cónyuge',partner:'Pareja',child:'Hijo/a',family:'Familiar',other:'Otro'})[m.relationshipToPrimary]||'—',m.age||'—','']),[]]:[] ),
+    ['─── INDICADORES ───','','',''],
+    ['Ingreso Anual',totalIncome,'',''],['Gasto Mensual',totalExpenses,'',''],['Ahorro Mensual',totalSavings,'',''],
+    ['Tasa de Ahorro',`${savingsRate.toFixed(1)}%`,'',''],['Total Activos',totalAssets,'',''],['Deuda Total',totalDebt,'',''],
+    ['Patrimonio Neto',netWorth,'',''],['DTI',`${dti.toFixed(1)}%`,'',''],
+    [],['─── NOTA DEL CLIENTE ───','','',''],[state.notes||'(sin notas)','','',''],
+  ];
+  const wsSummary=XLSX.utils.aoa_to_sheet(ws1);wsSummary['!cols']=[{wch:32},{wch:20},{wch:24},{wch:20}];
+  XLSX.utils.book_append_sheet(WB,wsSummary,'Resumen');
+  const ws3Rows=[['SNAPSHOT FINANCIERO','','','','',''],[], ['Categoría','Descripción','Tipo','Titular',`Monto (${cc.code})`,'Periodo','Tasa % (deudas)','Meses rest.']];
+  const CATS_ORDER=['income','expenses','savings','banking','investments_retirement','investments_nonretirement','liabilities','insurance','real_estate','business_trust','legal','other_assets'];
+  const sel=state.financials.categoriesSelected||[];
+  CATS_ORDER.filter(k=>sel.includes(k)).forEach(catKey=>{const catItems=items.filter(i=>i.category===catKey);if(!catItems.length)return;const isM=catKey==='expenses'||catKey==='savings',isD=catKey==='liabilities';catItems.forEach(it=>ws3Rows.push([CAT_LBL[catKey]||catKey,it.name||'—',it.type||it.expenseCategory||'—',pn(it.owner||'household'),it.value||0,isM?'Mensual':'Total',isD&&it.interestRate!=null?it.interestRate:'',isD&&it.monthsRemaining!=null?it.monthsRemaining:'']));ws3Rows.push(['',`TOTAL ${(CAT_LBL[catKey]||catKey).toUpperCase()}`,'','',catItems.reduce((a,b)=>a+(b.value||0),0),(isM?'Mensual':'Total'),'','']);ws3Rows.push([]);});
+  const wsSnap=XLSX.utils.aoa_to_sheet(ws3Rows);wsSnap['!cols']=[{wch:20},{wch:28},{wch:18},{wch:14},{wch:14},{wch:10},{wch:14},{wch:14}];
+  XLSX.utils.book_append_sheet(WB,wsSnap,'Snapshot Financiero');
+  const safeName=(state.userName||'cliente').replace(/\s+/g,'_');const dateStr=new Date().toISOString().slice(0,10);
+  const wbOut=XLSX.write(WB,{bookType:'xlsx',type:'array'});
+  const blob=new Blob([wbOut],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`Discovery_Coach_${safeName}_${dateStr}.xlsx`;
+  document.body.appendChild(a);a.click();setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},1000);
+  showToast('✅ Excel exportado');
+}
+</script>
+</body>
+</html>
