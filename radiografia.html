@@ -1080,16 +1080,43 @@ function showResults() {
   else if(stage === 2 && age <= 30) personalizedDesc = 'Vas por buen camino - aprovecha tu edad para crecer más';
   else if(stage === 3 && age >= 52) personalizedDesc = 'Estás acumulando bien pero debes acelerar para el retiro';
 
-  // Pasos personalizados
-  let steps = [...stageData.steps];
-  if(passive === 0 && netWorth >= 7 && stage === 3) {
-    steps.unshift('Activa tu patrimonio: investiga rentas, dividendos o fondos indexados que generen flujo mensual');
-  }
-  if(emergency < idealEmergency && stage <= 2) {
-    steps.unshift(`Construye reserva de ${idealEmergency} meses (te faltan ${Math.round(idealEmergency - emergency)} meses)`);
-  }
-  if(debtRatio >= 50 && stage <= 2) {
-    steps.unshift('🚨 URGENTE: Reduce ratio de endeudamiento bajo 50% (pasivos/activos)');
+  // ─────────────────────────────────────────────────────────────────
+  // PASOS PERSONALIZADOS — se sobreescriben si el perfil es rico
+  // Para alguien con patrimonio alto, los pasos genéricos de "ahorra
+  // 15%" o "reduce deudas" son irrelevantes o incluso ofensivos.
+  // ─────────────────────────────────────────────────────────────────
+  let steps;
+
+  if(wealthyEnough && passive === 0) {
+    // Perfil: patrimonio sólido pero sin flujo pasivo — prioridad es activar el capital
+    steps = [
+      'Activa tu patrimonio: estructura rentas, dividendos o fondos indexados que generen flujo mensual',
+      'Define un retiro sostenible — regla del 4% como punto de partida',
+      cashFlow === 'ahorros'
+        ? 'Deja de consumir capital directo — el objetivo es vivir del rendimiento, no del principal'
+        : 'Optimiza la asignación de activos para maximizar flujo sin vender principal',
+      'Completa tu planificación patrimonial (beneficiarios, testamento, directivas)'
+    ];
+  } else if(wealthyEnough && passive > 0 && passive < 100) {
+    // Perfil: tiene flujo pasivo pero no cubre todo — optimizar
+    steps = [
+      `Aumenta ingresos pasivos para cubrir el 100% de gastos (hoy cubren ${passive}%)`,
+      'Optimiza la estructura fiscal de tus ingresos pasivos',
+      'Reduce deuda restante a menos del 10% del ingreso',
+      'Refina tu planificación patrimonial y estate planning'
+    ];
+  } else {
+    // Pasos genéricos de etapa con ajustes contextuales
+    steps = [...stageData.steps];
+    if(passive === 0 && netWorth >= 7 && stage === 3) {
+      steps.unshift('Activa tu patrimonio: investiga rentas, dividendos o fondos indexados que generen flujo mensual');
+    }
+    if(emergency < idealEmergency && stage <= 2) {
+      steps.unshift(`Construye reserva de ${idealEmergency} meses (te faltan ${Math.round(idealEmergency - emergency)} meses)`);
+    }
+    if(debtRatio >= 50 && stage <= 2) {
+      steps.unshift('🚨 URGENTE: Reduce ratio de endeudamiento bajo 50% (pasivos/activos)');
+    }
   }
 
   // Render resultados
