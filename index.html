@@ -197,6 +197,210 @@
 
     .muted{ color:var(--muted); font-weight:800; }
 
+    /* ===== PROFILE MODAL ===== */
+    .modalOverlay{
+      position:fixed;inset:0;
+      background:rgba(15,23,42,.45);
+      backdrop-filter:blur(4px);
+      z-index:500;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      opacity:0;pointer-events:none;
+      transition:opacity .25s ease;
+    }
+    .modalOverlay.open{ opacity:1;pointer-events:all; }
+
+    .modalBox{
+      background:#fff;
+      border-radius:24px;
+      width:620px;
+      max-width:95vw;
+      max-height:88vh;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      box-shadow:0 32px 80px rgba(15,23,42,.22);
+      transform:translateY(18px) scale(.97);
+      transition:transform .28s cubic-bezier(.32,.72,0,1);
+    }
+    .modalOverlay.open .modalBox{ transform:translateY(0) scale(1); }
+
+    /* Modal header */
+    .modalHead{
+      padding:22px 26px 0;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .modalHeadLeft{
+      display:flex;
+      align-items:center;
+      gap:14px;
+    }
+    .modalAvatar{
+      width:56px;height:56px;border-radius:999px;
+      background:linear-gradient(135deg,var(--primary),var(--secondary));
+      display:grid;place-items:center;
+      color:#fff;font-weight:1000;font-size:22px;
+      border:3px solid #c7d2fe;
+      flex:0 0 auto;
+    }
+    .modalUserName{
+      font-weight:1000;font-size:18px;color:var(--text);line-height:1.1;
+    }
+    .modalUserRole{
+      font-size:12px;font-weight:900;
+      color:var(--primary);background:#eef2ff;
+      padding:3px 10px;border-radius:999px;
+      display:inline-block;margin-top:5px;
+    }
+    .modalClose{
+      width:36px;height:36px;border-radius:999px;
+      border:1px solid var(--stroke);
+      background:#f8fafc;
+      cursor:pointer;
+      display:grid;place-items:center;
+      font-size:18px;color:var(--muted);
+      transition:.15s ease;
+      flex:0 0 auto;
+    }
+    .modalClose:hover{ background:#fee2e2;color:#ef4444;border-color:#fecaca; }
+
+    /* Modal tabs */
+    .modalTabs{
+      display:flex;
+      gap:0;
+      padding:16px 26px 0;
+      border-bottom:1px solid var(--stroke);
+      margin-top:16px;
+    }
+    .modalTab{
+      padding:10px 16px;
+      font-weight:900;
+      font-size:14px;
+      color:var(--muted);
+      cursor:pointer;
+      border-bottom:3px solid transparent;
+      transition:.15s ease;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .modalTab.active{ color:var(--primary); border-bottom-color:var(--primary); }
+    .modalTab:hover:not(.active){ color:var(--text); }
+
+    /* Modal body */
+    .modalBody{
+      padding:24px 26px;
+      overflow-y:auto;
+      flex:1;
+    }
+    .tabPanel{ display:none; }
+    .tabPanel.active{ display:block; }
+
+    /* Form elements */
+    .formGrid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px;
+    }
+    .formGrid.full{ grid-template-columns:1fr; }
+    .formGroup{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .formGroup.span2{ grid-column:span 2; }
+    .formLabel{
+      font-size:12px;
+      font-weight:900;
+      color:var(--muted);
+      letter-spacing:.04em;
+      text-transform:uppercase;
+    }
+    .formInput{
+      border:1px solid var(--stroke);
+      border-radius:12px;
+      padding:11px 14px;
+      font-family:inherit;
+      font-size:14px;
+      font-weight:700;
+      color:var(--text);
+      background:#fff;
+      outline:none;
+      transition:.15s ease;
+    }
+    .formInput:focus{ border-color:#a5b4fc;box-shadow:0 0 0 3px rgba(99,102,241,.1); }
+    .formInput:disabled{
+      background:#f8fafc;
+      color:var(--muted);
+      cursor:not-allowed;
+    }
+    select.formInput{ appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; padding-right:36px; }
+
+    .sectionDivider{
+      font-size:12px;font-weight:900;color:var(--muted);
+      letter-spacing:.06em;text-transform:uppercase;
+      padding:14px 0 10px;
+      border-top:1px solid var(--stroke);
+      margin-top:8px;
+    }
+    .sectionDivider:first-child{ border-top:none;padding-top:0; }
+
+    .badgeRow{
+      display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;
+    }
+    .badge{
+      font-size:12px;font-weight:900;
+      padding:5px 12px;border-radius:999px;
+      background:#eef2ff;color:var(--primary);
+      border:1px solid #c7d2fe;
+    }
+    .badge.green{ background:#f0fdf4;color:#16a34a;border-color:#bbf7d0; }
+    .badge.yellow{ background:#fffbeb;color:#d97706;border-color:#fcd34d; }
+
+    /* Password strength */
+    .pwStrength{
+      display:flex;gap:4px;margin-top:6px;
+    }
+    .pwBar{
+      flex:1;height:4px;border-radius:999px;
+      background:#e5e7eb;transition:.3s ease;
+    }
+    .pwBar.filled{ background:var(--primary); }
+
+    /* Modal footer */
+    .modalFoot{
+      padding:16px 26px 20px;
+      border-top:1px solid var(--stroke);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .btnPrimary{
+      padding:11px 22px;border-radius:12px;border:0;
+      background:var(--primary);color:#fff;
+      font-family:inherit;font-weight:1000;font-size:14px;
+      cursor:pointer;transition:.15s ease;
+    }
+    .btnPrimary:hover{ transform:translateY(-1px);box-shadow:0 8px 20px rgba(57,86,232,.22); }
+    .btnGhost{
+      padding:11px 18px;border-radius:12px;
+      border:1px solid var(--stroke);background:#fff;
+      font-family:inherit;font-weight:900;font-size:14px;
+      color:var(--muted);cursor:pointer;transition:.15s ease;
+    }
+    .btnGhost:hover{ background:#f8fafc; }
+    .btnDanger{
+      padding:11px 18px;border-radius:12px;border:0;
+      background:#fff1f2;color:#ef4444;
+      font-family:inherit;font-weight:1000;font-size:14px;
+      cursor:pointer;border:1px solid #fecaca;transition:.15s ease;
+    }
+    .btnDanger:hover{ background:#fee2e2; }
+
     @media (max-width: 1100px){
       .sidebar{ width:260px; }
     }
@@ -240,10 +444,10 @@
 
       <div class="topBar">
         <div class="card welcomeCard">
-          <div class="welcomeTitle">Bienvenido, Frank 👋</div>
+          <div class="welcomeTitle" id="pageTitle">Bienvenido, Frank 👋</div>
         </div>
 
-        <div class="profileBlock">
+        <div class="profileBlock" id="profileBtn">
           <div class="profileAvatar">F</div>
           <div class="profileInfo">
             <div class="profileName">Frank García</div>
@@ -256,14 +460,240 @@
     </main>
   </div>
 
+  <!-- ===== PROFILE MODAL ===== -->
+  <div class="modalOverlay" id="modalOverlay">
+    <div class="modalBox">
+
+      <!-- Header -->
+      <div class="modalHead">
+        <div class="modalHeadLeft">
+          <div class="modalAvatar">F</div>
+          <div>
+            <div class="modalUserName">Frank García</div>
+            <div class="modalUserRole">✦ Members Pro</div>
+          </div>
+        </div>
+        <button class="modalClose" id="modalClose">✕</button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="modalTabs" id="modalTabs">
+        <div class="modalTab active" data-panel="personal">Información Personal</div>
+        <div class="modalTab" data-panel="empleo">Empleo</div>
+        <div class="modalTab" data-panel="acceso">Acceso & Contraseña</div>
+      </div>
+
+      <!-- Body -->
+      <div class="modalBody">
+
+        <!-- PANEL: Información Personal -->
+        <div class="tabPanel active" id="panel-personal">
+          <div class="formGrid">
+            <div class="formGroup">
+              <label class="formLabel">Nombre</label>
+              <input class="formInput" type="text" value="Frank"/>
+            </div>
+            <div class="formGroup">
+              <label class="formLabel">Apellido</label>
+              <input class="formInput" type="text" value="García"/>
+            </div>
+            <div class="formGroup">
+              <label class="formLabel">Correo electrónico</label>
+              <input class="formInput" type="email" value="frank.garcia@empresa.com"/>
+            </div>
+            <div class="formGroup">
+              <label class="formLabel">Teléfono</label>
+              <input class="formInput" type="tel" value="+1 (305) 555-0192"/>
+            </div>
+            <div class="formGroup">
+              <label class="formLabel">Fecha de nacimiento</label>
+              <input class="formInput" type="date" value="1990-04-15"/>
+            </div>
+            <div class="formGroup">
+              <label class="formLabel">Género</label>
+              <select class="formInput">
+                <option>Masculino</option>
+                <option>Femenino</option>
+                <option>Prefiero no decir</option>
+              </select>
+            </div>
+            <div class="formGroup span2">
+              <label class="formLabel">Dirección</label>
+              <input class="formInput" type="text" value="1234 Brickell Ave, Miami, FL 33131"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANEL: Empleo -->
+        <div class="tabPanel" id="panel-empleo">
+          <div class="sectionDivider">Datos del empleado</div>
+          <div class="formGrid">
+            <div class="formGroup">
+              <label class="formLabel">ID de Empleado</label>
+              <input class="formInput" type="text" value="EMP-00482" disabled/>
+            </div>
+            <div class="formGroup">
+              <label class="formLabel">Fecha de ingreso</label>
+              <input class="formInput" type="date" value="2021-08-01" disabled/>
+            </div>
+            <div class="formGroup">
+              <label class="formLabel">Departamento</label>
+              <select class="formInput">
+                <option>Finanzas</option>
+                <option>Recursos Humanos</option>
+                <option>Tecnología</option>
+                <option>Operaciones</option>
+              </select>
+            </div>
+            <div class="formGroup">
+              <label class="formLabel">Puesto</label>
+              <input class="formInput" type="text" value="Analista Financiero"/>
+            </div>
+            <div class="formGroup">
+              <label class="formLabel">Supervisor directo</label>
+              <input class="formInput" type="text" value="María López" disabled/>
+            </div>
+            <div class="formGroup">
+              <label class="formLabel">Tipo de contrato</label>
+              <input class="formInput" type="text" value="Tiempo completo" disabled/>
+            </div>
+          </div>
+          <div class="sectionDivider">Acceso al programa</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div class="formLabel">Plan activo</div>
+            <div class="badgeRow">
+              <span class="badge">✦ Members Pro</span>
+              <span class="badge green">✓ Activo</span>
+            </div>
+            <div class="formLabel" style="margin-top:10px;">Módulos habilitados</div>
+            <div class="badgeRow">
+              <span class="badge">Tablero</span>
+              <span class="badge">Tu Radiografía</span>
+              <span class="badge">Tus Metas</span>
+              <span class="badge">Herramientas</span>
+              <span class="badge">Tu Coach</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANEL: Acceso & Contraseña -->
+        <div class="tabPanel" id="panel-acceso">
+          <div class="sectionDivider">Credenciales de acceso</div>
+          <div class="formGrid full">
+            <div class="formGroup">
+              <label class="formLabel">Usuario / Email</label>
+              <input class="formInput" type="email" value="frank.garcia@empresa.com" disabled/>
+            </div>
+          </div>
+          <div class="sectionDivider">Cambiar contraseña</div>
+          <div class="formGrid full">
+            <div class="formGroup">
+              <label class="formLabel">Contraseña actual</label>
+              <input class="formInput" type="password" placeholder="••••••••"/>
+            </div>
+            <div class="formGroup">
+              <label class="formLabel">Nueva contraseña</label>
+              <input class="formInput" type="password" placeholder="••••••••" id="newPw"/>
+              <div class="pwStrength">
+                <div class="pwBar" id="pb1"></div>
+                <div class="pwBar" id="pb2"></div>
+                <div class="pwBar" id="pb3"></div>
+                <div class="pwBar" id="pb4"></div>
+              </div>
+            </div>
+            <div class="formGroup">
+              <label class="formLabel">Confirmar contraseña</label>
+              <input class="formInput" type="password" placeholder="••••••••"/>
+            </div>
+          </div>
+          <div class="sectionDivider">Sesiones activas</div>
+          <div style="border:1px solid var(--stroke);border-radius:14px;overflow:hidden;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#f8fafc;border-bottom:1px solid var(--stroke);">
+              <div>
+                <div style="font-weight:900;font-size:14px;">Chrome · Windows · Miami, FL</div>
+                <div style="font-size:12px;color:var(--muted);font-weight:700;margin-top:2px;">Sesión actual · hace 2 min</div>
+              </div>
+              <span class="badge green">Activa</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;">
+              <div>
+                <div style="font-weight:900;font-size:14px;">Safari · iPhone · Miami, FL</div>
+                <div style="font-size:12px;color:var(--muted);font-weight:700;margin-top:2px;">hace 3 días</div>
+              </div>
+              <span style="font-size:12px;font-weight:900;color:#ef4444;cursor:pointer;">Cerrar</span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /modalBody -->
+
+      <!-- Footer -->
+      <div class="modalFoot">
+        <button class="btnDanger">⏻ Cerrar sesión</button>
+        <div style="display:flex;gap:10px;">
+          <button class="btnGhost" id="modalCancel">Cancelar</button>
+          <button class="btnPrimary">Guardar cambios</button>
+        </div>
+      </div>
+
+    </div><!-- /modalBox -->
+  </div><!-- /modalOverlay -->
+
   <script>
-    // Sidebar active
-    const nav = document.getElementById('nav');
+    const pageTitles = {
+      tablero:      'Bienvenido, Frank 👋',
+      radiografia:  'Tu Radiografía',
+      metas:        'Tus Metas',
+      pax:          'Pregúntale a Xavier',
+      cursos:       'Cursos',
+      herramientas: 'Herramientas',
+      coach:        'Tu Coach',
+      signout:      'Sign Out',
+    };
+
+    const nav       = document.getElementById('nav');
+    const pageTitle = document.getElementById('pageTitle');
+
     nav.addEventListener('click', (e) => {
       const a = e.target.closest('a');
-      if(!a) return;
+      if(!a || !a.dataset.key) return;
       [...nav.querySelectorAll('a')].forEach(x => x.classList.remove('active'));
       a.classList.add('active');
+      pageTitle.textContent = pageTitles[a.dataset.key] || '';
+    });
+
+    // Modal open/close
+    const modalOverlay = document.getElementById('modalOverlay');
+    const profileBtn   = document.getElementById('profileBtn');
+    const modalClose   = document.getElementById('modalClose');
+    const modalCancel  = document.getElementById('modalCancel');
+
+    profileBtn.addEventListener('click', () => modalOverlay.classList.add('open'));
+    modalClose.addEventListener('click',  () => modalOverlay.classList.remove('open'));
+    modalCancel.addEventListener('click', () => modalOverlay.classList.remove('open'));
+    modalOverlay.addEventListener('click', (e) => {
+      if(e.target === modalOverlay) modalOverlay.classList.remove('open');
+    });
+
+    // Modal tabs
+    const modalTabs = document.getElementById('modalTabs');
+    modalTabs.addEventListener('click', (e) => {
+      const tab = e.target.closest('.modalTab');
+      if(!tab) return;
+      [...modalTabs.querySelectorAll('.modalTab')].forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      document.querySelectorAll('.tabPanel').forEach(p => p.classList.remove('active'));
+      document.getElementById('panel-' + tab.dataset.panel).classList.add('active');
+    });
+
+    // Password strength indicator
+    const newPw = document.getElementById('newPw');
+    if(newPw) newPw.addEventListener('input', () => {
+      const v = newPw.value;
+      const strength = [v.length>=8, /[A-Z]/.test(v), /[0-9]/.test(v), /[^A-Za-z0-9]/.test(v)];
+      ['pb1','pb2','pb3','pb4'].forEach((id,i) => {
+        document.getElementById(id).classList.toggle('filled', strength.slice(0,i+1).every(Boolean) || (i===0 && v.length>0));
+      });
     });
   </script>
 </body>
