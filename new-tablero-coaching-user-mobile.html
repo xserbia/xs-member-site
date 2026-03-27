@@ -1086,6 +1086,7 @@
             border: 1px solid #e7e5e4;
             overflow: hidden;
             margin-bottom: 1.5rem;
+            margin-top: 1rem;
         }
 
         .progress-header {
@@ -1747,16 +1748,6 @@
 </head>
 <body>
     <div class="container">
-        <!-- Dev bar (remove in production) -->
-        <div style="background:#1c1917;border-radius:0.75rem;padding:0.6rem 1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;">
-            <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-weight:600;text-transform:uppercase;letter-spacing:0.08em;">🛠 Dev Preview</span>
-            <button id="devToggleBtn" onclick="toggleVideoReady()"
-                style="padding:0.35rem 0.875rem;background:rgba(255,255,255,0.1);color:white;border:1px solid rgba(255,255,255,0.2);border-radius:0.5rem;font-size:0.72rem;font-weight:600;cursor:pointer;transition:background 0.2s;"
-                onmouseover="this.style.background='rgba(255,255,255,0.18)'"
-                onmouseout="this.style.background='rgba(255,255,255,0.1)'">
-                ▶️ Simular: video publicado
-            </button>
-        </div>
         <!-- Progress Bar on Top -->
         <aside class="sidebar">
             <div class="progress-header">
@@ -1834,6 +1825,17 @@
             </div>
 
         </main>
+
+        <!-- Dev bar (remove in production) -->
+        <div style="margin-top:1.5rem;display:flex;justify-content:center;">
+            <button id="devToggleBtn" onclick="toggleVideoReady()"
+                style="padding:0.3rem 0.75rem;background:#f5f5f4;color:#78716c;border:1px solid #e7e5e4;border-radius:9999px;font-size:0.68rem;font-weight:600;cursor:pointer;transition:all 0.2s;"
+                onmouseover="this.style.background='#e7e5e4'"
+                onmouseout="this.style.background='#f5f5f4'">
+                🛠 ▶️ Simular: video publicado
+            </button>
+        </div>
+
     </div>
 
     <!-- Money Map Summary Modal -->
