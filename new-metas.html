@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Mis Metas Financieras</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --primary:#3956E8;--secondary:#7459D9;--bg:#f6f7ff;--card:#ffffff;
+  --ink:#0f172a;--muted:#64748b;--border:#e5e7eb;--ok:#16a34a;
+  --r:16px;--shadow:0 10px 30px rgba(15,23,42,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Nunito",sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(circle at top,rgba(57,86,232,.12) 0,rgba(246,247,255,1) 40%)}
+.wrap{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:0 20px 40px}
+
+/* HEADER */
+.hdr{text-align:center;padding:48px 0 32px}
+.kicker{display:inline-flex;align-items:center;gap:7px;background:rgba(57,86,232,.08);border:1.5px solid rgba(57,86,232,.2);color:var(--primary);font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:6px 16px;border-radius:999px;margin-bottom:16px}
+.hdr h1{font-size:clamp(26px,5vw,40px);font-weight:900;letter-spacing:-.02em;line-height:1.15;margin-bottom:10px}
+.hdr h1 span{background:linear-gradient(90deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hdr p{font-size:15px;color:var(--muted);line-height:1.7;max-width:460px;margin:0 auto}
+
+/* COMUNES */
+.comunes-section{margin-bottom:24px}
+.comunes-title{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.comunes-grid{display:flex;flex-wrap:wrap;gap:8px}
+.comun-chip{
+  padding:9px 16px;border-radius:999px;border:1.5px solid var(--border);
+  background:var(--card);font-size:13px;font-weight:700;color:var(--ink);
+  cursor:pointer;font-family:"Nunito",sans-serif;transition:all .15s;
+  display:flex;align-items:center;gap:6px;
+}
+.comun-chip:hover{border-color:rgba(57,86,232,.4);background:rgba(57,86,232,.05);color:var(--primary);transform:translateY(-1px);box-shadow:0 4px 12px rgba(57,86,232,.12)}
+.comun-chip.active{border-color:var(--primary);background:rgba(57,86,232,.08);color:var(--primary)}
+
+/* ADD FORM */
+.add-card{background:var(--card);border:2px dashed rgba(57,86,232,.25);border-radius:var(--r);padding:20px;margin-bottom:8px;transition:border-color .2s,box-shadow .2s}
+.add-card:focus-within{border-color:rgba(57,86,232,.5);box-shadow:0 0 0 4px rgba(57,86,232,.08);border-style:solid}
+.field-label{display:block;font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}
+.add-row{display:grid;grid-template-columns:1fr 200px auto;gap:12px;align-items:flex-end}
+.meta-name-input{width:100%;padding:13px 15px;border:2px solid var(--border);border-radius:12px;font-size:15px;font-weight:700;font-family:"Nunito",sans-serif;outline:none;background:#fafafa;color:var(--ink);transition:all .2s}
+.meta-name-input::placeholder{color:#cbd5e1;font-weight:500}
+.meta-name-input:focus{border-color:var(--primary);background:#fff;box-shadow:0 0 0 4px rgba(57,86,232,.08)}
+.amount-wrap{display:flex;align-items:center;border:2px solid var(--border);border-radius:12px;overflow:hidden;background:#fafafa;transition:all .2s;padding:0}
+.amount-wrap:focus-within{border-color:var(--primary);background:#fff;box-shadow:0 0 0 4px rgba(57,86,232,.08)}
+.amount-input{flex:1;padding:13px 16px;font-size:17px;font-weight:800;font-family:"Nunito",sans-serif;border:none;outline:none;background:transparent;color:var(--ink);width:100%;min-width:0}
+.amount-input::placeholder{color:#cbd5e1;font-weight:500;font-size:14px}
+.add-btn{padding:13px 20px;border-radius:12px;font-size:14px;font-weight:800;background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;border:none;cursor:pointer;font-family:"Nunito",sans-serif;transition:all .15s;box-shadow:0 4px 14px rgba(57,86,232,.25);white-space:nowrap;opacity:.4;pointer-events:none;height:49px}
+.add-btn.ready{opacity:1;pointer-events:all}
+.add-btn.ready:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(57,86,232,.3)}
+
+/* LIST */
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;margin-top:28px}
+.section-title{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.section-count{font-size:12px;font-weight:800;color:var(--primary);background:rgba(57,86,232,.08);padding:3px 10px;border-radius:999px}
+.metas-list{display:flex;flex-direction:column;gap:9px}
+.meta-item{
+  background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);
+  padding:16px 18px;display:flex;align-items:center;gap:13px;
+  transition:box-shadow .2s,transform .15s,opacity .15s;position:relative;overflow:hidden;
+  cursor:grab;user-select:none;
+}
+.meta-item:hover{box-shadow:var(--shadow)}
+.meta-item.dragging{opacity:.45;transform:scale(.97);cursor:grabbing;box-shadow:none;border-style:dashed}
+.meta-item.drag-over{border-color:var(--primary);box-shadow:0 0 0 3px rgba(57,86,232,.18);transform:translateY(-2px)}
+.meta-item::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px 0 0 4px;background:linear-gradient(135deg,var(--primary),var(--secondary))}
+.meta-rank{
+  font-size:13px;font-weight:900;color:var(--primary);
+  background:rgba(57,86,232,.08);border-radius:10px;
+  width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  flex-direction:column;line-height:1;gap:1px;letter-spacing:.02em;
+}
+.meta-body{flex:1;min-width:0}
+.meta-name{font-size:15px;font-weight:800;color:var(--ink);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meta-amount{font-size:13px;color:var(--muted);font-weight:600}
+.meta-amount strong{font-weight:900;color:var(--ink);font-size:14px}
+.meta-rank-label{font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;flex-shrink:0;background:rgba(57,86,232,.08);color:var(--primary);white-space:nowrap}
+.meta-item:first-child .meta-rank-label{background:rgba(251,191,36,.15);color:#92400e}
+.meta-item:nth-child(2) .meta-rank-label{background:rgba(100,116,139,.1);color:#475569}
+.meta-item:nth-child(3) .meta-rank-label{background:rgba(180,83,9,.1);color:#92400e}
+.meta-actions{display:flex;gap:5px;flex-shrink:0}
+.action-btn{width:30px;height:30px;border-radius:8px;border:1.5px solid var(--border);background:#fff;color:var(--muted);font-size:13px;cursor:pointer;font-family:"Nunito",sans-serif;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.action-btn:hover{background:#f8fafc;border-color:#cbd5e1;color:var(--ink)}
+.action-btn.del:hover{background:#fef2f2;border-color:#fca5a5;color:#dc2626}
+.action-btn:disabled{opacity:.25;cursor:default;pointer-events:none}
+.empty{text-align:center;padding:48px 20px;color:var(--muted);border:2px dashed var(--border);border-radius:var(--r)}
+.empty p{font-size:14px;font-weight:600;line-height:1.7;margin-top:8px}
+
+
+
+/* STICKY BAR */
+
+.toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--ink);color:#fff;padding:10px 20px;border-radius:12px;font-size:13px;font-weight:700;opacity:0;transition:all .3s ease;z-index:9999;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:600px){
+  .add-row{grid-template-columns:1fr;gap:10px}
+  .add-btn{width:100%;height:auto}
+
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hdr">
+    <div class="kicker">🎯 Planificación financiera</div>
+    <h1>Mis <span>Metas Financieras</span></h1>
+    <p>Nombra cada meta, ponle un monto objetivo y ordénalas por prioridad. La posición define el orden.</p>
+  </div>
+
+  <!-- METAS MÁS COMUNES -->
+  <div class="comunes-section">
+    <div class="comunes-title">Metas más comunes — toca una para usarla</div>
+    <div class="comunes-grid" id="comunesGrid"></div>
+  </div>
+
+  <!-- FORM -->
+  <div class="add-card">
+    <div class="add-row">
+      <div>
+        <label class="field-label" for="newName">Nombre de la meta</label>
+        <input class="meta-name-input" id="newName" type="text" placeholder="Ej: Fondo de emergencia, Casa propia…" autocomplete="off"/>
+      </div>
+      <div>
+        <label class="field-label" for="newAmount">Monto objetivo</label>
+        <div class="amount-wrap">
+<input class="amount-input" id="newAmount" type="number" min="0" step="1" placeholder="0" inputmode="decimal"/>
+        </div>
+      </div>
+      <button class="add-btn" id="addBtn" onclick="addMeta()">➕ Agregar</button>
+    </div>
+  </div>
+
+  <!-- LIST -->
+  <div>
+    <div class="section-head" id="listHead" style="display:none">
+      <span class="section-title">Mis metas · en orden de prioridad</span>
+      <span class="section-count" id="listCount">0</span>
+    </div>
+    <div class="metas-list" id="metasList"></div>
+    <div class="empty" id="emptyState">
+      <div style="font-size:2.5rem;opacity:.3">🎯</div>
+      <p>Aún no tienes metas.<br>Selecciona una de arriba o escribe la tuya.</p>
+    </div>
+  </div>
+
+  <!-- TOTAL -->
+  <div id="totalSection" style="display:none;margin-top:20px">
+    <div style="background:linear-gradient(135deg,var(--primary),var(--secondary));border-radius:var(--r);padding:22px 24px;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:16px;box-shadow:0 8px 24px rgba(57,86,232,.28)">
+      <div>
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;opacity:.7;margin-bottom:6px">Meta total a alcanzar</div>
+        <div style="font-size:32px;font-weight:900;letter-spacing:-.02em" id="totalAmount">$0</div>
+        <div style="font-size:12px;opacity:.65;margin-top:4px;font-weight:600" id="totalSub">entre todas tus metas</div>
+      </div>
+      <div style="font-size:3rem;opacity:.25">🎯</div>
+    </div>
+  </div>
+</div>
+
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = "metas_financieras_v2";
+let metas = [];
+let currency = { code:"USD", symbol:"$", locale:"en-US" };
+
+const COMUNES = [
+  "Fondo de emergencia","Comprar casa","Retiro / Jubilación","Educación de hijos",
+  "Pagar deudas","Comprar auto","Iniciar negocio","Hacer crecer inversiones",
+  "Viaje o vacaciones","Independencia financiera","Fondo para herencia","Renovar hogar"
+];
+
+// Load currency from discovery draft
+try {
+  const CURRS = {USD:{symbol:"$",locale:"en-US"},MXN:{symbol:"$",locale:"es-MX"},GTQ:{symbol:"Q",locale:"es-GT"},HNL:{symbol:"L",locale:"es-HN"},NIO:{symbol:"C$",locale:"es-NI"},CRC:{symbol:"₡",locale:"es-CR"},PAB:{symbol:"B/.",locale:"es-PA"},DOP:{symbol:"RD$",locale:"es-DO"},CUP:{symbol:"$",locale:"es-CU"},COP:{symbol:"$",locale:"es-CO"},VES:{symbol:"Bs.",locale:"es-VE"},BRL:{symbol:"R$",locale:"pt-BR"},PEN:{symbol:"S/",locale:"es-PE"},BOB:{symbol:"Bs.",locale:"es-BO"},PYG:{symbol:"₲",locale:"es-PY"},UYU:{symbol:"$U",locale:"es-UY"},ARS:{symbol:"$",locale:"es-AR"},CLP:{symbol:"$",locale:"es-CL"},EUR:{symbol:"€",locale:"es-ES"},GBP:{symbol:"£",locale:"en-GB"},CAD:{symbol:"$",locale:"en-CA"}};
+  const draft = JSON.parse(localStorage.getItem("discovery_draft_v4") || "{}") || {};
+  if(draft.currency && CURRS[draft.currency]){ currency = {code:draft.currency, ...CURRS[draft.currency]}; }
+} catch(e){}
+
+try { const s = localStorage.getItem(STORAGE_KEY); if(s) metas = JSON.parse(s); } catch(e){}
+
+const uid = () => Math.random().toString(36).slice(2,10);
+const fmt = v => currency.symbol + Math.round(v||0).toLocaleString(currency.locale, {maximumFractionDigits:0});
+const esc = s => String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+
+function showToast(msg){ const el=document.getElementById("toast"); el.textContent=msg; el.classList.add("show"); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove("show"),2200); }
+
+// Render common chips
+function renderComunes(){
+  const grid = document.getElementById("comunesGrid");
+  const usedNames = metas.map(m=>m.name.toLowerCase());
+  grid.innerHTML = COMUNES.map(name => {
+    const active = usedNames.includes(name.toLowerCase());
+    return `<button class="comun-chip${active?" active":""}" onclick="pickComun(this,'${esc(name)}')">${active?"✓ ":"+"}${esc(name)}</button>`;
+  }).join("");
+}
+
+function pickComun(el, name){
+  const nameInput = document.getElementById("newName");
+  nameInput.value = name;
+  nameInput.focus();
+  checkReady();
+  // Scroll to form
+  document.querySelector(".add-card").scrollIntoView({behavior:"smooth", block:"center"});
+  // Highlight chips
+  document.querySelectorAll(".comun-chip").forEach(c => c.classList.remove("active"));
+  el.classList.add("active");
+}
+
+function checkReady(){
+  const name = document.getElementById("newName").value.trim();
+  const amt  = parseFloat(document.getElementById("newAmount").value);
+  document.getElementById("addBtn").classList.toggle("ready", name.length>0 && !isNaN(amt) && amt>0);
+}
+document.getElementById("newName").addEventListener("input", checkReady);
+document.getElementById("newAmount").addEventListener("input", checkReady);
+document.getElementById("newName").addEventListener("keydown", e=>{ if(e.key==="Enter") document.getElementById("newAmount").focus(); });
+document.getElementById("newAmount").addEventListener("keydown", e=>{ if(e.key==="Enter") addMeta(); });
+
+function addMeta(){
+  const name = document.getElementById("newName").value.trim();
+  const amt  = parseFloat(document.getElementById("newAmount").value);
+  if(!name || isNaN(amt) || amt<=0) return;
+  // Prevent duplicates
+  if(metas.find(m=>m.name.toLowerCase()===name.toLowerCase())){ showToast("Ya tienes esa meta"); return; }
+  metas.push({id:uid(), name, amount:amt});
+  document.getElementById("newName").value = "";
+  document.getElementById("newAmount").value = "";
+  document.getElementById("addBtn").classList.remove("ready");
+  document.getElementById("newName").focus();
+  render();
+  showToast("✓ Meta #"+metas.length+" agregada");
+}
+
+function removeMeta(id){ metas=metas.filter(m=>m.id!==id); render(); showToast("Meta eliminada"); }
+function moveUp(idx){ if(idx===0)return; [metas[idx-1],metas[idx]]=[metas[idx],metas[idx-1]]; render(); }
+function moveDown(idx){ if(idx>=metas.length-1)return; [metas[idx],metas[idx+1]]=[metas[idx+1],metas[idx]]; render(); }
+
+const RANK_LABELS = ["#1 Prioridad", "#2", "#3", "#4", "#5", "#6", "#7", "#8"];
+
+function render(){
+  const list  = document.getElementById("metasList");
+  const empty = document.getElementById("emptyState");
+  const head  = document.getElementById("listHead");
+  const total = metas.reduce((s,m)=>s+m.amount,0);
+
+  renderComunes();
+  list.innerHTML = "";
+
+  if(metas.length===0){
+    empty.style.display="block"; head.style.display="none";
+const ts=document.getElementById("totalSection"); if(ts) ts.style.display="none";
+    return;
+  }
+
+  empty.style.display="none"; head.style.display="flex";
+  document.getElementById("listCount").textContent=metas.length;
+
+  metas.forEach((m, idx) => {
+    const rankLabel = RANK_LABELS[idx] || ("#"+(idx+1));
+    const div = document.createElement("div");
+    div.className = "meta-item";
+    div.dataset.idx = idx;
+    div.innerHTML = `
+      <div class="meta-rank" title="Arrastra para reordenar">⠿ ${idx+1}</div>
+      <div class="meta-body">
+        <div class="meta-name">${esc(m.name)}</div>
+        <div class="meta-amount">Objetivo: <strong>${fmt(m.amount)}</strong></div>
+      </div>
+      <span class="meta-rank-label">${rankLabel}</span>
+      <div class="meta-actions">
+        <button class="action-btn del" onclick="removeMeta('${m.id}')" title="Eliminar">✕</button>
+      </div>`;
+    list.appendChild(div);
+  });
+
+  // Total card
+  const totalSection = document.getElementById("totalSection");
+  totalSection.style.display = "block";
+  document.getElementById("totalAmount").textContent = fmt(total);
+  document.getElementById("totalSub").textContent = metas.length+" meta"+(metas.length>1?"s":"")+" · suma total";
+}
+
+function saveMetas(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(metas));
+    try{
+      const draft=JSON.parse(localStorage.getItem("discovery_draft_v4")||"{}");
+      if(draft&&Object.keys(draft).length>0){ draft.goals=metas.map((m,i)=>({name:m.name,amount:m.amount,priority:i+1})); localStorage.setItem("discovery_draft_v4",JSON.stringify(draft)); }
+    }catch(e){}
+    showToast("✅ Metas guardadas");
+  }catch(e){ showToast("⚠ Error al guardar"); }
+}
+
+render();
+
+// ── DRAG & DROP — delegated on container ──────────────────────────────────
+(function(){
+  const list = document.getElementById('metasList');
+  let srcIdx = null;
+  let touchEl = null;
+
+  function itemOf(el){ return el.closest('.meta-item'); }
+  function idxOf(el){ return el ? parseInt(el.dataset.idx) : -1; }
+  function clearHighlight(){ list.querySelectorAll('.meta-item').forEach(i=>i.classList.remove('drag-over')); }
+
+  function doSwap(from, to){
+    if(from === to || from < 0 || to < 0) return;
+    const moved = metas.splice(from, 1)[0];
+    metas.splice(to, 0, moved);
+    render();
+    showToast('\u2713 Reordenado');
+  }
+
+  // ── MOUSE ──
+  list.addEventListener('dragstart', e => {
+    const item = itemOf(e.target);
+    if(!item) return;
+    srcIdx = idxOf(item);
+    item.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', srcIdx);
+  });
+  list.addEventListener('dragend', () => {
+    list.querySelectorAll('.meta-item').forEach(i=>{ i.classList.remove('dragging','drag-over'); });
+    srcIdx = null;
+  });
+  list.addEventListener('dragover', e => {
+    e.preventDefault();
+    const item = itemOf(e.target);
+    if(!item) return;
+    clearHighlight();
+    if(idxOf(item) !== srcIdx) item.classList.add('drag-over');
+  });
+  list.addEventListener('drop', e => {
+    e.preventDefault();
+    const item = itemOf(e.target);
+    const destIdx = idxOf(item);
+    clearHighlight();
+    doSwap(srcIdx, destIdx);
+    srcIdx = null;
+  });
+
+  // Make items draggable after each render via MutationObserver
+  new MutationObserver(() => {
+    list.querySelectorAll('.meta-item:not([draggable])').forEach(el => {
+      el.setAttribute('draggable', 'true');
+    });
+  }).observe(list, { childList: true });
+
+  // ── TOUCH ──
+  let touchSrcIdx = -1;
+  let longPressTimer = null;
+  let isDragging = false;
+
+  list.addEventListener('touchstart', e => {
+    if(e.touches.length > 1) return;
+    const item = itemOf(e.target);
+    if(!item) return;
+    touchSrcIdx = idxOf(item);
+    touchEl = item;
+    isDragging = false;
+    longPressTimer = setTimeout(() => {
+      isDragging = true;
+      item.classList.add('dragging');
+    }, 150);
+  }, { passive: true });
+
+  list.addEventListener('touchmove', e => {
+    if(e.touches.length > 1){ clearTimeout(longPressTimer); return; }
+    if(!isDragging){ clearTimeout(longPressTimer); return; }
+    e.preventDefault();
+    const y = e.touches[0].clientY;
+    clearHighlight();
+    const allItems = [...list.querySelectorAll('.meta-item')];
+    for(const item of allItems){
+      if(item === touchEl) continue;
+      const r = item.getBoundingClientRect();
+      if(y >= r.top && y <= r.bottom){ item.classList.add('drag-over'); break; }
+    }
+  }, { passive: false });
+
+  list.addEventListener('touchend', () => {
+    clearTimeout(longPressTimer);
+    if(!isDragging){ clearHighlight(); touchEl=null; touchSrcIdx=-1; return; }
+    const overEl = list.querySelector('.meta-item.drag-over');
+    const destIdx = idxOf(overEl);
+    clearHighlight();
+    if(touchEl) touchEl.classList.remove('dragging');
+    doSwap(touchSrcIdx, destIdx);
+    touchEl = null; touchSrcIdx = -1; isDragging = false;
+  }, { passive: true });
+})();
+
+</script>
+</body>
+</html>
