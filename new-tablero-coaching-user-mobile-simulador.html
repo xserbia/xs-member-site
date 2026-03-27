@@ -1,0 +1,2844 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Móvil</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0f0e17;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 2rem 1rem;
+  }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .toolbar-label {
+    color: rgba(255,255,255,0.4);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .device-btn {
+    padding: 0.4rem 0.875rem;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 0.5rem;
+    color: rgba(255,255,255,0.6);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .device-btn:hover, .device-btn.active {
+    background: #5B4CE2;
+    border-color: #5B4CE2;
+    color: white;
+  }
+
+  /* Phone shell */
+  .phone-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+  }
+
+  .phone {
+    position: relative;
+    background: #1a1a1a;
+    border-radius: 44px;
+    box-shadow:
+      0 0 0 2px #3a3a3a,
+      0 0 0 4px #1a1a1a,
+      0 30px 80px rgba(0,0,0,0.7),
+      inset 0 0 0 1px rgba(255,255,255,0.05);
+    transition: all 0.3s ease;
+  }
+
+  /* Dynamic Island */
+  .phone-notch {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 34px;
+    background: #0a0a0a;
+    border-radius: 20px;
+    z-index: 10;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.06);
+  }
+
+  /* Side buttons */
+  .phone::before {
+    content: '';
+    position: absolute;
+    right: -3px;
+    top: 120px;
+    width: 3px;
+    height: 70px;
+    background: #2a2a2a;
+    border-radius: 0 2px 2px 0;
+    box-shadow: 0 90px 0 #2a2a2a;
+  }
+
+  .phone::after {
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: 100px;
+    width: 3px;
+    height: 40px;
+    background: #2a2a2a;
+    border-radius: 2px 0 0 2px;
+    box-shadow: 0 55px 0 #2a2a2a, 0 105px 0 #2a2a2a;
+  }
+
+  .phone-screen {
+    border-radius: 36px;
+    overflow: hidden;
+    background: white;
+    position: relative;
+  }
+
+  .phone-screen iframe {
+    display: block;
+    border: none;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Status bar */
+  .status-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 14px 28px 0;
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  .status-time {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #1c1917;
+    letter-spacing: -0.02em;
+  }
+
+  .status-icons {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .status-icons svg {
+    width: 16px;
+    height: 16px;
+    fill: #1c1917;
+  }
+
+  /* Home indicator */
+  .home-indicator {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 130px;
+    height: 5px;
+    background: rgba(0,0,0,0.25);
+    border-radius: 3px;
+    z-index: 10;
+  }
+
+  /* iPhone 14 Pro */
+  .iphone-14 .phone {
+    width: 375px;
+    padding: 12px;
+  }
+  .iphone-14 .phone-screen {
+    width: 351px;
+    height: 760px;
+  }
+
+  /* iPhone SE */
+  .iphone-se .phone {
+    width: 320px;
+    padding: 12px;
+    border-radius: 36px;
+  }
+  .iphone-se .phone-screen {
+    width: 296px;
+    height: 568px;
+    border-radius: 26px;
+  }
+  .iphone-se .phone-notch {
+    display: none;
+  }
+  .iphone-se .phone {
+    border-radius: 36px;
+  }
+
+  /* Android */
+  .android .phone {
+    width: 390px;
+    padding: 10px;
+    border-radius: 30px;
+  }
+  .android .phone-screen {
+    width: 370px;
+    height: 800px;
+    border-radius: 22px;
+  }
+  .android .phone-notch {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    top: 16px;
+  }
+
+  .info {
+    margin-top: 1.5rem;
+    color: rgba(255,255,255,0.25);
+    font-size: 0.7rem;
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <span class="toolbar-label">Dispositivo</span>
+  <button class="device-btn active" onclick="setDevice('iphone-14')">iPhone 14 Pro</button>
+  <button class="device-btn" onclick="setDevice('android')">Android</button>
+  <button class="device-btn" onclick="setDevice('iphone-se')">iPhone SE</button>
+</div>
+
+<div class="phone-wrap iphone-14" id="phoneWrap">
+  <div class="phone" id="phone">
+    <div class="phone-notch" id="notch"></div>
+
+    <!-- Status bar -->
+    <div class="status-bar">
+      <span class="status-time" id="clock">9:41</span>
+      <div class="status-icons">
+        <!-- Signal -->
+        <svg viewBox="0 0 24 24"><rect x="1" y="14" width="4" height="6"/><rect x="7" y="10" width="4" height="10"/><rect x="13" y="6" width="4" height="14"/><rect x="19" y="2" width="4" height="18" opacity="0.3"/></svg>
+        <!-- WiFi -->
+        <svg viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0" opacity="0.3"/><path d="M1.42 9a16 16 0 0 1 21.16 0" opacity="0.15"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg>
+        <!-- Battery -->
+        <svg viewBox="0 0 24 24"><rect x="1" y="7" width="18" height="11" rx="2" stroke="#1c1917" stroke-width="1.5" fill="none"/><path d="M20 11v3" stroke="#1c1917" stroke-width="2" stroke-linecap="round"/><rect x="3" y="9" width="14" height="7" rx="1" fill="#1c1917"/></svg>
+      </div>
+    </div>
+
+    <div class="phone-screen" id="screen">
+      <iframe id="dashFrame" srcdoc="<!DOCTYPE html>
+<html lang=&quot;es&quot;>
+<head>
+    <meta charset=&quot;UTF-8&quot;>
+    <meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;>
+    <title>Mi Tablero - Dashboard de Usuario</title>
+    <link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;>
+    <link rel=&quot;preconnect&quot; href=&quot;https://fonts.gstatic.com&quot; crossorigin>
+    <link href=&quot;https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&amp;family=Fraunces:wght@600;700;900&amp;display=swap&quot; rel=&quot;stylesheet&quot;>
+    <script src=&quot;https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js&quot;></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(to bottom right, #f8fafc, rgba(91, 76, 226, 0.05), #f5f5f4);
+            min-height: 100vh;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Fraunces', serif;
+        }
+
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1c1917;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-subtitle {
+            font-size: 0.875rem;
+            color: #78716c;
+        }
+
+        .modal-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #44403c;
+        }
+
+        .form-input {
+            padding: 0.75rem;
+            border: 1px solid #d6d3d1;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #5B4CE2;
+            box-shadow: 0 0 0 3px rgba(91, 76, 226, 0.1);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .btn-modal {
+            flex: 1;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+        }
+
+        .btn-modal-primary {
+            background: #5B4CE2;
+            color: white;
+        }
+
+        .btn-modal-primary:hover {
+            background: #4A3BB8;
+        }
+
+        .btn-modal-secondary {
+            background: #f5f5f4;
+            color: #44403c;
+        }
+
+        .btn-modal-secondary:hover {
+            background: #e7e5e4;
+        }
+
+        /* Demo Controls */
+        /* Discovery Status Section */
+        .discovery-status-section {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 2px solid #7dd3fc;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .discovery-status-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .discovery-status-title {
+            font-size: 1.125rem;
+            font-weight: bold;
+            color: #0c4a6e;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .discovery-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .discovery-status-badge.not-started {
+            background: #fef3c7;
+            color: #854d0e;
+        }
+
+        .discovery-status-badge.in-progress {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .discovery-status-badge.completed {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .discovery-progress-container {
+            margin-bottom: 1.5rem;
+        }
+
+        .discovery-progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .discovery-progress-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #0c4a6e;
+        }
+
+        .discovery-progress-percent {
+            font-size: 0.875rem;
+            font-weight: bold;
+            color: #5B4CE2;
+        }
+
+        .discovery-progress-bar-bg {
+            height: 0.75rem;
+            background: white;
+            border-radius: 9999px;
+            overflow: hidden;
+            border: 2px solid #bae6fd;
+        }
+
+        .discovery-progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(to right, #5B4CE2, #7dd3fc);
+            transition: width 0.5s;
+            box-shadow: 0 0 10px rgba(91, 76, 226, 0.3);
+        }
+
+        .discovery-info-grid {
+            display: grid;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .discovery-info-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .discovery-info-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #bae6fd;
+        }
+
+        .discovery-info-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+
+        .discovery-info-value {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #1c1917;
+        }
+
+        .discovery-info-value.empty {
+            color: #a8a29e;
+            font-style: italic;
+        }
+
+        .discovery-summary-section {
+            background: white;
+            border: 2px solid #bae6fd;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .discovery-summary-title {
+            font-size: 0.875rem;
+            font-weight: bold;
+            color: #0c4a6e;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .discovery-summary-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .discovery-summary-item {
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e0f2fe;
+        }
+
+        .discovery-summary-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .discovery-summary-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 0.25rem;
+        }
+
+        .discovery-summary-value {
+            font-size: 0.875rem;
+            color: #1c1917;
+            line-height: 1.5;
+        }
+
+        .discovery-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-discovery {
+            flex: 1;
+            min-width: 200px;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 0.75rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-discovery.primary {
+            background: linear-gradient(to right, #5B4CE2, #4A3BB8);
+            color: white;
+            box-shadow: 0 10px 15px -3px rgba(91, 76, 226, 0.3);
+        }
+
+        .btn-discovery.primary:hover {
+            background: linear-gradient(to right, #4A3BB8, #3D2F9E);
+            box-shadow: 0 20px 25px -5px rgba(91, 76, 226, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-discovery.secondary {
+            background: white;
+            color: #5B4CE2;
+            border: 2px solid #5B4CE2;
+        }
+
+        .btn-discovery.secondary:hover {
+            background: #f0f9ff;
+        }
+
+        .discovery-alert {
+            background: #fef3c7;
+            border: 2px solid #fde047;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            display: flex;
+            align-items: start;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .discovery-alert-icon {
+            flex-shrink: 0;
+            color: #854d0e;
+        }
+
+        .discovery-alert-content {
+            flex: 1;
+        }
+
+        .discovery-alert-title {
+            font-size: 0.875rem;
+            font-weight: bold;
+            color: #854d0e;
+            margin-bottom: 0.25rem;
+        }
+
+        .discovery-alert-text {
+            font-size: 0.75rem;
+            color: #92400e;
+            line-height: 1.5;
+        }
+
+        /* Results Video + WhatsApp Section */
+        .results-video-section {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 1.25rem;
+            align-items: start;
+        }
+
+        @media (max-width: 900px) {
+            .results-video-section { grid-template-columns: 1fr; }
+        }
+
+        .results-video-wrapper {
+            background: white;
+            border-radius: 1rem;
+            border: 1px solid #e7e5e4;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+
+        .results-video-player {
+            position: relative;
+            aspect-ratio: 16/9;
+            background: #0f0e17;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .results-video-bg {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #1a0533 0%, #0f172a 50%, #14532d 100%);
+        }
+
+        .results-video-overlay {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at center, rgba(91,76,226,0.15) 0%, rgba(0,0,0,0.5) 100%);
+        }
+
+        .results-play-area {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1.25rem;
+            padding: 2rem;
+        }
+
+        .results-play-btn {
+            width: 72px;
+            height: 72px;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .results-play-btn:hover {
+            background: rgba(255,255,255,0.25);
+            transform: scale(1.08);
+        }
+
+        .results-video-label {
+            text-align: center;
+        }
+
+        .results-video-badge {
+            display: inline-block;
+            background: rgba(251,191,36,0.2);
+            border: 1px solid rgba(251,191,36,0.4);
+            color: #fbbf24;
+            padding: 0.2rem 0.65rem;
+            border-radius: 9999px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.5rem;
+        }
+
+        .results-video-title {
+            font-family: 'Fraunces', serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 0.25rem;
+        }
+
+        .results-video-sub {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .results-video-footer {
+            padding: 0.875rem 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            border-top: 1px solid #f0f0ef;
+        }
+
+        .results-video-progress {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex: 1;
+        }
+
+        .results-progress-bar {
+            flex: 1;
+            height: 6px;
+            background: #e7e5e4;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+
+        .results-progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, #5B4CE2, #22c55e);
+            border-radius: 9999px;
+            transition: width 0.6s ease;
+        }
+
+        .results-progress-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #78716c;
+            white-space: nowrap;
+        }
+
+        .btn-mark-watched {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.4rem 0.875rem;
+            background: #f5f5f4;
+            border: 1px solid #e7e5e4;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #44403c;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-mark-watched:hover {
+            background: #5B4CE2;
+            color: white;
+            border-color: #5B4CE2;
+        }
+
+        /* WhatsApp Support Card */
+        .wa-support-card {
+            background: white;
+            border: 1.5px solid #e7e5e4;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+
+        .wa-support-header {
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .wa-icon-wrap {
+            width: 48px;
+            height: 48px;
+            background: #25D366;
+            border-radius: 0.875rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 4px 10px rgba(37,211,102,0.3);
+        }
+
+        .wa-support-text { flex: 1; }
+
+        .wa-support-title {
+            font-weight: 700;
+            font-size: 0.9375rem;
+            color: #1c1917;
+        }
+
+        .wa-support-sub {
+            font-size: 0.75rem;
+            color: #78716c;
+        }
+
+        .wa-status-dot {
+            width: 10px;
+            height: 10px;
+            background: #22c55e;
+            border-radius: 50%;
+            box-shadow: 0 0 0 3px rgba(34,197,94,0.2);
+            flex-shrink: 0;
+        }
+
+        .wa-support-desc {
+            font-size: 0.825rem;
+            color: #57534e;
+            line-height: 1.55;
+            margin-bottom: 1.25rem;
+        }
+
+        .btn-whatsapp {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            width: 100%;
+            padding: 0.875rem;
+            background: #25D366;
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(37,211,102,0.3);
+        }
+
+        .btn-whatsapp:hover {
+            background: #1ebe5a;
+            box-shadow: 0 8px 20px rgba(37,211,102,0.4);
+            transform: translateY(-1px);
+        }
+
+        .wa-availability {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #a8a29e;
+            margin-top: 0.75rem;
+        }
+
+        /* keep .videocall-info-alert for other potential uses */
+
+        /* Presentation pending state */
+        .presentation-pending {
+            background: white;
+            border: 1.5px solid #e7e5e4;
+            border-radius: 1rem;
+            padding: 2rem;
+            display: flex;
+            gap: 1.5rem;
+            align-items: flex-start;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+
+        .pp-icon-wrap {
+            width: 56px;
+            height: 56px;
+            background: #f0f0ff;
+            border: 2px solid #e0e0ff;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .pp-content { flex: 1; }
+
+        .pp-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #5B4CE2;
+            margin-bottom: 0.4rem;
+        }
+
+        .pp-title {
+            font-family: 'Fraunces', serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1c1917;
+            margin-bottom: 0.6rem;
+        }
+
+        .pp-text {
+            font-size: 0.85rem;
+            color: #78716c;
+            line-height: 1.6;
+            margin-bottom: 1.25rem;
+        }
+
+        .pp-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .pp-step {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.8rem;
+            color: #a8a29e;
+        }
+
+        .pp-step.done { color: #16a34a; }
+        .pp-step.active { color: #1c1917; font-weight: 600; }
+
+        .pp-step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #e7e5e4;
+            flex-shrink: 0;
+        }
+
+        .pp-step-dot.done { background: #22c55e; }
+        .pp-step-dot.active {
+            background: #5B4CE2;
+            box-shadow: 0 0 0 3px rgba(91,76,226,0.2);
+            animation: pulse-dot 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { box-shadow: 0 0 0 3px rgba(91,76,226,0.2); }
+            50% { box-shadow: 0 0 0 6px rgba(91,76,226,0.1); }
+        }
+
+        /* Locked video overlay */
+        .video-locked-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #1c1917 0%, #292524 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .video-locked-icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(255,255,255,0.08);
+            border: 2px solid rgba(255,255,255,0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-locked-text {
+            text-align: center;
+        }
+
+        .video-locked-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 0.25rem;
+        }
+
+        .video-locked-sub {
+            font-size: 0.72rem;
+            color: rgba(255,255,255,0.35);
+        }
+
+        /* Next Meeting Banner */
+        .next-meeting-banner {
+            background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+            border: 2px solid #d8b4fe;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .next-meeting-icon-wrapper {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #a855f7, #9333ea);
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 4px 6px rgba(168, 85, 247, 0.3);
+        }
+
+        .next-meeting-content {
+            flex: 1;
+        }
+
+        .next-meeting-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #9333ea;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+
+        .next-meeting-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #581c87;
+            margin-bottom: 0.5rem;
+        }
+
+        .next-meeting-date {
+            font-size: 0.875rem;
+            color: #6b21a8;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .next-meeting-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-add-calendar {
+            padding: 0.75rem 1.5rem;
+            background: white;
+            color: #9333ea;
+            border: 2px solid #d8b4fe;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+
+        .btn-add-calendar:hover {
+            background: #faf5ff;
+            border-color: #a855f7;
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 768px) {
+            .next-meeting-banner {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .next-meeting-actions {
+                width: 100%;
+            }
+
+            .btn-add-calendar {
+                flex: 1;
+                justify-content: center;
+            }
+        }
+
+        /* Final Documents Section (Cerrado) */
+        .final-documents-section {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 2px solid #86efac;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .final-documents-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #bbf7d0;
+        }
+
+        .final-documents-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(34, 197, 94, 0.2);
+        }
+
+        .final-documents-title {
+            flex: 1;
+        }
+
+        .final-documents-title h3 {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #166534;
+            margin-bottom: 0.25rem;
+        }
+
+        .final-documents-subtitle {
+            font-size: 0.875rem;
+            color: #15803d;
+        }
+
+        .final-documents-grid {
+            display: grid;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .final-documents-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .final-document-card {
+            background: white;
+            border: 2px solid #bbf7d0;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .final-document-card:hover {
+            border-color: #22c55e;
+            box-shadow: 0 4px 6px rgba(34, 197, 94, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .final-document-card.pending {
+            background: #fafaf9;
+            border-color: #e7e5e4;
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .final-document-card.pending:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .final-document-header {
+            display: flex;
+            align-items: start;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .final-document-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .final-document-card.pending .final-document-icon {
+            background: #d6d3d1;
+        }
+
+        .final-document-info {
+            flex: 1;
+        }
+
+        .final-document-name {
+            font-weight: bold;
+            color: #1c1917;
+            margin-bottom: 0.25rem;
+            font-size: 1rem;
+        }
+
+        .final-document-description {
+            font-size: 0.75rem;
+            color: #78716c;
+            line-height: 1.4;
+            margin-bottom: 0.5rem;
+        }
+
+        .final-document-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.7rem;
+            color: #a8a29e;
+        }
+
+        .final-document-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-final-document {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-final-document.download {
+            background: linear-gradient(to right, #22c55e, #16a34a);
+            color: white;
+            box-shadow: 0 4px 6px rgba(34, 197, 94, 0.2);
+        }
+
+        .btn-final-document.download:hover {
+            background: linear-gradient(to right, #16a34a, #15803d);
+            box-shadow: 0 10px 15px rgba(34, 197, 94, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-final-document.preview {
+            background: white;
+            color: #22c55e;
+            border: 2px solid #22c55e;
+        }
+
+        .btn-final-document.preview:hover {
+            background: #f0fdf4;
+        }
+
+        .btn-final-document.pending {
+            background: #f5f5f4;
+            color: #a8a29e;
+            cursor: not-allowed;
+        }
+
+        .completion-message {
+            background: white;
+            border: 2px solid #bbf7d0;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .completion-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+        }
+
+        .completion-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #166534;
+            margin-bottom: 0.5rem;
+        }
+
+        .completion-text {
+            font-size: 0.875rem;
+            color: #15803d;
+            line-height: 1.6;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        /* Progress bar on top */
+        .sidebar {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e7e5e4;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .progress-header {
+            padding: 1rem 1.5rem;
+            background: linear-gradient(to bottom right, #5B4CE2, #4A3BB8);
+            color: white;
+        }
+
+        .progress-title {
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .progress-bar-bg {
+            flex: 1;
+            height: 0.375rem;
+            background: #3D2F9E;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(to right, #9D95F5, #C7C2FF);
+            transition: width 0.5s;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-text {
+            font-size: 0.8125rem;
+            font-weight: bold;
+        }
+
+        .timeline {
+            padding: 0.75rem 1rem;
+            display: flex;
+            gap: 0.5rem;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .timeline::-webkit-scrollbar { display: none; }
+
+        .step-btn {
+            flex: 1;
+            flex-direction: column;
+            text-align: center;
+            padding: 0.625rem 0.75rem;
+            min-width: 80px;
+            flex-shrink: 0;
+            width: auto;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: none;
+            border-radius: 0.625rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .step-btn:hover:not(:disabled) {
+            background: #f5f5f4;
+        }
+
+        .step-btn.active {
+            background: #5B4CE2;
+            color: white;
+            box-shadow: 0 10px 15px -3px rgba(91, 76, 226, 0.3);
+        }
+
+        .step-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .step-icon {
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .step-icon.completed {
+            color: #22c55e;
+        }
+
+        .step-icon.current {
+            color: #5B4CE2;
+        }
+
+        .step-icon.current.active {
+            color: white;
+        }
+
+        .step-icon.pending {
+            color: #d6d3d1;
+        }
+
+        .step-info {
+            flex: 1;
+            color: #44403c;
+        }
+
+        .step-btn.active .step-info {
+            color: white;
+        }
+
+        .step-name {
+            font-size: 0.8125rem;
+            font-weight: 600;
+        }
+
+        .step-status {
+            font-size: 0.6875rem;
+            color: #78716c;
+        }
+
+        .step-btn.active .step-status {
+            color: #d6d3d1;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        /* Single column layout — video then checklist */
+        .content-cols {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .col-left {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .col-right {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        /* Dynamic section — full width single row */
+        .dynamic-section-wrap {
+            width: 100%;
+        }
+
+        .card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e7e5e4;
+            overflow: hidden;
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .video-container {
+            position: relative;
+            background: #1c1917;
+            aspect-ratio: 16/9;
+        }
+
+        .video-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-content {
+            text-align: center;
+        }
+
+        .play-button {
+            width: 5rem;
+            height: 5rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            border: none;
+        }
+
+        .play-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .video-text {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.875rem;
+        }
+
+        .card-content {
+            padding: 1.25rem 1.5rem;
+        }
+
+        .content-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .content-title {
+            font-size: 1.875rem;
+            font-weight: bold;
+            color: #1c1917;
+            margin-bottom: 0.75rem;
+        }
+
+        .content-description {
+            font-size: 1.125rem;
+            color: #57534e;
+            line-height: 1.75;
+        }
+
+        .checklist-title {
+            font-size: 0.875rem;
+            font-weight: bold;
+            color: #1c1917;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+
+        .checklist {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: start;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: #fafaf9;
+            border: 1px solid #e7e5e4;
+            border-radius: 0.5rem;
+        }
+
+        .checklist-icon {
+            flex-shrink: 0;
+            margin-top: 0.125rem;
+        }
+
+        .checklist-icon.done {
+            color: #16a34a;
+        }
+
+        .checklist-icon.pending {
+            color: #d6d3d1;
+        }
+
+        .checklist-text {
+            font-size: 0.875rem;
+        }
+
+        .checklist-text.done {
+            color: #44403c;
+            text-decoration: line-through;
+        }
+
+        .checklist-text.pending {
+            color: #1c1917;
+            font-weight: 500;
+        }
+
+        .cta-button {
+            padding: 1rem 2rem;
+            background: linear-gradient(to right, #5B4CE2, #4A3BB8);
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 10px 15px -3px rgba(91, 76, 226, 0.3);
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+
+        .cta-button:hover {
+            background: linear-gradient(to right, #4A3BB8, #3D2F9E);
+            box-shadow: 0 20px 25px -5px rgba(91, 76, 226, 0.4);
+            transform: translateY(-2px);
+        }
+
+        @media (min-width: 768px) {
+            .cta-button {
+                width: auto;
+            }
+        }
+
+        .notes-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .notes-title {
+            font-size: 1.125rem;
+            font-weight: bold;
+            color: #1c1917;
+        }
+
+        .btn-save {
+            padding: 0.5rem 1rem;
+            background: #5B4CE2;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+        }
+
+        .btn-save:hover {
+            background: #4A3BB8;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .notes-textarea {
+            width: 100%;
+            height: 8rem;
+            padding: 1rem;
+            border: 1px solid #d6d3d1;
+            border-radius: 0.75rem;
+            resize: none;
+            color: #44403c;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.875rem;
+        }
+
+        .notes-textarea:focus {
+            outline: none;
+            border-color: #5B4CE2;
+            box-shadow: 0 0 0 3px rgba(91, 76, 226, 0.1);
+        }
+
+
+
+        .hidden {
+            display: none;
+        }
+
+        /* Money Map Summary Modal */
+        .mms-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1100;
+            padding: 1rem;
+        }
+        .mms-overlay.active { display: flex; }
+
+        .mms-modal {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 0;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 30px 60px -10px rgba(0,0,0,0.25);
+            overflow: hidden;
+            animation: mmsIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        @keyframes mmsIn {
+            from { opacity: 0; transform: scale(0.92) translateY(20px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .mms-header {
+            background: linear-gradient(135deg, #1c1917 0%, #292524 100%);
+            padding: 2rem 2rem 1.5rem;
+            position: relative;
+        }
+        .mms-header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        .mms-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(250,204,21,0.15);
+            border: 1px solid rgba(250,204,21,0.4);
+            color: #fbbf24;
+            padding: 0.3rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .mms-close {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: rgba(255,255,255,0.7);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+        .mms-close:hover { background: rgba(255,255,255,0.2); color: white; }
+        .mms-title {
+            font-family: 'Fraunces', serif;
+            font-size: 1.75rem;
+            font-weight: 900;
+            color: white;
+            line-height: 1.15;
+        }
+        .mms-title span { color: #fbbf24; }
+
+        .mms-body {
+            padding: 1.75rem 2rem 2rem;
+        }
+        .mms-section-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #a8a29e;
+            margin-bottom: 0.75rem;
+        }
+        .mms-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        .mms-metric {
+            background: #fafaf9;
+            border: 1.5px solid #e7e5e4;
+            border-radius: 0.75rem;
+            padding: 1rem;
+        }
+        .mms-metric-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #78716c;
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .mms-metric-value {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #1c1917;
+            font-family: 'Fraunces', serif;
+        }
+        .mms-metric-value.green { color: #16a34a; }
+        .mms-metric-value.amber { color: #d97706; }
+
+        .mms-insights {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            margin-bottom: 1.5rem;
+        }
+        .mms-insight {
+            display: flex;
+            align-items: start;
+            gap: 0.6rem;
+            padding: 0.75rem;
+            background: #f0fdf4;
+            border: 1.5px solid #bbf7d0;
+            border-radius: 0.6rem;
+            font-size: 0.825rem;
+            color: #166534;
+            line-height: 1.45;
+        }
+        .mms-insight.amber {
+            background: #fffbeb;
+            border-color: #fde68a;
+            color: #92400e;
+        }
+        .mms-insight-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            flex-shrink: 0;
+            margin-top: 4px;
+        }
+        .mms-insight.amber .mms-insight-dot { background: #f59e0b; }
+
+        .mms-footer {
+            display: flex;
+            gap: 0.75rem;
+        }
+        .btn-mms-close {
+            flex: 1;
+            padding: 0.875rem;
+            background: #f5f5f4;
+            border: none;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #44403c;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-mms-close:hover { background: #e7e5e4; }
+
+        /* Money Map Summary Banner */
+        .mms-banner {
+            background: linear-gradient(135deg, #1c1917 0%, #292524 100%);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 8px 20px -4px rgba(0,0,0,0.25);
+        }
+        .mms-banner:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 30px -6px rgba(0,0,0,0.3);
+        }
+        .mms-banner-icon {
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            border-radius: 0.875rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 4px 10px rgba(251,191,36,0.35);
+        }
+        .mms-banner-content { flex: 1; }
+        .mms-banner-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #fbbf24;
+            margin-bottom: 0.2rem;
+        }
+        .mms-banner-title {
+            font-family: 'Fraunces', serif;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: white;
+        }
+        .mms-banner-sub {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.55);
+            margin-top: 0.15rem;
+        }
+        .mms-banner-arrow {
+            color: rgba(255,255,255,0.4);
+            flex-shrink: 0;
+        }
+
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideOutRight {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(100px); }
+        }
+
+        /* ============ MOBILE ============ */
+        @media (max-width: 767px) {
+            .container { padding: 0.875rem; }
+            .sidebar { margin-bottom: 1rem; }
+            .progress-header { padding: 0.875rem 1rem; }
+            .progress-title { font-size: 0.875rem; }
+            .step-btn { min-width: 80px; padding: 0.5rem 0.6rem; }
+            .step-name { font-size: 0.68rem; }
+            .step-status { font-size: 0.58rem; }
+            .main-content { gap: 1rem; }
+            .content-cols { gap: 1rem; }
+            .card-content { padding: 1rem; }
+            .content-title { font-size: 1.25rem; }
+            .content-description { font-size: 0.9rem; }
+            .notes-textarea { height: 5rem; }
+            .notes-title { font-size: 0.9rem; }
+            .checklist-item { padding: 0.6rem; }
+            .cta-button { width: 100%; }
+
+            .discovery-status-section { padding: 1rem; }
+            .discovery-status-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+            .discovery-actions { flex-direction: column; }
+            .btn-discovery { min-width: unset; width: 100%; }
+
+            .results-video-section { grid-template-columns: 1fr; }
+            .results-video-footer { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+            .btn-mark-watched { width: 100%; justify-content: center; }
+
+            .presentation-pending { flex-direction: column; padding: 1rem; gap: 1rem; }
+            .wa-support-card { padding: 1.1rem; }
+
+            .final-documents-section { padding: 1rem; margin-bottom: 1rem; }
+            .final-documents-header { flex-direction: column; gap: 0.75rem; }
+            .final-documents-grid { grid-template-columns: 1fr !important; }
+            .final-document-card { padding: 1rem; }
+            .completion-message { padding: 1rem; }
+            .completion-icon { width: 56px; height: 56px; }
+            .completion-title { font-size: 1.15rem; }
+
+            .mms-banner { padding: 1rem; gap: 0.75rem; }
+            .mms-banner-title { font-size: 0.95rem; }
+            .mms-modal { max-height: 90vh; overflow-y: auto; }
+            .mms-header { padding: 1.1rem 1.1rem 0.875rem; }
+            .mms-title { font-size: 1.35rem; }
+            .mms-body { padding: 1.1rem; }
+            .mms-metrics { gap: 0.5rem; }
+            .mms-metric { padding: 0.7rem; }
+            .mms-metric-value { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class=&quot;container&quot;>
+        <!-- Progress Bar on Top -->
+        <aside class=&quot;sidebar&quot;>
+            <div class=&quot;progress-header&quot;>
+                <h2 class=&quot;progress-title&quot;>Progreso</h2>
+                <div class=&quot;progress-container&quot;>
+                    <div class=&quot;progress-bar-bg&quot;>
+                        <div class=&quot;progress-bar-fill&quot; id=&quot;progressBar&quot; style=&quot;width: 0%&quot;></div>
+                    </div>
+                    <span class=&quot;progress-text&quot; id=&quot;progressText&quot;>0/3</span>
+                </div>
+            </div>
+
+            <div class=&quot;timeline&quot; id=&quot;timeline&quot;>
+                <!-- Steps generated by JS -->
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class=&quot;main-content&quot;>
+            <!-- Next Meeting Banner (full width) -->
+            <div id=&quot;nextMeetingBanner&quot;></div>
+
+            <!-- Two-column row: video left, checklist+notes right -->
+            <div class=&quot;content-cols&quot;>
+                <!-- Left: Video card -->
+                <div class=&quot;col-left&quot;>
+                    <div class=&quot;card&quot;>
+                        <div class=&quot;video-container&quot;>
+                            <div class=&quot;video-placeholder&quot;>
+                                <div class=&quot;video-content&quot;>
+                                    <button class=&quot;play-button&quot;>
+                                        <i data-lucide=&quot;play&quot; style=&quot;width: 36px; height: 36px; color: white; margin-left: 4px;&quot;></i>
+                                    </button>
+                                    <p class=&quot;video-text&quot; id=&quot;videoText&quot;>Video explicativo</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Content info -->
+                <div class=&quot;col-right&quot;>
+                    <div class=&quot;card&quot;>
+                        <div class=&quot;card-content&quot;>
+                            <div class=&quot;content-header&quot;>
+                                <h2 class=&quot;content-title&quot; id=&quot;contentTitle&quot;></h2>
+                                <p class=&quot;content-description&quot; id=&quot;contentDescription&quot;></p>
+                            </div>
+                            <div>
+                                <h3 class=&quot;checklist-title&quot;>Checklist</h3>
+                                <div class=&quot;checklist&quot; id=&quot;checklist&quot;></div>
+                            </div>
+                            <div id=&quot;ctaContainer&quot;></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic section: full width single row -->
+            <div class=&quot;dynamic-section-wrap&quot; id=&quot;dynamicSection&quot;></div>
+
+            <!-- Notes: full-width row, always last -->
+            <div class=&quot;card&quot;>
+                <div class=&quot;card-content&quot;>
+                    <div class=&quot;notes-header&quot;>
+                        <h3 class=&quot;notes-title&quot;>Notas - <span id=&quot;notesStepName&quot;></span></h3>
+                        <button class=&quot;btn-save&quot; onclick=&quot;saveNote()&quot;>Guardar</button>
+                    </div>
+                    <textarea
+                        id=&quot;notesTextarea&quot;
+                        class=&quot;notes-textarea&quot;
+                        placeholder=&quot;Escribe aquí tus notas, dudas o recordatorios...&quot;
+                    ></textarea>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Dev bar (remove in production) -->
+        <div style=&quot;margin-top:1.5rem;display:flex;justify-content:center;&quot;>
+            <button id=&quot;devToggleBtn&quot; onclick=&quot;toggleVideoReady()&quot;
+                style=&quot;padding:0.3rem 0.75rem;background:#f5f5f4;color:#78716c;border:1px solid #e7e5e4;border-radius:9999px;font-size:0.68rem;font-weight:600;cursor:pointer;transition:all 0.2s;&quot;
+                onmouseover=&quot;this.style.background='#e7e5e4'&quot;
+                onmouseout=&quot;this.style.background='#f5f5f4'&quot;>
+                🛠 ▶️ Simular: video publicado
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Money Map Summary Modal -->
+    <div class=&quot;mms-overlay&quot; id=&quot;mmsOverlay&quot; onclick=&quot;closeMMS(event)&quot;>
+        <div class=&quot;mms-modal&quot; onclick=&quot;event.stopPropagation()&quot;>
+            <div class=&quot;mms-header&quot;>
+                <div class=&quot;mms-header-top&quot;>
+                    <span class=&quot;mms-badge&quot;>💰 Money Map</span>
+                    <button class=&quot;mms-close&quot; onclick=&quot;closeMMS()&quot;>✕</button>
+                </div>
+                <div class=&quot;mms-title&quot;>Tu <span>Money Map</span><br>Summary</div>
+            </div>
+            <div class=&quot;mms-body&quot;>
+                <div class=&quot;mms-section-label&quot;>Métricas clave del análisis</div>
+                <div class=&quot;mms-metrics&quot;>
+                    <div class=&quot;mms-metric&quot;>
+                        <div class=&quot;mms-metric-label&quot;>Ingresos actuales</div>
+                        <div class=&quot;mms-metric-value&quot;>$500K</div>
+                    </div>
+                    <div class=&quot;mms-metric&quot;>
+                        <div class=&quot;mms-metric-label&quot;>Potencial identificado</div>
+                        <div class=&quot;mms-metric-value green&quot;>+$280K</div>
+                    </div>
+                    <div class=&quot;mms-metric&quot;>
+                        <div class=&quot;mms-metric-label&quot;>Oportunidades</div>
+                        <div class=&quot;mms-metric-value&quot;>7 áreas</div>
+                    </div>
+                    <div class=&quot;mms-metric&quot;>
+                        <div class=&quot;mms-metric-label&quot;>Prioridad alta</div>
+                        <div class=&quot;mms-metric-value amber&quot;>3 acciones</div>
+                    </div>
+                </div>
+
+                <div class=&quot;mms-section-label&quot;>Hallazgos principales</div>
+                <div class=&quot;mms-insights&quot;>
+                    <div class=&quot;mms-insight&quot;>
+                        <div class=&quot;mms-insight-dot&quot;></div>
+                        <span>Tu funnel de ventas tiene una fuga estimada del 34% entre el primer contacto y el cierre — optimizarlo es la mayor palanca de crecimiento.</span>
+                    </div>
+                    <div class=&quot;mms-insight&quot;>
+                        <div class=&quot;mms-insight-dot&quot;></div>
+                        <span>El ticket promedio puede incrementarse un 22% implementando ofertas de upsell estructuradas en el punto de conversión.</span>
+                    </div>
+                    <div class=&quot;mms-insight amber&quot;>
+                        <div class=&quot;mms-insight-dot&quot;></div>
+                        <span>El costo de adquisición de cliente está 40% por encima del benchmark del sector — requiere atención prioritaria en los próximos 90 días.</span>
+                    </div>
+                </div>
+
+                <div class=&quot;mms-footer&quot;>
+                    <button class=&quot;btn-mms-close&quot; onclick=&quot;closeMMS()&quot;>Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Demo Controls Panel -->
+    <script src=&quot;https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js&quot;></script>
+    <script>
+        // ===== DATA =====
+        const steps = [
+            { id: 'discovery', name: 'Discovery',  icon: 'message-square', order: 1 },
+            { id: 'videocall', name: 'Presentación', icon: 'video',          order: 2 },
+            { id: 'cerrado',   name: 'Cerrado',     icon: 'award',          order: 3 }
+        ];
+
+        const stepContent = {
+            discovery: {
+                title: 'Completa el Discovery',
+                description: 'Este formulario es la base del análisis. Mientras más completo, mejor. Si te falta info, puedes guardarlo y volver.',
+                checklist: [
+                    { item: 'Formulario iniciado', done: false },
+                    { item: 'Información básica completada', done: false },
+                    { item: 'Discovery enviado para revisión', done: false }
+                ],
+                cta: { text: 'Completar Discovery', action: 'discovery' },
+                discoveryStatus: {
+                    status: 'not_started',
+                    progress: 0,
+                    lastUpdated: null,
+                    link: 'https://xserbia.github.io/xavierserbia-site/discovery-form-claude.html',
+                    summary: { businessName: '', industry: '', currentRevenue: '', goals: '' }
+                }
+            },
+            videocall: {
+                title: 'Tu Presentación de Resultados',
+                description: 'Hemos preparado un video personalizado con el análisis completo de tu negocio. Míralo a tu ritmo y si tienes preguntas, escríbenos por WhatsApp.',
+                checklist: [
+                    { item: 'Presentación lista', done: false },
+                    { item: 'Video visto', done: false },
+                    { item: 'Preguntas resueltas', done: false }
+                ],
+                cta: null,
+                videoReady: false,
+                videoUrl: '',
+                whatsappNumber: '15551234567',
+                whatsappMessage: 'Hola, acabo de ver mi presentación de resultados y tengo una pregunta:'
+            },
+            cerrado: {
+                title: 'Proceso completado',
+                description: 'Se entrega el resumen final y próximos pasos. Si tienes seguimiento mensual, aquí inicia el ciclo de check-ins.',
+                checklist: [
+                    { item: 'Resumen final entregado', done: false }
+                ],
+                cta: null,
+                finalDocuments: [
+                    {
+                        name: 'Resumen Final del Análisis',
+                        description: 'Documento completo con hallazgos, insights y recomendaciones estratégicas',
+                        size: '2.4 MB', pages: 24, type: 'pdf',
+                        status: 'available', icon: 'file-text', url: '#'
+                    }
+                ]
+            }
+        };
+
+        let currentStep = 'discovery';
+        let selectedStep = 'discovery';
+        let notes = {};
+        let selectedSlotData = null;
+
+        // ===== INIT =====
+        function init() {
+            loadNotes();
+            renderTimeline();
+            updateProgress();
+            updateContent();
+            lucide.createIcons();
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed; top: 100px; right: 2rem;
+                background: #5B4CE2; color: white;
+                padding: 1rem 1.5rem; border-radius: 0.75rem;
+                box-shadow: 0 10px 15px -3px rgba(91,76,226,0.4);
+                z-index: 1001; font-weight: 500; font-size: 0.875rem;
+                animation: slideInRight 0.3s ease-out;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.3s ease-out';
+                setTimeout(() => document.body.removeChild(notification), 300);
+            }, 3000);
+        }
+
+        // ===== DISCOVERY =====
+        function openDiscoveryForm() {
+            const ds = stepContent.discovery.discoveryStatus;
+            window.open(ds.link, '_blank');
+            showNotification('🚀 Abriendo formulario Discovery en nueva pestaña');
+            if (ds.status === 'not_started') {
+                setTimeout(() => {
+                    ds.status = 'in_progress'; ds.progress = 10;
+                    ds.lastUpdated = new Date().toLocaleDateString('es-ES', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' });
+                    stepContent.discovery.checklist[0].done = true;
+                    updateContent();
+                    showNotification('✓ Discovery iniciado - Progreso guardado automáticamente');
+                }, 2000);
+            }
+        }
+
+        function simulateDiscoveryCompletion() {
+            const ds = stepContent.discovery.discoveryStatus;
+            ds.status = 'completed'; ds.progress = 100;
+            ds.lastUpdated = new Date().toLocaleDateString('es-ES', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' });
+            ds.summary = { businessName: 'Tech Solutions Inc.', industry: 'Tecnología y Software', currentRevenue: '$500K - $1M anuales', goals: 'Aumentar conversión web en 30%, optimizar funnel de ventas, implementar automatización de marketing' };
+            stepContent.discovery.checklist.forEach(item => { item.done = true; });
+            updateContent();
+            showNotification('✅ Discovery completado - Respuestas enviadas para revisión');
+        }
+
+        function simulateDiscoveryProgress() {
+            if (selectedStep !== 'discovery') { showNotification('⚠️ Primero selecciona el paso Discovery'); return; }
+            const ds = stepContent.discovery.discoveryStatus;
+            const now = new Date().toLocaleDateString('es-ES', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' });
+            if (ds.status === 'not_started') {
+                ds.status = 'in_progress'; ds.progress = 35; ds.lastUpdated = now;
+                stepContent.discovery.checklist[0].done = true;
+                updateContent(); showNotification('📝 Discovery iniciado - Progreso: 35%');
+            } else if (ds.status === 'in_progress' &amp;&amp; ds.progress < 100) {
+                ds.progress = Math.min(ds.progress + 30, 100); ds.lastUpdated = now;
+                if (ds.progress >= 70) stepContent.discovery.checklist[1].done = true;
+                if (ds.progress === 100) {
+                    ds.status = 'completed';
+                    stepContent.discovery.checklist[2].done = true;
+                    ds.summary = { businessName: 'Tech Solutions Inc.', industry: 'Tecnología y Software', currentRevenue: '$500K - $1M anuales', goals: 'Aumentar conversión web en 30%, optimizar funnel de ventas, implementar automatización de marketing' };
+                    showNotification('✅ Discovery completado - 100%');
+                } else { showNotification(`📝 Progreso actualizado - ${ds.progress}%`); }
+                updateContent();
+            } else { showNotification('✓ El Discovery ya está completado'); }
+        }
+
+        // ===== VIDEOCALL (pre-produced video + WhatsApp) =====
+        function handlePlayVideo() {
+            const vc = stepContent.videocall;
+            if (vc.videoUrl) {
+                window.open(vc.videoUrl, '_blank');
+            } else {
+                showNotification('▶️ En producción aquí se reproducirá el video personalizado');
+            }
+            setTimeout(() => {
+                vc.checklist[0].done = true;
+                vc.checklist[1].done = true;
+                updateContent();
+            }, 1500);
+        }
+
+        function markVideoWatched() {
+            const vc = stepContent.videocall;
+            vc.checklist[0].done = true;
+            vc.checklist[1].done = true;
+            updateContent();
+            showNotification('✅ ¡Video marcado como visto!');
+        }
+
+        function openWhatsApp() {
+            const vc = stepContent.videocall;
+            const msg = encodeURIComponent(vc.whatsappMessage);
+            window.open(`https://wa.me/${vc.whatsappNumber}?text=${msg}`, '_blank');
+            stepContent.videocall.checklist[2].done = true;
+            updateContent();
+        }
+
+        // ===== CERRADO =====
+        function addNextMeetingToCalendar() {
+            const meeting = stepContent.cerrado.nextMeeting;
+            showNotification('📅 Agregando reunión de coaching a tu calendario...');
+            setTimeout(() => showNotification('✓ Reunión agregada: ' + meeting.title + ' - ' + meeting.date), 1500);
+        }
+
+        function previewFinalDocument(index) {
+            const doc = stepContent.cerrado.finalDocuments[index];
+            showNotification(`📄 Abriendo vista previa: ${doc.name}`);
+            setTimeout(() => showNotification('Esta es una demostración. En producción se mostraría el PDF completo.'), 1500);
+        }
+
+        function downloadFinalDocument(index) {
+            const doc = stepContent.cerrado.finalDocuments[index];
+            showNotification(`⬇️ Descargando: ${doc.name}`);
+            setTimeout(() => showNotification('✓ Documento descargado correctamente'), 1000);
+        }
+
+        function simulateFinalDocsAvailable() {
+            if (selectedStep !== 'cerrado') { showNotification('⚠️ Primero selecciona el paso Cerrado'); return; }
+            stepContent.cerrado.finalDocuments.forEach(doc => { doc.status = 'available'; });
+            stepContent.cerrado.checklist[0].done = true;
+            updateContent();
+            showNotification('✅ Documentos finales ahora disponibles para descargar');
+        }
+
+        // ===== NOTES =====
+        function loadNotes() {
+            const saved = localStorage.getItem('userDashboardNotes');
+            if (saved) notes = JSON.parse(saved);
+        }
+
+        function saveNote() {
+            notes[selectedStep] = document.getElementById('notesTextarea').value;
+            localStorage.setItem('userDashboardNotes', JSON.stringify(notes));
+            showNotification('💾 Nota guardada correctamente');
+        }
+
+        // ===== TIMELINE =====
+        function renderTimeline() {
+            const timeline = document.getElementById('timeline');
+            timeline.innerHTML = '';
+            steps.forEach(step => {
+                const status = getStepStatus(step);
+                const accessible = isStepAccessible(step);
+                const button = document.createElement('button');
+                button.className = 'step-btn';
+                if (selectedStep === step.id) button.classList.add('active');
+                if (!accessible) button.disabled = true;
+                button.onclick = () => selectStep(step.id);
+
+                const iconClass = status === 'completed' ? 'completed' : status === 'current' ? 'current' : 'pending';
+                const iconName = status === 'completed' ? 'check-circle' : (!accessible ? 'lock' : step.icon);
+
+                button.innerHTML = `
+                    <div class=&quot;step-icon ${iconClass} ${selectedStep === step.id ? 'active' : ''}&quot;>
+                        <i data-lucide=&quot;${iconName}&quot; style=&quot;width: 18px; height: 18px;&quot;></i>
+                    </div>
+                    <div class=&quot;step-info&quot;>
+                        <div class=&quot;step-name&quot;>${step.name}</div>
+                        <div class=&quot;step-status&quot;>${status === 'completed' ? 'Completado' : status === 'current' ? 'En progreso' : 'Pendiente'}</div>
+                    </div>
+                    ${selectedStep === step.id ? '<i data-lucide=&quot;chevron-right&quot; style=&quot;width: 14px; height: 14px;&quot;></i>' : ''}
+                `;
+                timeline.appendChild(button);
+            });
+            lucide.createIcons();
+        }
+
+        function isStepAccessible(step) {
+            const currentIdx = steps.findIndex(s => s.id === currentStep);
+            const stepIdx = steps.findIndex(s => s.id === step.id);
+            return stepIdx <= currentIdx;
+        }
+
+        function getStepStatus(step) {
+            const currentIdx = steps.findIndex(s => s.id === currentStep);
+            const stepIdx = steps.findIndex(s => s.id === step.id);
+            if (step.id === 'cerrado' &amp;&amp; stepContent.cerrado.nextMeeting) return 'completed';
+            if (stepIdx < currentIdx) return 'completed';
+            if (stepIdx === currentIdx) return 'current';
+            return 'pending';
+        }
+
+        function selectStep(stepId) {
+            if (!isStepAccessible(steps.find(s => s.id === stepId))) return;
+            selectedStep = stepId;
+            renderTimeline();
+            updateContent();
+            document.getElementById('notesTextarea').value = notes[selectedStep] || '';
+        }
+
+        function updateProgress() {
+            const completed = steps.filter(s => getStepStatus(s) === 'completed').length;
+            const pct = (completed / steps.length) * 100;
+            document.getElementById('progressBar').style.width = pct + '%';
+            document.getElementById('progressText').textContent = `${completed}/${steps.length}`;
+        }
+
+        // ===== CONTENT RENDER =====
+        function updateContent() {
+            const content = stepContent[selectedStep];
+            const stepName = steps.find(s => s.id === selectedStep).name;
+
+            // Clear next meeting banner (no longer used)
+            document.getElementById('nextMeetingBanner').innerHTML = '';
+
+            // Update video area based on state
+
+            const videoPlaceholder = document.querySelector('.video-placeholder');
+            if (selectedStep === 'videocall' &amp;&amp; !content.videoReady) {
+                videoPlaceholder.innerHTML = `
+                    <div class=&quot;video-locked-overlay&quot;>
+                        <div class=&quot;video-locked-icon&quot;>
+                            <i data-lucide=&quot;lock&quot; style=&quot;width:24px;height:24px;color:rgba(255,255,255,0.6);&quot;></i>
+                        </div>
+                        <div class=&quot;video-locked-text&quot;>
+                            <div class=&quot;video-locked-title&quot;>Presentación en preparación</div>
+                            <div class=&quot;video-locked-sub&quot;>Disponible pronto</div>
+                        </div>
+                    </div>`;
+            } else {
+                videoPlaceholder.innerHTML = `
+                    <div class=&quot;video-content&quot;>
+                        <button class=&quot;play-button&quot; onclick=&quot;${selectedStep === 'videocall' ? 'handlePlayVideo()' : ''}&quot;>
+                            <i data-lucide=&quot;play&quot; style=&quot;width: 36px; height: 36px; color: white; margin-left: 4px;&quot;></i>
+                        </button>
+                        <p class=&quot;video-text&quot; id=&quot;videoText&quot;>Video explicativo - ${content.title}</p>
+                    </div>`;
+            }
+            document.getElementById('contentTitle').textContent = content.title;
+            document.getElementById('contentDescription').textContent = content.description;
+            document.getElementById('notesStepName').textContent = stepName;
+
+            // Checklist
+            const checklist = document.getElementById('checklist');
+            checklist.innerHTML = '';
+            content.checklist.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'checklist-item';
+                div.innerHTML = `
+                    <div class=&quot;checklist-icon ${item.done ? 'done' : 'pending'}&quot;>
+                        <i data-lucide=&quot;${item.done ? 'check-circle' : 'circle'}&quot; style=&quot;width: 20px; height: 20px;&quot;></i>
+                    </div>
+                    <span class=&quot;checklist-text ${item.done ? 'done' : 'pending'}&quot;>${item.item}</span>`;
+                checklist.appendChild(div);
+            });
+
+            // Auto-advance to next step when checklist is fully complete
+            const allDone = content.checklist.every(item => item.done);
+            const currentIdx = steps.findIndex(s => s.id === selectedStep);
+            const nextStep = steps[currentIdx + 1];
+            if (allDone &amp;&amp; nextStep &amp;&amp; currentStep === selectedStep) {
+                setTimeout(() => {
+                    currentStep = nextStep.id;
+                    selectedStep = nextStep.id;
+                    renderTimeline();
+                    updateProgress();
+                    updateContent();
+                    document.getElementById('notesTextarea').value = notes[selectedStep] || '';
+                    showNotification(`✅ ¡Listo! Avanzando a ${nextStep.name}`);
+                }, 600);
+                return;
+            }
+
+            // Remove old dynamic sections
+            document.querySelectorAll('.discovery-status-section, .videocall-section, .final-documents-section').forEach(el => el.remove());
+
+            const ctaContainer = document.getElementById('ctaContainer');
+            const dynamicSection = document.getElementById('dynamicSection');
+            dynamicSection.innerHTML = '';
+
+            if (selectedStep === 'discovery') {
+                dynamicSection.innerHTML = buildDiscoveryHTML();
+                ctaContainer.innerHTML = '';
+            } else if (selectedStep === 'videocall') {
+                dynamicSection.innerHTML = buildVideocallHTML();
+                ctaContainer.innerHTML = '';
+            } else if (selectedStep === 'cerrado') {
+                dynamicSection.innerHTML = buildFinalDocsHTML();
+                ctaContainer.innerHTML = '';
+            } else if (content.cta) {
+                ctaContainer.innerHTML = `<button class=&quot;cta-button&quot; onclick=&quot;handleCTA('${content.cta.action}')&quot;>${content.cta.text}</button>`;
+            } else {
+                ctaContainer.innerHTML = '';
+            }
+
+            lucide.createIcons();
+        }
+
+        // ===== HTML BUILDERS =====
+        function buildDiscoveryHTML() {
+            const ds = stepContent.discovery.discoveryStatus;
+            const statusText = { not_started: '⏳ No iniciado', in_progress: '📝 En progreso', completed: '✅ Completado' };
+            const statusClass = ds.status.replace('_', '-');
+            return `
+            <div class=&quot;discovery-status-section&quot;>
+                <div class=&quot;discovery-status-header&quot;>
+                    <h3 class=&quot;discovery-status-title&quot;>
+                        <i data-lucide=&quot;clipboard-list&quot; style=&quot;width: 24px; height: 24px;&quot;></i>
+                        Estado del Discovery
+                    </h3>
+                    <span class=&quot;discovery-status-badge ${statusClass}&quot;>${statusText[ds.status]}</span>
+                </div>
+
+                ${ds.status !== 'not_started' ? `
+                <div class=&quot;discovery-progress-container&quot;>
+                    <div class=&quot;discovery-progress-header&quot;>
+                        <span class=&quot;discovery-progress-label&quot;>Progreso del formulario</span>
+                        <span class=&quot;discovery-progress-percent&quot;>${ds.progress}%</span>
+                    </div>
+                    <div class=&quot;discovery-progress-bar-bg&quot;>
+                        <div class=&quot;discovery-progress-bar-fill&quot; style=&quot;width: ${ds.progress}%&quot;></div>
+                    </div>
+                </div>
+                <div class=&quot;discovery-info-grid&quot;>
+                    <div class=&quot;discovery-info-item&quot;>
+                        <div class=&quot;discovery-info-label&quot;>Última actualización</div>
+                        <div class=&quot;discovery-info-value&quot;>${ds.lastUpdated || 'N/A'}</div>
+                    </div>
+                    <div class=&quot;discovery-info-item&quot;>
+                        <div class=&quot;discovery-info-label&quot;>Estado del formulario</div>
+                        <div class=&quot;discovery-info-value&quot;>${ds.status === 'completed' ? 'Enviado para revisión' : 'Borrador guardado'}</div>
+                    </div>
+                </div>` : ''}
+
+                ${ds.status === 'completed' ? `
+                <div class=&quot;discovery-summary-section&quot;>
+                    <h4 class=&quot;discovery-summary-title&quot;>📊 Resumen de respuestas clave</h4>
+                    <div class=&quot;discovery-summary-grid&quot;>
+                        <div class=&quot;discovery-summary-item&quot;>
+                            <div class=&quot;discovery-summary-label&quot;>Nombre del negocio</div>
+                            <div class=&quot;discovery-summary-value&quot;>${ds.summary.businessName || 'No especificado'}</div>
+                        </div>
+                        <div class=&quot;discovery-summary-item&quot;>
+                            <div class=&quot;discovery-summary-label&quot;>Industria</div>
+                            <div class=&quot;discovery-summary-value&quot;>${ds.summary.industry || 'No especificado'}</div>
+                        </div>
+                        <div class=&quot;discovery-summary-item&quot;>
+                            <div class=&quot;discovery-summary-label&quot;>Ingresos actuales</div>
+                            <div class=&quot;discovery-summary-value&quot;>${ds.summary.currentRevenue || 'No especificado'}</div>
+                        </div>
+                        <div class=&quot;discovery-summary-item&quot;>
+                            <div class=&quot;discovery-summary-label&quot;>Objetivos principales</div>
+                            <div class=&quot;discovery-summary-value&quot;>${ds.summary.goals || 'No especificado'}</div>
+                        </div>
+                    </div>
+                </div>` : ''}
+
+                <div class=&quot;discovery-actions&quot;>
+                    ${ds.status !== 'completed' ? `
+                    <button class=&quot;btn-discovery primary&quot; onclick=&quot;openDiscoveryForm()&quot;>
+                        <i data-lucide=&quot;external-link&quot; style=&quot;width: 18px; height: 18px;&quot;></i>
+                        ${ds.status === 'not_started' ? 'Iniciar Discovery' : 'Continuar formulario'}
+                    </button>` : ''}
+                    ${ds.status === 'completed' ? `
+                    <button class=&quot;btn-discovery secondary&quot; onclick=&quot;openDiscoveryForm()&quot;>
+                        <i data-lucide=&quot;edit&quot; style=&quot;width: 18px; height: 18px;&quot;></i>
+                        Ver/Editar respuestas
+                    </button>` : ''}
+                    ${ds.status === 'in_progress' ? `
+                    <button class=&quot;btn-discovery secondary&quot; onclick=&quot;simulateDiscoveryCompletion()&quot;>
+                        <i data-lucide=&quot;check&quot; style=&quot;width: 18px; height: 18px;&quot;></i>
+                        Marcar como completado (Demo)
+                    </button>` : ''}
+                </div>
+
+                ${ds.status === 'not_started' ? `
+                <div class=&quot;discovery-alert&quot;>
+                    <i data-lucide=&quot;alert-circle&quot; class=&quot;discovery-alert-icon&quot; style=&quot;width: 20px; height: 20px;&quot;></i>
+                    <div class=&quot;discovery-alert-content&quot;>
+                        <div class=&quot;discovery-alert-title&quot;>Importante</div>
+                        <div class=&quot;discovery-alert-text&quot;>El formulario se abrirá en una nueva pestaña. Puedes guardar tu progreso y volver en cualquier momento. La información se sincronizará automáticamente con este tablero.</div>
+                    </div>
+                </div>` : ''}
+            </div>`;
+        }
+
+        function buildVideocallHTML() {
+            const vc = stepContent.videocall;
+
+            if (!vc.videoReady) {
+                return `
+                <div class=&quot;presentation-pending&quot;>
+                    <div class=&quot;pp-icon-wrap&quot;>
+                        <i data-lucide=&quot;film&quot; style=&quot;width:32px;height:32px;color:#5B4CE2;&quot;></i>
+                    </div>
+                    <div class=&quot;pp-content&quot;>
+                        <div class=&quot;pp-label&quot;>En preparación</div>
+                        <h3 class=&quot;pp-title&quot;>Estamos editando tu presentación personalizada</h3>
+                        <p class=&quot;pp-text&quot;>Con base en tu Discovery, estamos preparando un video con los hallazgos y recomendaciones específicos para tu negocio. Recibirás una notificación cuando esté lista.</p>
+                        <div class=&quot;pp-steps&quot;>
+                            <div class=&quot;pp-step done&quot;>
+                                <div class=&quot;pp-step-dot done&quot;></div>
+                                <span>Discovery completado y analizado</span>
+                            </div>
+                            <div class=&quot;pp-step active&quot;>
+                                <div class=&quot;pp-step-dot active&quot;></div>
+                                <span>Grabando tu presentación personalizada</span>
+                            </div>
+                            <div class=&quot;pp-step&quot;>
+                                <div class=&quot;pp-step-dot&quot;></div>
+                                <span>Presentación lista para ver</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }
+
+            const waMsg = encodeURIComponent(vc.whatsappMessage);
+            const waUrl = `https://wa.me/${vc.whatsappNumber}?text=${waMsg}`;
+            return `
+            <div class=&quot;wa-support-card&quot;>
+                <div class=&quot;wa-support-header&quot;>
+                    <div class=&quot;wa-icon-wrap&quot;>
+                        <svg viewBox=&quot;0 0 24 24&quot; width=&quot;28&quot; height=&quot;28&quot; fill=&quot;white&quot;><path d=&quot;M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z&quot;/><path d=&quot;M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.532 5.849L.054 23.5a.5.5 0 0 0 .613.613l5.72-1.497A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.892 9.892 0 0 1-5.031-1.375l-.361-.214-3.741.979.999-3.645-.235-.374A9.858 9.858 0 0 1 2.1 12C2.1 6.534 6.534 2.1 12 2.1c5.466 0 9.9 4.434 9.9 9.9 0 5.466-4.434 9.9-9.9 9.9z&quot;/></svg>
+                    </div>
+                    <div class=&quot;wa-support-text&quot;>
+                        <div class=&quot;wa-support-title&quot;>¿Tienes preguntas?</div>
+                        <div class=&quot;wa-support-sub&quot;>Soporte en tiempo real vía WhatsApp</div>
+                    </div>
+                    <div class=&quot;wa-status-dot&quot;></div>
+                </div>
+                <p class=&quot;wa-support-desc&quot;>Después de ver el video, si tienes dudas sobre tus resultados o próximos pasos, escríbenos directamente. Respondemos en minutos.</p>
+                <a href=&quot;${waUrl}&quot; target=&quot;_blank&quot; class=&quot;btn-whatsapp&quot; onclick=&quot;openWhatsApp()&quot;>
+                    <svg viewBox=&quot;0 0 24 24&quot; width=&quot;20&quot; height=&quot;20&quot; fill=&quot;currentColor&quot;><path d=&quot;M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z&quot;/><path d=&quot;M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.532 5.849L.054 23.5a.5.5 0 0 0 .613.613l5.72-1.497A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.892 9.892 0 0 1-5.031-1.375l-.361-.214-3.741.979.999-3.645-.235-.374A9.858 9.858 0 0 1 2.1 12C2.1 6.534 6.534 2.1 12 2.1c5.466 0 9.9 4.434 9.9 9.9 0 5.466-4.434 9.9-9.9 9.9z&quot;/></svg>
+                    Escribir por WhatsApp
+                </a>
+                <p class=&quot;wa-availability&quot;>🟢 Disponible lun–vie 9am–6pm EST</p>
+            </div>`;
+        }
+
+        function openMMS() {
+            document.getElementById('mmsOverlay').classList.add('active');
+        }
+
+        function closeMMS(event) {
+            if (!event || event.target === document.getElementById('mmsOverlay')) {
+                document.getElementById('mmsOverlay').classList.remove('active');
+            }
+        }
+
+        function buildFinalDocsHTML() {
+            const docs = stepContent.cerrado.finalDocuments;
+            const doc = docs[0];
+            const available = doc.status === 'available';
+
+            return `
+            <div class=&quot;final-documents-section&quot;>
+                <!-- Money Map Summary Banner -->
+                <div class=&quot;mms-banner&quot; onclick=&quot;window.open('https://xserbia.github.io/xs-member-site/money-map-json.html', '_blank')&quot;style=&quot;cursor:pointer;&quot;>
+                    <div class=&quot;mms-banner-icon&quot;>
+                        <i data-lucide=&quot;bar-chart-2&quot; style=&quot;width: 26px; height: 26px; color: #1c1917;&quot;></i>
+                    </div>
+                    <div class=&quot;mms-banner-content&quot;>
+                        <div class=&quot;mms-banner-label&quot;>💰 Disponible ahora</div>
+                        <div class=&quot;mms-banner-title&quot;>Money Map Summary</div>
+                        <div class=&quot;mms-banner-sub&quot;>Ver hallazgos y métricas clave de tu análisis</div>
+                    </div>
+                    <div class=&quot;mms-banner-arrow&quot;>
+                        <i data-lucide=&quot;chevron-right&quot; style=&quot;width: 22px; height: 22px;&quot;></i>
+                    </div>
+                </div>
+
+                ${available ? `
+                <div class=&quot;final-documents-header&quot;>
+                    <div class=&quot;final-documents-icon&quot;>
+                        <i data-lucide=&quot;check-circle&quot; style=&quot;width: 32px; height: 32px; color: white;&quot;></i>
+                    </div>
+                    <div class=&quot;final-documents-title&quot;>
+                        <h3>🎉 Proceso Completado</h3>
+                        <p class=&quot;final-documents-subtitle&quot;>Tu documento final está listo para descargar</p>
+                    </div>
+                </div>
+
+                <div class=&quot;final-documents-grid&quot; style=&quot;grid-template-columns: 1fr;&quot;>
+                    <div class=&quot;final-document-card&quot;>
+                        <div class=&quot;final-document-header&quot;>
+                            <div class=&quot;final-document-icon&quot;>
+                                <i data-lucide=&quot;${doc.icon}&quot; style=&quot;width: 24px; height: 24px; color: white;&quot;></i>
+                            </div>
+                            <div class=&quot;final-document-info&quot;>
+                                <div class=&quot;final-document-name&quot;>${doc.name}</div>
+                                <div class=&quot;final-document-description&quot;>${doc.description}</div>
+                                <div class=&quot;final-document-meta&quot;>
+                                    <span>📄 ${doc.pages} páginas</span>
+                                    <span>💾 ${doc.size}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class=&quot;final-document-actions&quot;>
+                            <button class=&quot;btn-final-document download&quot; onclick=&quot;downloadFinalDocument(0)&quot;>
+                                <i data-lucide=&quot;download&quot; style=&quot;width: 16px; height: 16px;&quot;></i>
+                                Descargar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class=&quot;completion-message&quot;>
+                    <div class=&quot;completion-icon&quot;>
+                        <i data-lucide=&quot;award&quot; style=&quot;width: 48px; height: 48px; color: white;&quot;></i>
+                    </div>
+                    <h4 class=&quot;completion-title&quot;>¡Felicitaciones!</h4>
+                    <p class=&quot;completion-text&quot;>Has completado exitosamente el proceso de análisis. El documento contiene tu resumen ejecutivo completo con hallazgos y recomendaciones estratégicas. Si contrataste seguimiento mensual, pronto recibirás información sobre los próximos check-ins.</p>
+                </div>
+                ` : `
+                <div class=&quot;final-documents-header&quot;>
+                    <div class=&quot;final-documents-icon&quot; style=&quot;background: linear-gradient(135deg, #f59e0b, #d97706);&quot;>
+                        <i data-lucide=&quot;clock&quot; style=&quot;width: 32px; height: 32px; color: white;&quot;></i>
+                    </div>
+                    <div class=&quot;final-documents-title&quot;>
+                        <h3>Documento en preparación</h3>
+                        <p class=&quot;final-documents-subtitle&quot;>Tu resumen final estará disponible pronto</p>
+                    </div>
+                </div>
+                <div class=&quot;videocall-info-alert&quot;>
+                    <i data-lucide=&quot;info&quot; class=&quot;videocall-info-icon&quot; style=&quot;width: 20px; height: 20px;&quot;></i>
+                    <div class=&quot;videocall-info-content&quot;>
+                        <div class=&quot;videocall-info-title&quot;>Estamos trabajando en tu documento</div>
+                        <div class=&quot;videocall-info-text&quot;>Nuestro equipo está finalizando tu resumen ejecutivo. Recibirás una notificación cuando esté listo para descargar.</div>
+                    </div>
+                </div>
+                `}
+
+                <!-- WhatsApp support -->
+                <div class=&quot;wa-support-card&quot; style=&quot;margin-top:1.25rem;&quot;>
+                    <div class=&quot;wa-support-header&quot;>
+                        <div class=&quot;wa-icon-wrap&quot;>
+                            <svg viewBox=&quot;0 0 24 24&quot; width=&quot;28&quot; height=&quot;28&quot; fill=&quot;white&quot;><path d=&quot;M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z&quot;/><path d=&quot;M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.532 5.849L.054 23.5a.5.5 0 0 0 .613.613l5.72-1.497A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.892 9.892 0 0 1-5.031-1.375l-.361-.214-3.741.979.999-3.645-.235-.374A9.858 9.858 0 0 1 2.1 12C2.1 6.534 6.534 2.1 12 2.1c5.466 0 9.9 4.434 9.9 9.9 0 5.466-4.434 9.9-9.9 9.9z&quot;/></svg>
+                        </div>
+                        <div class=&quot;wa-support-text&quot;>
+                            <div class=&quot;wa-support-title&quot;>¿Tienes preguntas?</div>
+                            <div class=&quot;wa-support-sub&quot;>Soporte en tiempo real vía WhatsApp</div>
+                        </div>
+                        <div class=&quot;wa-status-dot&quot;></div>
+                    </div>
+                    <p class=&quot;wa-support-desc&quot;>Si tienes dudas sobre tu resumen final, los próximos pasos o quieres hablar sobre seguimiento, escríbenos directamente.</p>
+                    <a href=&quot;https://wa.me/${stepContent.videocall.whatsappNumber}?text=${encodeURIComponent('Hola, tengo una pregunta sobre mi resumen final:')}&quot; target=&quot;_blank&quot; class=&quot;btn-whatsapp&quot;>
+                        <svg viewBox=&quot;0 0 24 24&quot; width=&quot;20&quot; height=&quot;20&quot; fill=&quot;currentColor&quot;><path d=&quot;M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z&quot;/><path d=&quot;M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.532 5.849L.054 23.5a.5.5 0 0 0 .613.613l5.72-1.497A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.892 9.892 0 0 1-5.031-1.375l-.361-.214-3.741.979.999-3.645-.235-.374A9.858 9.858 0 0 1 2.1 12C2.1 6.534 6.534 2.1 12 2.1c5.466 0 9.9 4.434 9.9 9.9 0 5.466-4.434 9.9-9.9 9.9z&quot;/></svg>
+                        Escribir por WhatsApp
+                    </a>
+                    <p class=&quot;wa-availability&quot;>🟢 Disponible lun–vie 9am–6pm EST</p>
+                </div>
+            </div>`;
+        }
+
+        function handleCTA(action) {
+            if (action === 'discovery') { openDiscoveryForm(); return; }
+            if (action === 'schedule') {
+                const vs = document.querySelector('.videocall-section');
+                if (vs) { vs.scrollIntoView({ behavior: 'smooth', block: 'start' }); showNotification('📅 Selecciona una fecha y hora disponible'); }
+                return;
+            }
+            showNotification('Procesando acción...');
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+
+        // ===== DEV TOGGLE (remove in production) =====
+        function toggleVideoReady() {
+            const vc = stepContent.videocall;
+            vc.videoReady = !vc.videoReady;
+            if (vc.videoReady) {
+                vc.checklist[0].done = true;
+                vc.checklist[1].done = true;
+                vc.checklist[2].done = true;
+            } else {
+                vc.checklist[0].done = false;
+                vc.checklist[1].done = false;
+                vc.checklist[2].done = false;
+            }
+            if (selectedStep === 'videocall') updateContent();
+            const btn = document.getElementById('devToggleBtn');
+            btn.textContent = vc.videoReady ? '🔒 Simular: video en preparación' : '▶️ Simular: video publicado';
+        }
+    </script>
+</body>
+</html>
+" scrolling="yes"></iframe>
+    </div>
+
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<p class="info">Scroll dentro del teléfono para navegar · Interactivo</p>
+
+<script>
+  // Live clock
+  function updateClock() {
+    const now = new Date();
+    const h = now.getHours().toString().padStart(2,'0');
+    const m = now.getMinutes().toString().padStart(2,'0');
+    document.getElementById('clock').textContent = `${h}:${m}`;
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // Device switcher
+  function setDevice(type) {
+    const wrap = document.getElementById('phoneWrap');
+    wrap.className = `phone-wrap ${type}`;
+
+    document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+
+    // Show/hide notch
+    const notch = document.getElementById('notch');
+    if (type === 'iphone-se') {
+      notch.style.display = 'none';
+    } else {
+      notch.style.display = 'block';
+      notch.style.borderRadius = type === 'android' ? '50%' : '20px';
+      notch.style.width = type === 'android' ? '12px' : '120px';
+      notch.style.height = type === 'android' ? '12px' : '34px';
+    }
+  }
+</script>
+</body>
+</html>
