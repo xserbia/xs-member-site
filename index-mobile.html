@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>Xavier Formula Menudo — Móvil</title>
+  <link rel="stylesheet" href="https://cadamenudo.github.io/UI-UX/css-fonts.css"/>
+  <style>
+    :root{
+      --primary:#3956E8;
+      --secondary:#7459D9;
+      --accent:#E8C239;
+      --bg:#f3f5f9;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --stroke:#e5e7eb;
+      --shadow:0 8px 24px rgba(15,23,42,.08);
+      --radius:16px;
+      --bottom-nav-h:72px;
+    }
+
+    *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+
+    body{
+      font-family:"Nunito",system-ui,-apple-system,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      padding-bottom:calc(var(--bottom-nav-h) + env(safe-area-inset-bottom));
+    }
+
+    /* ===== TOP HEADER ===== */
+    .topHeader{
+      position:sticky;
+      top:0;
+      z-index:100;
+      background:#fff;
+      border-bottom:1px solid var(--stroke);
+      padding:14px 18px 12px;
+      padding-top:calc(14px + env(safe-area-inset-top));
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .headerBrand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .headerLogo{
+      width:38px;height:38px;border-radius:10px;
+      background:linear-gradient(135deg,var(--primary),var(--secondary));
+      display:grid;place-items:center;
+      color:#fff;font-weight:900;font-size:13px;
+      flex:0 0 auto;
+    }
+    .headerName{
+      font-weight:900;
+      font-size:15px;
+      line-height:1.1;
+      color:var(--text);
+    }
+    .headerSub{
+      font-size:11px;
+      color:var(--muted);
+      font-weight:700;
+    }
+    .headerAvatar{
+      width:40px;height:40px;border-radius:999px;
+      background:linear-gradient(135deg,var(--primary),var(--secondary));
+      display:grid;place-items:center;
+      color:#fff;font-weight:1000;font-size:16px;
+      border:2px solid #c7d2fe;
+      cursor:pointer;
+      flex:0 0 auto;
+    }
+
+    /* ===== MAIN CONTENT ===== */
+    .main{
+      padding:18px 16px;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+
+    /* Welcome */
+    .welcomeCard{
+      background:var(--card);
+      border:1px solid var(--stroke);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:20px 20px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .welcomeText{}
+    .welcomeTitle{
+      font-size:22px;
+      font-weight:1000;
+      letter-spacing:-.02em;
+      line-height:1.1;
+    }
+    .welcomeSub{
+      font-size:13px;
+      color:var(--muted);
+      font-weight:700;
+      margin-top:4px;
+    }
+    .welcomeEmoji{
+      font-size:36px;
+      flex:0 0 auto;
+    }
+
+    /* Profile card */
+    .profileCard{
+      background:linear-gradient(135deg,var(--primary),var(--secondary));
+      border-radius:var(--radius);
+      padding:18px 20px;
+      display:flex;
+      align-items:center;
+      gap:14px;
+      box-shadow:0 10px 28px rgba(57,86,232,.22);
+      color:#fff;
+    }
+    .profileAvatarLg{
+      width:52px;height:52px;border-radius:999px;
+      background:rgba(255,255,255,.2);
+      display:grid;place-items:center;
+      font-weight:1000;font-size:20px;
+      border:2px solid rgba(255,255,255,.4);
+      flex:0 0 auto;
+    }
+    .profileName{
+      font-weight:1000;
+      font-size:17px;
+      line-height:1.1;
+    }
+    .profilePlan{
+      display:inline-block;
+      margin-top:5px;
+      font-size:11px;
+      font-weight:900;
+      background:rgba(255,255,255,.2);
+      padding:4px 10px;
+      border-radius:999px;
+      letter-spacing:.04em;
+    }
+    .profileArrow{
+      margin-left:auto;
+      font-size:18px;
+      opacity:.7;
+    }
+
+    /* ===== BOTTOM NAV ===== */
+    .bottomNav{
+      position:fixed;
+      bottom:0;left:0;right:0;
+      height:calc(var(--bottom-nav-h) + env(safe-area-inset-bottom));
+      background:#fff;
+      border-top:1px solid var(--stroke);
+      display:flex;
+      align-items:flex-start;
+      padding-top:8px;
+      padding-bottom:env(safe-area-inset-bottom);
+      z-index:200;
+      box-shadow:0 -4px 20px rgba(15,23,42,.07);
+    }
+    .navItem{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:4px;
+      cursor:pointer;
+      user-select:none;
+      padding:6px 4px;
+      border-radius:12px;
+      transition:.15s ease;
+    }
+    .navItem .icon{
+      font-size:22px;
+      line-height:1;
+    }
+    .navItem .label{
+      font-size:10px;
+      font-weight:900;
+      color:var(--muted);
+      letter-spacing:.01em;
+      text-align:center;
+      line-height:1.2;
+    }
+    .navItem.active .label{ color:var(--primary); }
+    .navItem.active .icon{ filter:none; }
+
+    .navItem .activeDot{
+      width:4px;height:4px;border-radius:999px;
+      background:var(--primary);
+      opacity:0;
+      transition:.15s ease;
+    }
+    .navItem.active .activeDot{ opacity:1; }
+
+    /* More sheet */
+    .moreSheet{
+      position:fixed;
+      bottom:0;left:0;right:0;
+      background:#fff;
+      border-radius:24px 24px 0 0;
+      padding:12px 0 calc(20px + env(safe-area-inset-bottom));
+      z-index:300;
+      box-shadow:0 -8px 40px rgba(15,23,42,.14);
+      transform:translateY(100%);
+      transition:transform .3s cubic-bezier(.32,.72,0,1);
+    }
+    .moreSheet.open{ transform:translateY(0); }
+
+    .sheetHandle{
+      width:36px;height:4px;border-radius:999px;
+      background:#e5e7eb;
+      margin:0 auto 16px;
+    }
+    .sheetTitle{
+      font-size:13px;
+      font-weight:900;
+      color:var(--muted);
+      letter-spacing:.06em;
+      text-transform:uppercase;
+      padding:0 20px 10px;
+    }
+    .sheetItem{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      padding:14px 20px;
+      cursor:pointer;
+      transition:.12s ease;
+      font-weight:800;
+      font-size:15px;
+    }
+    .sheetItem:active{ background:#f8fafc; }
+    .sheetItemIcon{
+      width:40px;height:40px;border-radius:12px;
+      background:#eef2ff;
+      display:grid;place-items:center;
+      font-size:18px;
+      flex:0 0 auto;
+    }
+    .sheetItem.danger{ color:#ef4444; }
+    .sheetItem.danger .sheetItemIcon{ background:#fff1f2; }
+    .sheetDivider{
+      height:1px;background:var(--stroke);
+      margin:8px 20px;
+    }
+
+    .overlay{
+      position:fixed;inset:0;
+      background:rgba(0,0,0,.35);
+      z-index:250;
+      opacity:0;pointer-events:none;
+      transition:opacity .3s ease;
+      backdrop-filter:blur(2px);
+    }
+    .overlay.open{ opacity:1;pointer-events:all; }
+
+    /* ===== METAS TABS ===== */
+    .metasTabs{
+      display:none;
+      background:#fff;
+      border-bottom:1px solid var(--stroke);
+      padding:0 16px;
+      gap:0;
+    }
+    .metasTabs.visible{ display:flex; }
+    .metasTab{
+      flex:1;
+      text-align:center;
+      padding:14px 8px;
+      font-weight:900;
+      font-size:14px;
+      color:var(--muted);
+      cursor:pointer;
+      border-bottom:3px solid transparent;
+      transition:.15s ease;
+      user-select:none;
+    }
+    .metasTab.active{
+      color:var(--primary);
+      border-bottom-color:var(--primary);
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- TOP HEADER -->
+  <header class="topHeader">
+    <div class="headerBrand">
+      <div class="headerLogo">FM</div>
+      <div>
+        <div class="headerName">Xavier</div>
+        <div class="headerSub">Formula Menudo</div>
+      </div>
+    </div>
+    <div class="headerAvatar" id="avatarBtn">F</div>
+  </header>
+
+  <!-- METAS TABS (solo visible en Metas) -->
+  <div class="metasTabs" id="metasTabs">
+    <div class="metasTab active" data-tab="radiografia">Tu Radiografía</div>
+    <div class="metasTab" data-tab="metas">Tus Metas</div>
+  </div>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- Bienvenida -->
+    <div class="welcomeCard" id="welcomeCard">
+      <div class="welcomeText">
+        <div class="welcomeTitle">Bienvenido,<br/>Frank 👋</div>
+        <div class="welcomeSub">¿Qué hacemos hoy?</div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- OVERLAY -->
+  <div class="overlay" id="overlay"></div>
+
+  <!-- PROFILE SHEET (toca el F) -->
+  <div class="moreSheet" id="profileSheet">
+    <div class="sheetHandle"></div>
+    <div style="display:flex;align-items:center;gap:14px;padding:0 20px 16px;">
+      <div style="width:52px;height:52px;border-radius:999px;background:linear-gradient(135deg,var(--primary),var(--secondary));display:grid;place-items:center;color:#fff;font-weight:1000;font-size:20px;border:2px solid #c7d2fe;flex:0 0 auto;">F</div>
+      <div>
+        <div style="font-weight:1000;font-size:16px;color:var(--text);">Frank García</div>
+        <div style="font-size:11px;font-weight:900;color:var(--primary);background:#eef2ff;padding:3px 10px;border-radius:999px;display:inline-block;margin-top:4px;">✦ Members Pro</div>
+      </div>
+    </div>
+    <div class="sheetDivider"></div>
+    <div class="sheetItem"><div class="sheetItemIcon">⚙️</div>Configuración</div>
+    <div class="sheetDivider"></div>
+    <div class="sheetItem danger"><div class="sheetItemIcon">⏻</div>Sign Out</div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottomNav" id="bottomNav">
+    <div class="navItem active" data-key="tablero">
+      <div class="icon">🏠</div>
+      <div class="label">Tablero</div>
+      <div class="activeDot"></div>
+    </div>
+    <div class="navItem" data-key="metas">
+      <div class="icon">🎯</div>
+      <div class="label">Metas</div>
+      <div class="activeDot"></div>
+    </div>
+    <div class="navItem" data-key="herramientas">
+      <div class="icon">🔧</div>
+      <div class="label">Herramientas</div>
+      <div class="activeDot"></div>
+    </div>
+    <div class="navItem" data-key="coach">
+      <div class="icon">🤝</div>
+      <div class="label">Tu Coach</div>
+      <div class="activeDot"></div>
+    </div>
+    <div class="navItem" data-key="pax">
+      <div class="icon">💬</div>
+      <div class="label">Xavier</div>
+      <div class="activeDot"></div>
+    </div>
+  </nav>
+
+  <script>
+    // Bottom nav active
+    const bottomNav  = document.getElementById('bottomNav');
+    const welcomeCard = document.getElementById('welcomeCard');
+    const metasTabs  = document.getElementById('metasTabs');
+
+    bottomNav.addEventListener('click', (e) => {
+      const item = e.target.closest('.navItem');
+      if(!item) return;
+      [...bottomNav.querySelectorAll('.navItem')].forEach(x => x.classList.remove('active'));
+      item.classList.add('active');
+      // Show welcome only on tablero
+      welcomeCard.style.display = item.dataset.key === 'tablero' ? 'flex' : 'none';
+      // Show tabs only on metas
+      metasTabs.classList.toggle('visible', item.dataset.key === 'metas');
+    });
+
+    // Metas tabs switching
+    metasTabs.addEventListener('click', (e) => {
+      const tab = e.target.closest('.metasTab');
+      if(!tab) return;
+      [...metasTabs.querySelectorAll('.metasTab')].forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+    });
+
+    // Profile sheet (avatar btn)
+    const profileSheet = document.getElementById('profileSheet');
+    const overlay      = document.getElementById('overlay');
+    const avatarBtn    = document.getElementById('avatarBtn');
+
+    function openProfile(){
+      profileSheet.classList.add('open');
+      overlay.classList.add('open');
+    }
+    function closeProfile(){
+      profileSheet.classList.remove('open');
+      overlay.classList.remove('open');
+    }
+    avatarBtn.addEventListener('click', openProfile);
+    overlay.addEventListener('click', closeProfile);
+    profileSheet.querySelectorAll('.sheetItem').forEach(i => i.addEventListener('click', closeProfile));
+  </script>
+</body>
+</html>
