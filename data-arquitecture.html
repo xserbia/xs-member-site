@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Xavier Serbia Money Map — Arquitectura de Datos</title>
+<style>
+:root {
+  --navy: #0f1730;
+  --blue: #3956E8;
+  --teal: #1D9E75;
+  --red: #E24B4A;
+  --amber: #BA7517;
+  --purple: #534AB7;
+  --green: #3B6D11;
+  --gray: #5F5E5A;
+  --border: #e2e8f0;
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --mono: 'Courier New', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+
+/* LAYOUT */
+.app { display: flex; min-height: 100vh; }
+.sidebar { width: 240px; min-width: 240px; background: var(--navy); position: sticky; top: 0; height: 100vh; overflow-y: auto; flex-shrink: 0; }
+.sidebar-inner { padding: 1.5rem 0 2rem; }
+.sidebar-logo { padding: 0 1.25rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,.1); margin-bottom: 1rem; }
+.sidebar-logo .title { font-size: .85rem; font-weight: 700; color: #fff; letter-spacing: .02em; }
+.sidebar-logo .sub { font-size: .72rem; color: rgba(200,215,255,.5); margin-top: .2rem; }
+.nav-section { padding: .4rem 0; }
+.nav-label { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: rgba(200,215,255,.35); padding: .5rem 1.25rem .25rem; }
+.nav-link { display: block; padding: .45rem 1.25rem; font-size: .8rem; font-weight: 500; color: rgba(200,215,255,.65); text-decoration: none; transition: all .15s; border-left: 2px solid transparent; }
+.nav-link:hover { color: #fff; background: rgba(255,255,255,.05); border-left-color: rgba(255,255,255,.2); }
+.nav-link.active { color: #fff; border-left-color: var(--teal); background: rgba(255,255,255,.08); }
+.main { flex: 1; padding: 2.5rem 2.75rem; max-width: 960px; }
+
+/* PAGE HEADER */
+.page-header { margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 2px solid var(--border); }
+.page-header h1 { font-size: 1.6rem; font-weight: 700; color: var(--navy); }
+.page-header p { color: var(--muted); font-size: .9rem; margin-top: .35rem; }
+
+/* SECTIONS */
+.schema-section { margin-bottom: 3rem; scroll-margin-top: 2rem; }
+.section-heading { display: flex; align-items: center; gap: .65rem; margin-bottom: 1.25rem; }
+.section-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.section-heading h2 { font-size: 1.1rem; font-weight: 700; color: var(--navy); }
+.section-badge { font-size: .7rem; font-weight: 600; padding: 2px 9px; border-radius: 20px; margin-left: auto; white-space: nowrap; font-family: var(--mono); }
+
+/* CARDS */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 1rem; }
+.fields-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 10px 16px; background: #f1f5f9; border-bottom: 1px solid var(--border); }
+.field-label { font-size: .72rem; color: var(--muted); margin-right: 2px; }
+.field-chip { font-size: .7rem; padding: 2px 8px; border-radius: 4px; background: #fff; color: var(--text); border: 1px solid var(--border); font-family: var(--mono); }
+
+/* GROUP ROWS */
+.group-row { display: grid; grid-template-columns: 190px 1fr; border-bottom: 1px solid var(--border); }
+.group-row:last-child { border-bottom: none; }
+.group-left { padding: 11px 16px; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 3px; }
+.group-name { font-size: .82rem; font-weight: 600; color: var(--text); }
+.group-key { font-size: .7rem; font-family: var(--mono); color: var(--muted); }
+.group-right { padding: 11px 16px; display: flex; flex-wrap: wrap; gap: 5px; align-items: flex-start; }
+
+/* TAGS */
+.tag { font-size: .72rem; padding: 2px 9px; border-radius: 4px; background: #f1f5f9; color: var(--muted); border: 1px solid var(--border); }
+.tag em { font-style: normal; color: #94a3b8; }
+
+/* PILLS */
+.pill { font-size: .7rem; padding: 2px 9px; border-radius: 20px; border: 1px solid; white-space: nowrap; }
+.pill-m      { background: #E1F5EE; color: #0F6E56; border-color: #9FE1CB; }
+.pill-a      { background: #E6F1FB; color: #185FA5; border-color: #B5D4F4; }
+.pill-snap   { background: #EEEDFE; color: #534AB7; border-color: #AFA9EC; }
+.pill-der    { background: #FAEEDA; color: #854F0B; border-color: #FAC775; }
+.pill-perf   { background: #F1EFE8; color: #5F5E5A; border-color: #D3D1C7; }
+.pill-dyn    { background: #EEEDFE; color: #534AB7; border-color: #AFA9EC; }
+.pill-bm     { background: #E6F1FB; color: #185FA5; border-color: #B5D4F4; }
+.pill-ok     { background: #EAF3DE; color: #3B6D11; border-color: #C0DD97; }
+.pill-warn   { background: #FAEEDA; color: #854F0B; border-color: #FAC775; }
+.pill-bad    { background: #FCEBEB; color: #A32D2D; border-color: #F7C1C1; }
+.pill-neutral{ background: #F1EFE8; color: #5F5E5A; border-color: #D3D1C7; }
+
+/* RATIO ROWS */
+.ratio-row { display: grid; grid-template-columns: 195px 1fr; border-bottom: 1px solid var(--border); }
+.ratio-row:last-child { border-bottom: none; }
+.ratio-left { padding: 13px 16px; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; }
+.ratio-name { font-size: .82rem; font-weight: 600; color: var(--text); }
+.ratio-key  { font-size: .7rem; font-family: var(--mono); color: var(--muted); }
+.ratio-right { padding: 13px 16px; display: flex; flex-direction: column; gap: 8px; }
+.formula { font-size: .75rem; font-family: var(--mono); background: #f1f5f9; padding: 6px 10px; border-radius: 6px; color: var(--muted); line-height: 1.7; }
+.formula b { color: var(--text); font-weight: 600; }
+.meta-row { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+.note { font-size: .7rem; color: #94a3b8; }
+
+/* DYN TABLE */
+.dyn-table { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; font-size: .75rem; }
+.dyn-row { display: grid; border-bottom: 1px solid var(--border); }
+.dyn-row:last-child { border-bottom: none; }
+.dyn-row.head { background: #f1f5f9; font-size: .68rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.dyn-row.cols-2 { grid-template-columns: 58px 1fr; }
+.dyn-row.cols-3 { grid-template-columns: 58px 1fr 1fr; }
+.dc { padding: 6px 10px; color: var(--muted); }
+.dc.age { font-weight: 600; color: var(--text); border-right: 1px solid var(--border); }
+.dc.mid { border-right: 1px solid var(--border); }
+
+/* ENUM ROW (full width tags) */
+.enum-row { padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid var(--border); }
+.enum-row:last-child { border-bottom: none; }
+
+/* STATUS TAGS */
+.tag-yes  { background: #f0fdf4; color: #15803d; border-color: #9FE1CB; }
+.tag-part { background: #fffbeb; color: #92400e; border-color: #FAC775; }
+.tag-no   { background: #fef2f2; color: #b91c1c; border-color: #F7C1C1; }
+
+/* SEPARATOR */
+.divider { height: 1px; background: var(--border); margin: 2rem 0; }
+
+/* LEGEND */
+.legend { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 12px 16px; font-size: .75rem; color: var(--muted); }
+.legend-item { display: flex; align-items: center; gap: 5px; }
+
+/* PRINT */
+@media print {
+  .sidebar { display: none; }
+  .main { padding: 1rem; max-width: 100%; }
+  .schema-section { page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-inner">
+    <div class="sidebar-logo">
+      <div class="title">Xavier Serbia Money Map</div>
+      <div class="sub">Arquitectura de Datos — v1.0</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Flujo de Caja</div>
+      <a class="nav-link" href="#ingresos">Ingresos</a>
+      <a class="nav-link" href="#gastos">Gastos</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Balance</div>
+      <a class="nav-link" href="#activos">Activos</a>
+      <a class="nav-link" href="#pasivos">Pasivos</a>
+      <a class="nav-link" href="#transferencia">Transferencia (enum)</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Protección</div>
+      <a class="nav-link" href="#polizas">Pólizas de Seguro</a>
+      <a class="nav-link" href="#documentos">Documentos Legales</a>
+      <a class="nav-link" href="#beneficiarios">Beneficiarios</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Ratios Financieros</div>
+      <a class="nav-link" href="#inputs">Inputs del Motor</a>
+      <a class="nav-link" href="#liquidez">Liquidez</a>
+      <a class="nav-link" href="#ahorro">Ahorro</a>
+      <a class="nav-link" href="#deuda">Deuda</a>
+      <a class="nav-link" href="#patrimonio">Patrimonio</a>
+      <a class="nav-link" href="#semaforo">Semáforo</a>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+  <div class="page-header">
+    <h1>Arquitectura de Datos</h1>
+    <p>Referencia completa de entidades, categorías, enums y fórmulas del motor de cálculo de ratios.</p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       INGRESOS
+  ══════════════════════════════════════════════ -->
+  <div class="schema-section" id="ingresos">
+    <div class="section-heading">
+      <div class="section-dot" style="background:var(--teal)"></div>
+      <h2>Ingresos</h2>
+      <span class="section-badge" style="background:#E1F5EE;color:#0F6E56">ingresos[]</span>
+    </div>
+    <div class="card">
+      <div class="fields-bar">
+        <span class="field-label">Campos por ítem:</span>
+        <span class="field-chip">nombre</span>
+        <span class="field-chip">categoria</span>
+        <span class="field-chip">monto</span>
+      </div>
+      <div class="group-row" style="grid-template-columns:1fr">
+        <div class="group-right" style="padding:12px 16px">
+          <span class="tag">Salario</span>
+          <span class="tag">Pago por hora</span>
+          <span class="tag">Bono</span>
+          <span class="tag">Comisión</span>
+          <span class="tag">Negocio propio</span>
+          <span class="tag">Dividendos</span>
+          <span class="tag">Renta inmueble</span>
+          <span class="tag">Pensión</span>
+          <span class="tag">Seguro Social</span>
+          <span class="tag">Otro</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       GASTOS
+  ══════════════════════════════════════════════ -->
+  <div class="schema-section" id="gastos">
+    <div class="section-heading">
+      <div class="section-dot" style="background:var(--red)"></div>
+      <h2>Gastos</h2>
+      <span class="section-badge" style="background:#FCEBEB;color:#A32D2D">gastos{}</span>
+    </div>
+    <div class="card">
+      <div class="fields-bar">
+        <span class="field-label">Campos por ítem:</span>
+        <span class="field-chip">nombre</span>
+        <span class="field-chip">categoria</span>
+        <span class="field-chip">monto</span>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Ahorro</span><span class="group-key">gastos.ahorro[]</span></div>
+        <div class="group-right">
+          <span class="tag">Reserva de emergencia</span><span class="tag">401(k)</span><span class="tag">IRA / Roth</span>
+          <span class="tag">Corretaje <em>(Brokerage)</em></span><span class="tag">ETF</span><span class="tag">Cripto</span><span class="tag">Otro</span>
+        </div>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Pago de Deuda</span><span class="group-key">gastos.deuda[]</span></div>
+        <div class="group-right">
+          <span class="tag">Hipoteca</span><span class="tag">Línea hipotecaria <em>(HELOC)</em></span>
+          <span class="tag">Tarjeta de crédito</span><span class="tag">Préstamo de auto</span>
+          <span class="tag">Préstamo estudiantil</span><span class="tag">Préstamo personal</span><span class="tag">Otro</span>
+        </div>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Gastos Diarios</span><span class="group-key">gastos.diarios[]</span></div>
+        <div class="group-right">
+          <span class="tag">Alimentación</span><span class="tag">Casa</span><span class="tag">Transportación</span>
+          <span class="tag">Entretenimiento</span><span class="tag">Telecomunicaciones</span><span class="tag">Gastos médicos</span>
+          <span class="tag">Cuidado personal</span><span class="tag">Dependientes</span><span class="tag">Regalos</span><span class="tag">Otro</span>
+        </div>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Seguros</span><span class="group-key">gastos.seguros[]</span></div>
+        <div class="group-right">
+          <span class="tag">Vida a término <em>(Term Life)</em></span><span class="tag">Vida permanente <em>(Whole Life)</em></span>
+          <span class="tag">Salud <em>(Health)</em></span><span class="tag">Auto</span><span class="tag">Hogar <em>(Homeowners)</em></span>
+          <span class="tag">Discapacidad <em>(Disability)</em></span><span class="tag">Paraguas <em>(Umbrella)</em></span><span class="tag">Otro</span>
+        </div>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Impuestos</span><span class="group-key">gastos.impuestos[]</span></div>
+        <div class="group-right">
+          <span class="tag">Federal</span><span class="tag">Estatal <em>(State)</em></span>
+          <span class="tag">Seguro Social <em>(FICA)</em></span><span class="tag">Medicare</span>
+          <span class="tag">Propiedad <em>(Property Tax)</em></span><span class="tag">Otro</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       ACTIVOS
+  ══════════════════════════════════════════════ -->
+  <div class="schema-section" id="activos">
+    <div class="section-heading">
+      <div class="section-dot" style="background:var(--blue)"></div>
+      <h2>Activos</h2>
+      <span class="section-badge" style="background:#E6F1FB;color:#185FA5">activos{}</span>
+    </div>
+    <div class="card">
+      <div class="fields-bar">
+        <span class="field-label">Campos por ítem:</span>
+        <span class="field-chip">tipo</span>
+        <span class="field-chip">ubicacion</span>
+        <span class="field-chip">valor</span>
+        <span class="field-chip">transferencia</span>
+        <span class="field-chip">beneficiario</span>
+        <span class="field-chip">aporteMensual</span>
+        <span class="note" style="font-size:.72rem">(aporteMensual solo en retiro)</span>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Efectivo</span><span class="group-key">activos.efectivo[]</span></div>
+        <div class="group-right">
+          <span class="tag">Cuenta corriente <em>(Checking)</em></span><span class="tag">Cuenta de ahorro <em>(Savings)</em></span>
+          <span class="tag">Mercado monetario <em>(Money Market)</em></span><span class="tag">Certificado de depósito <em>(CD)</em></span>
+          <span class="tag">Efectivo en mano</span><span class="tag">Otro</span>
+        </div>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Inversiones</span><span class="group-key">activos.inversiones[]</span></div>
+        <div class="group-right">
+          <span class="tag">Cuenta de corretaje <em>(Brokerage)</em></span><span class="tag">Acciones <em>(Stocks)</em></span>
+          <span class="tag">ETF / Fondos mutuos</span><span class="tag">Bonos <em>(Bonds)</em></span>
+          <span class="tag">Criptomonedas</span><span class="tag">Otro</span>
+        </div>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Retiro</span><span class="group-key">activos.retiro[]</span></div>
+        <div class="group-right">
+          <span class="tag">401(k)</span><span class="tag">403(b)</span><span class="tag">IRA Tradicional</span>
+          <span class="tag">Roth IRA</span><span class="tag">SEP IRA</span><span class="tag">Pensión <em>(Pension)</em></span>
+          <span class="tag">Anualidad <em>(Annuity)</em></span><span class="tag">Otro</span>
+        </div>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Bienes Raíces</span><span class="group-key">activos.bienesRaices[]</span></div>
+        <div class="group-right">
+          <span class="tag">Casa principal</span><span class="tag">Casa vacacional</span>
+          <span class="tag">Propiedad de renta</span><span class="tag">Apartamento</span>
+          <span class="tag">Terreno</span><span class="tag">Otro</span>
+        </div>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Bienes Personales</span><span class="group-key">activos.bienesPersonales[]</span></div>
+        <div class="group-right">
+          <span class="tag">Vehículo</span><span class="tag">Bote <em>(Boat)</em></span><span class="tag">Casa rodante <em>(RV)</em></span>
+          <span class="tag">Joyas</span><span class="tag">Arte</span><span class="tag">Coleccionables</span><span class="tag">Otro</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       PASIVOS
+  ══════════════════════════════════════════════ -->
+  <div class="schema-section" id="pasivos">
+    <div class="section-heading">
+      <div class="section-dot" style="background:var(--amber)"></div>
+      <h2>Pasivos</h2>
+      <span class="section-badge" style="background:#FAEEDA;color:#854F0B">deudas{}</span>
+    </div>
+    <div class="card">
+      <div class="fields-bar">
+        <span class="field-label">Campos por ítem:</span>
+        <span class="field-chip">compania</span>
+        <span class="field-chip">apr</span>
+        <span class="field-chip">meses</span>
+        <span class="field-chip">mensual</span>
+        <span class="field-chip">balance</span>
+      </div>
+      <div class="group-row" style="grid-template-columns:1fr">
+        <div class="group-right" style="padding:12px 16px">
+          <span class="tag">Tarjetas de crédito <em>(Credit Cards)</em></span>
+          <span class="tag">Línea de crédito personal <em>(Personal LOC)</em></span>
+          <span class="tag">Línea hipotecaria <em>(HELOC)</em></span>
+          <span class="tag">Hipoteca <em>(Mortgage)</em></span>
+          <span class="tag">Préstamo de auto <em>(Auto Loan)</em></span>
+          <span class="tag">Préstamos educativos <em>(Student Loans)</em></span>
+          <span class="tag">Otros préstamos</span>
+        </div>
+      </div>
+      <div class="fields-bar" style="border-top:1px solid var(--border)">
+        <span class="field-label">Nota:</span>
+        <span class="note" style="font-size:.72rem">El campo <code style="font-size:.7rem">mensual</code> puede calcularse automáticamente si viene vacío — fórmula de amortización estándar usando <code style="font-size:.7rem">balance</code>, <code style="font-size:.7rem">apr</code> y <code style="font-size:.7rem">meses</code></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       TRANSFERENCIA
+  ══════════════════════════════════════════════ -->
+  <div class="schema-section" id="transferencia">
+    <div class="section-heading">
+      <div class="section-dot" style="background:var(--purple)"></div>
+      <h2>Transferencia de Activos</h2>
+      <span class="section-badge" style="background:#EEEDFE;color:#534AB7">enum — campo en activos[].transferencia</span>
+    </div>
+    <div class="card">
+      <div class="enum-row">
+        <span class="tag">Beneficiario designado <em>(TOD / POD)</em></span>
+        <span class="tag">Copropiedad con supervivencia <em>(Joint Tenancy / JTWROS)</em></span>
+        <span class="tag">Copropiedad por partes <em>(Tenancy in Common)</em></span>
+        <span class="tag">En fideicomiso <em>(In Trust)</em></span>
+        <span class="tag">Vía testamento <em>(Via Will)</em></span>
+        <span class="tag">Sin designación <em>(No Designation)</em></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ══════════════════════════════════════════════
+       PÓLIZAS
+  ══════════════════════════════════════════════ -->
+  <div class="schema-section" id="polizas">
+    <div class="section-heading">
+      <div class="section-dot" style="background:var(--blue)"></div>
+      <h2>Pólizas de Seguro</h2>
+      <span class="section-badge" style="background:#E6F1FB;color:#185FA5">proteccion.polizas[]</span>
+    </div>
+    <div class="card">
+      <div class="fields-bar">
+        <span class="field-label">Campos por ítem:</span>
+        <span class="field-chip">tipo</span>
+        <span class="field-chip">aseguradora</span>
+        <span class="field-chip">numeroPoliza</span>
+        <span class="field-chip">cobertura</span>
+        <span class="field-chip">prima</span>
+        <span class="field-chip">frecuenciaPrima</span>
+        <span class="field-chip">deducible</span>
+        <span class="field-chip">beneficiario</span>
+        <span class="field-chip">renovacion</span>
+        <span class="field-chip">notas</span>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Vida a término <em style="font-style:normal;font-size:.72rem;color:var(--muted)">(Term Life)</em></span></div>
+        <div class="group-right"><span class="tag">Cobertura en caso de fallecimiento</span><span class="tag">Plazo definido</span></div>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Vida permanente <em style="font-style:normal;font-size:.72rem;color:var(--muted)">(Whole Life)</em></span></div>
+        <div class="group-right"><span class="tag">Cobertura de por vida</span><span class="tag">Valor en efectivo acumulable</span></div>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Salud <em style="font-style:normal;font-size:.72rem;color:var(--muted)">(Health)</em></span></div>
+        <div class="group-right"><span class="tag">HMO</span><span class="tag">PPO</span><span class="tag">HDHP</span><span class="tag">HSA elegible</span></div>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Auto</span></div>
+        <div class="group-right">
+          <span class="tag">Responsabilidad civil <em>(Liability)</em></span>
+          <span class="tag">Cobertura total <em>(Comprehensive)</em></span>
+          <span class="tag">Colisión <em>(Collision)</em></span>
+        </div>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Hogar <em style="font-style:normal;font-size:.72rem;color:var(--muted)">(Homeowners)</em></span></div>
+        <div class="group-right">
+          <span class="tag">Estructura</span><span class="tag">Contenido</span>
+          <span class="tag">Responsabilidad civil</span><span class="tag">Inundación <em>(Flood)</em></span>
+        </div>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Discapacidad <em style="font-style:normal;font-size:.72rem;color:var(--muted)">(Disability)</em></span></div>
+        <div class="group-right"><span class="tag">Corto plazo <em>(STD)</em></span><span class="tag">Largo plazo <em>(LTD)</em></span></div>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Paraguas <em style="font-style:normal;font-size:.72rem;color:var(--muted)">(Umbrella)</em></span></div>
+        <div class="group-right"><span class="tag">Cobertura de responsabilidad adicional</span></div>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name" style="color:var(--muted)">Otro</span></div>
+        <div class="group-right"><span class="tag">Campo libre</span></div>
+      </div>
+      <div class="fields-bar" style="border-top:1px solid var(--border)">
+        <span class="field-label">frecuenciaPrima (enum):</span>
+        <span class="tag">Mensual <em>(Monthly)</em></span>
+        <span class="tag">Anual <em>(Annual)</em></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       DOCUMENTOS LEGALES
+  ══════════════════════════════════════════════ -->
+  <div class="schema-section" id="documentos">
+    <div class="section-heading">
+      <div class="section-dot" style="background:var(--green)"></div>
+      <h2>Documentos Legales</h2>
+      <span class="section-badge" style="background:#EAF3DE;color:#3B6D11">proteccion.documentos[]</span>
+    </div>
+    <div class="card">
+      <div class="fields-bar">
+        <span class="field-label">Campos por ítem:</span>
+        <span class="field-chip">tipo</span>
+        <span class="field-chip">tiene</span>
+        <span class="field-chip">fecha</span>
+        <span class="field-chip">contacto</span>
+        <span class="field-chip">notas</span>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Testamento <em style="font-style:normal;font-size:.72rem;color:var(--muted)">(Will)</em></span></div>
+        <div class="group-right"><span class="tag">Distribución de bienes al fallecimiento</span></div>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Fideicomiso revocable <em style="font-style:normal;font-size:.72rem;color:var(--muted)">(Living Trust)</em></span></div>
+        <div class="group-right"><span class="tag">Evita proceso sucesorio</span><span class="tag">Control en vida y al fallecimiento</span></div>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Poder notarial <em style="font-style:normal;font-size:.72rem;color:var(--muted)">(Power of Attorney)</em></span></div>
+        <div class="group-right"><span class="tag">Financiero</span><span class="tag">Durable <em>(Durable POA)</em></span></div>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Directiva médica <em style="font-style:normal;font-size:.72rem;color:var(--muted)">(Healthcare Directive)</em></span></div>
+        <div class="group-right">
+          <span class="tag">Testamento vital <em>(Living Will)</em></span>
+          <span class="tag">Representante de salud <em>(Healthcare Proxy)</em></span>
+        </div>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Beneficiarios actualizados</span></div>
+        <div class="group-right">
+          <span class="tag">Cuentas de retiro</span><span class="tag">Pólizas de seguro</span><span class="tag">Cuentas de corretaje</span>
+        </div>
+      </div>
+      <div class="fields-bar" style="border-top:1px solid var(--border)">
+        <span class="field-label">tiene (enum):</span>
+        <span class="tag tag-yes pill" style="border-radius:4px">Sí <em style="font-style:normal;color:#9FE1CB">(Yes)</em></span>
+        <span class="tag tag-part pill" style="border-radius:4px">Parcial / Desactualizado</span>
+        <span class="tag tag-no pill" style="border-radius:4px">No</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       BENEFICIARIOS
+  ══════════════════════════════════════════════ -->
+  <div class="schema-section" id="beneficiarios">
+    <div class="section-heading">
+      <div class="section-dot" style="background:var(--purple)"></div>
+      <h2>Estado de Beneficiarios</h2>
+      <span class="section-badge" style="background:#EEEDFE;color:#534AB7">campo en activos + pólizas</span>
+    </div>
+    <div class="card">
+      <div class="group-row">
+        <div class="group-left"><span class="group-name" style="color:var(--muted);font-weight:400">Se registra en</span></div>
+        <div class="group-right">
+          <span class="tag">Cada activo <em>(activos[].beneficiario)</em></span>
+          <span class="tag">Cada póliza <em>(polizas[].beneficiario)</em></span>
+        </div>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name" style="color:var(--muted);font-weight:400">Tipos comunes</span></div>
+        <div class="group-right">
+          <span class="tag">Primario <em>(Primary)</em></span>
+          <span class="tag">Contingente <em>(Contingent)</em></span>
+          <span class="tag">Revocable</span>
+          <span class="tag">Irrevocable</span>
+          <span class="tag">Fideicomiso <em>(Trust)</em></span>
+          <span class="tag">Patrimonio <em>(Estate)</em></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ══════════════════════════════════════════════
+       INPUTS DEL MOTOR
+  ══════════════════════════════════════════════ -->
+  <div class="schema-section" id="inputs">
+    <div class="section-heading">
+      <div class="section-dot" style="background:var(--navy)"></div>
+      <h2>Inputs del Motor de Cálculo</h2>
+    </div>
+
+    <!-- Ingresos / Gastos -->
+    <p style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.6rem">Desde Ingresos y Gastos</p>
+    <div class="card" style="margin-bottom:1rem">
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">ingresoBruto</span></div>
+        <div class="ratio-right">
+          <span class="formula">Σ <b>ingresos[].monto</b> × 12</span>
+          <div class="meta-row"><span class="pill pill-a">anual</span><span class="note">Suma todos los ítems del array ingresos[], siempre guardado mensual, se anualiza × 12</span></div>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">ingresoNeto</span></div>
+        <div class="ratio-right">
+          <span class="formula"><b>ingresoBruto</b> − impuestosAnual</span>
+          <div class="meta-row"><span class="pill pill-a">anual</span><span class="pill pill-der">derivado</span><span class="note">impuestosAnual = Σ gastos.impuestos[].monto × 12</span></div>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">ahorroAnual</span></div>
+        <div class="ratio-right">
+          <span class="formula">Σ <b>gastos.ahorro[].monto</b> × 12</span>
+          <div class="meta-row"><span class="pill pill-a">anual</span><span class="note">Subcategoría ahorro dentro de gastos</span></div>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">deudaAnual</span></div>
+        <div class="ratio-right">
+          <span class="formula">Σ <b>gastos.deuda[].monto</b> × 12</span>
+          <div class="meta-row"><span class="pill pill-a">anual</span><span class="note">Pagos mensuales de deuda en gastos — no los balances de deudas[]</span></div>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">gastosAnual</span></div>
+        <div class="ratio-right">
+          <span class="formula">Σ <b>gastos.diarios[].monto</b> × 12</span>
+          <div class="meta-row"><span class="pill pill-a">anual</span><span class="note">Solo gastos del hogar — no incluye ahorro, deuda, seguros ni impuestos</span></div>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">pagoDeudaMensual</span></div>
+        <div class="ratio-right">
+          <span class="formula">Σ <b>gastos.deuda[].monto</b></span>
+          <div class="meta-row"><span class="pill pill-m">mensual</span><span class="note">Igual que deudaAnual sin × 12 — usado en DTI</span></div>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">gastosEsencialesMensuales</span></div>
+        <div class="ratio-right">
+          <span class="formula">Σ <b>gastos.diarios[].monto</b><br>+ Σ <b>gastos.seguros[].monto</b><br>+ Σ <b>gastos.deuda[].monto</b></span>
+          <div class="meta-row"><span class="pill pill-m">mensual</span><span class="note">Excluye ahorro (se detiene en emergencia) e impuestos. Usado en meses de reserva y Runway</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activos / Pasivos -->
+    <p style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.6rem">Desde Activos y Pasivos</p>
+    <div class="card" style="margin-bottom:1rem">
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">reserva</span></div>
+        <div class="ratio-right">
+          <span class="formula">Σ <b>activos.efectivo[].valor</b></span>
+          <div class="meta-row"><span class="pill pill-snap">snapshot</span><span class="note">Solo cuentas de efectivo y equivalentes</span></div>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">activosLiquidos</span></div>
+        <div class="ratio-right">
+          <span class="formula">Σ <b>activos.efectivo[].valor</b></span>
+          <div class="meta-row"><span class="pill pill-snap">snapshot</span><span class="pill pill-der">= reserva</span><span class="note">Mismo valor, nombre distinto — usado en razón corriente</span></div>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">inversiones</span></div>
+        <div class="ratio-right">
+          <span class="formula">Σ <b>activos.inversiones[].valor</b><br>+ Σ <b>activos.retiro[].valor</b></span>
+          <div class="meta-row"><span class="pill pill-snap">snapshot</span><span class="note">Corretaje + todas las cuentas de retiro (401k, IRA, etc.)</span></div>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">totalRetiro</span></div>
+        <div class="ratio-right">
+          <span class="formula">Σ <b>activos.retiro[].valor</b></span>
+          <div class="meta-row"><span class="pill pill-snap">snapshot</span><span class="note">Solo retiro, excluye corretaje — usado en ahorro_retiro</span></div>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">activosTotales</span></div>
+        <div class="ratio-right">
+          <span class="formula">Σ <b>activos.efectivo[].valor</b><br>+ Σ <b>activos.inversiones[].valor</b><br>+ Σ <b>activos.retiro[].valor</b><br>+ Σ <b>activos.bienesRaices[].valor</b><br>+ Σ <b>activos.bienesPersonales[].valor</b></span>
+          <div class="meta-row"><span class="pill pill-snap">snapshot</span><span class="note">Valores reportados por el cliente, no tasaciones formales</span></div>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">pasivosTotales</span></div>
+        <div class="ratio-right">
+          <span class="formula">Σ <b>deudas.tarjetas[].balance</b><br>+ Σ <b>deudas.lineaPersonal[].balance</b><br>+ Σ <b>deudas.lineaPropiedad[].balance</b><br>+ Σ <b>deudas.casa[].balance</b><br>+ Σ <b>deudas.auto[].balance</b><br>+ Σ <b>deudas.educacion[].balance</b><br>+ Σ <b>deudas.otros[].balance</b></span>
+          <div class="meta-row"><span class="pill pill-snap">snapshot</span><span class="note">Suma de balances pendientes — no los pagos mensuales</span></div>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">pasivosCorrientes</span></div>
+        <div class="ratio-right">
+          <span class="formula">Σ <b>deudas.tarjetas[].balance</b><br>+ Σ <b>deudas.lineaPersonal[].balance</b></span>
+          <div class="meta-row"><span class="pill pill-snap">snapshot</span><span class="note">Solo deuda revolving de corto plazo — usado en razón corriente</span></div>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">patrimonioNeto</span></div>
+        <div class="ratio-right">
+          <span class="formula"><b>activosTotales</b> − <b>pasivosTotales</b></span>
+          <div class="meta-row"><span class="pill pill-snap">snapshot</span><span class="pill pill-der">derivado</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Perfil -->
+    <p style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.6rem">Desde Perfil del Cliente</p>
+    <div class="card">
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">edad</span></div>
+        <div class="ratio-right">
+          <span class="formula"><b>userProfile.edad</b></span>
+          <div class="meta-row"><span class="pill pill-perf">perfil</span><span class="note">Interpola benchmarks de inversion_ingreso, riqueza_neta y ahorro_retiro</span></div>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">estadoCivil</span></div>
+        <div class="ratio-right">
+          <span class="formula"><b>userProfile.estadoCivil</b></span>
+          <div class="meta-row"><span class="pill pill-perf">perfil</span><span class="note">Junto con dependientes determina el benchmark de meses de reserva</span></div>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">dependientes</span></div>
+        <div class="ratio-right">
+          <span class="formula"><b>userProfile.dependientes</b></span>
+          <div class="meta-row"><span class="pill pill-perf">perfil</span><span class="note">Número de personas económicamente dependientes</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       LIQUIDEZ
+  ══════════════════════════════════════════════ -->
+  <div class="schema-section" id="liquidez">
+    <div class="section-heading">
+      <div class="section-dot" style="background:var(--teal)"></div>
+      <h2>Ratios — Liquidez</h2>
+      <span class="section-badge" style="background:#E1F5EE;color:#0F6E56">2 ratios</span>
+    </div>
+    <div class="card">
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">Meses de reserva</span><span class="ratio-key">meses_reserva</span></div>
+        <div class="ratio-right">
+          <span class="formula"><b>reserva</b> / <b>gastosEsencialesMensuales</b></span>
+          <div class="meta-row"><span class="pill pill-m">meses (m)</span><span class="pill pill-dyn">benchmark dinámico por perfil</span></div>
+          <div class="dyn-table">
+            <div class="dyn-row cols-2 head"><div class="dc age">Benchmark</div><div class="dc">Situación del cliente</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">6 m</div><div class="dc">Empleo estable + buena liquidez</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">9 m</div><div class="dc">Empleo estable + dependientes</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">12 m</div><div class="dc">Empleo inestable + dependientes</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">18 m</div><div class="dc">Ingresos variables (freelance)</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">24 m</div><div class="dc">Negocio propio / alta volatilidad</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">36 m</div><div class="dc">Ingresos irregulares / pre-retiro</div></div>
+          </div>
+          <div class="meta-row">
+            <span class="pill pill-ok">OK si ≥ benchmark</span>
+            <span class="pill pill-warn">revisar si ≥ benchmark × 0.5</span>
+            <span class="pill pill-bad">crítico si &lt; benchmark × 0.5</span>
+          </div>
+          <span class="note">Seleccionar benchmark usando estadoCivil + dependientes del perfil</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">Razón corriente</span><span class="ratio-key">razon_corriente</span></div>
+        <div class="ratio-right">
+          <span class="formula"><b>activosLiquidos</b> / <b>pasivosCorrientes</b></span>
+          <div class="meta-row">
+            <span class="pill pill-m">veces (x)</span>
+            <span class="pill pill-bm">benchmark ≥ 1.0</span>
+            <span class="pill pill-ok">OK si ≥ 1.0</span>
+            <span class="pill pill-warn">revisar si ≥ 0.5</span>
+            <span class="pill pill-bad">crítico si &lt; 0.5</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       AHORRO
+  ══════════════════════════════════════════════ -->
+  <div class="schema-section" id="ahorro">
+    <div class="section-heading">
+      <div class="section-dot" style="background:var(--blue)"></div>
+      <h2>Ratios — Ahorro</h2>
+      <span class="section-badge" style="background:#E6F1FB;color:#185FA5">2 ratios</span>
+    </div>
+    <div class="card">
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">Tasa de ahorro</span><span class="ratio-key">tasa_ahorro</span></div>
+        <div class="ratio-right">
+          <span class="formula"><b>ahorroAnual</b> / <b>ingresoBruto</b></span>
+          <div class="meta-row">
+            <span class="pill pill-a">porcentaje (%)</span>
+            <span class="pill pill-bm">benchmark ≥ 20%</span>
+            <span class="pill pill-ok">OK si ≥ 20%</span>
+            <span class="pill pill-warn">revisar si ≥ 10%</span>
+            <span class="pill pill-bad">crítico si &lt; 10%</span>
+          </div>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">Capacidad de acumulación</span><span class="ratio-key">cap_acum</span></div>
+        <div class="ratio-right">
+          <span class="formula">(<b>ahorroAnual</b> + <b>superávit</b>) / <b>ingresoNeto</b></span>
+          <div class="meta-row">
+            <span class="pill pill-a">porcentaje (%)</span>
+            <span class="pill pill-bm">benchmark ≥ 30%</span>
+            <span class="pill pill-ok">OK si ≥ 30%</span>
+            <span class="pill pill-warn">revisar si ≥ 10%</span>
+            <span class="pill pill-bad">crítico si &lt; 10%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       DEUDA
+  ══════════════════════════════════════════════ -->
+  <div class="schema-section" id="deuda">
+    <div class="section-heading">
+      <div class="section-dot" style="background:var(--red)"></div>
+      <h2>Ratios — Deuda</h2>
+      <span class="section-badge" style="background:#FCEBEB;color:#A32D2D">2 ratios</span>
+    </div>
+    <div class="card">
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">DTI neto</span><span class="ratio-key">dti</span></div>
+        <div class="ratio-right">
+          <span class="formula"><b>pagoDeudaMensual</b> / (<b>ingresoNeto</b> / 12)</span>
+          <div class="meta-row">
+            <span class="pill pill-a">porcentaje (%)</span>
+            <span class="pill pill-bm">benchmark ≤ 36%</span>
+            <span class="pill pill-ok">OK si ≤ 36%</span>
+            <span class="pill pill-warn">revisar si ≤ 50%</span>
+            <span class="pill pill-bad">crítico si &gt; 50%</span>
+          </div>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">Deuda / Activos</span><span class="ratio-key">deuda_activos</span></div>
+        <div class="ratio-right">
+          <span class="formula"><b>pasivosTotales</b> / <b>activosTotales</b></span>
+          <div class="meta-row">
+            <span class="pill pill-a">porcentaje (%)</span>
+            <span class="pill pill-bm">benchmark ≤ 30%</span>
+            <span class="pill pill-ok">OK si ≤ 30%</span>
+            <span class="pill pill-warn">revisar si ≤ 50%</span>
+            <span class="pill pill-bad">crítico si &gt; 50%</span>
+          </div>
+          <span class="note">Complementario a patrimonio_activos — si deuda/activos ≤ 30% entonces patrimonio/activos ≥ 70%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       PATRIMONIO
+  ══════════════════════════════════════════════ -->
+  <div class="schema-section" id="patrimonio">
+    <div class="section-heading">
+      <div class="section-dot" style="background:var(--amber)"></div>
+      <h2>Ratios — Patrimonio</h2>
+      <span class="section-badge" style="background:#FAEEDA;color:#854F0B">4 ratios</span>
+    </div>
+    <div class="card">
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">Patrimonio / Activos</span><span class="ratio-key">patrimonio_activos</span></div>
+        <div class="ratio-right">
+          <span class="formula"><b>patrimonioNeto</b> / <b>activosTotales</b></span>
+          <div class="meta-row">
+            <span class="pill pill-a">porcentaje (%)</span>
+            <span class="pill pill-bm">benchmark ≥ 70%</span>
+            <span class="pill pill-ok">OK si ≥ 70%</span>
+            <span class="pill pill-warn">revisar si ≥ 50%</span>
+            <span class="pill pill-bad">crítico si &lt; 50%</span>
+          </div>
+          <span class="note">Complementario a deuda_activos — ambos usan el mismo par desde lados opuestos</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">Inversión / Ingreso</span><span class="ratio-key">inversion_ingreso</span></div>
+        <div class="ratio-right">
+          <span class="formula"><b>inversiones</b> / <b>ingresoBruto</b></span>
+          <div class="meta-row"><span class="pill pill-a">veces (x)</span><span class="pill pill-dyn">benchmark dinámico por edad</span></div>
+          <div class="dyn-table">
+            <div class="dyn-row cols-2 head"><div class="dc age">Edad</div><div class="dc">Benchmark (× ingreso bruto)</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">25</div><div class="dc">0.20x</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">30</div><div class="dc">0.60x</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">35</div><div class="dc">1.20x</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">40</div><div class="dc">2.00x</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">45</div><div class="dc">3.50x</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">50</div><div class="dc">5.50x</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">55</div><div class="dc">8.50x</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">60</div><div class="dc">12.00x</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">65</div><div class="dc">16.00x</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">70+</div><div class="dc">18.00x</div></div>
+          </div>
+          <div class="meta-row">
+            <span class="pill pill-ok">OK si ≥ benchmark</span>
+            <span class="pill pill-bad">crítico si &lt; benchmark</span>
+          </div>
+          <span class="note">Interpolar linealmente entre edades usando userProfile.edad</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">Nivel riqueza neta</span><span class="ratio-key">riqueza_neta</span></div>
+        <div class="ratio-right">
+          <span class="formula"><b>patrimonioNeto</b> / <b>ingresoBruto</b></span>
+          <div class="meta-row"><span class="pill pill-a">veces (x)</span><span class="pill pill-dyn">benchmark dinámico por edad — 2 niveles</span></div>
+          <div class="dyn-table">
+            <div class="dyn-row cols-3 head"><div class="dc age">Edad</div><div class="dc mid">Good ⚠️</div><div class="dc">Great ✅</div></div>
+            <div class="dyn-row cols-3"><div class="dc age">25</div><div class="dc mid">2.50x</div><div class="dc">5.00x</div></div>
+            <div class="dyn-row cols-3"><div class="dc age">30</div><div class="dc mid">3.00x</div><div class="dc">6.00x</div></div>
+            <div class="dyn-row cols-3"><div class="dc age">35</div><div class="dc mid">3.50x</div><div class="dc">7.00x</div></div>
+            <div class="dyn-row cols-3"><div class="dc age">40</div><div class="dc mid">4.00x</div><div class="dc">8.00x</div></div>
+            <div class="dyn-row cols-3"><div class="dc age">45</div><div class="dc mid">4.50x</div><div class="dc">9.00x</div></div>
+            <div class="dyn-row cols-3"><div class="dc age">50</div><div class="dc mid">5.00x</div><div class="dc">10.00x</div></div>
+            <div class="dyn-row cols-3"><div class="dc age">55</div><div class="dc mid">5.50x</div><div class="dc">11.00x</div></div>
+            <div class="dyn-row cols-3"><div class="dc age">60</div><div class="dc mid">6.00x</div><div class="dc">12.00x</div></div>
+            <div class="dyn-row cols-3"><div class="dc age">65</div><div class="dc mid">6.50x</div><div class="dc">13.00x</div></div>
+            <div class="dyn-row cols-3"><div class="dc age">70+</div><div class="dc mid">7.00x</div><div class="dc">14.00x</div></div>
+          </div>
+          <div class="meta-row">
+            <span class="pill pill-ok">OK (Great) si ≥ columna Great</span>
+            <span class="pill pill-warn">revisar (Good) si ≥ columna Good</span>
+            <span class="pill pill-bad">crítico si &lt; columna Good</span>
+          </div>
+          <span class="note">Único ratio con tres umbrales derivados de dos columnas. Interpolar linealmente entre edades.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">Ahorro para retiro</span><span class="ratio-key">ahorro_retiro</span></div>
+        <div class="ratio-right">
+          <span class="formula"><b>totalRetiro</b> / <b>ingresoBruto</b></span>
+          <div class="meta-row"><span class="pill pill-a">veces (x)</span><span class="pill pill-dyn">benchmark dinámico por edad</span></div>
+          <div class="dyn-table">
+            <div class="dyn-row cols-2 head"><div class="dc age">Edad</div><div class="dc">Benchmark (× ingreso bruto)</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">25</div><div class="dc">0.35x</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">30</div><div class="dc">1.00x</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">35</div><div class="dc">2.00x</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">40</div><div class="dc">3.00x</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">45</div><div class="dc">4.00x</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">50</div><div class="dc">6.00x</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">55</div><div class="dc">7.00x</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">60</div><div class="dc">8.00x</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">65</div><div class="dc">10.00x</div></div>
+            <div class="dyn-row cols-2"><div class="dc age">70+</div><div class="dc">11.00x</div></div>
+          </div>
+          <div class="meta-row">
+            <span class="pill pill-ok">OK si ≥ benchmark</span>
+            <span class="pill pill-bad">crítico si &lt; benchmark</span>
+          </div>
+          <span class="note">Basado en tabla de Fidelity. Interpolar linealmente entre edades.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SEMÁFORO
+  ══════════════════════════════════════════════ -->
+  <div class="schema-section" id="semaforo">
+    <div class="section-heading">
+      <div class="section-dot" style="background:var(--navy)"></div>
+      <h2>Semáforo</h2>
+      <span class="section-badge" style="background:#f1f5f9;color:var(--muted)">4 estados</span>
+    </div>
+    <div class="card">
+      <div class="legend">
+        <div class="legend-item"><span class="pill pill-ok" style="font-size:.8rem;padding:3px 13px">OK</span><span>Dentro del benchmark</span></div>
+        <span style="color:var(--border);margin:0 4px">|</span>
+        <div class="legend-item"><span class="pill pill-warn" style="font-size:.8rem;padding:3px 13px">REVISAR</span><span>Zona de alerta, por debajo del benchmark</span></div>
+        <span style="color:var(--border);margin:0 4px">|</span>
+        <div class="legend-item"><span class="pill pill-bad" style="font-size:.8rem;padding:3px 13px">CRÍTICO</span><span>Fuera de rango, acción inmediata</span></div>
+        <span style="color:var(--border);margin:0 4px">|</span>
+        <div class="legend-item"><span class="pill pill-neutral" style="font-size:.8rem;padding:3px 13px">—</span><span>Sin datos suficientes</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);font-size:.75rem;color:#94a3b8;display:flex;justify-content:space-between;">
+    <span>Xavier Serbia Money Map — Arquitectura de Datos v1.0</span>
+    <span>Confidencial · Uso interno</span>
+  </div>
+
+</main>
+</div>
+
+<script>
+// Highlight active nav link on scroll
+const sections = document.querySelectorAll('.schema-section');
+const links = document.querySelectorAll('.nav-link');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const active = document.querySelector('.nav-link[href="#' + e.target.id + '"]');
+      if (active) active.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
