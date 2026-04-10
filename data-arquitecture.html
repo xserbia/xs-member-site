@@ -165,6 +165,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <a class="nav-link" href="#patrimonio">Patrimonio</a>
       <a class="nav-link" href="#semaforo">Semáforo</a>
     </div>
+    <div class="nav-section">
+      <div class="nav-label">Radiografía Financiera</div>
+      <a class="nav-link" href="#rad-estados">Estados del Card</a>
+      <a class="nav-link" href="#rad-resultado">Estructura de Resultado</a>
+      <a class="nav-link" href="#rad-etapas">Las 5 Etapas</a>
+      <a class="nav-link" href="#rad-storage">LocalStorage</a>
+      <a class="nav-link" href="#rad-iframe">Protocolo iFrame</a>
+    </div>
   </div>
 </nav>
 
@@ -1041,6 +1049,253 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <div class="legend-item"><span class="pill pill-bad" style="font-size:.8rem;padding:3px 13px">CRÍTICO</span><span>Fuera de rango, acción inmediata</span></div>
         <span style="color:var(--border);margin:0 4px">|</span>
         <div class="legend-item"><span class="pill pill-neutral" style="font-size:.8rem;padding:3px 13px">—</span><span>Sin datos suficientes</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ══════════════════════════════════════════════
+       RADIOGRAFÍA FINANCIERA
+  ══════════════════════════════════════════════ -->
+
+  <!-- ESTADOS DEL CARD -->
+  <div class="schema-section" id="rad-estados">
+    <div class="section-heading">
+      <div class="section-dot" style="background:#8b5cf6"></div>
+      <h2>Radiografía Financiera — Estados del Card</h2>
+      <span class="section-badge" style="background:#f5f3ff;color:#6d28d9">3 estados</span>
+    </div>
+    <div class="card">
+      <div class="ratio-row">
+        <div class="ratio-left">
+          <span class="ratio-name">Inicial</span>
+          <span class="ratio-key">initial</span>
+        </div>
+        <div class="ratio-right">
+          <div class="meta-row">
+            <span class="pill" style="background:#f1f5f9;color:#475569;border-color:#e2e8f0">Sin datos</span>
+          </div>
+          <span class="note">No existe <code style="font-size:.7rem">financialRadiografiaResults</code> ni <code style="font-size:.7rem">financialRadiografiaInProgress</code> en localStorage. Muestra CTA "Hacer radiografía".</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left">
+          <span class="ratio-name">Incompleto</span>
+          <span class="ratio-key">incomplete</span>
+        </div>
+        <div class="ratio-right">
+          <div class="meta-row">
+            <span class="pill pill-warn">En progreso</span>
+          </div>
+          <span class="note">Existe <code style="font-size:.7rem">financialRadiografiaInProgress</code> pero no <code style="font-size:.7rem">financialRadiografiaResults</code>. Muestra porcentaje calculado como <code style="font-size:.7rem">round(currentQ / 14 × 100)</code> y CTA "Continuar radiografía".</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left">
+          <span class="ratio-name">Completado</span>
+          <span class="ratio-key">completed</span>
+        </div>
+        <div class="ratio-right">
+          <div class="meta-row">
+            <span class="pill pill-ok">Con resultado</span>
+          </div>
+          <span class="note">Existe <code style="font-size:.7rem">financialRadiografiaResults</code>. Muestra etapa, barra de progreso combinada y checklist de áreas a mejorar. CTA "Actualizar radiografía".</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ESTRUCTURA DE RESULTADO -->
+  <div class="schema-section" id="rad-resultado">
+    <div class="section-heading">
+      <div class="section-dot" style="background:#8b5cf6"></div>
+      <h2>Estructura de Resultado</h2>
+      <span class="section-badge" style="background:#f5f3ff;color:#6d28d9">financialRadiografiaResults</span>
+    </div>
+    <div class="card">
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">stage</span><span class="ratio-key">number — 1 a 5</span></div>
+        <div class="ratio-right">
+          <span class="formula">1 | 2 | 3 | 4 | 5</span>
+          <span class="note">Etapa financiera resultante del cuestionario</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">progress</span><span class="ratio-key">number — 0 a 100</span></div>
+        <div class="ratio-right">
+          <span class="formula">porcentaje base de avance dentro de la etapa</span>
+          <span class="note">El progreso final que se muestra en la card se calcula como <code style="font-size:.7rem">round((progress + issuesProgress) / 2)</code>, donde issuesProgress = % de issues marcados como resueltos en el checklist</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">issues</span><span class="ratio-key">string[]</span></div>
+        <div class="ratio-right">
+          <span class="formula">[ "descripción del área a mejorar", … ]</span>
+          <span class="note">Array de textos que se renderizan como checklist interactivo. Puede ser vacío (etapa 5 = libertad total). El estado de cada checkbox se persiste en <code style="font-size:.7rem">financialRadiografiaChecked</code>.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LAS 5 ETAPAS -->
+  <div class="schema-section" id="rad-etapas">
+    <div class="section-heading">
+      <div class="section-dot" style="background:#8b5cf6"></div>
+      <h2>Las 5 Etapas</h2>
+      <span class="section-badge" style="background:#f5f3ff;color:#6d28d9">STAGES config</span>
+    </div>
+    <div class="card">
+      <div class="group-row">
+        <div class="group-left">
+          <span class="group-name">1 — Supervivencia</span>
+          <span class="group-key" style="color:#ef4444">🆘 gradient: red</span>
+        </div>
+        <div class="group-right" style="flex-direction:column;gap:4px;align-items:flex-start">
+          <span class="note" style="color:var(--text)">Lucha para cubrir gastos básicos. Depende del crédito para el día a día.</span>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">
+            <span class="tag">Deja de usar crédito para gastos diarios</span>
+            <span class="tag">Reduce gastos al mínimo</span>
+            <span class="tag">Aumenta ingresos</span>
+            <span class="tag">Ahorra $100–200/mes</span>
+          </div>
+        </div>
+      </div>
+      <div class="group-row">
+        <div class="group-left">
+          <span class="group-name">2 — Seguridad</span>
+          <span class="group-key" style="color:#f59e0b">🛡️ gradient: amber</span>
+        </div>
+        <div class="group-right" style="flex-direction:column;gap:4px;align-items:flex-start">
+          <span class="note" style="color:var(--text)">Estabilidad básica pero poca protección. Empieza a construir reserva.</span>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">
+            <span class="tag">Reserva de 6–9 meses</span>
+            <span class="tag">Deuda &lt; 30% del ingreso</span>
+            <span class="tag">Ahorro ≥ 15%</span>
+            <span class="tag">Seguros básicos (vida, salud)</span>
+          </div>
+        </div>
+      </div>
+      <div class="group-row">
+        <div class="group-left">
+          <span class="group-name">3 — Acumulación</span>
+          <span class="group-key" style="color:#3b82f6">💰 gradient: blue</span>
+        </div>
+        <div class="group-right" style="flex-direction:column;gap:4px;align-items:flex-start">
+          <span class="note" style="color:var(--text)">Construyendo riqueza consistentemente. Inversiones activas.</span>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">
+            <span class="tag">Ahorro 25–30%</span>
+            <span class="tag">Diversificar inversiones</span>
+            <span class="tag">Patrimonio ≥ 15× ingreso anual</span>
+            <span class="tag">Iniciar ingresos pasivos</span>
+          </div>
+        </div>
+      </div>
+      <div class="group-row">
+        <div class="group-left">
+          <span class="group-name">4 — Independencia</span>
+          <span class="group-key" style="color:#10b981">🟩 gradient: green</span>
+        </div>
+        <div class="group-right" style="flex-direction:column;gap:4px;align-items:flex-start">
+          <span class="note" style="color:var(--text)">Inversiones pueden mantener el estilo de vida. Ingresos pasivos cubriendo gastos.</span>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">
+            <span class="tag">Ingresos pasivos = 100% gastos</span>
+            <span class="tag">Optimizar portafolio</span>
+            <span class="tag">Protección patrimonial</span>
+            <span class="tag">Deuda &lt; 10%</span>
+          </div>
+        </div>
+      </div>
+      <div class="group-row">
+        <div class="group-left">
+          <span class="group-name">5 — Libertad</span>
+          <span class="group-key" style="color:#8b5cf6">🟦 gradient: purple</span>
+        </div>
+        <div class="group-right" style="flex-direction:column;gap:4px;align-items:flex-start">
+          <span class="note" style="color:var(--text)">Libertad financiera completa. Sin issues en el checklist.</span>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">
+            <span class="tag">Preservar riqueza</span>
+            <span class="tag">Estrategias fiscales</span>
+            <span class="tag">Legado generacional</span>
+            <span class="tag">Impacto filantrópico</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOCALSTORAGE -->
+  <div class="schema-section" id="rad-storage">
+    <div class="section-heading">
+      <div class="section-dot" style="background:#8b5cf6"></div>
+      <h2>Claves de LocalStorage</h2>
+      <span class="section-badge" style="background:#f5f3ff;color:#6d28d9">4 claves</span>
+    </div>
+    <div class="card">
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">…Results</span><span class="ratio-key">financialRadiografiaResults</span></div>
+        <div class="ratio-right">
+          <span class="formula">JSON → { <b>stage</b>, <b>progress</b>, <b>issues</b>[] }</span>
+          <div class="meta-row"><span class="pill pill-ok">Resultado final</span><span class="note">Escrito por el cuestionario al completarse. Determina estado "completado" del card.</span></div>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">…InProgress</span><span class="ratio-key">financialRadiografiaInProgress</span></div>
+        <div class="ratio-right">
+          <span class="formula">JSON → { respuestas parciales del cuestionario }</span>
+          <div class="meta-row"><span class="pill pill-warn">En progreso</span><span class="note">Escrito en cada paso del cuestionario. Determina estado "incompleto". Se borra al completar.</span></div>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">…CurrentQ</span><span class="ratio-key">financialRadiografiaCurrentQ</span></div>
+        <div class="ratio-right">
+          <span class="formula">string → número de pregunta actual (ej. "7")</span>
+          <div class="meta-row"><span class="pill pill-warn">En progreso</span><span class="note">Usado para calcular el % de avance en el estado incompleto: <code style="font-size:.7rem">round(currentQ / 14 × 100)</code>. Total de preguntas = 14.</span></div>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">…Checked</span><span class="ratio-key">financialRadiografiaChecked</span></div>
+        <div class="ratio-right">
+          <span class="formula">JSON → { "0": true, "1": false, "2": true, … }</span>
+          <div class="meta-row"><span class="pill pill-ok">Checklist</span><span class="note">Mapa index → boolean del estado de cada issue en el checklist. Se actualiza cada vez que el usuario marca/desmarca un ítem. Se borra al actualizar la radiografía.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROTOCOLO IFRAME -->
+  <div class="schema-section" id="rad-iframe">
+    <div class="section-heading">
+      <div class="section-dot" style="background:#8b5cf6"></div>
+      <h2>Protocolo iFrame — postMessage</h2>
+      <span class="section-badge" style="background:#f5f3ff;color:#6d28d9">2 mensajes</span>
+    </div>
+    <div class="card">
+      <div class="ratio-row">
+        <div class="ratio-left">
+          <span class="ratio-name">questionnaireComplete</span>
+          <span class="ratio-key">cuestionario → parent</span>
+        </div>
+        <div class="ratio-right">
+          <span class="formula">{ <b>type</b>: "questionnaireComplete",<br>  <b>results</b>: { stage, progress, issues[] } }</span>
+          <div class="meta-row"><span class="pill pill-ok">Al finalizar</span></div>
+          <span class="note">El parent escucha este mensaje, guarda <code style="font-size:.7rem">results</code> en localStorage, actualiza el card y cierra el modal. El parent verifica <code style="font-size:.7rem">event.origin === "https://xserbia.github.io"</code> antes de procesar.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left">
+          <span class="ratio-name">questionnaireProgress</span>
+          <span class="ratio-key">cuestionario → parent</span>
+        </div>
+        <div class="ratio-right">
+          <span class="formula">{ <b>type</b>: "questionnaireProgress",<br>  <b>answers</b>: { respuestas parciales },<br>  <b>currentQ</b>: number }</span>
+          <div class="meta-row"><span class="pill pill-warn">En cada paso</span></div>
+          <span class="note">El parent guarda <code style="font-size:.7rem">answers</code> en <code style="font-size:.7rem">financialRadiografiaInProgress</code> y <code style="font-size:.7rem">currentQ</code> en <code style="font-size:.7rem">financialRadiografiaCurrentQ</code>. Permite retomar el cuestionario si se cierra el modal.</span>
+        </div>
+      </div>
+      <div class="fields-bar" style="border-top:1px solid var(--border);border-bottom:none">
+        <span class="field-label">iFrame src:</span>
+        <code style="font-size:.72rem;color:var(--muted)">https://xserbia.github.io/xs-member-site/radiografia.html</code>
       </div>
     </div>
   </div>
