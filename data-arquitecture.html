@@ -1142,85 +1142,301 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   <div class="schema-section" id="rad-etapas">
     <div class="section-heading">
       <div class="section-dot" style="background:#8b5cf6"></div>
-      <h2>Las 5 Etapas</h2>
-      <span class="section-badge" style="background:#f5f3ff;color:#6d28d9">STAGES config</span>
+      <h2>Diagnóstico Financiero por Etapas</h2>
+      <span class="section-badge" style="background:#f5f3ff;color:#6d28d9">arquitectura completa</span>
     </div>
-    <div class="card">
-      <div class="group-row">
-        <div class="group-left">
-          <span class="group-name">1 — Supervivencia</span>
-          <span class="group-key" style="color:#ef4444">🆘 gradient: red</span>
-        </div>
-        <div class="group-right" style="flex-direction:column;gap:4px;align-items:flex-start">
-          <span class="note" style="color:var(--text)">Lucha para cubrir gastos básicos. Depende del crédito para el día a día.</span>
-          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">
-            <span class="tag">Deja de usar crédito para gastos diarios</span>
-            <span class="tag">Reduce gastos al mínimo</span>
-            <span class="tag">Aumenta ingresos</span>
-            <span class="tag">Ahorra $100–200/mes</span>
+    <div class="card" style="padding:0;overflow:visible">
+      <div style="padding:20px 20px 0">
+        <style>
+          .dfe-wrap{max-width:100%;font-size:13px}
+          .dfe-wrap h2{font-size:16px;font-weight:600;color:var(--text);margin:1.5rem 0 0.75rem}
+          .dfe-wrap h2:first-child{margin-top:0}
+          .dfe-wrap h3{font-size:13px;font-weight:600;color:var(--text);margin:.75rem 0 .4rem}
+          .dfe-wrap table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:.75rem}
+          .dfe-wrap th{text-align:left;padding:7px 10px;background:var(--bg);color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);font-size:.7rem;text-transform:uppercase;letter-spacing:.03em}
+          .dfe-wrap td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:top}
+          .dfe-wrap tr:last-child td{border-bottom:none}
+          .dfe-icard{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:.75rem}
+          .dfe-ladder{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:1.5rem}
+          .dfe-step{border-radius:8px;padding:.65rem;text-align:center}
+          .dfe-step.ls1{background:#FCEBEB}.dfe-step.ls2{background:#FAEEDA}.dfe-step.ls3{background:#E6F1FB}.dfe-step.ls4{background:#E1F5EE}.dfe-step.ls5{background:#EEEDFE}
+          .dfe-snum{font-size:10px;font-weight:600;margin-bottom:3px}
+          .l1n{color:#A32D2D}.l2n{color:#854F0B}.l3n{color:#185FA5}.l4n{color:#0F6E56}.l5n{color:#534AB7}
+          .dfe-sname{font-size:11px;font-weight:600;color:var(--text)}
+          .dfe-skey{font-size:10px;color:var(--muted);margin-top:2px}
+          .dfe-hr{border:none;border-top:1px solid var(--border);margin:1.25rem 0}
+          .dfe-stage-card{border-left:3px solid;border-radius:10px;padding:1rem;margin-bottom:.75rem;background:var(--card);border-top:1px solid var(--border);border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+          .dfe-s1{border-left-color:#E24B4A}.dfe-s2{border-left-color:#EF9F27}.dfe-s3{border-left-color:#378ADD}.dfe-s4{border-left-color:#1D9E75}.dfe-s5{border-left-color:#7F77DD}
+          .dfe-sh{display:flex;align-items:center;gap:10px;margin-bottom:.75rem}
+          .dfe-snum-pill{font-size:11px;font-weight:600;padding:2px 9px;border-radius:999px}
+          .n1{background:#FCEBEB;color:#A32D2D}.n2{background:#FAEEDA;color:#854F0B}.n3{background:#E6F1FB;color:#185FA5}.n4{background:#E1F5EE;color:#0F6E56}.n5{background:#EEEDFE;color:#534AB7}
+          .dfe-stitle{font-size:13px;font-weight:600;color:var(--text)}
+          .dfe-sdesc{font-size:12px;color:var(--muted);margin-bottom:.75rem}
+          .dfe-row2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+          .dfe-block{background:var(--bg);border-radius:7px;padding:.75rem}
+          .dfe-btitle{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.4rem}
+          .dfe-cond{font-size:12px;color:var(--text);padding:3px 0;border-bottom:1px solid var(--border)}
+          .dfe-cond:last-child{border-bottom:none}
+          .dfe-check{color:#1D9E75;font-weight:600}
+          .dfe-cross{color:#E24B4A;font-weight:600}
+          .dfe-code{font-family:var(--mono);font-size:11px;background:var(--border);padding:1px 5px;border-radius:3px;color:var(--text)}
+          .dfe-pill{display:inline-block;font-size:10px;padding:2px 7px;border-radius:999px;margin:2px}
+          .pp-red{background:#FCEBEB;color:#A32D2D}.pp-amber{background:#FAEEDA;color:#854F0B}.pp-blue{background:#E6F1FB;color:#185FA5}.pp-green{background:#E1F5EE;color:#0F6E56}.pp-purple{background:#EEEDFE;color:#534AB7}.pp-gray{background:var(--bg);color:var(--muted);border:1px solid var(--border)}
+          @media(max-width:600px){.dfe-row2{grid-template-columns:1fr}.dfe-ladder{grid-template-columns:repeat(2,1fr)}}
+        </style>
+
+        <div class="dfe-wrap">
+
+          <!-- Escalera visual -->
+          <div class="dfe-ladder">
+            <div class="dfe-step ls1"><div class="dfe-snum l1n">Etapa 1</div><div class="dfe-sname">Supervivencia</div><div class="dfe-skey">flujo positivo</div></div>
+            <div class="dfe-step ls2"><div class="dfe-snum l2n">Etapa 2</div><div class="dfe-sname">Seguridad</div><div class="dfe-skey">protección</div></div>
+            <div class="dfe-step ls3"><div class="dfe-snum l3n">Etapa 3</div><div class="dfe-sname">Acumulación</div><div class="dfe-skey">crecimiento</div></div>
+            <div class="dfe-step ls4"><div class="dfe-snum l4n">Etapa 4</div><div class="dfe-sname">Independencia</div><div class="dfe-skey">flujo pasivo</div></div>
+            <div class="dfe-step ls5"><div class="dfe-snum l5n">Etapa 5</div><div class="dfe-sname">Libertad</div><div class="dfe-skey">preservación</div></div>
           </div>
+
+          <hr class="dfe-hr">
+
+          <!-- 1. Variables de entrada -->
+          <h2>1. Variables de entrada (cuestionario)</h2>
+          <table>
+            <tr><th>#</th><th>Variable</th><th>Tipo</th><th>Valores posibles</th></tr>
+            <tr><td>Q1</td><td><code class="dfe-code">age</code></td><td>number</td><td>25, 37, 52, 65</td></tr>
+            <tr><td>Q2</td><td><code class="dfe-code">dependents</code></td><td>number</td><td>0, 1, 2, 3</td></tr>
+            <tr><td>Q3</td><td><code class="dfe-code">empType</code></td><td>number</td><td>6, 12, 18, 24, 36 (meses base de reserva)</td></tr>
+            <tr><td>Q4</td><td><code class="dfe-code">cashFlow</code></td><td>string</td><td>"no", "ahorros", "justo", "sobra"</td></tr>
+            <tr><td>Q5</td><td><code class="dfe-code">emergency</code></td><td>number</td><td>0, 2, 5, 8, 11, 15, 21, 30 (meses)</td></tr>
+            <tr><td>Q6</td><td><code class="dfe-code">debt</code></td><td>number</td><td>0–100 (% ingreso neto destinado a deudas)</td></tr>
+            <tr><td>Q7</td><td><code class="dfe-code">debtRatio</code></td><td>number</td><td>10, 35, 55, 75 (% activos que son pasivos)</td></tr>
+            <tr><td>Q8</td><td><code class="dfe-code">save</code></td><td>number</td><td>0–100 (% ingreso que se ahorra/invierte)</td></tr>
+            <tr><td>Q9</td><td><code class="dfe-code">retirement</code></td><td>number</td><td>0, 1, 3, 6, 10, 15 (× ingreso anual)</td></tr>
+            <tr><td>Q10</td><td><code class="dfe-code">netWorth</code></td><td>number</td><td>-1, 0, 2, 7, 20, 35 (× ingreso anual)</td></tr>
+            <tr><td>Q11</td><td><code class="dfe-code">passive</code></td><td>number</td><td>0, 20, 50, 100, 120 (% gastos cubiertos)</td></tr>
+            <tr><td>Q12</td><td><code class="dfe-code">assets[]</code></td><td>array</td><td>auto, propiedad, dependientes, bienes, ninguno</td></tr>
+            <tr><td>Q13</td><td><code class="dfe-code">insurance[]</code></td><td>array</td><td>salud, auto, propiedad, vida, umbrella, otros, ninguno</td></tr>
+            <tr><td>Q14</td><td><code class="dfe-code">estateDocs[]</code></td><td>array</td><td>beneficiarios, testamento, directivas, poa, trust, ninguno</td></tr>
+          </table>
+
+          <hr class="dfe-hr">
+
+          <!-- 2. Variables derivadas -->
+          <h2>2. Variables derivadas</h2>
+
+          <div class="dfe-icard">
+            <h3>Reserva de emergencia ideal (<code class="dfe-code">idealEmergency</code>)</h3>
+            <table>
+              <tr><th>Perfil laboral</th><th>Dependientes</th><th>Meses</th></tr>
+              <tr><td>Empleo estable (<code class="dfe-code">empType=6</code>)</td><td>0</td><td>6</td></tr>
+              <tr><td>Empleo estable (<code class="dfe-code">empType=6</code>)</td><td>&gt;0</td><td>9</td></tr>
+              <tr><td>Industria volátil (<code class="dfe-code">empType=12</code>)</td><td>&gt;0</td><td>12</td></tr>
+              <tr><td>Freelance / Consultor (<code class="dfe-code">empType=18</code>)</td><td>cualquiera</td><td>18</td></tr>
+              <tr><td>Negocio propio (<code class="dfe-code">empType=24</code>)</td><td>cualquiera</td><td>24</td></tr>
+              <tr><td>Irregular / Pre-retiro (<code class="dfe-code">empType=36</code>)</td><td>cualquiera</td><td>36</td></tr>
+            </table>
+          </div>
+
+          <div class="dfe-icard">
+            <h3>Matriz patrimonio neto por edad (<code class="dfe-code">stanleyGood</code> / <code class="dfe-code">stanleyGreat</code>)</h3>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:.6rem">Fórmula: Good = edad/10 · Great = edad/5 (× ingreso anual)</p>
+            <table>
+              <tr><th>Edad</th><th>Good ⚠️ (Stanley original)</th><th>Great ✅ (Stanley × 2)</th></tr>
+              <tr><td>25</td><td>2.5×</td><td>5×</td></tr>
+              <tr><td>30</td><td>3×</td><td>6×</td></tr>
+              <tr><td>35</td><td>3.5×</td><td>7×</td></tr>
+              <tr><td>40</td><td>4×</td><td>8×</td></tr>
+              <tr><td>45</td><td>4.5×</td><td>9×</td></tr>
+              <tr><td>50</td><td>5×</td><td>10×</td></tr>
+              <tr><td>55</td><td>5.5×</td><td>11×</td></tr>
+              <tr><td>60</td><td>6×</td><td>12×</td></tr>
+              <tr><td>65</td><td>6.5×</td><td>13×</td></tr>
+              <tr><td>70+</td><td>7×</td><td>14×</td></tr>
+            </table>
+          </div>
+
+          <div class="dfe-row2">
+            <div class="dfe-icard">
+              <h3>Score de seguros (<code class="dfe-code">insuranceScore</code> 0–100)</h3>
+              <table>
+                <tr><th>Seguro</th><th>Puntos</th><th>Aplica a</th></tr>
+                <tr><td>Salud</td><td>30</td><td>Todos</td></tr>
+                <tr><td>Vida</td><td>25</td><td>Si tiene dependientes</td></tr>
+                <tr><td>Auto</td><td>15</td><td>Si tiene auto</td></tr>
+                <tr><td>Propiedad</td><td>15</td><td>Si tiene propiedad</td></tr>
+                <tr><td>Umbrella</td><td>15</td><td>Si tiene propiedad o bienes &gt;$10k</td></tr>
+              </table>
+              <p style="font-size:11px;color:var(--muted);margin-top:.4rem"><code class="dfe-code">hasAdequateInsurance = insuranceScore === 100</code></p>
+            </div>
+            <div class="dfe-icard">
+              <h3>Score estate planning (<code class="dfe-code">estateScore</code> 0–100)</h3>
+              <table>
+                <tr><th>Documento</th><th>Puntos</th><th>Aplica a</th></tr>
+                <tr><td>Beneficiarios</td><td>25</td><td>Si tiene cuentas/activos</td></tr>
+                <tr><td>Testamento/Will</td><td>25</td><td>Todos</td></tr>
+                <tr><td>Directivas médicas</td><td>25</td><td>Todos</td></tr>
+                <tr><td>Trust/estructuras</td><td>25</td><td>Si <code class="dfe-code">netWorth &gt;= Great</code></td></tr>
+              </table>
+              <p style="font-size:11px;color:var(--muted);margin-top:.4rem"><code class="dfe-code">hasAdequateEstate = estateScore === 100</code></p>
+            </div>
+          </div>
+
+          <hr class="dfe-hr">
+
+          <!-- 3. Lógica de etapas -->
+          <h2>3. Lógica de etapas</h2>
+
+          <div class="dfe-stage-card dfe-s1">
+            <div class="dfe-sh">
+              <span class="dfe-snum-pill n1">Etapa 1</span>
+              <span class="dfe-stitle">Supervivencia</span>
+            </div>
+            <p class="dfe-sdesc">Estás luchando para cubrir gastos básicos o no tienes ningún colchón.</p>
+            <div class="dfe-row2">
+              <div class="dfe-block">
+                <div class="dfe-btitle">Condición de entrada</div>
+                <div class="dfe-cond"><span class="dfe-cross">A)</span> <code class="dfe-code">cashFlow === "no"</code> + <code class="dfe-code">emergency &lt; 1</code></div>
+                <div class="dfe-cond"><span class="dfe-cross">A)</span> <code class="dfe-code">cashFlow === "ahorros"</code> + <code class="dfe-code">emergency &lt; 1</code></div>
+                <div class="dfe-cond"><span class="dfe-cross">A)</span> <code class="dfe-code">cashFlow === "justo"</code> + <code class="dfe-code">emergency &lt; 1</code></div>
+                <p style="font-size:11px;color:var(--muted);margin-top:6px">Si cashFlow es cualquiera de los tres primeros Y emergency &lt; 1 → Etapa 1. Si emergency &gt;= 1 → Etapa 2.</p>
+              </div>
+              <div class="dfe-block">
+                <div class="dfe-btitle">Condiciones de salida (ambas)</div>
+                <div class="dfe-cond"><span class="dfe-check">✓</span> <code class="dfe-code">cashFlow = "justo"</code> o <code class="dfe-code">"sobra"</code></div>
+                <div class="dfe-cond"><span class="dfe-check">✓</span> <code class="dfe-code">emergency &gt;= 1</code> mes de gastos esenciales</div>
+                <div style="margin-top:10px">
+                  <div class="dfe-btitle">No se pide en esta etapa</div>
+                  <div class="dfe-cond" style="color:var(--muted)">Ahorro porcentual · Seguros · Reducir deudas · Invertir</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="dfe-stage-card dfe-s2">
+            <div class="dfe-sh">
+              <span class="dfe-snum-pill n2">Etapa 2</span>
+              <span class="dfe-stitle">Seguridad</span>
+            </div>
+            <p class="dfe-sdesc">Flujo positivo pero sin protección completa ante imprevistos.</p>
+            <div class="dfe-row2">
+              <div class="dfe-block">
+                <div class="dfe-btitle">Condición de entrada (cualquiera)</div>
+                <div class="dfe-cond"><code class="dfe-code">emergency &lt; idealEmergency</code></div>
+                <div class="dfe-cond"><code class="dfe-code">debt &gt;= 36%</code> ingreso neto (o &gt;= 30% bruto)</div>
+                <div class="dfe-cond"><code class="dfe-code">debtRatio &gt;= 50%</code></div>
+                <div class="dfe-cond"><code class="dfe-code">insuranceScore &lt; 100</code></div>
+                <div class="dfe-cond"><code class="dfe-code">estateScore &lt; 100</code></div>
+              </div>
+              <div class="dfe-block">
+                <div class="dfe-btitle">Condiciones de salida (todas)</div>
+                <div class="dfe-cond"><span class="dfe-check">✓</span> <code class="dfe-code">emergency &gt;= idealEmergency</code></div>
+                <div class="dfe-cond"><span class="dfe-check">✓</span> <code class="dfe-code">debt &lt; 36%</code> neto / <code class="dfe-code">&lt; 30%</code> bruto</div>
+                <div class="dfe-cond"><span class="dfe-check">✓</span> <code class="dfe-code">debtRatio &lt; 50%</code></div>
+                <div class="dfe-cond"><span class="dfe-check">✓</span> <code class="dfe-code">insuranceScore = 100</code></div>
+                <div class="dfe-cond"><span class="dfe-check">✓</span> <code class="dfe-code">estateScore = 100</code> (básico)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="dfe-stage-card dfe-s3">
+            <div class="dfe-sh">
+              <span class="dfe-snum-pill n3">Etapa 3</span>
+              <span class="dfe-stitle">Acumulación</span>
+            </div>
+            <p class="dfe-sdesc">Construyendo riqueza consistentemente. Meta: alcanzar Stanley Great para la edad.</p>
+            <div class="dfe-row2">
+              <div class="dfe-block">
+                <div class="dfe-btitle">Condición de entrada (cualquiera)</div>
+                <div class="dfe-cond"><code class="dfe-code">netWorth &lt; stanleyGreat</code> para su edad</div>
+                <div class="dfe-cond"><code class="dfe-code">save &lt; 20%</code> del ingreso</div>
+                <div class="dfe-cond"><code class="dfe-code">debt &gt;= 20%</code> del ingreso</div>
+                <div class="dfe-cond"><code class="dfe-code">debtRatio &gt;= 30%</code></div>
+                <div class="dfe-cond"><code class="dfe-code">passive &lt; 25%</code> de gastos</div>
+              </div>
+              <div class="dfe-block">
+                <div class="dfe-btitle">Condiciones de salida (todas)</div>
+                <div class="dfe-cond"><span class="dfe-check">✓</span> <code class="dfe-code">netWorth &gt;= stanleyGreat</code></div>
+                <div class="dfe-cond"><span class="dfe-check">✓</span> <code class="dfe-code">save &gt;= 20%</code></div>
+                <div class="dfe-cond"><span class="dfe-check">✓</span> <code class="dfe-code">debt &lt; 20%</code></div>
+                <div class="dfe-cond"><span class="dfe-check">✓</span> <code class="dfe-code">debtRatio &lt; 30%</code></div>
+                <div class="dfe-cond"><span class="dfe-check">✓</span> <code class="dfe-code">passive &gt;= 25%</code> de gastos</div>
+              </div>
+            </div>
+            <div style="margin-top:.75rem">
+              <div class="dfe-btitle" style="font-size:11px;margin-bottom:5px">Fuentes de ingreso pasivo válidas</div>
+              <span class="dfe-pill pp-blue">Títulos financieros</span>
+              <span class="dfe-pill pp-blue">Dividendos / ETFs</span>
+              <span class="dfe-pill pp-green">Bienes raíces / REITs</span>
+              <span class="dfe-pill pp-purple">Negocios automatizados</span>
+              <span class="dfe-pill pp-gray">Regalías / licencias</span>
+            </div>
+          </div>
+
+          <div class="dfe-stage-card dfe-s4">
+            <div class="dfe-sh">
+              <span class="dfe-snum-pill n4">Etapa 4</span>
+              <span class="dfe-stitle">Independencia</span>
+            </div>
+            <p class="dfe-sdesc">Las inversiones pueden mantener el estilo de vida. Ingresos pasivos cubriendo gastos.</p>
+            <div class="dfe-row2">
+              <div class="dfe-block">
+                <div class="dfe-btitle">Condición de entrada (cualquiera)</div>
+                <div class="dfe-cond"><code class="dfe-code">passive &lt; 100%</code> de gastos</div>
+                <div class="dfe-cond"><code class="dfe-code">debt &gt;= 10%</code> del ingreso</div>
+                <div class="dfe-cond"><code class="dfe-code">estateScore &lt; 100</code> (completo)</div>
+              </div>
+              <div class="dfe-block">
+                <div class="dfe-btitle">Condiciones de salida (todas)</div>
+                <div class="dfe-cond"><span class="dfe-check">✓</span> <code class="dfe-code">passive &gt;= 100%</code> de gastos</div>
+                <div class="dfe-cond"><span class="dfe-check">✓</span> <code class="dfe-code">debt &lt; 10%</code> del ingreso</div>
+                <div class="dfe-cond"><span class="dfe-check">✓</span> <code class="dfe-code">estateScore = 100</code> (incl. trust)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="dfe-stage-card dfe-s5">
+            <div class="dfe-sh">
+              <span class="dfe-snum-pill n5">Etapa 5</span>
+              <span class="dfe-stitle">Libertad</span>
+            </div>
+            <p class="dfe-sdesc">Libertad financiera completa. Sin issues pendientes en ninguna dimensión.</p>
+            <div class="dfe-block">
+              <div class="dfe-btitle">Metas permanentes (no son condiciones de salida)</div>
+              <div class="dfe-cond">Preservar y proteger el patrimonio acumulado</div>
+              <div class="dfe-cond">Optimización fiscal avanzada</div>
+              <div class="dfe-cond">Planificación de legado generacional</div>
+              <div class="dfe-cond">Impacto filantrópico</div>
+            </div>
+          </div>
+
+          <hr class="dfe-hr">
+
+          <!-- 4. Cálculo de progreso -->
+          <h2>4. Cálculo de progreso dentro de cada etapa (0–100%)</h2>
+          <table>
+            <tr><th>Etapa</th><th>Variables del promedio</th></tr>
+            <tr><td><span class="dfe-pill pp-red">Etapa 1</span></td><td>cashFlow resuelto (0/100) + emergency/1 mes → promedio de 2</td></tr>
+            <tr><td><span class="dfe-pill pp-amber">Etapa 2</span></td><td>emergency/idealEmergency + debt inverso (meta 36%) + debtRatio inverso (meta 50%) + insuranceScore + estateScore → promedio de 5</td></tr>
+            <tr><td><span class="dfe-pill pp-blue">Etapa 3</span></td><td>netWorth/stanleyGreat + save/20 + debt inverso (meta 20%) + debtRatio inverso (meta 30%) + passive/25 → promedio de 5</td></tr>
+            <tr><td><span class="dfe-pill pp-green">Etapa 4</span></td><td>passive/100 + debt inverso (meta 10%) + estateScore → promedio de 3</td></tr>
+            <tr><td><span class="dfe-pill pp-purple">Etapa 5</span></td><td>100% fijo</td></tr>
+          </table>
+
+          <hr class="dfe-hr">
+
+          <!-- 5. Escalera ingresos pasivos -->
+          <h2>5. Escalera de ingresos pasivos</h2>
+          <table>
+            <tr><th>Etapa</th><th>Meta ingreso pasivo</th><th>Significado</th></tr>
+            <tr><td><span class="dfe-pill pp-red">Etapa 1</span></td><td>No aplica</td><td>No es requisito</td></tr>
+            <tr><td><span class="dfe-pill pp-amber">Etapa 2</span></td><td>No aplica</td><td>No es requisito</td></tr>
+            <tr><td><span class="dfe-pill pp-blue">Etapa 3</span></td><td><code class="dfe-code">25% – 50%</code> de gastos</td><td>Construyendo el pilar</td></tr>
+            <tr><td><span class="dfe-pill pp-green">Etapa 4</span></td><td><code class="dfe-code">100%</code> de gastos</td><td>Independencia total</td></tr>
+            <tr><td><span class="dfe-pill pp-purple">Etapa 5</span></td><td><code class="dfe-code">&gt;100%</code> de gastos</td><td>Excedente generacional</td></tr>
+          </table>
+
         </div>
       </div>
-      <div class="group-row">
-        <div class="group-left">
-          <span class="group-name">2 — Seguridad</span>
-          <span class="group-key" style="color:#f59e0b">🛡️ gradient: amber</span>
-        </div>
-        <div class="group-right" style="flex-direction:column;gap:4px;align-items:flex-start">
-          <span class="note" style="color:var(--text)">Estabilidad básica pero poca protección. Empieza a construir reserva.</span>
-          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">
-            <span class="tag">Reserva de 6–9 meses</span>
-            <span class="tag">Deuda &lt; 30% del ingreso</span>
-            <span class="tag">Ahorro ≥ 15%</span>
-            <span class="tag">Seguros básicos (vida, salud)</span>
-          </div>
-        </div>
-      </div>
-      <div class="group-row">
-        <div class="group-left">
-          <span class="group-name">3 — Acumulación</span>
-          <span class="group-key" style="color:#3b82f6">💰 gradient: blue</span>
-        </div>
-        <div class="group-right" style="flex-direction:column;gap:4px;align-items:flex-start">
-          <span class="note" style="color:var(--text)">Construyendo riqueza consistentemente. Inversiones activas.</span>
-          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">
-            <span class="tag">Ahorro 25–30%</span>
-            <span class="tag">Diversificar inversiones</span>
-            <span class="tag">Patrimonio ≥ 15× ingreso anual</span>
-            <span class="tag">Iniciar ingresos pasivos</span>
-          </div>
-        </div>
-      </div>
-      <div class="group-row">
-        <div class="group-left">
-          <span class="group-name">4 — Independencia</span>
-          <span class="group-key" style="color:#10b981">🟩 gradient: green</span>
-        </div>
-        <div class="group-right" style="flex-direction:column;gap:4px;align-items:flex-start">
-          <span class="note" style="color:var(--text)">Inversiones pueden mantener el estilo de vida. Ingresos pasivos cubriendo gastos.</span>
-          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">
-            <span class="tag">Ingresos pasivos = 100% gastos</span>
-            <span class="tag">Optimizar portafolio</span>
-            <span class="tag">Protección patrimonial</span>
-            <span class="tag">Deuda &lt; 10%</span>
-          </div>
-        </div>
-      </div>
-      <div class="group-row">
-        <div class="group-left">
-          <span class="group-name">5 — Libertad</span>
-          <span class="group-key" style="color:#8b5cf6">🟦 gradient: purple</span>
-        </div>
-        <div class="group-right" style="flex-direction:column;gap:4px;align-items:flex-start">
-          <span class="note" style="color:var(--text)">Libertad financiera completa. Sin issues en el checklist.</span>
-          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">
-            <span class="tag">Preservar riqueza</span>
-            <span class="tag">Estrategias fiscales</span>
-            <span class="tag">Legado generacional</span>
-            <span class="tag">Impacto filantrópico</span>
-          </div>
-        </div>
-      </div>
+      <div style="height:16px"></div>
     </div>
   </div>
 
