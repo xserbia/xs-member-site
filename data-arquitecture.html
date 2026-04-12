@@ -173,6 +173,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <a class="nav-link" href="#rad-storage">LocalStorage</a>
       <a class="nav-link" href="#rad-iframe">Protocolo iFrame</a>
     </div>
+    <div class="nav-section">
+      <div class="nav-label">Metas Financieras</div>
+      <a class="nav-link" href="#metas-modelo">Modelo de Datos</a>
+      <a class="nav-link" href="#metas-storage">LocalStorage</a>
+      <a class="nav-link" href="#metas-catalogo">Catálogo de Metas</a>
+      <a class="nav-link" href="#metas-monedas">Monedas</a>
+      <a class="nav-link" href="#metas-comportamiento">Comportamiento</a>
+    </div>
   </div>
 </nav>
 
@@ -1512,6 +1520,241 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <div class="fields-bar" style="border-top:1px solid var(--border);border-bottom:none">
         <span class="field-label">iFrame src:</span>
         <code style="font-size:.72rem;color:var(--muted)">https://xserbia.github.io/xs-member-site/radiografia.html</code>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ══════════════════════════════════════════════
+       METAS FINANCIERAS
+  ══════════════════════════════════════════════ -->
+
+  <!-- MODELO DE DATOS -->
+  <div class="schema-section" id="metas-modelo">
+    <div class="section-heading">
+      <div class="section-dot" style="background:#f59e0b"></div>
+      <h2>Metas Financieras — Modelo de Datos</h2>
+      <span class="section-badge" style="background:#fffbeb;color:#92400e">metas[]</span>
+    </div>
+    <div class="card">
+      <div class="fields-bar">
+        <span class="field-label">Estructura por ítem:</span>
+        <span class="field-chip">id</span>
+        <span class="field-chip">name</span>
+        <span class="field-chip">amount</span>
+        <span class="note" style="font-size:.72rem">· el índice en el array define la prioridad (0 = prioridad #1)</span>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">id</span><span class="ratio-key">string</span></div>
+        <div class="ratio-right">
+          <span class="formula">Math.random().toString(36).slice(2, 10)</span>
+          <span class="note">UID generado en cliente al crear la meta. 8 caracteres alfanuméricos. No se reutiliza.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">name</span><span class="ratio-key">string</span></div>
+        <div class="ratio-right">
+          <span class="formula">texto libre — máx. sin límite explícito</span>
+          <span class="note">Nombre de la meta. Se valida que no sea vacío y que no exista duplicado (comparación case-insensitive). Origen: input manual o selección del catálogo.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">amount</span><span class="ratio-key">number</span></div>
+        <div class="ratio-right">
+          <span class="formula">float &gt; 0</span>
+          <span class="note">Monto objetivo en la moneda del cliente. Se valida que sea &gt; 0. Se muestra formateado con símbolo y locale de la moneda seleccionada.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">priority</span><span class="ratio-key">number — derivado</span></div>
+        <div class="ratio-right">
+          <span class="formula">índice + 1 (posición en el array)</span>
+          <div class="meta-row"><span class="pill pill-der">derivado</span></div>
+          <span class="note">No se guarda en el ítem. Se deriva del orden del array. Al reordenar (drag & drop), se hace splice + insert en el array y se re-renderiza. Al exportar a <code style="font-size:.7rem">discovery_draft_v4.goals</code> se incluye como campo explícito.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOCALSTORAGE -->
+  <div class="schema-section" id="metas-storage">
+    <div class="section-heading">
+      <div class="section-dot" style="background:#f59e0b"></div>
+      <h2>LocalStorage</h2>
+      <span class="section-badge" style="background:#fffbeb;color:#92400e">2 claves</span>
+    </div>
+    <div class="card">
+      <div class="ratio-row">
+        <div class="ratio-left">
+          <span class="ratio-name">metas_financieras_v2</span>
+          <span class="ratio-key">clave propia</span>
+        </div>
+        <div class="ratio-right">
+          <span class="formula">JSON → [ { <b>id</b>, <b>name</b>, <b>amount</b> }, … ]</span>
+          <div class="meta-row"><span class="pill pill-ok">Array ordenado</span></div>
+          <span class="note">Array de metas en el orden de prioridad del usuario. Se escribe en cada operación (agregar, eliminar, reordenar). El orden del array ES la prioridad — el índice 0 es prioridad #1.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left">
+          <span class="ratio-name">discovery_draft_v4</span>
+          <span class="ratio-key">clave compartida</span>
+        </div>
+        <div class="ratio-right">
+          <span class="formula">JSON → { …draft, <b>goals</b>: [ { name, amount, priority }, … ] }</span>
+          <div class="meta-row"><span class="pill pill-warn">Sincronización</span></div>
+          <span class="note">Solo se sincroniza si el draft ya existe y tiene contenido. Las metas se inyectan en el campo <code style="font-size:.7rem">goals</code> con <code style="font-size:.7rem">priority</code> explícito (índice + 1). También lee <code style="font-size:.7rem">discovery_draft_v4.currency</code> para determinar símbolo y locale de formato.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CATÁLOGO DE METAS -->
+  <div class="schema-section" id="metas-catalogo">
+    <div class="section-heading">
+      <div class="section-dot" style="background:#f59e0b"></div>
+      <h2>Catálogo de Metas Comunes</h2>
+      <span class="section-badge" style="background:#fffbeb;color:#92400e">COMUNES — 12 ítems</span>
+    </div>
+    <div class="card">
+      <div class="group-row" style="grid-template-columns:1fr">
+        <div class="group-right" style="padding:12px 16px;flex-wrap:wrap">
+          <span class="tag">Fondo de emergencia</span>
+          <span class="tag">Comprar casa</span>
+          <span class="tag">Retiro / Jubilación</span>
+          <span class="tag">Educación de hijos</span>
+          <span class="tag">Pagar deudas</span>
+          <span class="tag">Comprar auto</span>
+          <span class="tag">Iniciar negocio</span>
+          <span class="tag">Hacer crecer inversiones</span>
+          <span class="tag">Viaje o vacaciones</span>
+          <span class="tag">Independencia financiera</span>
+          <span class="tag">Fondo para herencia</span>
+          <span class="tag">Renovar hogar</span>
+        </div>
+      </div>
+      <div class="fields-bar" style="border-top:1px solid var(--border);border-bottom:none">
+        <span class="note" style="font-size:.72rem">Al seleccionar un chip del catálogo se pre-rellena el input <code style="font-size:.7rem">name</code> y se hace scroll al formulario. El chip se marca como activo (✓) si ya existe esa meta en el array. La comparación es case-insensitive.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MONEDAS -->
+  <div class="schema-section" id="metas-monedas">
+    <div class="section-heading">
+      <div class="section-dot" style="background:#f59e0b"></div>
+      <h2>Soporte de Monedas</h2>
+      <span class="section-badge" style="background:#fffbeb;color:#92400e">21 monedas</span>
+    </div>
+    <div class="card">
+      <div class="fields-bar">
+        <span class="field-label">Origen:</span>
+        <span class="note" style="font-size:.72rem">Leído de <code style="font-size:.7rem">discovery_draft_v4.currency</code>. Si no existe, default a USD.</span>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Norteamérica</span></div>
+        <div class="group-right">
+          <span class="tag">USD — $</span>
+          <span class="tag">CAD — $</span>
+          <span class="tag">MXN — $</span>
+        </div>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Centroamérica</span></div>
+        <div class="group-right">
+          <span class="tag">GTQ — Q</span>
+          <span class="tag">HNL — L</span>
+          <span class="tag">NIO — C$</span>
+          <span class="tag">CRC — ₡</span>
+          <span class="tag">PAB — B/.</span>
+          <span class="tag">DOP — RD$</span>
+          <span class="tag">CUP — $</span>
+        </div>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Sudamérica</span></div>
+        <div class="group-right">
+          <span class="tag">COP — $</span>
+          <span class="tag">VES — Bs.</span>
+          <span class="tag">BRL — R$</span>
+          <span class="tag">PEN — S/</span>
+          <span class="tag">BOB — Bs.</span>
+          <span class="tag">PYG — ₲</span>
+          <span class="tag">UYU — $U</span>
+          <span class="tag">ARS — $</span>
+          <span class="tag">CLP — $</span>
+        </div>
+      </div>
+      <div class="group-row">
+        <div class="group-left"><span class="group-name">Europa</span></div>
+        <div class="group-right">
+          <span class="tag">EUR — €</span>
+          <span class="tag">GBP — £</span>
+        </div>
+      </div>
+      <div class="fields-bar" style="border-top:1px solid var(--border);border-bottom:none">
+        <span class="field-label">Formato:</span>
+        <span class="note" style="font-size:.72rem"><code style="font-size:.7rem">symbol + Math.round(value).toLocaleString(locale, { maximumFractionDigits: 0 })</code> — sin decimales. El símbolo se antepone directamente, no vía Intl.NumberFormat currency.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPORTAMIENTO -->
+  <div class="schema-section" id="metas-comportamiento">
+    <div class="section-heading">
+      <div class="section-dot" style="background:#f59e0b"></div>
+      <h2>Comportamiento y Validaciones</h2>
+      <span class="section-badge" style="background:#fffbeb;color:#92400e">reglas de negocio</span>
+    </div>
+    <div class="card">
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">Agregar meta</span></div>
+        <div class="ratio-right">
+          <div class="meta-row">
+            <span class="pill pill-ok">Permite</span>
+            <span class="pill pill-bad">Bloquea</span>
+          </div>
+          <span class="note">Botón deshabilitado hasta que <code style="font-size:.7rem">name.length &gt; 0</code> AND <code style="font-size:.7rem">amount &gt; 0</code>. Bloquea duplicados (case-insensitive) con toast de aviso. Al agregar: push al final del array, limpiar inputs, re-enfocar name input.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">Reordenar</span></div>
+        <div class="ratio-right">
+          <span class="formula">splice(fromIdx, 1) → splice(toIdx, 0, moved)</span>
+          <div class="meta-row">
+            <span class="pill" style="background:#E6F1FB;color:#185FA5;border-color:#B5D4F4">Mouse drag & drop</span>
+            <span class="pill" style="background:#E6F1FB;color:#185FA5;border-color:#B5D4F4">Touch (long press 150ms)</span>
+          </div>
+          <span class="note">Delegado en el contenedor de la lista. Soporta tanto mouse (HTML draggable) como touch (touchstart/touchmove/touchend). Los ítems reciben <code style="font-size:.7rem">draggable="true"</code> dinámicamente vía MutationObserver después de cada render.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">Eliminar meta</span></div>
+        <div class="ratio-right">
+          <span class="formula">metas.filter(m =&gt; m.id !== id)</span>
+          <span class="note">Sin confirmación. Inmediato. Se actualiza el array, se re-renderiza y se muestra toast. La prioridad de todos los ítems siguientes sube automáticamente (re-indexación implícita).</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">Etiquetas de rango</span></div>
+        <div class="ratio-right">
+          <span class="formula">RANK_LABELS = ["#1 Prioridad", "#2", "#3", "#4", "#5", "#6", "#7", "#8"]</span>
+          <span class="note">Las primeras 3 posiciones tienen estilos visuales diferenciados (dorado, plateado, bronce). A partir del índice 8 se usa <code style="font-size:.7rem">"#" + (idx + 1)</code> como fallback.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">Total acumulado</span></div>
+        <div class="ratio-right">
+          <span class="formula">metas.reduce((s, m) =&gt; s + m.amount, 0)</span>
+          <span class="note">Suma de todos los montos objetivo. Se muestra en una card al pie cuando hay al menos 1 meta. Se oculta cuando la lista está vacía.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">Teclado</span></div>
+        <div class="ratio-right">
+          <span class="note">Enter en el input <code style="font-size:.7rem">name</code> → mueve foco a <code style="font-size:.7rem">amount</code>. Enter en <code style="font-size:.7rem">amount</code> → llama <code style="font-size:.7rem">addMeta()</code>. Flujo completo sin mouse.</span>
+        </div>
       </div>
     </div>
   </div>
