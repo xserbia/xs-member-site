@@ -181,6 +181,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <a class="nav-link" href="#metas-monedas">Monedas</a>
       <a class="nav-link" href="#metas-comportamiento">Comportamiento</a>
     </div>
+    <div class="nav-section">
+      <div class="nav-label">Coaching Process</div>
+      <a class="nav-link" href="#cp-pipeline">Pipeline de Pasos</a>
+      <a class="nav-link" href="#cp-step-data">Datos por Paso</a>
+      <a class="nav-link" href="#cp-estados">Estados y Transiciones</a>
+      <a class="nav-link" href="#cp-discovery">Paso 1 — Discovery</a>
+      <a class="nav-link" href="#cp-videocall">Paso 2 — Presentación</a>
+      <a class="nav-link" href="#cp-cerrado">Paso 3 — Cerrado</a>
+      <a class="nav-link" href="#cp-storage">LocalStorage</a>
+      <a class="nav-link" href="#cp-mms">Money Map Summary</a>
+    </div>
   </div>
 </nav>
 
@@ -1754,6 +1765,401 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <div class="ratio-left"><span class="ratio-name">Teclado</span></div>
         <div class="ratio-right">
           <span class="note">Enter en el input <code style="font-size:.7rem">name</code> → mueve foco a <code style="font-size:.7rem">amount</code>. Enter en <code style="font-size:.7rem">amount</code> → llama <code style="font-size:.7rem">addMeta()</code>. Flujo completo sin mouse.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ══════════════════════════════════════════════
+       COACHING PROCESS — DASHBOARD
+  ══════════════════════════════════════════════ -->
+
+  <!-- PIPELINE DE PASOS -->
+  <div class="schema-section" id="cp-pipeline">
+    <div class="section-heading">
+      <div class="section-dot" style="background:#5B4CE2"></div>
+      <h2>Coaching Process — Pipeline de Pasos</h2>
+      <span class="section-badge" style="background:#f0f0ff;color:#4A3BB8">3 pasos lineales</span>
+    </div>
+    <div class="card">
+      <div class="fields-bar">
+        <span class="field-label">Array steps[]:</span>
+        <span class="field-chip">id</span>
+        <span class="field-chip">name</span>
+        <span class="field-chip">icon</span>
+        <span class="field-chip">order</span>
+      </div>
+      <div class="group-row">
+        <div class="group-left">
+          <span class="group-name">Paso 1</span>
+          <span class="group-key">id: "discovery"</span>
+        </div>
+        <div class="group-right" style="flex-direction:column;gap:3px;align-items:flex-start">
+          <span style="font-size:.82rem;font-weight:600;color:var(--text)">Discovery</span>
+          <span class="note">El cliente completa el formulario externo. El progreso se refleja en el dashboard automáticamente.</span>
+        </div>
+      </div>
+      <div class="group-row">
+        <div class="group-left">
+          <span class="group-name">Paso 2</span>
+          <span class="group-key">id: "videocall"</span>
+        </div>
+        <div class="group-right" style="flex-direction:column;gap:3px;align-items:flex-start">
+          <span style="font-size:.82rem;font-weight:600;color:var(--text)">Presentación</span>
+          <span class="note">Video personalizado pregrabado. Tiene dos subestados: en preparación (<code style="font-size:.7rem">videoReady=false</code>) y disponible (<code style="font-size:.7rem">videoReady=true</code>). WhatsApp como canal de soporte.</span>
+        </div>
+      </div>
+      <div class="group-row">
+        <div class="group-left">
+          <span class="group-name">Paso 3</span>
+          <span class="group-key">id: "cerrado"</span>
+        </div>
+        <div class="group-right" style="flex-direction:column;gap:3px;align-items:flex-start">
+          <span style="font-size:.82rem;font-weight:600;color:var(--text)">Cerrado</span>
+          <span class="note">Entrega del documento final. Contiene el Money Map Summary modal y soporte WhatsApp.</span>
+        </div>
+      </div>
+      <div class="fields-bar" style="border-top:1px solid var(--border);border-bottom:none">
+        <span class="note" style="font-size:.72rem">El pipeline es estrictamente lineal y secuencial. Un paso solo se desbloquea cuando todos los ítems del checklist del paso anterior están marcados como <code style="font-size:.7rem">done: true</code>. No hay saltos ni retrocesos forzados.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATOS POR PASO -->
+  <div class="schema-section" id="cp-step-data">
+    <div class="section-heading">
+      <div class="section-dot" style="background:#5B4CE2"></div>
+      <h2>Estructura de Datos por Paso</h2>
+      <span class="section-badge" style="background:#f0f0ff;color:#4A3BB8">stepContent{}</span>
+    </div>
+    <div class="card">
+      <div class="fields-bar">
+        <span class="field-label">Campos comunes a todos los pasos:</span>
+        <span class="field-chip">title</span>
+        <span class="field-chip">description</span>
+        <span class="field-chip">checklist[]</span>
+        <span class="field-chip">cta</span>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">title</span><span class="ratio-key">string</span></div>
+        <div class="ratio-right">
+          <span class="note">Título del paso que se muestra en el card de contenido derecho.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">description</span><span class="ratio-key">string</span></div>
+        <div class="ratio-right">
+          <span class="note">Descripción larga del paso. Explica al cliente qué hacer y qué esperar.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">checklist[]</span><span class="ratio-key">{ item: string, done: boolean }[]</span></div>
+        <div class="ratio-right">
+          <span class="formula">[ { item: "texto del ítem", done: false }, … ]</span>
+          <span class="note">Array de ítems de verificación. Cuando <strong>todos</strong> son <code style="font-size:.7rem">done: true</code>, se dispara el auto-advance al siguiente paso (con 600ms de delay). Los ítems se marcan programáticamente desde las funciones de cada paso — el usuario no los toca directamente.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">cta</span><span class="ratio-key">{ text, action } | null</span></div>
+        <div class="ratio-right">
+          <span class="note">Botón CTA opcional para pasos que no tienen sección dinámica propia. Los pasos discovery, videocall y cerrado usan <code style="font-size:.7rem">cta: null</code> porque tienen su propio HTML builder.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ESTADOS Y TRANSICIONES -->
+  <div class="schema-section" id="cp-estados">
+    <div class="section-heading">
+      <div class="section-dot" style="background:#5B4CE2"></div>
+      <h2>Estados y Transiciones</h2>
+      <span class="section-badge" style="background:#f0f0ff;color:#4A3BB8">currentStep / selectedStep</span>
+    </div>
+    <div class="card">
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">currentStep</span><span class="ratio-key">string — paso activo</span></div>
+        <div class="ratio-right">
+          <span class="formula">"discovery" | "videocall" | "cerrado"</span>
+          <span class="note">Determina hasta qué paso están desbloqueados. Un paso es accesible si su índice ≤ índice de <code style="font-size:.7rem">currentStep</code>. Avanza automáticamente cuando el checklist del paso actual se completa.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">selectedStep</span><span class="ratio-key">string — paso en vista</span></div>
+        <div class="ratio-right">
+          <span class="formula">"discovery" | "videocall" | "cerrado"</span>
+          <span class="note">El paso que el usuario está viendo actualmente. Puede ser diferente de <code style="font-size:.7rem">currentStep</code> si el usuario navega a un paso anterior. Las notas se cargan según <code style="font-size:.7rem">selectedStep</code>.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">getStepStatus(step)</span><span class="ratio-key">función</span></div>
+        <div class="ratio-right">
+          <span class="formula">stepIdx &lt; currentIdx → "completed"<br>stepIdx === currentIdx → "current"<br>stepIdx &gt; currentIdx → "pending"</span>
+          <span class="note">Determina el ícono y etiqueta de cada paso en el timeline. "completed" = check-circle verde, "current" = ícono del paso, "pending" = lock gris.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">Auto-advance</span><span class="ratio-key">lógica de transición</span></div>
+        <div class="ratio-right">
+          <span class="formula">if (allDone && nextStep && currentStep === selectedStep)<br>  → setTimeout(600ms) → currentStep = nextStep.id</span>
+          <div class="meta-row"><span class="pill pill-warn">Solo cuando selectedStep === currentStep</span></div>
+          <span class="note">No avanza si el usuario está viendo un paso anterior. Al avanzar: actualiza <code style="font-size:.7rem">currentStep</code>, <code style="font-size:.7rem">selectedStep</code>, re-renderiza timeline, actualiza progreso y carga notas del nuevo paso.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">Barra de progreso</span><span class="ratio-key">header sidebar</span></div>
+        <div class="ratio-right">
+          <span class="formula">completedCount / steps.length × 100 = %</span>
+          <span class="note">Cuenta los pasos con status "completed". Se muestra como barra + texto "X/3".</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASO 1: DISCOVERY -->
+  <div class="schema-section" id="cp-discovery">
+    <div class="section-heading">
+      <div class="section-dot" style="background:#5B4CE2"></div>
+      <h2>Paso 1 — Discovery</h2>
+      <span class="section-badge" style="background:#f0f0ff;color:#4A3BB8">discoveryStatus{}</span>
+    </div>
+    <div class="card">
+      <div class="fields-bar">
+        <span class="field-label">Campos de discoveryStatus:</span>
+        <span class="field-chip">status</span>
+        <span class="field-chip">progress</span>
+        <span class="field-chip">lastUpdated</span>
+        <span class="field-chip">link</span>
+        <span class="field-chip">summary{}</span>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">status</span><span class="ratio-key">enum</span></div>
+        <div class="ratio-right">
+          <div class="meta-row">
+            <span class="pill" style="background:#fef3c7;color:#854d0e;border-color:#fde047">not_started</span>
+            <span class="pill" style="background:#dbeafe;color:#1e40af;border-color:#93c5fd">in_progress</span>
+            <span class="pill pill-ok">completed</span>
+          </div>
+          <span class="note">Controla la UI del panel Discovery: estado <code style="font-size:.7rem">not_started</code> muestra alerta + botón "Iniciar". <code style="font-size:.7rem">in_progress</code> muestra barra de progreso + botón "Continuar". <code style="font-size:.7rem">completed</code> muestra resumen de respuestas.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">progress</span><span class="ratio-key">number — 0 a 100</span></div>
+        <div class="ratio-right">
+          <span class="note">Porcentaje de completado del formulario externo. Se actualiza programáticamente cuando el formulario externo manda señales (o manualmente en demo). Cuando llega a 100 → <code style="font-size:.7rem">status = "completed"</code>.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">link</span><span class="ratio-key">string — URL</span></div>
+        <div class="ratio-right">
+          <span class="formula">https://xserbia.github.io/xavierserbia-site/discovery-form-claude.html</span>
+          <span class="note">Se abre en nueva pestaña. Al abrir, si <code style="font-size:.7rem">status === "not_started"</code>, después de 2s cambia a <code style="font-size:.7rem">in_progress</code> con progress=10 y marca checklist[0].done=true.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">summary</span><span class="ratio-key">object</span></div>
+        <div class="ratio-right">
+          <span class="formula">{ businessName, industry, currentRevenue, goals }</span>
+          <span class="note">Resumen de respuestas clave del formulario. Solo se muestra cuando <code style="font-size:.7rem">status === "completed"</code>. Se popula programáticamente al completar el Discovery.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">Checklist items</span><span class="ratio-key">3 ítems</span></div>
+        <div class="ratio-right">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <span class="note">[0] "Formulario iniciado" → done cuando <code style="font-size:.7rem">status</code> cambia a <code style="font-size:.7rem">in_progress</code></span>
+            <span class="note">[1] "Información básica completada" → done cuando <code style="font-size:.7rem">progress ≥ 70</code></span>
+            <span class="note">[2] "Discovery enviado para revisión" → done cuando <code style="font-size:.7rem">status === "completed"</code></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASO 2: VIDEOCALL -->
+  <div class="schema-section" id="cp-videocall">
+    <div class="section-heading">
+      <div class="section-dot" style="background:#5B4CE2"></div>
+      <h2>Paso 2 — Presentación</h2>
+      <span class="section-badge" style="background:#f0f0ff;color:#4A3BB8">videocall{}</span>
+    </div>
+    <div class="card">
+      <div class="fields-bar">
+        <span class="field-label">Campos específicos:</span>
+        <span class="field-chip">videoReady</span>
+        <span class="field-chip">videoUrl</span>
+        <span class="field-chip">whatsappNumber</span>
+        <span class="field-chip">whatsappMessage</span>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">videoReady</span><span class="ratio-key">boolean</span></div>
+        <div class="ratio-right">
+          <div class="meta-row">
+            <span class="pill pill-bad">false → "en preparación"</span>
+            <span class="pill pill-ok">true → "video disponible"</span>
+          </div>
+          <span class="note">Controla cuál de los dos estados se renderiza. <code style="font-size:.7rem">false</code>: muestra card de "presentación en preparación" con timeline de 3 pasos (discovery ✓, grabando ●, lista ○). <code style="font-size:.7rem">true</code>: muestra card de WhatsApp support y el video es reproducible.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">videoUrl</span><span class="ratio-key">string</span></div>
+        <div class="ratio-right">
+          <span class="note">URL del video personalizado. Si está vacío, al hacer clic en play se muestra notificación "En producción aquí se reproducirá el video". En producción apunta al video real del cliente.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">whatsappNumber</span><span class="ratio-key">string</span></div>
+        <div class="ratio-right">
+          <span class="formula">formato: "15551234567" (sin + ni espacios)</span>
+          <span class="note">Número de WhatsApp del asesor. Se usa en la URL <code style="font-size:.7rem">https://wa.me/{number}?text={msg}</code> en los pasos Presentación y Cerrado.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">whatsappMessage</span><span class="ratio-key">string</span></div>
+        <div class="ratio-right">
+          <span class="note">Mensaje pre-rellenado al abrir WhatsApp. Se encodea con <code style="font-size:.7rem">encodeURIComponent()</code>. Paso Cerrado tiene su propio mensaje hardcodeado.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">Checklist items</span><span class="ratio-key">3 ítems</span></div>
+        <div class="ratio-right">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <span class="note">[0] "Presentación lista" → done cuando videoReady=true o al reproducir</span>
+            <span class="note">[1] "Video visto" → done al reproducir o al marcar "visto"</span>
+            <span class="note">[2] "Preguntas resueltas" → done al abrir WhatsApp</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASO 3: CERRADO -->
+  <div class="schema-section" id="cp-cerrado">
+    <div class="section-heading">
+      <div class="section-dot" style="background:#5B4CE2"></div>
+      <h2>Paso 3 — Cerrado</h2>
+      <span class="section-badge" style="background:#f0f0ff;color:#4A3BB8">cerrado{}</span>
+    </div>
+    <div class="card">
+      <div class="fields-bar">
+        <span class="field-label">Campos específicos:</span>
+        <span class="field-chip">finalDocuments[]</span>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">finalDocuments[]</span><span class="ratio-key">array</span></div>
+        <div class="ratio-right">
+          <span class="formula">{ name, description, size, pages, type, status, icon, url }</span>
+          <div class="meta-row">
+            <span class="pill pill-bad">status: "pending" → bloqueado</span>
+            <span class="pill pill-ok">status: "available" → descargable</span>
+          </div>
+          <span class="note">Array de documentos finales entregables. Cuando <code style="font-size:.7rem">status === "available"</code> se muestra el botón de descarga y el mensaje de celebración. Cuando <code style="font-size:.7rem">status === "pending"</code> se muestra el estado "en preparación" con alerta informativa.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">Campos del documento</span></div>
+        <div class="ratio-right">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <span class="note"><code style="font-size:.7rem">name</code> — nombre del documento mostrado en la card</span>
+            <span class="note"><code style="font-size:.7rem">description</code> — descripción del contenido</span>
+            <span class="note"><code style="font-size:.7rem">size</code> — tamaño del archivo (ej. "2.4 MB")</span>
+            <span class="note"><code style="font-size:.7rem">pages</code> — número de páginas</span>
+            <span class="note"><code style="font-size:.7rem">type</code> — tipo de archivo ("pdf")</span>
+            <span class="note"><code style="font-size:.7rem">icon</code> — nombre del ícono Lucide (ej. "file-text")</span>
+            <span class="note"><code style="font-size:.7rem">url</code> — URL de descarga del documento</span>
+          </div>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">Checklist items</span><span class="ratio-key">1 ítem</span></div>
+        <div class="ratio-right">
+          <span class="note">[0] "Resumen final entregado" → done cuando <code style="font-size:.7rem">finalDocuments[0].status === "available"</code></span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">Secciones del panel</span></div>
+        <div class="ratio-right">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <span class="note">1. Money Map Summary banner (siempre visible) → abre modal <code style="font-size:.7rem">mmsOverlay</code></span>
+            <span class="note">2. Header del estado del documento (available vs pending)</span>
+            <span class="note">3. Card del documento final con botón descarga</span>
+            <span class="note">4. Mensaje de felicitaciones (solo cuando available)</span>
+            <span class="note">5. Card de soporte WhatsApp (siempre visible)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOCALSTORAGE -->
+  <div class="schema-section" id="cp-storage">
+    <div class="section-heading">
+      <div class="section-dot" style="background:#5B4CE2"></div>
+      <h2>LocalStorage</h2>
+      <span class="section-badge" style="background:#f0f0ff;color:#4A3BB8">1 clave</span>
+    </div>
+    <div class="card">
+      <div class="ratio-row">
+        <div class="ratio-left">
+          <span class="ratio-name">userDashboardNotes</span>
+          <span class="ratio-key">notas por paso</span>
+        </div>
+        <div class="ratio-right">
+          <span class="formula">JSON → { "discovery": "texto…", "videocall": "texto…", "cerrado": "texto…" }</span>
+          <div class="meta-row"><span class="pill pill-ok">Por paso</span></div>
+          <span class="note">Mapa de <code style="font-size:.7rem">stepId → string</code>. Se carga al seleccionar un paso y se guarda al pulsar el botón "Guardar" de la sección de notas. Las notas son independientes por paso.</span>
+        </div>
+      </div>
+      <div class="fields-bar" style="border-top:1px solid var(--border);border-bottom:none">
+        <span class="note" style="font-size:.72rem">El resto del estado del proceso (<code style="font-size:.7rem">stepContent</code>, <code style="font-size:.7rem">currentStep</code>, progreso del discovery) NO se persiste en localStorage — vive solo en memoria durante la sesión. El servidor es la fuente de verdad para el estado del proceso.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MONEY MAP SUMMARY MODAL -->
+  <div class="schema-section" id="cp-mms">
+    <div class="section-heading">
+      <div class="section-dot" style="background:#5B4CE2"></div>
+      <h2>Money Map Summary Modal</h2>
+      <span class="section-badge" style="background:#f0f0ff;color:#4A3BB8">mmsOverlay</span>
+    </div>
+    <div class="card">
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">Activación</span></div>
+        <div class="ratio-right">
+          <span class="note">Se abre al hacer clic en el banner dark "Money Map Summary" dentro del paso Cerrado. Se cierra con el botón ✕, el botón "Cerrar" o clic en el overlay exterior.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">metrics[]</span><span class="ratio-key">grid 2×2</span></div>
+        <div class="ratio-right">
+          <span class="formula">{ label, value, color? }</span>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">
+            <span class="tag">Ingresos actuales</span>
+            <span class="tag">Potencial identificado (+verde)</span>
+            <span class="tag">Oportunidades</span>
+            <span class="tag">Prioridad alta (ámbar)</span>
+          </div>
+          <span class="note" style="margin-top:5px">4 métricas en grid 2×2. Los colores <code style="font-size:.7rem">green</code> y <code style="font-size:.7rem">amber</code> son clases CSS en el valor.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">insights[]</span><span class="ratio-key">lista semáforo</span></div>
+        <div class="ratio-right">
+          <span class="formula">{ text, type: "green" | "amber" }</span>
+          <div class="meta-row">
+            <span class="pill pill-ok">green — hallazgo positivo</span>
+            <span class="pill pill-warn">amber — área de atención</span>
+          </div>
+          <span class="note">Lista de hallazgos con dot de color. Verde = oportunidad o logro. Ámbar = problema o riesgo que requiere atención. Los datos son específicos del cliente — se generan en el análisis.</span>
+        </div>
+      </div>
+      <div class="ratio-row">
+        <div class="ratio-left"><span class="ratio-name">Notificaciones toast</span><span class="ratio-key">sistema global</span></div>
+        <div class="ratio-right">
+          <span class="formula">showNotification(message) — fixed, top-right, 3s</span>
+          <span class="note">Sistema de notificaciones global usado en todo el dashboard. Se crea un <code style="font-size:.7rem">div</code> dinámico con animación <code style="font-size:.7rem">slideInRight</code>. Se autodestruye a los 3s con <code style="font-size:.7rem">slideOutRight</code>.</span>
         </div>
       </div>
     </div>
