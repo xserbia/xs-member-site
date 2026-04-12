@@ -527,13 +527,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <div class="fields-bar">
         <span class="field-label">Campos por ítem:</span>
         <span class="field-chip">tipo</span>
-        <span class="field-chip">aseguradora</span>
-        <span class="field-chip">numeroPoliza</span>
         <span class="field-chip">cobertura</span>
         <span class="field-chip">prima</span>
         <span class="field-chip">frecuenciaPrima</span>
         <span class="field-chip">deducible</span>
-        <span class="field-chip">beneficiario</span>
+        <span class="field-chip">tieneBeneficiario</span>
         <span class="field-chip">renovacion</span>
         <span class="field-chip">notas</span>
       </div>
@@ -650,7 +648,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <div class="group-left"><span class="group-name" style="color:var(--muted);font-weight:400">Se registra en</span></div>
         <div class="group-right">
           <span class="tag">Cada activo <em>(activos[].beneficiario)</em></span>
-          <span class="tag">Cada póliza <em>(polizas[].beneficiario)</em></span>
+          <span class="tag">Póliza — tiene beneficiario sí/no <em>(polizas[].tieneBeneficiario)</em></span>
         </div>
       </div>
       <div class="group-row">
