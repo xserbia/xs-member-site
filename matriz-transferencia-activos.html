@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matriz de Transferencia de Activos</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; color: #0f172a; padding: 24px; }
+.wrap { max-width: 900px; margin: 0 auto; }
+h1 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.sub { font-size: 13px; color: #64748b; margin-bottom: 20px; }
+
+.mx-legend { display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px; }
+.mx-leg { display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b; }
+.mx-dot { width:12px;height:12px;border-radius:50%;display:inline-block; }
+.mx-filters { display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px; }
+.mx-chip { padding:4px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid #e2e8f0;color:#64748b;background:transparent;transition:all .15s;font-family:inherit; }
+.mx-chip.active { background:#1D9E75;border-color:#1D9E75;color:#fff; }
+.mx-tbl-wrap { overflow-x:auto; }
+table.mx { border-collapse:collapse;width:100%;min-width:620px; }
+table.mx th, table.mx td { padding:0; }
+.mx-th-asset { width:150px;min-width:150px;text-align:left;font-size:12px;font-weight:500;color:#64748b;padding:0 8px 8px 0;vertical-align:bottom;border-bottom:1px solid #e2e8f0; }
+.mx-th-method { text-align:center;padding:0 4px 8px;vertical-align:bottom;border-bottom:1px solid #e2e8f0; }
+.mx-method-name { font-size:10px;color:#64748b;font-weight:500;line-height:1.2;text-align:center;max-width:58px; }
+.mx-tr td { border-bottom:1px solid #e2e8f0;transition:background .1s; }
+.mx-tr:last-child td { border-bottom:none; }
+.mx-tr:hover td { background:#f8fafc; }
+.mx-tr.faded { opacity:0.2; }
+.mx-td-asset { font-size:12px;color:#0f172a;padding:10px 8px 10px 0;white-space:nowrap; }
+.mx-td-asset span { font-size:10px;color:#64748b;display:block; }
+.mx-td-cell { text-align:center;padding:8px 4px; }
+.mx-pill { display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:10px;font-weight:500;transition:transform .1s;cursor:default; }
+.mx-pill:hover { transform:scale(1.2); }
+.mx-pill-p { background:#E1F5EE;color:#0F6E56; }
+.mx-pill-s { background:#FAEEDA;color:#854F0B; }
+.mx-pill-n { background:transparent;color:#e2e8f0; }
+.mx-note { font-size:11px;color:#64748b;margin-top:14px;line-height:1.5; }
+.mx-tag-p { display:inline-block;font-size:9px;padding:1px 5px;border-radius:3px;background:#FAECE7;color:#993C1D;margin-left:4px;vertical-align:middle;font-weight:500; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Matriz de Transferencia de Activos</h1>
+  <p class="sub">Métodos aplicables por tipo de activo — filtrar por categoría · Jurisdicción Florida / EE.UU.</p>
+
+  <div class="mx-legend">
+    <span class="mx-leg"><span class="mx-dot" style="background:#1D9E75"></span>Método primario</span>
+    <span class="mx-leg"><span class="mx-dot" style="background:#FAC775"></span>Método alternativo</span>
+    <span class="mx-leg"><span class="mx-dot" style="background:#e2e8f0"></span>No aplica</span>
+  </div>
+
+  <div class="mx-filters">
+    <button class="mx-chip active" onclick="mxFilter('all',this)">Todos</button>
+    <button class="mx-chip" onclick="mxFilter('inmueble',this)">Bienes raíces</button>
+    <button class="mx-chip" onclick="mxFilter('financiero',this)">Financiero</button>
+    <button class="mx-chip" onclick="mxFilter('retiro',this)">Retiro</button>
+    <button class="mx-chip" onclick="mxFilter('negocio',this)">Negocios</button>
+    <button class="mx-chip" onclick="mxFilter('seguro',this)">Seguros</button>
+  </div>
+
+  <div class="mx-tbl-wrap">
+    <table class="mx">
+      <thead>
+        <tr>
+          <th class="mx-th-asset">Activo</th>
+          <th class="mx-th-method"><div class="mx-method-name">Testamento</div></th>
+          <th class="mx-th-method"><div class="mx-method-name">Fideicomiso revocable</div></th>
+          <th class="mx-th-method"><div class="mx-method-name">Benef. POD/TOD</div></th>
+          <th class="mx-th-method"><div class="mx-method-name">Copropiedad</div></th>
+          <th class="mx-th-method"><div class="mx-method-name">Lady Bird Deed</div></th>
+          <th class="mx-th-method"><div class="mx-method-name">TOD Deed</div></th>
+          <th class="mx-th-method"><div class="mx-method-name">Donación en vida</div></th>
+          <th class="mx-th-method"><div class="mx-method-name">Soc. Familiar</div></th>
+        </tr>
+      </thead>
+      <tbody id="mx-tbody"></tbody>
+    </table>
+  </div>
+
+  <p class="mx-note">P = Método primario recomendado &nbsp;·&nbsp; A = Alternativo válido &nbsp;·&nbsp; <span class="mx-tag-p">probate</span> = sujeto a proceso judicial</p>
+</div>
+
+<script>
+const M = {
+  T: { label:'P', cls:'mx-pill-p', tip:'Primario' },
+  A: { label:'A', cls:'mx-pill-s', tip:'Alternativo' },
+  N: { label:'–', cls:'mx-pill-n', tip:'No aplica' },
+};
+const assets = [
+  { name:'Residencia principal',    note:'Homestead',               cat:'inmueble',   cols:['A','T','N','A','T','A','A','N'] },
+  { name:'Propiedad de inversión',  note:'Rental / comercial',      cat:'inmueble',   cols:['A','T','N','A','A','T','A','A'] },
+  { name:'Cuenta bancaria',         note:'Checking / savings',      cat:'financiero', cols:['A','A','T','A','N','N','A','N'] },
+  { name:'Cuenta de inversión',     note:'Brokerage / taxable',     cat:'financiero', cols:['A','A','T','A','N','N','A','A'] },
+  { name:'IRA / 401(k)',            note:'Cuentas de retiro',       cat:'retiro',     cols:['N','N','T','N','N','N','N','N'] },
+  { name:'Seguro de vida',          note:'Life insurance',          cat:'seguro',     cols:['A','N','T','N','N','N','N','N'] },
+  { name:'Interés en negocio',      note:'LLC / Corp / Partnership', cat:'negocio',   cols:['A','T','N','A','N','N','A','T'] },
+  { name:'Vehículos',               note:'Autos, botes',            cat:'financiero', cols:['A','A','N','A','N','N','A','N'] },
+  { name:'Activos digitales',       note:'Crypto, cuentas online',  cat:'financiero', cols:['A','T','A','N','N','N','A','N'] },
+  { name:'Bienes personales',       note:'Joyas, arte, muebles',    cat:'financiero', cols:['T','A','N','N','N','N','A','N'] },
+];
+
+function render(cat) {
+  const tbody = document.getElementById('mx-tbody');
+  tbody.innerHTML = '';
+  assets.forEach(a => {
+    const faded = cat !== 'all' && a.cat !== cat;
+    const tr = document.createElement('tr');
+    tr.className = 'mx-tr' + (faded ? ' faded' : '');
+    let html = `<td class="mx-td-asset">${a.name}<span>${a.note}</span></td>`;
+    a.cols.forEach(c => {
+      const m = M[c];
+      html += `<td class="mx-td-cell"><span class="mx-pill ${m.cls}" title="${m.tip}">${m.label}</span></td>`;
+    });
+    tr.innerHTML = html;
+    tbody.appendChild(tr);
+  });
+}
+
+function mxFilter(cat, btn) {
+  document.querySelectorAll('.mx-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  render(cat);
+}
+
+render('all');
+</script>
+</body>
+</html>
