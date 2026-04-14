@@ -432,24 +432,23 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
           .mx-tag-p { display:inline-block;font-size:9px;padding:1px 5px;border-radius:3px;background:#FAECE7;color:#993C1D;margin-left:4px;vertical-align:middle;font-weight:500; }
         </style>
         <div class="mx-legend">
-          <span class="mx-leg"><span class="mx-dot" style="background:#1D9E75"></span>Método primario</span>
-          <span class="mx-leg"><span class="mx-dot" style="background:#FAC775"></span>Método alternativo</span>
+          <span class="mx-leg"><span class="mx-dot" style="background:#1D9E75"></span>Aplica</span>
           <span class="mx-leg"><span class="mx-dot" style="background:var(--border)"></span>No aplica</span>
         </div>
         <div class="mx-filters">
           <button class="mx-chip active" onclick="mxFilter('all',this)">Todos</button>
-          <button class="mx-chip" onclick="mxFilter('inmueble',this)">Bienes raíces</button>
-          <button class="mx-chip" onclick="mxFilter('financiero',this)">Financiero</button>
+          <button class="mx-chip" onclick="mxFilter('efectivo',this)">Efectivo</button>
+          <button class="mx-chip" onclick="mxFilter('inversiones',this)">Inversiones</button>
           <button class="mx-chip" onclick="mxFilter('retiro',this)">Retiro</button>
-          <button class="mx-chip" onclick="mxFilter('negocio',this)">Negocios</button>
-          <button class="mx-chip" onclick="mxFilter('seguro',this)">Seguros</button>
+          <button class="mx-chip" onclick="mxFilter('bienesRaices',this)">Bienes Raíces</button>
+          <button class="mx-chip" onclick="mxFilter('bienesPersonales',this)">Bienes Personales</button>
         </div>
       </div>
       <div class="mx-tbl-wrap" style="padding:0 16px">
         <table class="mx">
           <thead>
             <tr>
-              <th class="mx-th-asset">Activo</th>
+              <th class="mx-th-asset">Categoría — Activo</th>
               <th class="mx-th-method"><div class="mx-method-name">Testamento</div></th>
               <th class="mx-th-method"><div class="mx-method-name">Fideicomiso revocable</div></th>
               <th class="mx-th-method"><div class="mx-method-name">Benef. POD/TOD</div></th>
@@ -464,45 +463,101 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         </table>
       </div>
       <div style="padding:0 16px">
-        <p class="mx-note">P = Método primario recomendado &nbsp;·&nbsp; A = Alternativo válido &nbsp;·&nbsp; <span class="mx-tag-p">probate</span> = sujeto a proceso judicial &nbsp;·&nbsp; Aplica jurisdicción de Florida / EE.UU.</p>
+        <p class="mx-note">✓ = Método aplicable &nbsp;·&nbsp; – = No aplica &nbsp;·&nbsp; <span class="mx-tag-p">probate</span> = sujeto a proceso judicial &nbsp;·&nbsp; Aplica jurisdicción de Florida / EE.UU.</p>
       </div>
     </div>
   </div>
   <script>
   (function(){
     const M = {
-      T: { label:'P', cls:'mx-pill-p', tip:'Primario' },
-      A: { label:'A', cls:'mx-pill-s', tip:'Alternativo' },
+      T: { label:'✓', cls:'mx-pill-p', tip:'Aplica' },
+      A: { label:'✓', cls:'mx-pill-p', tip:'Aplica' },
       N: { label:'–', cls:'mx-pill-n', tip:'No aplica' },
     };
-    const assets = [
-      { name:'Residencia principal',    note:'Homestead',              cat:'inmueble',   cols:['A','T','N','A','T','A','A','N'] },
-      { name:'Propiedad de inversión',  note:'Rental / comercial',     cat:'inmueble',   cols:['A','T','N','A','A','T','A','A'] },
-      { name:'Cuenta bancaria',         note:'Checking / savings',     cat:'financiero', cols:['A','A','T','A','N','N','A','N'] },
-      { name:'Cuenta de inversión',     note:'Brokerage / taxable',    cat:'financiero', cols:['A','A','T','A','N','N','A','A'] },
-      { name:'IRA / 401(k)',            note:'Cuentas de retiro',      cat:'retiro',     cols:['N','N','T','N','N','N','N','N'] },
-      { name:'Seguro de vida',          note:'Life insurance',         cat:'seguro',     cols:['A','N','T','N','N','N','N','N'] },
-      { name:'Interés en negocio',      note:'LLC / Corp / Partnership',cat:'negocio',   cols:['A','T','N','A','N','N','A','T'] },
-      { name:'Vehículos',               note:'Autos, botes',           cat:'financiero', cols:['A','A','N','A','N','N','A','N'] },
-      { name:'Activos digitales',       note:'Crypto, cuentas online', cat:'financiero', cols:['A','T','A','N','N','N','A','N'] },
-      { name:'Bienes personales',       note:'Joyas, arte, muebles',   cat:'financiero', cols:['T','A','N','N','N','N','A','N'] },
+
+    // cols: Testamento | Fideicomiso | POD/TOD | Copropiedad | LadyBird | TODDeed | Donacion | SocFam
+    // Ordenado de más líquido a menos líquido
+    const GROUPS = [
+      {
+        cat: 'efectivo', label: 'Efectivo', color: '#185FA5', bg: '#E6F1FB',
+        assets: [
+          { name:'Cuenta corriente',       note:'Checking account',       cols:['A','A','T','A','N','N','A','N'] },
+          { name:'Cuenta de ahorro',        note:'Savings account',        cols:['A','A','T','A','N','N','A','N'] },
+          { name:'Mercado monetario / CD',  note:'Money market / CD',      cols:['A','A','T','A','N','N','A','N'] },
+        ]
+      },
+      {
+        cat: 'inversiones', label: 'Inversiones', color: '#534AB7', bg: '#EEEDFE',
+        assets: [
+          { name:'Cuenta de corretaje',     note:'Brokerage / taxable',    cols:['A','A','T','A','N','N','A','A'] },
+          { name:'ETF / Acciones / Bonos',  note:'Stocks / funds / bonds', cols:['A','A','T','A','N','N','A','A'] },
+          { name:'Criptomonedas',           note:'Crypto / digital assets',cols:['A','T','A','N','N','N','A','N'] },
+        ]
+      },
+      {
+        cat: 'retiro', label: 'Retiro', color: '#854F0B', bg: '#FAEEDA',
+        assets: [
+          { name:'401(k) / 403(b)',         note:'Employer retirement plan',cols:['N','N','T','N','N','N','N','N'] },
+          { name:'IRA / Roth IRA / SEP IRA',note:'Individual retirement',  cols:['N','N','T','N','N','N','N','N'] },
+          { name:'Pensión / Anualidad',      note:'Pension / annuity',      cols:['A','N','T','N','N','N','N','N'] },
+        ]
+      },
+      {
+        cat: 'bienesRaices', label: 'Bienes Raíces', color: '#0F6E56', bg: '#E1F5EE',
+        assets: [
+          { name:'Casa principal',           note:'Homestead',              cols:['A','T','N','A','T','A','A','N'] },
+          { name:'Casa vacacional',           note:'Vacation home',          cols:['A','T','N','A','A','T','A','N'] },
+          { name:'Propiedad de renta',        note:'Rental / investment',    cols:['A','T','N','A','A','T','A','A'] },
+          { name:'Terreno',                   note:'Land',                   cols:['A','T','N','A','A','T','A','N'] },
+        ]
+      },
+      {
+        cat: 'bienesPersonales', label: 'Bienes Personales', color: '#5F5E5A', bg: '#F1EFE8',
+        assets: [
+          { name:'Vehículo',                  note:'Auto / boat / RV',       cols:['A','A','N','A','N','N','A','N'] },
+          { name:'Joyas',                     note:'Jewelry',                cols:['T','A','N','N','N','N','A','N'] },
+          { name:'Arte / Coleccionables',     note:'Art / collectibles',     cols:['T','A','N','N','N','N','A','N'] },
+        ]
+      }
     ];
-    function render(cat) {
+
+    const COLS = 8; // number of method columns
+
+    function render(filterCat) {
       const tbody = document.getElementById('mx-tbody');
       tbody.innerHTML = '';
-      assets.forEach(a => {
-        const faded = cat !== 'all' && a.cat !== cat;
-        const tr = document.createElement('tr');
-        tr.className = 'mx-tr' + (faded ? ' faded' : '');
-        let html = `<td class="mx-td-asset">${a.name}<span>${a.note}</span></td>`;
-        a.cols.forEach(c => {
-          const m = M[c];
-          html += `<td class="mx-td-cell"><span class="mx-pill ${m.cls}" title="${m.tip}">${m.label}</span></td>`;
+
+      GROUPS.forEach(g => {
+        if (filterCat !== 'all' && filterCat !== g.cat) return;
+
+        // Group header row
+        const hdr = document.createElement('tr');
+        hdr.innerHTML = `
+          <td colspan="${COLS + 1}" style="padding:10px 0 6px;border-bottom:none">
+            <span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:3px 10px;border-radius:20px;background:${g.bg};color:${g.color}">${g.label}</span>
+          </td>`;
+        tbody.appendChild(hdr);
+
+        // Asset rows
+        g.assets.forEach((a, i) => {
+          const tr = document.createElement('tr');
+          const isLast = i === g.assets.length - 1;
+          tr.className = 'mx-tr';
+          if (isLast) tr.style.borderBottom = '2px solid var(--border)';
+          let html = `<td class="mx-td-asset" style="padding-left:8px;white-space:normal;min-width:160px">
+            <span style="font-size:12px;font-weight:600;color:var(--text)">${a.name}</span>
+            <span>${a.note}</span>
+          </td>`;
+          a.cols.forEach(c => {
+            const m = M[c];
+            html += `<td class="mx-td-cell"><span class="mx-pill ${m.cls}" title="${m.tip}">${m.label}</span></td>`;
+          });
+          tr.innerHTML = html;
+          tbody.appendChild(tr);
         });
-        tr.innerHTML = html;
-        tbody.appendChild(tr);
       });
     }
+
     window.mxFilter = function(cat, btn) {
       document.querySelectorAll('.mx-chip').forEach(c => c.classList.remove('active'));
       btn.classList.add('active');
