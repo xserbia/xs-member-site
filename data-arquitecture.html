@@ -222,7 +222,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <div class="group-row" style="grid-template-columns:1fr">
         <div class="group-right" style="padding:12px 16px">
           <span class="tag">Salario</span>
-          <span class="tag">Pago por hora</span>
           <span class="tag">Bono</span>
           <span class="tag">Comisión</span>
           <span class="tag">Negocio propio</span>
@@ -737,35 +736,35 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <div class="ratio-row">
         <div class="ratio-left"><span class="ratio-name">ingresoBruto</span></div>
         <div class="ratio-right">
-          <span class="formula">Σ <b>ingresos[].monto</b> × 12</span>
-          <div class="meta-row"><span class="pill pill-a">anual</span><span class="note">Suma todos los ítems del array ingresos[], siempre guardado mensual, se anualiza × 12</span></div>
+          <span class="formula">Σ <b>ingresos[].monto</b></span>
+          <div class="meta-row"><span class="pill pill-a">anual</span><span class="note">Suma todos los ítems del array ingresos[]</span></div>
         </div>
       </div>
       <div class="ratio-row">
         <div class="ratio-left"><span class="ratio-name">ingresoNeto</span></div>
         <div class="ratio-right">
           <span class="formula"><b>ingresoBruto</b> − impuestosAnual</span>
-          <div class="meta-row"><span class="pill pill-a">anual</span><span class="pill pill-der">derivado</span><span class="note">impuestosAnual = Σ gastos.impuestos[].monto × 12</span></div>
+          <div class="meta-row"><span class="pill pill-a">anual</span><span class="pill pill-der">derivado</span><span class="note">impuestosAnual = Σ gastos.impuestos[].monto</span></div>
         </div>
       </div>
       <div class="ratio-row">
         <div class="ratio-left"><span class="ratio-name">ahorroAnual</span></div>
         <div class="ratio-right">
-          <span class="formula">Σ <b>gastos.ahorro[].monto</b> × 12</span>
+          <span class="formula">Σ <b>gastos.ahorro[].monto</b></span>
           <div class="meta-row"><span class="pill pill-a">anual</span><span class="note">Subcategoría ahorro dentro de gastos</span></div>
         </div>
       </div>
       <div class="ratio-row">
         <div class="ratio-left"><span class="ratio-name">deudaAnual</span></div>
         <div class="ratio-right">
-          <span class="formula">Σ <b>gastos.deuda[].monto</b> × 12</span>
-          <div class="meta-row"><span class="pill pill-a">anual</span><span class="note">Pagos mensuales de deuda en gastos — no los balances de deudas[]</span></div>
+          <span class="formula">Σ <b>gastos.deuda[].monto</b></span>
+          <div class="meta-row"><span class="pill pill-a">anual</span><span class="note">Pagos de deuda en gastos — no los balances de deudas[]</span></div>
         </div>
       </div>
       <div class="ratio-row">
         <div class="ratio-left"><span class="ratio-name">gastosAnual</span></div>
         <div class="ratio-right">
-          <span class="formula">Σ <b>gastos.diarios[].monto</b> × 12</span>
+          <span class="formula">Σ <b>gastos.diarios[].monto</b></span>
           <div class="meta-row"><span class="pill pill-a">anual</span><span class="note">Solo gastos del hogar — no incluye ahorro, deuda, seguros ni impuestos</span></div>
         </div>
       </div>
@@ -773,7 +772,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <div class="ratio-left"><span class="ratio-name">pagoDeudaMensual</span></div>
         <div class="ratio-right">
           <span class="formula">Σ <b>gastos.deuda[].monto</b></span>
-          <div class="meta-row"><span class="pill pill-m">mensual</span><span class="note">Igual que deudaAnual sin × 12 — usado en DTI</span></div>
+          <div class="meta-row"><span class="pill pill-m">mensual</span><span class="note">Suma mensual de pagos de deuda — usado en DTI</span></div>
         </div>
       </div>
       <div class="ratio-row">
