@@ -7,9 +7,18 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; color: #0f172a; padding: 24px; }
-.wrap { max-width: 900px; margin: 0 auto; }
-h1 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
-.sub { font-size: 13px; color: #64748b; margin-bottom: 20px; }
+.wrap { max-width: 960px; margin: 0 auto; }
+h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.page-sub { font-size: 13px; color: #64748b; margin-bottom: 32px; }
+.section-block { margin-bottom: 48px; }
+.section-header { margin-bottom: 14px; }
+.section-label { display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:3px 10px;border-radius:20px;margin-bottom:7px; }
+.label-general { background:#E6F1FB;color:#185FA5; }
+.label-florida { background:#EEEDFE;color:#534AB7; }
+.section-title { font-size:16px;font-weight:700;color:#0f172a;margin-bottom:3px; }
+.section-sub { font-size:12px;color:#64748b; }
+.jurisdiction-note { display:flex;gap:8px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:#92400e;line-height:1.5; }
+.section-divider { border:none;border-top:2px solid #e2e8f0;margin:8px 0 32px; }
 
 .mx-legend { display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px; }
 .mx-leg { display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b; }
@@ -18,15 +27,15 @@ h1 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
 .mx-chip { padding:4px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid #e2e8f0;color:#64748b;background:transparent;transition:all .15s;font-family:inherit; }
 .mx-chip.active { background:#1D9E75;border-color:#1D9E75;color:#fff; }
 .mx-tbl-wrap { overflow-x:auto; }
-table.mx { border-collapse:collapse;width:100%;min-width:620px; }
+table.mx { border-collapse:collapse;width:100%;min-width:560px; }
 table.mx th, table.mx td { padding:0; }
-.mx-th-asset { width:150px;min-width:150px;text-align:left;font-size:12px;font-weight:500;color:#64748b;padding:0 8px 8px 0;vertical-align:bottom;border-bottom:1px solid #e2e8f0; }
+.mx-th-asset { width:160px;min-width:160px;text-align:left;font-size:12px;font-weight:500;color:#64748b;padding:0 8px 8px 0;vertical-align:bottom;border-bottom:1px solid #e2e8f0; }
 .mx-th-method { text-align:center;padding:0 4px 8px;vertical-align:bottom;border-bottom:1px solid #e2e8f0; }
-.mx-method-name { font-size:10px;color:#64748b;font-weight:500;line-height:1.2;text-align:center;max-width:58px; }
+.mx-method-name { font-size:10px;color:#64748b;font-weight:500;line-height:1.2;text-align:center;max-width:64px; }
 .mx-tr td { border-bottom:1px solid #e2e8f0;transition:background .1s; }
 .mx-tr:last-child td { border-bottom:none; }
-.mx-tr:hover td { background:#f8fafc; }
-.mx-tr.faded { opacity:0.2; }
+.mx-tr:hover td { background:#f1f5f9; }
+.mx-tr.faded { opacity:0.18; }
 .mx-td-asset { font-size:12px;color:#0f172a;padding:10px 8px 10px 0;white-space:nowrap; }
 .mx-td-asset span { font-size:10px;color:#64748b;display:block; }
 .mx-td-cell { text-align:center;padding:8px 4px; }
@@ -34,51 +43,110 @@ table.mx th, table.mx td { padding:0; }
 .mx-pill:hover { transform:scale(1.2); }
 .mx-pill-p { background:#E1F5EE;color:#0F6E56; }
 .mx-pill-s { background:#FAEEDA;color:#854F0B; }
-.mx-pill-n { background:transparent;color:#e2e8f0; }
-.mx-note { font-size:11px;color:#64748b;margin-top:14px;line-height:1.5; }
+.mx-pill-n { background:transparent;color:#cbd5e1; }
+.mx-note { font-size:11px;color:#64748b;margin-top:12px;line-height:1.5; }
 .mx-tag-p { display:inline-block;font-size:9px;padding:1px 5px;border-radius:3px;background:#FAECE7;color:#993C1D;margin-left:4px;vertical-align:middle;font-weight:500; }
 </style>
 </head>
 <body>
 <div class="wrap">
+
   <h1>Matriz de Transferencia de Activos</h1>
-  <p class="sub">Métodos aplicables por tipo de activo — filtrar por categoría · Jurisdicción Florida / EE.UU.</p>
+  <p class="page-sub">Dos vistas: universal (cualquier jurisdicción) y específica Florida / EE.UU.</p>
 
-  <div class="mx-legend">
-    <span class="mx-leg"><span class="mx-dot" style="background:#1D9E75"></span>Método primario</span>
-    <span class="mx-leg"><span class="mx-dot" style="background:#FAC775"></span>Método alternativo</span>
-    <span class="mx-leg"><span class="mx-dot" style="background:#e2e8f0"></span>No aplica</span>
+  <!-- ── MATRIZ GENERAL ─────────────────────────────────── -->
+  <div class="section-block">
+    <div class="section-header">
+      <span class="section-label label-general">Universal</span>
+      <div class="section-title">Métodos de transferencia — aplicación general</div>
+      <div class="section-sub">Métodos reconocidos en la mayoría de jurisdicciones. No depende de legislación local específica.</div>
+    </div>
+
+    <div class="mx-legend">
+      <span class="mx-leg"><span class="mx-dot" style="background:#1D9E75"></span>Método primario</span>
+      <span class="mx-leg"><span class="mx-dot" style="background:#FAC775"></span>Método alternativo</span>
+      <span class="mx-leg"><span class="mx-dot" style="background:#cbd5e1"></span>No aplica / raro</span>
+    </div>
+
+    <div class="mx-filters">
+      <button class="mx-chip active" onclick="gFilter('all',this)">Todos</button>
+      <button class="mx-chip" onclick="gFilter('inmueble',this)">Bienes raíces</button>
+      <button class="mx-chip" onclick="gFilter('financiero',this)">Financiero</button>
+      <button class="mx-chip" onclick="gFilter('retiro',this)">Retiro</button>
+      <button class="mx-chip" onclick="gFilter('negocio',this)">Negocios</button>
+      <button class="mx-chip" onclick="gFilter('seguro',this)">Seguros</button>
+    </div>
+
+    <div class="mx-tbl-wrap">
+      <table class="mx">
+        <thead>
+          <tr>
+            <th class="mx-th-asset">Activo</th>
+            <th class="mx-th-method"><div class="mx-method-name">Testamento</div></th>
+            <th class="mx-th-method"><div class="mx-method-name">Fideicomiso / Trust</div></th>
+            <th class="mx-th-method"><div class="mx-method-name">Beneficiario designado</div></th>
+            <th class="mx-th-method"><div class="mx-method-name">Copropiedad</div></th>
+            <th class="mx-th-method"><div class="mx-method-name">Donación en vida</div></th>
+            <th class="mx-th-method"><div class="mx-method-name">Entidad familiar (LLC/Soc.)</div></th>
+          </tr>
+        </thead>
+        <tbody id="g-tbody"></tbody>
+      </table>
+    </div>
+    <p class="mx-note">P = Método primario recomendado &nbsp;·&nbsp; A = Alternativo válido &nbsp;·&nbsp; Los efectos exactos (probate, impuestos, timing) varían por país y jurisdicción.</p>
   </div>
 
-  <div class="mx-filters">
-    <button class="mx-chip active" onclick="mxFilter('all',this)">Todos</button>
-    <button class="mx-chip" onclick="mxFilter('inmueble',this)">Bienes raíces</button>
-    <button class="mx-chip" onclick="mxFilter('financiero',this)">Financiero</button>
-    <button class="mx-chip" onclick="mxFilter('retiro',this)">Retiro</button>
-    <button class="mx-chip" onclick="mxFilter('negocio',this)">Negocios</button>
-    <button class="mx-chip" onclick="mxFilter('seguro',this)">Seguros</button>
+  <hr class="section-divider">
+
+  <!-- ── MATRIZ FLORIDA / EE.UU. ───────────────────────── -->
+  <div class="section-block">
+    <div class="section-header">
+      <span class="section-label label-florida">Florida / EE.UU.</span>
+      <div class="section-title">Métodos de transferencia — jurisdicción específica</div>
+      <div class="section-sub">Incluye instrumentos propios del sistema legal de Florida y EE.UU.</div>
+    </div>
+
+    <div class="jurisdiction-note">
+      <span>⚠️</span>
+      <span><strong>Jurisdicción Florida / EE.UU.</strong> — Lady Bird Deed y TOD Deed son instrumentos específicos de este sistema legal y no existen en todas las jurisdicciones. Consultar con abogado local antes de aplicar.</span>
+    </div>
+
+    <div class="mx-legend">
+      <span class="mx-leg"><span class="mx-dot" style="background:#1D9E75"></span>Método primario</span>
+      <span class="mx-leg"><span class="mx-dot" style="background:#FAC775"></span>Método alternativo</span>
+      <span class="mx-leg"><span class="mx-dot" style="background:#cbd5e1"></span>No aplica</span>
+    </div>
+
+    <div class="mx-filters">
+      <button class="mx-chip active" onclick="fFilter('all',this)">Todos</button>
+      <button class="mx-chip" onclick="fFilter('inmueble',this)">Bienes raíces</button>
+      <button class="mx-chip" onclick="fFilter('financiero',this)">Financiero</button>
+      <button class="mx-chip" onclick="fFilter('retiro',this)">Retiro</button>
+      <button class="mx-chip" onclick="fFilter('negocio',this)">Negocios</button>
+      <button class="mx-chip" onclick="fFilter('seguro',this)">Seguros</button>
+    </div>
+
+    <div class="mx-tbl-wrap">
+      <table class="mx">
+        <thead>
+          <tr>
+            <th class="mx-th-asset">Activo</th>
+            <th class="mx-th-method"><div class="mx-method-name">Testamento</div></th>
+            <th class="mx-th-method"><div class="mx-method-name">Fideicomiso revocable</div></th>
+            <th class="mx-th-method"><div class="mx-method-name">Benef. POD/TOD</div></th>
+            <th class="mx-th-method"><div class="mx-method-name">Copropiedad</div></th>
+            <th class="mx-th-method"><div class="mx-method-name">Lady Bird Deed</div></th>
+            <th class="mx-th-method"><div class="mx-method-name">TOD Deed</div></th>
+            <th class="mx-th-method"><div class="mx-method-name">Donación en vida</div></th>
+            <th class="mx-th-method"><div class="mx-method-name">Soc. Familiar</div></th>
+          </tr>
+        </thead>
+        <tbody id="f-tbody"></tbody>
+      </table>
+    </div>
+    <p class="mx-note">P = Método primario recomendado &nbsp;·&nbsp; A = Alternativo válido &nbsp;·&nbsp; <span class="mx-tag-p">probate</span> = sujeto a proceso judicial &nbsp;·&nbsp; Aplica jurisdicción Florida / EE.UU.</p>
   </div>
 
-  <div class="mx-tbl-wrap">
-    <table class="mx">
-      <thead>
-        <tr>
-          <th class="mx-th-asset">Activo</th>
-          <th class="mx-th-method"><div class="mx-method-name">Testamento</div></th>
-          <th class="mx-th-method"><div class="mx-method-name">Fideicomiso revocable</div></th>
-          <th class="mx-th-method"><div class="mx-method-name">Benef. POD/TOD</div></th>
-          <th class="mx-th-method"><div class="mx-method-name">Copropiedad</div></th>
-          <th class="mx-th-method"><div class="mx-method-name">Lady Bird Deed</div></th>
-          <th class="mx-th-method"><div class="mx-method-name">TOD Deed</div></th>
-          <th class="mx-th-method"><div class="mx-method-name">Donación en vida</div></th>
-          <th class="mx-th-method"><div class="mx-method-name">Soc. Familiar</div></th>
-        </tr>
-      </thead>
-      <tbody id="mx-tbody"></tbody>
-    </table>
-  </div>
-
-  <p class="mx-note">P = Método primario recomendado &nbsp;·&nbsp; A = Alternativo válido &nbsp;·&nbsp; <span class="mx-tag-p">probate</span> = sujeto a proceso judicial</p>
 </div>
 
 <script>
@@ -87,23 +155,40 @@ const M = {
   A: { label:'A', cls:'mx-pill-s', tip:'Alternativo' },
   N: { label:'–', cls:'mx-pill-n', tip:'No aplica' },
 };
-const assets = [
+
+// ── DATOS MATRIZ GENERAL (6 columnas) ─────────────────────────────
+// cols: Testamento | Fideicomiso | Benef.designado | Copropiedad | Donacion | Entidad familiar
+const gAssets = [
+  { name:'Inmuebles',           note:'Casa, terreno, apto.',       cat:'inmueble',   cols:['A','T','N','A','A','A'] },
+  { name:'Cuentas bancarias',   note:'Checking / savings',         cat:'financiero', cols:['A','A','T','A','A','N'] },
+  { name:'Inversiones',         note:'Brokerage / valores',        cat:'financiero', cols:['A','A','T','A','A','A'] },
+  { name:'Cuentas de retiro',   note:'Pensión / jubilación',       cat:'retiro',     cols:['N','N','T','N','N','N'] },
+  { name:'Seguro de vida',      note:'Life insurance',             cat:'seguro',     cols:['A','N','T','N','N','N'] },
+  { name:'Negocio / empresa',   note:'Sociedad, participaciones',  cat:'negocio',    cols:['A','T','N','A','A','T'] },
+  { name:'Vehículos',           note:'Autos, embarcaciones',       cat:'financiero', cols:['A','A','N','A','A','N'] },
+  { name:'Activos digitales',   note:'Crypto, cuentas online',     cat:'financiero', cols:['A','T','A','N','A','N'] },
+  { name:'Bienes personales',   note:'Joyas, arte, muebles',       cat:'financiero', cols:['T','A','N','N','A','N'] },
+];
+
+// ── DATOS MATRIZ FLORIDA (8 columnas) ─────────────────────────────
+// cols: Testamento | Fideicomiso | POD/TOD | Copropiedad | LadyBird | TODDeed | Donacion | SocFam
+const fAssets = [
   { name:'Residencia principal',    note:'Homestead',               cat:'inmueble',   cols:['A','T','N','A','T','A','A','N'] },
   { name:'Propiedad de inversión',  note:'Rental / comercial',      cat:'inmueble',   cols:['A','T','N','A','A','T','A','A'] },
   { name:'Cuenta bancaria',         note:'Checking / savings',      cat:'financiero', cols:['A','A','T','A','N','N','A','N'] },
   { name:'Cuenta de inversión',     note:'Brokerage / taxable',     cat:'financiero', cols:['A','A','T','A','N','N','A','A'] },
   { name:'IRA / 401(k)',            note:'Cuentas de retiro',       cat:'retiro',     cols:['N','N','T','N','N','N','N','N'] },
   { name:'Seguro de vida',          note:'Life insurance',          cat:'seguro',     cols:['A','N','T','N','N','N','N','N'] },
-  { name:'Interés en negocio',      note:'LLC / Corp / Partnership', cat:'negocio',   cols:['A','T','N','A','N','N','A','T'] },
+  { name:'Interés en negocio',      note:'LLC / Corp / Partnership',cat:'negocio',    cols:['A','T','N','A','N','N','A','T'] },
   { name:'Vehículos',               note:'Autos, botes',            cat:'financiero', cols:['A','A','N','A','N','N','A','N'] },
   { name:'Activos digitales',       note:'Crypto, cuentas online',  cat:'financiero', cols:['A','T','A','N','N','N','A','N'] },
   { name:'Bienes personales',       note:'Joyas, arte, muebles',    cat:'financiero', cols:['T','A','N','N','N','N','A','N'] },
 ];
 
-function render(cat) {
-  const tbody = document.getElementById('mx-tbody');
+function renderTable(tbodyId, data, cat) {
+  const tbody = document.getElementById(tbodyId);
   tbody.innerHTML = '';
-  assets.forEach(a => {
+  data.forEach(a => {
     const faded = cat !== 'all' && a.cat !== cat;
     const tr = document.createElement('tr');
     tr.className = 'mx-tr' + (faded ? ' faded' : '');
@@ -117,13 +202,21 @@ function render(cat) {
   });
 }
 
-function mxFilter(cat, btn) {
-  document.querySelectorAll('.mx-chip').forEach(c => c.classList.remove('active'));
+function gFilter(cat, btn) {
+  document.querySelectorAll('#g-tbody').forEach(() => {});
+  btn.closest('.section-block').querySelectorAll('.mx-chip').forEach(c => c.classList.remove('active'));
   btn.classList.add('active');
-  render(cat);
+  renderTable('g-tbody', gAssets, cat);
 }
 
-render('all');
+function fFilter(cat, btn) {
+  btn.closest('.section-block').querySelectorAll('.mx-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable('f-tbody', fAssets, cat);
+}
+
+renderTable('g-tbody', gAssets, 'all');
+renderTable('f-tbody', fAssets, 'all');
 </script>
 </body>
 </html>
