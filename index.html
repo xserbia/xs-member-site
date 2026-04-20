@@ -20,7 +20,9 @@
       --shadow:0 14px 34px rgba(15,23,42,.08);
       --radius:18px;
     }
+
     *{box-sizing:border-box}
+
     body{
       margin:0;
       font-family:"Nunito",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
@@ -28,8 +30,10 @@
       color:var(--text);
     }
 
-    /* ===== Layout ===== */
-    .app{ display:flex; min-height:100vh; }
+    .app{
+      display:flex;
+      min-height:100vh;
+    }
 
     /* ===== Sidebar ===== */
     .sidebar{
@@ -40,6 +44,7 @@
       display:flex;
       flex-direction:column;
     }
+
     .brand{
       display:flex;
       align-items:center;
@@ -47,18 +52,25 @@
       padding:8px 10px 18px;
       margin-bottom:10px;
     }
+
     .brand .logo{
-      width:44px;height:44px;border-radius:12px;
+      width:44px;
+      height:44px;
+      border-radius:12px;
       background:linear-gradient(135deg, var(--primary), var(--secondary));
-      display:grid;place-items:center;
-      color:#fff;font-weight:900;
+      display:grid;
+      place-items:center;
+      color:#fff;
+      font-weight:900;
     }
+
     .brand .name{
       font-weight:900;
       letter-spacing:.2px;
       font-size:18px;
       line-height:1.1;
     }
+
     .nav{
       margin-top:12px;
       display:flex;
@@ -66,9 +78,11 @@
       gap:8px;
       flex:1;
     }
+
     .nav a{
       display:flex;
       align-items:center;
+      justify-content:space-between;
       gap:10px;
       text-decoration:none;
       color:var(--text);
@@ -79,35 +93,42 @@
       cursor:pointer;
       user-select:none;
     }
+
     .nav a:hover{ background:#f2f5ff; }
     .nav a.active{ background:var(--primary); color:#fff; }
 
-    .nav .section-title{
-      font-size:12px;
-      font-weight:900;
-      color:var(--muted);
-      margin:14px 10px 6px;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-    }
     .subnav{
-      margin-left:12px;
-      display:flex;
+      margin-left:14px;
+      display:none;
       flex-direction:column;
       gap:6px;
     }
+
     .subnav a{
       padding:10px 12px;
       font-weight:700;
       color:#1f2937;
       border-radius:12px;
       background:transparent;
+      justify-content:flex-start;
     }
+
     .subnav a:hover{ background:#f7f7fb; }
-    .subnav a.active{ background:#eef2ff; color:var(--primary); }
+    .subnav a.active{
+      background:#eef2ff;
+      color:var(--primary);
+    }
+
+    .muted{
+      color:var(--muted);
+      font-weight:800;
+    }
 
     /* ===== Main ===== */
-    .main{ flex:1; padding:26px 28px; }
+    .main{
+      flex:1;
+      padding:26px 28px;
+    }
 
     .card{
       background:var(--card);
@@ -133,6 +154,7 @@
       box-shadow:0 10px 24px rgba(15,23,42,.05);
       flex:1;
     }
+
     .welcomeTitle{
       font-size:34px;
       font-weight:1000;
@@ -156,29 +178,39 @@
       transition:.15s ease;
       flex:0 0 auto;
     }
-    .profileBlock:hover{ box-shadow:0 14px 30px rgba(57,86,232,.10); transform:translateY(-1px); }
+
+    .profileBlock:hover{
+      box-shadow:0 14px 30px rgba(57,86,232,.10);
+      transform:translateY(-1px);
+    }
 
     .profileAvatar{
-      width:46px;height:46px;border-radius:999px;
+      width:46px;
+      height:46px;
+      border-radius:999px;
       background:linear-gradient(135deg,var(--primary),var(--secondary));
-      display:grid;place-items:center;
+      display:grid;
+      place-items:center;
       color:#fff;
       font-weight:1000;
       font-size:18px;
       flex:0 0 auto;
       border:2px solid #c7d2fe;
     }
+
     .profileInfo{
       display:flex;
       flex-direction:column;
       gap:2px;
     }
+
     .profileName{
       font-weight:1000;
       font-size:15px;
       color:#0f172a;
       line-height:1.1;
     }
+
     .profilePlan{
       font-size:11px;
       font-weight:900;
@@ -189,27 +221,51 @@
       display:inline-block;
       letter-spacing:.04em;
     }
+
     .profileChevron{
       color:var(--muted);
       font-size:12px;
       margin-left:4px;
     }
 
-    .muted{ color:var(--muted); font-weight:800; }
+    /* ===== Content card ===== */
+    .contentCard{
+      padding:24px;
+      min-height:420px;
+    }
+
+    .contentCard h3{
+      margin:0 0 10px;
+      font-size:24px;
+      font-weight:900;
+    }
+
+    .contentCard p{
+      margin:0;
+      color:var(--muted);
+      font-weight:700;
+      line-height:1.55;
+    }
 
     /* ===== PROFILE MODAL ===== */
     .modalOverlay{
-      position:fixed;inset:0;
+      position:fixed;
+      inset:0;
       background:rgba(15,23,42,.45);
       backdrop-filter:blur(4px);
       z-index:500;
       display:flex;
       align-items:center;
       justify-content:center;
-      opacity:0;pointer-events:none;
+      opacity:0;
+      pointer-events:none;
       transition:opacity .25s ease;
     }
-    .modalOverlay.open{ opacity:1;pointer-events:all; }
+
+    .modalOverlay.open{
+      opacity:1;
+      pointer-events:all;
+    }
 
     .modalBox{
       background:#fff;
@@ -224,9 +280,11 @@
       transform:translateY(18px) scale(.97);
       transition:transform .28s cubic-bezier(.32,.72,0,1);
     }
-    .modalOverlay.open .modalBox{ transform:translateY(0) scale(1); }
 
-    /* Modal header */
+    .modalOverlay.open .modalBox{
+      transform:translateY(0) scale(1);
+    }
+
     .modalHead{
       padding:22px 26px 0;
       display:flex;
@@ -234,48 +292,75 @@
       justify-content:space-between;
       gap:12px;
     }
+
     .modalHeadLeft{
       display:flex;
       align-items:center;
       gap:14px;
     }
+
     .modalAvatar{
-      width:56px;height:56px;border-radius:999px;
+      width:56px;
+      height:56px;
+      border-radius:999px;
       background:linear-gradient(135deg,var(--primary),var(--secondary));
-      display:grid;place-items:center;
-      color:#fff;font-weight:1000;font-size:22px;
+      display:grid;
+      place-items:center;
+      color:#fff;
+      font-weight:1000;
+      font-size:22px;
       border:3px solid #c7d2fe;
       flex:0 0 auto;
     }
+
     .modalUserName{
-      font-weight:1000;font-size:18px;color:var(--text);line-height:1.1;
+      font-weight:1000;
+      font-size:18px;
+      color:var(--text);
+      line-height:1.1;
     }
+
     .modalUserRole{
-      font-size:12px;font-weight:900;
-      color:var(--primary);background:#eef2ff;
-      padding:3px 10px;border-radius:999px;
-      display:inline-block;margin-top:5px;
+      font-size:12px;
+      font-weight:900;
+      color:var(--primary);
+      background:#eef2ff;
+      padding:3px 10px;
+      border-radius:999px;
+      display:inline-block;
+      margin-top:5px;
     }
+
     .modalClose{
-      width:36px;height:36px;border-radius:999px;
+      width:36px;
+      height:36px;
+      border-radius:999px;
       border:1px solid var(--stroke);
       background:#f8fafc;
       cursor:pointer;
-      display:grid;place-items:center;
-      font-size:18px;color:var(--muted);
+      display:grid;
+      place-items:center;
+      font-size:18px;
+      color:var(--muted);
       transition:.15s ease;
       flex:0 0 auto;
     }
-    .modalClose:hover{ background:#fee2e2;color:#ef4444;border-color:#fecaca; }
 
-    /* Modal tabs */
+    .modalClose:hover{
+      background:#fee2e2;
+      color:#ef4444;
+      border-color:#fecaca;
+    }
+
     .modalTabs{
       display:flex;
       gap:0;
       padding:16px 26px 0;
       border-bottom:1px solid var(--stroke);
       margin-top:16px;
+      overflow-x:auto;
     }
+
     .modalTab{
       padding:10px 16px;
       font-weight:900;
@@ -287,31 +372,43 @@
       user-select:none;
       white-space:nowrap;
     }
-    .modalTab.active{ color:var(--primary); border-bottom-color:var(--primary); }
+
+    .modalTab.active{
+      color:var(--primary);
+      border-bottom-color:var(--primary);
+    }
+
     .modalTab:hover:not(.active){ color:var(--text); }
 
-    /* Modal body */
     .modalBody{
       padding:24px 26px;
       overflow-y:auto;
       flex:1;
     }
+
     .tabPanel{ display:none; }
     .tabPanel.active{ display:block; }
 
-    /* Form elements */
     .formGrid{
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:16px;
     }
-    .formGrid.full{ grid-template-columns:1fr; }
+
+    .formGrid.full{
+      grid-template-columns:1fr;
+    }
+
     .formGroup{
       display:flex;
       flex-direction:column;
       gap:6px;
     }
-    .formGroup.span2{ grid-column:span 2; }
+
+    .formGroup.span2{
+      grid-column:span 2;
+    }
+
     .formLabel{
       font-size:12px;
       font-weight:900;
@@ -319,6 +416,7 @@
       letter-spacing:.04em;
       text-transform:uppercase;
     }
+
     .formInput{
       border:1px solid var(--stroke);
       border-radius:12px;
@@ -331,46 +429,83 @@
       outline:none;
       transition:.15s ease;
     }
-    .formInput:focus{ border-color:#a5b4fc;box-shadow:0 0 0 3px rgba(99,102,241,.1); }
+
+    .formInput:focus{
+      border-color:#a5b4fc;
+      box-shadow:0 0 0 3px rgba(99,102,241,.1);
+    }
+
     .formInput:disabled{
       background:#f8fafc;
       color:var(--muted);
       cursor:not-allowed;
     }
-    select.formInput{ appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; padding-right:36px; }
+
+    select.formInput{
+      appearance:none;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat:no-repeat;
+      background-position:right 14px center;
+      padding-right:36px;
+    }
 
     .sectionDivider{
-      font-size:12px;font-weight:900;color:var(--muted);
-      letter-spacing:.06em;text-transform:uppercase;
+      font-size:12px;
+      font-weight:900;
+      color:var(--muted);
+      letter-spacing:.06em;
+      text-transform:uppercase;
       padding:14px 0 10px;
       border-top:1px solid var(--stroke);
       margin-top:8px;
     }
-    .sectionDivider:first-child{ border-top:none;padding-top:0; }
+
+    .sectionDivider:first-child{
+      border-top:none;
+      padding-top:0;
+    }
 
     .badgeRow{
-      display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:4px;
     }
+
     .badge{
-      font-size:12px;font-weight:900;
-      padding:5px 12px;border-radius:999px;
-      background:#eef2ff;color:var(--primary);
+      font-size:12px;
+      font-weight:900;
+      padding:5px 12px;
+      border-radius:999px;
+      background:#eef2ff;
+      color:var(--primary);
       border:1px solid #c7d2fe;
     }
-    .badge.green{ background:#f0fdf4;color:#16a34a;border-color:#bbf7d0; }
-    .badge.yellow{ background:#fffbeb;color:#d97706;border-color:#fcd34d; }
 
-    /* Password strength */
+    .badge.green{
+      background:#f0fdf4;
+      color:#16a34a;
+      border-color:#bbf7d0;
+    }
+
     .pwStrength{
-      display:flex;gap:4px;margin-top:6px;
+      display:flex;
+      gap:4px;
+      margin-top:6px;
     }
-    .pwBar{
-      flex:1;height:4px;border-radius:999px;
-      background:#e5e7eb;transition:.3s ease;
-    }
-    .pwBar.filled{ background:var(--primary); }
 
-    /* Modal footer */
+    .pwBar{
+      flex:1;
+      height:4px;
+      border-radius:999px;
+      background:#e5e7eb;
+      transition:.3s ease;
+    }
+
+    .pwBar.filled{
+      background:var(--primary);
+    }
+
     .modalFoot{
       padding:16px 26px 20px;
       border-top:1px solid var(--stroke);
@@ -379,30 +514,82 @@
       justify-content:space-between;
       gap:12px;
     }
+
     .btnPrimary{
-      padding:11px 22px;border-radius:12px;border:0;
-      background:var(--primary);color:#fff;
-      font-family:inherit;font-weight:1000;font-size:14px;
-      cursor:pointer;transition:.15s ease;
+      padding:11px 22px;
+      border-radius:12px;
+      border:0;
+      background:var(--primary);
+      color:#fff;
+      font-family:inherit;
+      font-weight:1000;
+      font-size:14px;
+      cursor:pointer;
+      transition:.15s ease;
     }
-    .btnPrimary:hover{ transform:translateY(-1px);box-shadow:0 8px 20px rgba(57,86,232,.22); }
+
+    .btnPrimary:hover{
+      transform:translateY(-1px);
+      box-shadow:0 8px 20px rgba(57,86,232,.22);
+    }
+
     .btnGhost{
-      padding:11px 18px;border-radius:12px;
-      border:1px solid var(--stroke);background:#fff;
-      font-family:inherit;font-weight:900;font-size:14px;
-      color:var(--muted);cursor:pointer;transition:.15s ease;
+      padding:11px 18px;
+      border-radius:12px;
+      border:1px solid var(--stroke);
+      background:#fff;
+      font-family:inherit;
+      font-weight:900;
+      font-size:14px;
+      color:var(--muted);
+      cursor:pointer;
+      transition:.15s ease;
     }
-    .btnGhost:hover{ background:#f8fafc; }
+
+    .btnGhost:hover{
+      background:#f8fafc;
+    }
+
     .btnDanger{
-      padding:11px 18px;border-radius:12px;border:0;
-      background:#fff1f2;color:#ef4444;
-      font-family:inherit;font-weight:1000;font-size:14px;
-      cursor:pointer;border:1px solid #fecaca;transition:.15s ease;
+      padding:11px 18px;
+      border-radius:12px;
+      border:0;
+      background:#fff1f2;
+      color:#ef4444;
+      font-family:inherit;
+      font-weight:1000;
+      font-size:14px;
+      cursor:pointer;
+      border:1px solid #fecaca;
+      transition:.15s ease;
     }
-    .btnDanger:hover{ background:#fee2e2; }
+
+    .btnDanger:hover{
+      background:#fee2e2;
+    }
 
     @media (max-width: 1100px){
       .sidebar{ width:260px; }
+      .welcomeTitle{ font-size:28px; }
+    }
+
+    @media (max-width: 900px){
+      .app{ flex-direction:column; }
+      .sidebar{
+        width:100%;
+        border-right:none;
+        border-bottom:1px solid var(--stroke);
+      }
+      .topBar{
+        flex-direction:column;
+        align-items:stretch;
+      }
+      .formGrid{
+        grid-template-columns:1fr;
+      }
+      .formGroup.span2{
+        grid-column:span 1;
+      }
     }
   </style>
 </head>
@@ -420,28 +607,46 @@
       </div>
 
       <nav class="nav" id="nav">
-        <a class="active" data-key="tablero">Tablero</a>
-        <a data-key="radiografia">Tu Radiografía</a>
-        <a data-key="metas">Tus Metas</a>
-        <a data-key="pax">Pregúntale a Xavier</a>
+        <a class="active" data-key="tablero">
+          <span>Tablero</span>
+        </a>
 
-        <div class="section-title">Conocimiento</div>
-        <div class="subnav">
-          <a data-key="cursos">Cursos</a>
+        <a data-key="radiografia">
+          <span>Tu Radiografía</span>
+        </a>
+
+        <a data-key="metas">
+          <span>Tus Metas</span>
+        </a>
+
+        <a data-key="conocimiento" id="conocimientoBtn">
+          <span>Conocimiento</span>
+          <span id="arrow">▾</span>
+        </a>
+
+        <div class="subnav" id="sub-conocimiento">
+          <a data-key="videos"><span>Videos</span></a>
+          <a data-key="articulos"><span>Artículos</span></a>
+          <a data-key="cursos"><span>Cursos</span></a>
         </div>
 
-        <a data-key="herramientas">Herramientas</a>
-        <a data-key="coach">Tu Coach</a>
+        <a data-key="herramientas">
+          <span>Herramientas</span>
+        </a>
+
+        <a data-key="coach">
+          <span>Tu Coach</span>
+        </a>
 
         <div style="flex:1;min-height:32px;"></div>
+
         <a data-key="signout" style="color:#ef4444;margin-top:auto;">
-          <span style="font-size:16px;">⏻</span> Sign Out
+          <span>⏻ Sign Out</span>
         </a>
       </nav>
     </aside>
 
     <main class="main">
-
       <div class="topBar">
         <div class="card welcomeCard">
           <div class="welcomeTitle" id="pageTitle">Bienvenido, Frank 👋</div>
@@ -457,6 +662,10 @@
         </div>
       </div>
 
+      <div class="card contentCard" id="contentArea">
+        <h3>Tablero</h3>
+        <p>Resumen general del usuario.</p>
+      </div>
     </main>
   </div>
 
@@ -464,7 +673,6 @@
   <div class="modalOverlay" id="modalOverlay">
     <div class="modalBox">
 
-      <!-- Header -->
       <div class="modalHead">
         <div class="modalHeadLeft">
           <div class="modalAvatar">F</div>
@@ -476,17 +684,14 @@
         <button class="modalClose" id="modalClose">✕</button>
       </div>
 
-      <!-- Tabs -->
       <div class="modalTabs" id="modalTabs">
         <div class="modalTab active" data-panel="personal">Información Personal</div>
         <div class="modalTab" data-panel="empleo">Empleo</div>
         <div class="modalTab" data-panel="acceso">Acceso & Contraseña</div>
       </div>
 
-      <!-- Body -->
       <div class="modalBody">
 
-        <!-- PANEL: Información Personal -->
         <div class="tabPanel active" id="panel-personal">
           <div class="formGrid">
             <div class="formGroup">
@@ -524,7 +729,6 @@
           </div>
         </div>
 
-        <!-- PANEL: Empleo -->
         <div class="tabPanel" id="panel-empleo">
           <div class="sectionDivider">Datos del empleado</div>
           <div class="formGrid">
@@ -558,6 +762,7 @@
               <input class="formInput" type="text" value="Tiempo completo" disabled/>
             </div>
           </div>
+
           <div class="sectionDivider">Acceso al programa</div>
           <div style="display:flex;flex-direction:column;gap:8px;">
             <div class="formLabel">Plan activo</div>
@@ -565,18 +770,19 @@
               <span class="badge">✦ Members Pro</span>
               <span class="badge green">✓ Activo</span>
             </div>
+
             <div class="formLabel" style="margin-top:10px;">Módulos habilitados</div>
             <div class="badgeRow">
               <span class="badge">Tablero</span>
               <span class="badge">Tu Radiografía</span>
               <span class="badge">Tus Metas</span>
+              <span class="badge">Conocimiento</span>
               <span class="badge">Herramientas</span>
               <span class="badge">Tu Coach</span>
             </div>
           </div>
         </div>
 
-        <!-- PANEL: Acceso & Contraseña -->
         <div class="tabPanel" id="panel-acceso">
           <div class="sectionDivider">Credenciales de acceso</div>
           <div class="formGrid full">
@@ -585,6 +791,7 @@
               <input class="formInput" type="email" value="frank.garcia@empresa.com" disabled/>
             </div>
           </div>
+
           <div class="sectionDivider">Cambiar contraseña</div>
           <div class="formGrid full">
             <div class="formGroup">
@@ -606,6 +813,7 @@
               <input class="formInput" type="password" placeholder="••••••••"/>
             </div>
           </div>
+
           <div class="sectionDivider">Sesiones activas</div>
           <div style="border:1px solid var(--stroke);border-radius:14px;overflow:hidden;">
             <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#f8fafc;border-bottom:1px solid var(--stroke);">
@@ -615,6 +823,7 @@
               </div>
               <span class="badge green">Activa</span>
             </div>
+
             <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;">
               <div>
                 <div style="font-weight:900;font-size:14px;">Safari · iPhone · Miami, FL</div>
@@ -625,9 +834,8 @@
           </div>
         </div>
 
-      </div><!-- /modalBody -->
+      </div>
 
-      <!-- Footer -->
       <div class="modalFoot">
         <button class="btnDanger">⏻ Cerrar sesión</button>
         <div style="display:flex;gap:10px;">
@@ -636,30 +844,108 @@
         </div>
       </div>
 
-    </div><!-- /modalBox -->
-  </div><!-- /modalOverlay -->
+    </div>
+  </div>
 
   <script>
     const pageTitles = {
-      tablero:      'Bienvenido, Frank 👋',
-      radiografia:  'Tu Radiografía',
-      metas:        'Tus Metas',
-      pax:          'Pregúntale a Xavier',
-      cursos:       'Cursos',
+      tablero: 'Bienvenido, Frank 👋',
+      radiografia: 'Tu Radiografía',
+      metas: 'Tus Metas',
+      conocimiento: 'Conocimiento',
+      videos: 'Videos',
+      articulos: 'Artículos',
+      cursos: 'Cursos',
       herramientas: 'Herramientas',
-      coach:        'Tu Coach',
-      signout:      'Sign Out',
+      coach: 'Tu Coach',
+      signout: 'Sign Out'
     };
 
-    const nav       = document.getElementById('nav');
+    const contentTemplates = {
+      tablero: `
+        <h3>Tablero</h3>
+        <p>Resumen general del usuario.</p>
+      `,
+      radiografia: `
+        <h3>Tu Radiografía</h3>
+        <p>Aquí puedes mostrar el diagnóstico financiero del usuario.</p>
+      `,
+      metas: `
+        <h3>Tus Metas</h3>
+        <p>Aquí puedes mostrar metas, progreso y próximos pasos.</p>
+      `,
+      conocimiento: `
+        <h3>Conocimiento</h3>
+        <p>Selecciona una categoría: Videos, Artículos o Cursos.</p>
+      `,
+      videos: `
+        <h3>Videos</h3>
+        <p>Aquí va la librería de videos educativos.</p>
+      `,
+      articulos: `
+        <h3>Artículos</h3>
+        <p>Aquí van los artículos y lecturas de la plataforma.</p>
+      `,
+      cursos: `
+        <h3>Cursos</h3>
+        <p>Aquí van los cursos estructurados por módulos.</p>
+      `,
+      herramientas: `
+        <h3>Herramientas</h3>
+        <p>Aquí puedes mostrar calculadoras, recursos y utilidades.</p>
+      `,
+      coach: `
+        <h3>Tu Coach</h3>
+        <p>Aquí puedes integrar el espacio de acompañamiento o seguimiento.</p>
+      `,
+      signout: `
+        <h3>Sign Out</h3>
+        <p>Salida del sistema.</p>
+      `
+    };
+
+    const nav = document.getElementById('nav');
     const pageTitle = document.getElementById('pageTitle');
+    const contentArea = document.getElementById('contentArea');
+
+    const conocimientoBtn = document.getElementById('conocimientoBtn');
+    const subMenu = document.getElementById('sub-conocimiento');
+    const arrow = document.getElementById('arrow');
+
+    subMenu.style.display = 'none';
 
     nav.addEventListener('click', (e) => {
       const a = e.target.closest('a');
       if(!a || !a.dataset.key) return;
+
+      const key = a.dataset.key;
+
+      if(key === 'conocimiento'){
+        return;
+      }
+
       [...nav.querySelectorAll('a')].forEach(x => x.classList.remove('active'));
       a.classList.add('active');
-      pageTitle.textContent = pageTitles[a.dataset.key] || '';
+
+      pageTitle.textContent = pageTitles[key] || '';
+      contentArea.innerHTML = pageTitles[key]
+        ? (contentTemplates[key] || '')
+        : '';
+    });
+
+    conocimientoBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const open = subMenu.style.display === 'flex';
+      subMenu.style.display = open ? 'none' : 'flex';
+      arrow.textContent = open ? '▾' : '▴';
+
+      [...nav.querySelectorAll('a')].forEach(x => x.classList.remove('active'));
+      conocimientoBtn.classList.add('active');
+
+      pageTitle.textContent = pageTitles.conocimiento;
+      contentArea.innerHTML = contentTemplates.conocimiento;
     });
 
     // Modal open/close
@@ -680,8 +966,10 @@
     modalTabs.addEventListener('click', (e) => {
       const tab = e.target.closest('.modalTab');
       if(!tab) return;
+
       [...modalTabs.querySelectorAll('.modalTab')].forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
+
       document.querySelectorAll('.tabPanel').forEach(p => p.classList.remove('active'));
       document.getElementById('panel-' + tab.dataset.panel).classList.add('active');
     });
@@ -690,9 +978,18 @@
     const newPw = document.getElementById('newPw');
     if(newPw) newPw.addEventListener('input', () => {
       const v = newPw.value;
-      const strength = [v.length>=8, /[A-Z]/.test(v), /[0-9]/.test(v), /[^A-Za-z0-9]/.test(v)];
+      const strength = [
+        v.length >= 8,
+        /[A-Z]/.test(v),
+        /[0-9]/.test(v),
+        /[^A-Za-z0-9]/.test(v)
+      ];
+
       ['pb1','pb2','pb3','pb4'].forEach((id,i) => {
-        document.getElementById(id).classList.toggle('filled', strength.slice(0,i+1).every(Boolean) || (i===0 && v.length>0));
+        document.getElementById(id).classList.toggle(
+          'filled',
+          strength.slice(0, i + 1).every(Boolean) || (i === 0 && v.length > 0)
+        );
       });
     });
   </script>
