@@ -9,10 +9,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
   :root {
-    --navy: #0f2744;
-    --navy-light: #1a3a5c;
-    --accent: #2b7fff;
-    --accent-light: #e8f1ff;
+    --navy: #1a56db;
+    --navy-light: #1e3a8a;
+    --accent: #1a56db;
+    --accent-light: #eff6ff;
     --green: #0e9f6e;
     --green-light: #e8faf3;
     --amber: #c27803;
@@ -220,7 +220,7 @@
     width: 100%;
     transition: border-color 0.15s;
   }
-  input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(43,127,255,0.1); }
+  input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,86,219,0.1); }
   .del-btn {
     width: 28px; height: 28px;
     border: 1px solid var(--gray-200);
@@ -341,7 +341,7 @@
   .act-btn:hover { background: var(--gray-50); }
   .act-btn.on-keep { background: #f0fdf4; border-color: #86efac; color: #166534; font-weight: 500; }
   .act-btn.on-sell { background: #fffbeb; border-color: #fcd34d; color: #b45309; font-weight: 500; }
-  .act-btn.on-refi { background: var(--accent-light); border-color: #93c5fd; color: #1d4ed8; font-weight: 500; }
+  .act-btn.on-refi { background: var(--accent-light); border-color: #93c5fd; color: #1a56db; font-weight: 500; }
   .act-btn.on-surr { background: #fef2f2; border-color: #fca5a5; color: #b91c1c; font-weight: 500; }
   .action-note {
     font-size: 12px; color: var(--gray-500);
@@ -359,7 +359,7 @@
   .alert-warn { background: var(--amber-light); color: #78350f; }
   .alert-danger { background: var(--red-light); color: #7f1d1d; }
   .alert-ok { background: var(--green-light); color: #064e3b; }
-  .alert-info { background: var(--accent-light); color: #1e40af; }
+  .alert-info { background: var(--accent-light); color: #1e3a8a; }
 
   /* STRATEGY */
   .strat-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
@@ -373,7 +373,7 @@
   .stab:hover { border-color: var(--gray-300); }
   .stab-hint { font-size: 10px; display: block; margin-bottom: 1px; opacity: 0.6; }
   .stab.s-snow.on { background: var(--green-light); border-color: var(--green); color: #065f46; font-weight: 500; }
-  .stab.s-consol.on { background: var(--accent-light); border-color: var(--accent); color: #1e40af; font-weight: 500; }
+  .stab.s-consol.on { background: var(--accent-light); border-color: var(--accent); color: #1e3a8a; font-weight: 500; }
   .stab.s-negot.on { background: var(--amber-light); border-color: #f59e0b; color: #78350f; font-weight: 500; }
 
   .step-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 16px; }
@@ -395,7 +395,7 @@
 
   /* RESULT BOX */
   .result-box {
-    background: var(--navy);
+    background: #1a56db;
     border-radius: var(--radius-lg);
     padding: 18px 20px;
     margin-top: 20px;
@@ -429,13 +429,13 @@
   .btn-next {
     flex: 1; padding: 10px 20px;
     border: none; border-radius: var(--radius);
-    background: var(--navy); font-size: 13px; font-weight: 600;
+    background: #1a56db; font-size: 13px; font-weight: 600;
     cursor: pointer; color: #fff;
     font-family: 'DM Sans', sans-serif;
     transition: background 0.15s;
     letter-spacing: 0.01em;
   }
-  .btn-next:hover { background: var(--navy-light); }
+  .btn-next:hover { background: #1e3a8a; }
 
   /* EXTRA SLIDER */
   .slider-section { margin-bottom: 20px; }
@@ -538,7 +538,7 @@
     <div class="sel-summary" id="sel-summary"></div>
     <div class="nav-row">
       <button class="btn-back" onclick="goPhase(1)">← Atrás</button>
-      <button class="btn-next" id="btn-p2next" onclick="goPhase(3)">Siguiente: decisiones de activos →</button>
+      <button class="btn-next" id="btn-p2next" onclick="hasSelectedAssets()?goPhase(3):goPhase(4)">Siguiente →</button>
     </div>
   </div>
 
@@ -586,7 +586,7 @@
     <div id="consol-rate-row" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px 16px;margin-bottom:20px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
         <div>
-          <p style="font-size:13px;font-weight:600;color:#1e40af;margin-bottom:2px">APR del préstamo consolidado</p>
+          <p style="font-size:13px;font-weight:600;color:#1e3a8a;margin-bottom:2px">APR del préstamo consolidado</p>
           <p style="font-size:11px;color:#3b82f6">Ingresa la tasa que te ofrece el prestamista</p>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
@@ -594,7 +594,7 @@
             style="width:140px"
             oninput="consolRate=+this.value;document.getElementById('consol-rate-disp-input').value=consolRate.toFixed(1);document.getElementById('consol-rate-disp').textContent=consolRate.toFixed(1)+'%';renderStrat()">
           <input type="number" id="consol-rate-disp-input" min="1" max="30" step="0.1" value="9.5"
-            style="width:72px;font-size:16px;font-weight:600;color:#1e40af;text-align:center;border:1px solid #93c5fd;border-radius:7px;padding:5px 8px"
+            style="width:72px;font-size:16px;font-weight:600;color:#1e3a8a;text-align:center;border:1px solid #93c5fd;border-radius:7px;padding:5px 8px"
             oninput="consolRate=+this.value||9.5;document.getElementById('consol-rate-slider').value=consolRate;document.getElementById('consol-rate-disp').textContent=consolRate.toFixed(1)+'%';renderStrat()">
           <span id="consol-rate-disp" style="display:none">9.5%</span>
         </div>
@@ -622,7 +622,7 @@
     <div id="strat-output"></div>
 
     <div class="nav-row" style="margin-top: 28px;">
-      <button class="btn-back" onclick="goPhase(3)">← Atrás</button>
+      <button class="btn-back" onclick="goPhase(3,'back')">← Atrás</button>
       
     </div>
   </div>
@@ -675,7 +675,7 @@ function renderInvMetrics(){
   document.getElementById('inv-metrics').innerHTML =
     metricColor('Deuda total', fmt(td), '', '#fef2f2','#b91c1c','#fca5a5') +
     metricColor('Servicio mensual', fmt(tm), 'pagos mínimos', '#fff7ed','#c2410c','#fdba74') +
-    metricColor('Con activo', fmt(sec), '', '#eff6ff','#1d4ed8','#93c5fd') +
+    metricColor('Con activo', fmt(sec), '', '#eff6ff','#1a56db','#93c5fd') +
     metricColor('Sin activo', fmt(td-sec), 'deuda expuesta', '#fdf4ff','#7e22ce','#d8b4fe');
 }
 function metric(label, value, sub){
@@ -782,7 +782,7 @@ function renderSelCards(){
   var groups=[
     {label:'Recomendadas — atacar primero', ghBg:'#fef2f2', ghColor:'#b91c1c', pillBg:'#fef2f2', pillColor:'#b91c1c', pText:'Prioridad 1', pCls:'chip-red', prio:[1]},
     {label:'Opcionales — incluir si tienes flujo', ghBg:'#fffbeb', ghColor:'#b45309', pillBg:'#fffbeb', pillColor:'#b45309', pText:'Prioridad 2', pCls:'chip-amber', prio:[2]},
-    {label:'Complementarias', ghBg:'#eff6ff', ghColor:'#1d4ed8', pillBg:'#eff6ff', pillColor:'#1d4ed8', pText:'Prioridad 3', pCls:'', prio:[3]}
+    {label:'Complementarias', ghBg:'#eff6ff', ghColor:'#1a56db', pillBg:'#eff6ff', pillColor:'#1a56db', pText:'Prioridad 3', pCls:'', prio:[3]}
   ];
   groups.forEach(function(g){
     var gCats=cats.filter(function(c){return !c.excluded&&g.prio.indexOf(c.priority)>=0&&c.items.length>0;});
@@ -857,7 +857,9 @@ function updateSelSummary(){
     +' &nbsp;·&nbsp; Total a resolver: <b>'+fmt(bal)+'</b>'
     +' &nbsp;·&nbsp; Servicio mensual: <b>'+fmt(mn)+'</b>'
     +(cnt===0?'<br><span style="color:#b91c1c;font-size:12px">Selecciona al menos una deuda para continuar.</span>':'');
-  document.getElementById('btn-p2next').disabled=cnt===0;
+  var btn=document.getElementById('btn-p2next');
+  btn.disabled=cnt===0;
+  btn.textContent=hasSelectedAssets()?'Siguiente: decisiones de activos →':'Siguiente: estrategia de salida →';
 }
 
 /* ---- PHASE 3 ---- */
@@ -993,7 +995,7 @@ function renderStratMetrics(){
   document.getElementById('strat-metrics').innerHTML=
     metricColor('Deuda a resolver', fmt(tot), el.length+' deudas', '#fef2f2','#b91c1c','#fca5a5') +
     metricColor('Pagos mínimos', fmt(pm), 'por mes', '#fff7ed','#c2410c','#fdba74') +
-    metricColor('Total con extra', fmt(pm+extraPay), '/mes', '#eff6ff','#1d4ed8','#93c5fd');
+    metricColor('Total con extra', fmt(pm+extraPay), '/mes', '#eff6ff','#1a56db','#93c5fd');
 }
 function renderStrat(){
   renderStratMetrics();
@@ -1013,7 +1015,7 @@ function renderStrat(){
       {n:'Paso 4',t:'Efecto de nieve',d:'Al liquidar una, suma su pago a la siguiente. En '+c.months+' meses puedes terminar el plan completo.'}
     ];
   } else if(curStrat==='consol'){
-    c=consol(dl,extraPay,consolRate); c1='#2b7fff'; c2='#dbeafe';
+    c=consol(dl,extraPay,consolRate); c1='#1a56db'; c2='#dbeafe';
     steps=[
       {n:'Paso 1',t:'Verifica tu crédito',d:'Necesitas score 650+ para tasas competitivas (8–12%). Obtén tu reporte en annualcreditreport.com sin costo.'},
       {n:'Paso 2',t:'Compara 3 opciones',d:'Préstamo personal, balance transfer 0% intro, o HELOC si tienes equity. No aceptes el primero que encuentres.'},
@@ -1022,7 +1024,7 @@ function renderStrat(){
     ];
   } else if(curStrat==='negot'){
     c=negot(dl,extraPay,negotPct); c1='#c27803'; c2='#fef9c3';
-    warn='<div class="alert alert-info" style="margin-bottom:8px"><span class="alert-icon" style="color:#1e40af">i</span><span><b>¿Cuándo usar esta estrategia?</b> La negociación funciona cuando ya estás en mora (+90 días sin pagar) o la situación financiera es crítica — pérdida de empleo, enfermedad, reducción severa de ingresos. Los acreedores solo aceptan reducir el saldo cuando ven que la alternativa es no cobrar nada. Si estás al día en tus pagos, es muy difícil que negocien una quita.</span></div>'
+    warn='<div class="alert alert-info" style="margin-bottom:8px"><span class="alert-icon" style="color:#1e3a8a">i</span><span><b>¿Cuándo usar esta estrategia?</b> La negociación funciona cuando ya estás en mora (+90 días sin pagar) o la situación financiera es crítica — pérdida de empleo, enfermedad, reducción severa de ingresos. Los acreedores solo aceptan reducir el saldo cuando ven que la alternativa es no cobrar nada. Si estás al día en tus pagos, es muy difícil que negocien una quita.</span></div>'
     +'<div class="alert alert-warn" style="margin-bottom:8px"><span class="alert-icon">▲</span><span>La negociación puede reducir tu score hasta 100 puntos temporalmente. La deuda perdonada puede ser ingreso gravable (Form 1099-C). Consulta un contador antes de cerrar acuerdos.</span></div>';
     var rights='<div style="border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-top:16px;background:#fff">'
     +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
@@ -1037,7 +1039,7 @@ function renderStrat(){
     +'</div>'
     +'<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">'
     +'<span style="font-size:11px;color:#9ca3af">Fuente: Consumer Financial Protection Bureau (CFPB) · Actualizado dic. 2024</span>'
-    +'<a href="https://www.consumerfinance.gov/ask-cfpb/when-and-how-often-can-a-debt-collector-call-me-on-the-phone-en-2110/" target="_blank" style="font-size:11px;color:#2b7fff;text-decoration:none;font-weight:500">Ver artículo completo →</a>'
+    +'<a href="https://www.consumerfinance.gov/ask-cfpb/when-and-how-often-can-a-debt-collector-call-me-on-the-phone-en-2110/" target="_blank" style="font-size:11px;color:#1a56db;text-decoration:none;font-weight:500">Ver artículo completo →</a>'
     +'</div>'
     +'</div>';
     steps=[
@@ -1059,7 +1061,7 @@ function renderStrat(){
   metricsHtml+=metricColor('Libre de deuda en', c.months+' meses', (c.months/12).toFixed(1)+' años', '#f0fdf4','#166534','#86efac');
   metricsHtml+=metricColor('Interés total pagado', fmt(c.interest), '', '#fef2f2','#b91c1c','#fca5a5');
   if(curStrat==='negot') metricsHtml+=metricColor('Ahorro estimado', fmt(c.reduction), 'deuda perdonada', '#f0fdf4','#166534','#86efac');
-  if(curStrat==='consol') metricsHtml+=metricColor('Nueva tasa', c.rate+'% APR', 'estimado', '#eff6ff','#1d4ed8','#93c5fd');
+  if(curStrat==='consol') metricsHtml+=metricColor('Nueva tasa', c.rate+'% APR', 'estimado', '#eff6ff','#1a56db','#93c5fd');
   metricsHtml+='</div>';
 
   var selBal=0,excBal=0;
@@ -1107,7 +1109,16 @@ function selStrat(s,btn){
 }
 
 /* ---- NAVIGATION ---- */
+function hasSelectedAssets(){
+  return cats.some(function(cat){
+    if(!cat.hasAsset)return false;
+    return cat.items.some(function(d,i){return selectedDebts[cat.id+'-'+i]&&(+d.balance||0)>0;});
+  });
+}
 function goPhase(n){
+  if(n===3&&!hasSelectedAssets()){
+    n=(arguments[1]==='back')?2:4;
+  }
   document.querySelectorAll('.phase').forEach(function(p){p.classList.remove('active');});
   document.getElementById('phase'+n).classList.add('active');
   ['ps1','ps2','ps3','ps4'].forEach(function(id,i){
@@ -1116,6 +1127,10 @@ function goPhase(n){
     if(i+1===n)el.classList.add('active');
     else if(i+1<n)el.classList.add('done');
   });
+  var ps3=document.getElementById('ps3');
+  if(ps3)ps3.style.opacity=hasSelectedAssets()?'':'0.35';
+  var ps3=document.getElementById('ps3');
+  if(ps3)ps3.style.opacity=hasSelectedAssets()?'':'0.3';
   if(n===2){initSelected();renderSelCards();}
   if(n===3){renderAssetCards();}
   if(n===4){renderStratMetrics();renderStrat();}
