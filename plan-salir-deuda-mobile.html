@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Plan de Salida de Deudas</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --blue-main: #1a56db;
+  --blue-light-main: #eff6ff;
+  --blue-mid: #3b82f6;
+  --red: #e53e3e;
+  --red-light: #fff5f5;
+  --orange: #dd6b20;
+  --orange-light: #fffaf0;
+  --blue: #2b6cb0;
+  --blue-light: #ebf8ff;
+  --purple: #6b46c1;
+  --purple-light: #faf5ff;
+  --green: #276749;
+  --green-light: #f0fff4;
+  --amber: #b7791f;
+  --amber-light: #fffff0;
+  --gray-50: #f7fafc;
+  --gray-100: #edf2f7;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e0;
+  --gray-400: #a0aec0;
+  --gray-500: #718096;
+  --gray-700: #2d3748;
+  --gray-900: #1a202c;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --safe-bottom: env(safe-area-inset-bottom, 16px);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: 'Sora', sans-serif;
+  background: var(--gray-50);
+  color: var(--gray-900);
+  font-size: 14px;
+  line-height: 1.5;
+  max-width: 430px;
+  margin: 0 auto;
+}
+
+/* APP SHELL */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* TOP BAR */
+.topbar {
+  background: #fff;
+  border-bottom: 1px solid var(--gray-200);
+  padding: 14px 20px 10px;
+  flex-shrink: 0;
+}
+.topbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.app-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a56db;
+  letter-spacing: -0.3px;
+}
+.step-badge {
+  font-size: 11px;
+  color: var(--gray-400);
+  font-weight: 500;
+}
+.step-dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--gray-200);
+  transition: all 0.25s;
+}
+.dot.active { background: var(--blue-main); width: 22px; border-radius: 4px; }
+.dot.done { background: var(--blue-mid); opacity: 0.5; }
+
+/* SCROLLABLE CONTENT */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 16px 0;
+}
+
+/* PHASE */
+.phase { display: none; }
+.phase.active { display: block; }
+.phase-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 4px;
+  letter-spacing: -0.4px;
+}
+.phase-sub {
+  font-size: 13px;
+  color: var(--gray-400);
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+
+/* METRIC CARDS */
+.metric-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.metric-card {
+  border-radius: var(--radius-sm);
+  padding: 12px 13px;
+  border: 1.5px solid transparent;
+}
+.mc-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+  opacity: 0.7;
+}
+.mc-value {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.mc-sub { font-size: 10px; margin-top: 1px; opacity: 0.6; }
+
+/* DEBT CATEGORY CARDS */
+.cat-card {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.cat-header {
+  display: flex;
+  align-items: center;
+  padding: 13px 14px;
+  gap: 11px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.cat-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+  flex-shrink: 0;
+}
+.cat-info { flex: 1; min-width: 0; }
+.cat-name { font-size: 13px; font-weight: 600; color: var(--gray-900); }
+.cat-sub-lbl { font-size: 11px; color: var(--gray-400); }
+.cat-right { display: flex; align-items: center; gap: 8px; }
+.cat-total { font-size: 13px; font-weight: 600; color: var(--gray-700); }
+.chevron { font-size: 10px; color: var(--gray-300); transition: transform 0.2s; }
+.chevron.open { transform: rotate(90deg); }
+
+.cat-body { display: none; border-top: 1px solid var(--gray-100); padding: 12px 14px; }
+.cat-body.open { display: block; }
+
+/* DEBT ITEM */
+.debt-item {
+  background: var(--gray-50);
+  border: 1px solid var(--gray-100);
+  border-radius: var(--radius-sm);
+  padding: 11px 12px;
+  margin-bottom: 8px;
+}
+.debt-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.debt-row:last-child { margin-bottom: 0; }
+.fi { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.fi.narrow { flex: 0 0 80px; }
+.fl {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+input[type=text], input[type=number] {
+  border: 1.5px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 9px 10px;
+  font-size: 14px;
+  font-family: 'Sora', sans-serif;
+  font-weight: 500;
+  background: #fff;
+  color: var(--gray-900);
+  width: 100%;
+  -webkit-appearance: none;
+}
+input:focus {
+  outline: none;
+  border-color: var(--blue-mid);
+  box-shadow: 0 0 0 3px rgba(26,158,158,0.12);
+}
+.equity-display {
+  font-size: 14px; font-weight: 700;
+  padding: 9px 10px;
+  border-radius: 8px;
+}
+.del-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+.del-btn {
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--gray-400);
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: 'Sora', sans-serif;
+}
+.del-btn:active { background: var(--red-light); color: var(--red); }
+
+.add-btn {
+  width: 100%;
+  border: 1.5px dashed #3b82f6;
+  border-radius: 10px;
+  background: transparent;
+  color: #1a56db;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Sora', sans-serif;
+  margin-top: 4px;
+}
+.add-btn:active { background: #eff6ff; }
+
+/* SELECTION CARDS */
+.group-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--gray-400);
+  margin: 16px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.g-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 9px;
+  font-weight: 700;
+}
+.sel-card {
+  background: #fff;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 13px 14px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  -webkit-user-select: none;
+}
+.sel-card.checked { border-color: #1a56db; background: #eff6ff; }
+.sel-card.excluded { opacity: 0.55; cursor: default; background: var(--gray-50); }
+.chk-box {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  border: 2px solid var(--gray-300);
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; color: #fff;
+  background: #fff;
+  transition: all 0.15s;
+  margin-top: 1px;
+}
+.sel-card.checked .chk-box { background: var(--blue-main); border-color: #1a56db; }
+.sel-card.excluded .chk-box { background: var(--gray-200); border-color: var(--gray-200); }
+.sc-name { font-size: 14px; font-weight: 600; color: var(--gray-900); margin-bottom: 5px; }
+.sc-cat { font-size: 11px; color: var(--gray-400); font-weight: 400; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 5px; }
+.chip {
+  font-size: 11px; padding: 3px 8px;
+  border-radius: 99px;
+  background: var(--gray-100);
+  color: var(--gray-500);
+  font-weight: 500;
+}
+.chip-red { background: #fff5f5; color: #c53030; }
+.chip-amber { background: #fffaf0; color: #c05621; }
+.chip-green { background: #f0fff4; color: #276749; }
+.sc-why { font-size: 12px; color: var(--gray-400); line-height: 1.4; }
+.prio-tag {
+  font-size: 10px; font-weight: 700;
+  padding: 3px 8px; border-radius: 99px;
+  flex-shrink: 0; margin-top: 2px;
+}
+.excl-tag {
+  display: inline-block; margin-top: 5px;
+  font-size: 11px; padding: 3px 9px;
+  border-radius: 99px;
+  background: var(--gray-100); color: var(--gray-500);
+}
+.warn-note {
+  display: flex; align-items: flex-start; gap: 6px;
+  background: var(--amber-light);
+  border-radius: 8px; padding: 7px 9px; margin-top: 5px;
+}
+.warn-note span { font-size: 11px; color: var(--amber); line-height: 1.4; }
+
+.sel-summary {
+  background: #eff6ff;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #1a56db;
+  margin-top: 14px;
+  line-height: 1.6;
+}
+.sel-summary b { color: #1a56db; font-weight: 700; }
+
+/* ASSET CARDS */
+.asset-card {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.asset-name { font-size: 15px; font-weight: 700; color: var(--gray-900); }
+.asset-type { font-size: 11px; color: var(--gray-400); margin-top: 1px; margin-bottom: 12px; }
+.asset-nums {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.an-block {
+  text-align: center;
+  background: var(--gray-50);
+  border-radius: 10px;
+  padding: 9px 6px;
+}
+.an-label { font-size: 9px; font-weight: 700; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+.an-val { font-size: 15px; font-weight: 700; color: var(--gray-900); }
+.action-btns { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.act-btn {
+  flex: 1; min-width: 80px;
+  padding: 10px 8px;
+  border: 2px solid var(--gray-200);
+  border-radius: 10px;
+  background: #fff;
+  font-size: 12px; font-weight: 600;
+  cursor: pointer;
+  font-family: 'Sora', sans-serif;
+  color: var(--gray-500);
+  text-align: center;
+  transition: all 0.15s;
+}
+.act-btn.on-keep { background: var(--green-light); border-color: #68d391; color: var(--green); }
+.act-btn.on-sell { background: var(--amber-light); border-color: #f6ad55; color: var(--amber); }
+.act-btn.on-refi { background: var(--blue-light); border-color: #63b3ed; color: var(--blue); }
+.act-btn.on-surr { background: var(--red-light); border-color: #fc8181; color: var(--red); }
+.action-note {
+  font-size: 12px; color: var(--gray-500);
+  background: var(--gray-50);
+  border-radius: 9px; padding: 9px 11px;
+  line-height: 1.5;
+}
+
+/* ALERTS */
+.alert {
+  display: flex; gap: 9px; align-items: flex-start;
+  border-radius: var(--radius-sm);
+  padding: 11px 13px;
+  font-size: 12px;
+  line-height: 1.55;
+  margin-bottom: 10px;
+}
+.alert-icon { font-size: 13px; font-weight: 700; flex-shrink: 0; }
+.alert-warn { background: var(--amber-light); color: #7b341e; }
+.alert-ok { background: var(--green-light); color: var(--green); }
+.alert-info { background: var(--blue-light); color: var(--blue); }
+.alert-danger { background: var(--red-light); color: var(--red); }
+
+/* STRATEGY */
+.strat-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.stab {
+  padding: 10px 6px;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  font-size: 11px; font-weight: 600;
+  cursor: pointer;
+  font-family: 'Sora', sans-serif;
+  color: var(--gray-500);
+  text-align: center;
+  line-height: 1.3;
+}
+.stab-hint { font-size: 9px; display: block; margin-bottom: 2px; opacity: 0.6; font-weight: 500; }
+.stab.s-snow.on { background: #eff6ff; border-color: #3b82f6; color: #1a56db; }
+.stab.s-consol.on { background: var(--blue-light); border-color: #63b3ed; color: var(--blue); }
+.stab.s-negot.on { background: var(--amber-light); border-color: #f6ad55; color: var(--amber); }
+
+.param-box {
+  display: none;
+  border-radius: var(--radius-sm);
+  padding: 13px 14px;
+  margin-bottom: 16px;
+  border: 1.5px solid transparent;
+}
+.param-box.show { display: block; }
+.param-title { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
+.param-sub { font-size: 11px; margin-bottom: 10px; opacity: 0.7; }
+.param-row { display: flex; align-items: center; gap: 10px; }
+.param-row input[type=range] { flex: 1; }
+.param-val {
+  font-size: 18px; font-weight: 700;
+  min-width: 56px; text-align: right;
+}
+
+.extra-box {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 16px;
+}
+.extra-label { font-size: 12px; font-weight: 700; color: var(--gray-700); margin-bottom: 2px; }
+.extra-sub { font-size: 11px; color: var(--gray-400); margin-bottom: 10px; }
+.extra-amount {
+  font-size: 32px; font-weight: 700;
+  color: #1a56db;
+  letter-spacing: -1px;
+  margin-bottom: 8px;
+}
+input[type=range] {
+  width: 100%; height: 4px;
+  background: var(--gray-200);
+  border-radius: 2px;
+  outline: none;
+  border: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  padding: 0;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--blue-main);
+  cursor: pointer;
+  border: 3px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+.chart-wrap { position: relative; width: 100%; height: 180px; margin-bottom: 8px; }
+.chart-legend { display: flex; gap: 12px; font-size: 11px; color: var(--gray-400); margin-bottom: 14px; }
+.leg-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; display: inline-block; margin-right: 4px; vertical-align: middle; }
+
+.step-list { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+.step-item {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 13px 14px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.step-num-circle {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  flex-shrink: 0;
+  color: #fff;
+}
+.step-title { font-size: 13px; font-weight: 700; color: var(--gray-900); margin-bottom: 3px; }
+.step-desc { font-size: 12px; color: var(--gray-500); line-height: 1.5; }
+
+.rights-box {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-top: 14px;
+}
+.rights-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+}
+.cfpb-badge {
+  background: #ebf8ff; color: #2b6cb0;
+  font-size: 9px; font-weight: 700;
+  padding: 2px 8px; border-radius: 99px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.rights-title { font-size: 13px; font-weight: 700; color: var(--gray-900); }
+.rights-items { display: flex; flex-direction: column; gap: 8px; }
+.rights-item {
+  background: var(--gray-50);
+  border-radius: 9px;
+  padding: 10px 12px;
+}
+.ri-title { font-size: 11px; font-weight: 700; color: var(--gray-700); margin-bottom: 3px; }
+.ri-desc { font-size: 12px; color: var(--gray-500); line-height: 1.45; }
+.cfpb-link {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 12px; padding-top: 10px;
+  border-top: 1px solid var(--gray-100);
+}
+.cfpb-link span { font-size: 11px; color: var(--gray-400); }
+.cfpb-link a { font-size: 12px; color: #1a56db; font-weight: 600; text-decoration: none; }
+
+.result-box {
+  background: var(--blue-main);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-top: 14px;
+}
+.rb-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 10px; }
+.rb-row {
+  display: flex; justify-content: space-between;
+  font-size: 13px; color: rgba(255,255,255,0.65);
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.rb-row:last-child { border: none; color: #fff; font-weight: 700; font-size: 14px; padding-top: 8px; }
+.rb-row span:last-child { color: rgba(255,255,255,0.9); }
+.rb-row:last-child span:last-child { color: #fff; }
+
+/* BOTTOM NAV */
+.bottom-nav {
+  background: #fff;
+  border-top: 1px solid var(--gray-200);
+  padding: 10px 16px;
+  padding-bottom: calc(10px + var(--safe-bottom));
+  flex-shrink: 0;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.btn-back {
+  width: 48px; height: 48px;
+  border: 2px solid var(--gray-200);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--gray-400);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.btn-back:active { background: var(--gray-100); }
+.btn-next {
+  flex: 1;
+  height: 48px;
+  border: none;
+  border-radius: 12px;
+  background: var(--blue-main);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Sora', sans-serif;
+  letter-spacing: 0.01em;
+  transition: background 0.15s;
+}
+.btn-next:active { background: var(--blue-mid); }
+.btn-next:disabled { background: var(--gray-200); color: var(--gray-400); }
+
+.divider { border: none; border-top: 1px solid var(--gray-100); margin: 16px 0; }
+.pb-16 { padding-bottom: 16px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-row">
+      <span class="app-title">Plan de Deuda</span>
+      <span class="step-badge" id="step-badge">Paso 1 de 4</span>
+    </div>
+    <div class="step-dots">
+      <div class="dot active" id="d1"></div>
+      <div class="dot" id="d2"></div>
+      <div class="dot" id="d3"></div>
+      <div class="dot" id="d4"></div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content" id="content">
+
+    <!-- FASE 1 -->
+    <div class="phase active" id="phase1">
+      <p class="phase-title">Inventario</p>
+      <p class="phase-sub">Ingresa tus deudas por categoría.</p>
+      <div class="metric-grid" id="inv-metrics"></div>
+      <div id="cat-list"></div>
+      <div class="pb-16"></div>
+    </div>
+
+    <!-- FASE 2 -->
+    <div class="phase" id="phase2">
+      <p class="phase-title">Selección</p>
+      <p class="phase-sub">Elige qué deudas entran al plan.</p>
+      <div id="sel-cards"></div>
+      <div class="sel-summary" id="sel-summary"></div>
+      <div class="pb-16"></div>
+    </div>
+
+    <!-- FASE 3 -->
+    <div class="phase" id="phase3">
+      <p class="phase-title">Activos</p>
+      <p class="phase-sub">¿Qué haces con cada activo seleccionado?</p>
+      <div id="asset-cards"></div>
+      <hr class="divider">
+      <div class="metric-grid" id="asset-metrics"></div>
+      <div id="asset-alerts"></div>
+      <div class="pb-16"></div>
+    </div>
+
+    <!-- FASE 4 -->
+    <div class="phase" id="phase4">
+      <p class="phase-title">Estrategia</p>
+      <p class="phase-sub">Tu plan personalizado de salida.</p>
+
+      <div class="extra-box">
+        <div class="extra-label">Pago extra mensual disponible</div>
+        <div class="extra-sub">Sobre los mínimos actuales</div>
+        <div class="extra-amount" id="extra-disp">$200</div>
+        <input type="range" id="extra-sl" min="0" max="2000" step="25" value="200"
+          oninput="extraPay=+this.value;document.getElementById('extra-disp').textContent='$'+extraPay.toLocaleString();renderStrat()">
+      </div>
+
+      <div class="metric-grid" id="strat-metrics"></div>
+
+      <div class="strat-tabs">
+        <button class="stab s-snow on" onclick="selStrat('snow',this)"><span class="stab-hint">Motivadora</span>Bola de nieve</button>
+        <button class="stab s-consol" onclick="selStrat('consol',this)"><span class="stab-hint">Un pago</span>Consolidación</button>
+        <button class="stab s-negot" onclick="selStrat('negot',this)"><span class="stab-hint">Reducción</span>Negociación</button>
+      </div>
+
+      <div class="param-box" id="consol-box" style="background:var(--blue-light);border-color:#63b3ed">
+        <div class="param-title" style="color:var(--blue)">APR del préstamo consolidado</div>
+        <div class="param-sub" style="color:var(--blue)">Tasa que te ofrece el prestamista</div>
+        <div class="param-row">
+          <input type="range" min="1" max="30" step="0.5" value="9.5" id="consol-sl"
+            oninput="consolRate=+this.value;document.getElementById('consol-val').textContent=consolRate.toFixed(1)+'%';document.getElementById('consol-inp').value=consolRate.toFixed(1);renderStrat()">
+          <input type="number" id="consol-inp" value="9.5" min="1" max="30" step="0.1"
+            style="width:72px;text-align:center;color:var(--blue);border-color:#63b3ed"
+            oninput="consolRate=+this.value||9.5;document.getElementById('consol-sl').value=consolRate;renderStrat()">
+        </div>
+        <span id="consol-val" style="display:none">9.5%</span>
+      </div>
+
+      <div class="param-box" id="negot-box" style="background:var(--amber-light);border-color:#f6ad55">
+        <div class="param-title" style="color:var(--amber)">Porcentaje a pagar al acreedor</div>
+        <div class="param-sub" style="color:var(--amber)">Típicamente entre 40–60% del saldo</div>
+        <div class="param-row">
+          <input type="range" min="10" max="95" step="1" value="55" id="negot-sl"
+            oninput="negotPct=+this.value;document.getElementById('negot-inp').value=negotPct;renderStrat()">
+          <input type="number" id="negot-inp" value="55" min="10" max="95" step="1"
+            style="width:72px;text-align:center;color:var(--amber);border-color:#f6ad55"
+            oninput="negotPct=Math.min(95,Math.max(10,+this.value||55));document.getElementById('negot-sl').value=negotPct;renderStrat()">
+        </div>
+      </div>
+
+      <div id="strat-output"></div>
+      <div class="pb-16"></div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <button class="btn-back" id="btn-back" onclick="goPhase(curPhase-1)" style="display:none">←</button>
+    <button class="btn-next" id="btn-next" onclick="handleNext()">Siguiente →</button>
+  </div>
+
+</div>
+
+<script>
+var cats=[
+  {id:'cc',  name:'Tarjetas de crédito', sub:'Credit Cards', ic:'CC', bg:'#fff5f5',fc:'#e53e3e',hasAsset:false,priority:1,items:[]},
+  {id:'loc', name:'Línea de crédito personal',sub:'Personal LOC',ic:'LOC',bg:'#faf5ff',fc:'#6b46c1',hasAsset:false,priority:1,items:[]},
+  {id:'auto',name:'Préstamo de auto',sub:'Auto Loan',ic:'AU',bg:'#ebf8ff',fc:'#2b6cb0',hasAsset:true,priority:2,items:[]},
+  {id:'heloc',name:'Línea hipotecaria',sub:'HELOC',ic:'HE',bg:'#fffff0',fc:'#b7791f',hasAsset:true,priority:3,items:[]},
+  {id:'mortgage',name:'Hipoteca',sub:'Mortgage',ic:'MG',bg:'#fff7ed',fc:'#c05621',hasAsset:true,priority:null,excluded:true,
+   excludeReason:'Estrategia separada: refinanciamiento o venta',items:[]},
+  {id:'student',name:'Préstamos estudiantiles',sub:'Student Loans',ic:'SL',bg:'#faf5ff',fc:'#6b46c1',hasAsset:false,priority:null,excluded:true,
+   excludeReason:'No descargables en bancarrota. Evalúa IDR o PSLF',items:[]},
+  {id:'taxes',name:'Impuestos atrasados',sub:'Back Taxes',ic:'TX',bg:'#f7fafc',fc:'#718096',hasAsset:false,priority:null,excluded:true,
+   excludeReason:'Negociación directa con IRS (OIC, plan de pago)',items:[]},
+  {id:'other',name:'Otros préstamos',sub:'Other Loans',ic:'OT',bg:'#f7fafc',fc:'#718096',hasAsset:false,priority:3,items:[]}
+];
+
+var openCats={cc:true,loc:true};
+var selectedDebts={};
+var assetActions={};
+var extraPay=200;
+var consolRate=9.5;
+var negotPct=55;
+var curStrat='snow';
+var chartInst=null;
+var curPhase=1;
+
+function fmt(n){return '$'+Math.round(+n||0).toLocaleString('en-US');}
+function aprChipCls(apr){return apr>=20?'chip-red':apr>=12?'chip-amber':'chip-green';}
+function totalDebt(){return cats.reduce(function(s,c){return s+c.items.reduce(function(ss,d){return ss+(+d.balance||0);},0);},0);}
+function totalMin(){return cats.reduce(function(s,c){return s+c.items.reduce(function(ss,d){return ss+(+d.min||0);},0);},0);}
+
+function metricCard(label,value,sub,bg,color,border){
+  return '<div class="metric-card" style="background:'+bg+';border-color:'+border+'">'
+    +'<div class="mc-label" style="color:'+color+'">'+label+'</div>'
+    +'<div class="mc-value" style="color:'+color+'">'+value+'</div>'
+    +(sub?'<div class="mc-sub" style="color:'+color+'">'+sub+'</div>':'')
+    +'</div>';
+}
+
+/* PHASE 1 */
+function renderInvMetrics(){
+  var td=totalDebt(),tm=totalMin();
+  var sec=cats.filter(function(c){return c.hasAsset;}).reduce(function(s,c){return s+c.items.reduce(function(ss,d){return ss+(+d.balance||0);},0);},0);
+  document.getElementById('inv-metrics').innerHTML=
+    metricCard('Deuda total',fmt(td),'',  '#fff5f5','#c53030','#feb2b2')+
+    metricCard('Servicio mensual',fmt(tm),'mínimos','#fffaf0','#c05621','#fbd38d')+
+    metricCard('Con activo',fmt(sec),'','#ebf8ff','#2b6cb0','#90cdf4')+
+    metricCard('Sin activo',fmt(td-sec),'expuesta','#faf5ff','#6b46c1','#d6bcfa');
+}
+function renderCatList(){
+  var el=document.getElementById('cat-list');el.innerHTML='';
+  cats.forEach(function(cat){
+    var bal=cat.items.reduce(function(s,d){return s+(+d.balance||0);},0);
+    var isOpen=!!openCats[cat.id];
+    var d=document.createElement('div');d.className='cat-card';
+    d.innerHTML='<div class="cat-header" onclick="toggleCat(\''+cat.id+'\')">'
+      +'<div class="cat-icon" style="background:'+cat.bg+';color:'+cat.fc+'">'+cat.ic+'</div>'
+      +'<div class="cat-info"><div class="cat-name">'+cat.name+'</div><div class="cat-sub-lbl">'+cat.sub+'</div></div>'
+      +'<div class="cat-right"><span id="ctot-'+cat.id+'" class="cat-total">'+(bal>0?fmt(bal):'—')+'</span>'
+      +'<span class="chevron'+(isOpen?' open':'')+'" id="chev-'+cat.id+'">▶</span></div>'
+      +'</div>'
+      +'<div class="cat-body'+(isOpen?' open':'')+'" id="cbody-'+cat.id+'"></div>';
+    el.appendChild(d);renderCatBody(cat.id);
+  });
+}
+function toggleCat(id){
+  openCats[id]=!openCats[id];
+  document.getElementById('cbody-'+id).classList.toggle('open',openCats[id]);
+  document.getElementById('chev-'+id).classList.toggle('open',openCats[id]);
+}
+function renderCatBody(catId){
+  var cat=cats.find(function(c){return c.id===catId;});
+  var body=document.getElementById('cbody-'+catId);if(!body)return;
+  var html='';
+  cat.items.forEach(function(d,i){
+    html+='<div class="debt-item">';
+    if(cat.hasAsset){
+      var eq=(+d.assetValue||0)-(+d.balance||0);
+      var ec=eq>=0?'#276749':'#e53e3e';
+      var eqBg=eq>=0?'#f0fff4':'#fff5f5';
+      html+='<div class="debt-row"><div class="fi"><span class="fl">Nombre</span><input type="text" value="'+d.name+'" oninput="setF(\''+catId+'\','+i+',\'name\',this.value)"></div></div>'
+        +'<div class="debt-row">'
+        +'<div class="fi"><span class="fl">Valor activo ($)</span><input type="number" value="'+(d.assetValue||'')+'" min="0" oninput="setF(\''+catId+'\','+i+',\'assetValue\',this.value)"></div>'
+        +'<div class="fi"><span class="fl">Saldo ($)</span><input type="number" value="'+(d.balance||'')+'" min="0" oninput="setF(\''+catId+'\','+i+',\'balance\',this.value)"></div>'
+        +'</div>'
+        +'<div class="debt-row">'
+        +'<div class="fi"><span class="fl">APR (%)</span><input type="number" value="'+(d.apr||'')+'" min="0" step="0.1" oninput="setF(\''+catId+'\','+i+',\'apr\',this.value)"></div>'
+        +'<div class="fi"><span class="fl">Pago mensual ($)</span><input type="number" value="'+(d.min||'')+'" min="0" oninput="setF(\''+catId+'\','+i+',\'min\',this.value)"></div>'
+        +'</div>'
+        +'<div class="debt-row">'
+        +'<div class="fi"><span class="fl">Equity</span><div class="equity-display" style="background:'+eqBg+';color:'+ec+'">'+fmt(eq)+'</div></div>'
+        +'</div>';
+    } else {
+      html+='<div class="debt-row"><div class="fi"><span class="fl">Nombre</span><input type="text" value="'+d.name+'" oninput="setF(\''+catId+'\','+i+',\'name\',this.value)"></div></div>'
+        +'<div class="debt-row">'
+        +'<div class="fi"><span class="fl">Saldo ($)</span><input type="number" value="'+(d.balance||'')+'" min="0" oninput="setF(\''+catId+'\','+i+',\'balance\',this.value)"></div>'
+        +'<div class="fi"><span class="fl">APR (%)</span><input type="number" value="'+(d.apr||'')+'" min="0" step="0.1" oninput="setF(\''+catId+'\','+i+',\'apr\',this.value)"></div>'
+        +'</div>'
+        +'<div class="debt-row">'
+        +'<div class="fi"><span class="fl">Pago mín. ($)</span><input type="number" value="'+(d.min||'')+'" min="0" oninput="setF(\''+catId+'\','+i+',\'min\',this.value)"></div>'
+        +'</div>';
+    }
+    html+='<div class="del-row"><button class="del-btn" onclick="delItem(\''+catId+'\','+i+')">Eliminar</button></div></div>';
+  });
+  if(cat.items.length===0){
+    html+='<div style="text-align:center;padding:14px 0 8px;color:#a0aec0;font-size:13px">Toca <b style=\"color:#1a56db\">+ Agregar</b> para ingresar una deuda</div>';
+  }
+  html+='<button class="add-btn" onclick="addItem(\''+catId+'\')">+ Agregar</button>';
+  body.innerHTML=html;
+}
+function setF(catId,idx,field,val){
+  var cat=cats.find(function(c){return c.id===catId;});
+  cat.items[idx][field]=field==='name'?val:(+val||0);
+  if(!cat.hasAsset&&(field==='balance'||field==='apr')){
+    var d=cat.items[idx];
+    if((+d.balance)>0&&(+d.apr)>0) d.min=Math.round(d.balance*d.apr/100/12);
+  }
+  var bal=cat.items.reduce(function(s,d){return s+(+d.balance||0);},0);
+  var el=document.getElementById('ctot-'+catId);if(el)el.textContent=bal>0?fmt(bal):'—';
+  renderInvMetrics();renderCatBody(catId);
+}
+function addItem(catId){
+  var cat=cats.find(function(c){return c.id===catId;});
+  var b={name:'',balance:0,apr:0,min:0};if(cat.hasAsset)b.assetValue=0;
+  cat.items.push(b);openCats[catId]=true;
+  document.getElementById('cbody-'+catId).classList.add('open');
+  document.getElementById('chev-'+catId).classList.add('open');
+  renderCatBody(catId);renderInvMetrics();
+  setTimeout(function(){
+    var body=document.getElementById('cbody-'+catId);
+    var inputs=body.querySelectorAll('input');
+    if(inputs.length)inputs[0].focus();
+  },100);
+}
+function delItem(catId,idx){
+  cats.find(function(c){return c.id===catId;}).items.splice(idx,1);
+  renderCatBody(catId);renderInvMetrics();
+}
+
+/* PHASE 2 */
+function initSelected(){
+  selectedDebts={};
+  cats.forEach(function(cat){
+    cat.items.forEach(function(d,i){
+      selectedDebts[cat.id+'-'+i]=cat.excluded?false:(cat.priority===1||cat.priority===2);
+    });
+  });
+}
+function renderSelCards(){
+  initSelected();
+  var tm=totalMin();
+  var html='';
+  var groups=[
+    {label:'Atacar primero',pillBg:'#fff5f5',pillColor:'#c53030',pText:'Prioridad 1',prio:[1]},
+    {label:'Incluir si puedes',pillBg:'#fffaf0',pillColor:'#c05621',pText:'Prioridad 2',prio:[2]},
+    {label:'Complementarias',pillBg:'#ebf8ff',pillColor:'#2b6cb0',pText:'Prioridad 3',prio:[3]}
+  ];
+  groups.forEach(function(g){
+    var gCats=cats.filter(function(c){return !c.excluded&&g.prio.indexOf(c.priority)>=0&&c.items.length>0;});
+    if(gCats.length===0)return;
+    html+='<div class="group-lbl"><span class="g-pill" style="background:'+g.pillBg+';color:'+g.pillColor+'">'+g.pText+'</span>'+g.label+'</div>';
+    gCats.forEach(function(cat){
+      cat.items.forEach(function(d,i){
+        if(!d.balance&&!d.name)return;
+        var key=cat.id+'-'+i;
+        var isSel=!!selectedDebts[key];
+        var pctSvc=tm>0&&d.min?(d.min/tm*100):0;
+        var why=cat.id==='cc'||cat.id==='loc'?'Sin activo detrás — alto impacto al eliminar.':
+          cat.id==='auto'&&pctSvc>10?'Pago: '+pctSvc.toFixed(0)+'% del servicio (>10%). Considera venta.':
+          'Equity: '+fmt((+d.assetValue||0)-(+d.balance||0))+'.';
+        html+='<div class="sel-card'+(isSel?' checked':'')+'" id="sc-'+key+'" onclick="toggleSel(\''+key+'\')">'
+          +'<div class="chk-box" id="cb-'+key+'">'+(isSel?'✓':'')+'</div>'
+          +'<div style="flex:1"><div class="sc-name">'+(d.name||cat.name)+' <span class="sc-cat">· '+cat.sub+'</span></div>'
+          +'<div class="chips">'+(d.apr?'<span class="chip '+aprChipCls(d.apr)+'">'+d.apr+'% APR</span>':'')+'<span class="chip">'+fmt(d.balance)+'</span>'+(d.min?'<span class="chip">'+fmt(d.min)+'/mes</span>':'')+'</div>'
+          +'<div class="sc-why">'+why+'</div></div>'
+          +'<span class="prio-tag" style="background:'+g.pillBg+';color:'+g.pillColor+'">'+g.pText+'</span></div>';
+      });
+    });
+  });
+  html+='<hr class="divider"><div class="group-lbl">Sugeridas excluir <span style="font-size:9px;font-weight:400;opacity:.7">(puedes incluirlas)</span></div>';
+  cats.filter(function(c){return c.excluded;}).forEach(function(cat){
+    var items=cat.items.filter(function(d){return d.balance>0||d.name;});
+    if(items.length===0){
+      html+='<div class="sel-card excluded"><div class="chk-box"></div><div style="flex:1"><div class="sc-name">'+cat.name+'</div><span class="excl-tag">'+cat.excludeReason+'</span></div></div>';
+      return;
+    }
+    items.forEach(function(d){
+      var realIdx=cat.items.indexOf(d);
+      var key=cat.id+'-'+realIdx;
+      var isSel=!!selectedDebts[key];
+      html+='<div class="sel-card'+(isSel?' checked':'')+'" id="sc-'+key+'" onclick="toggleSel(\''+key+'\')">'
+        +'<div class="chk-box" id="cb-'+key+'">'+(isSel?'✓':'')+'</div>'
+        +'<div style="flex:1"><div class="sc-name">'+(d.name||cat.name)+' <span class="sc-cat">· '+cat.sub+'</span></div>'
+        +'<div class="chips"><span class="chip">'+fmt(d.balance)+'</span>'+(d.min?'<span class="chip">'+fmt(d.min)+'/mes</span>':'')+'</div>'
+        +'<div class="warn-note"><span style="font-size:12px;color:var(--amber)">⚠</span><span>'+cat.excludeReason+'</span></div>'
+        +'</div></div>';
+    });
+  });
+  document.getElementById('sel-cards').innerHTML=html;
+  updateSelSummary();
+}
+function toggleSel(key){
+  selectedDebts[key]=!selectedDebts[key];
+  var card=document.getElementById('sc-'+key);
+  var box=document.getElementById('cb-'+key);
+  if(card)card.classList.toggle('checked',selectedDebts[key]);
+  if(box)box.textContent=selectedDebts[key]?'✓':'';
+  updateSelSummary();
+}
+function updateSelSummary(){
+  var cnt=0,bal=0,mn=0;
+  cats.forEach(function(cat){cat.items.forEach(function(d,i){if(selectedDebts[cat.id+'-'+i]){cnt++;bal+=(+d.balance||0);mn+=(+d.min||0);}});});
+  document.getElementById('sel-summary').innerHTML=
+    '<b>'+cnt+' deuda'+(cnt!==1?'s':'')+' seleccionada'+(cnt!==1?'s':'')+' — '+fmt(bal)+'</b><br>'
+    +'Servicio mensual: '+fmt(mn)
+    +(cnt===0?'<br><span style="color:var(--red);font-size:12px">Selecciona al menos una deuda.</span>':'');
+  document.getElementById('btn-next').disabled=cnt===0;
+}
+
+/* PHASE 3 */
+function getSelectedAssets(){
+  var list=[];
+  cats.forEach(function(cat){
+    if(!cat.hasAsset)return;
+    cat.items.forEach(function(d,i){
+      var key=cat.id+'-'+i;
+      if(selectedDebts[key]&&(+d.balance||0)>0)list.push({catId:cat.id,catName:cat.name,idx:i,key:key,d:d});
+    });
+  });
+  return list;
+}
+function renderAssetCards(){
+  var sa=getSelectedAssets(),tm=totalMin(),html='';
+  if(sa.length===0){html='<div class="alert alert-ok"><span class="alert-icon">✓</span><span>No tienes activos en el plan. Pasa a la estrategia.</span></div>';}
+  sa.forEach(function(s){
+    var key=s.key,act=assetActions[key]||'keep',d=s.d;
+    var eq=(+d.assetValue||0)-(+d.balance||0);
+    var pct=tm>0?(d.min/tm*100):0;
+    var eqColor=eq>=0?'#276749':'#e53e3e';
+    var netSell=+d.assetValue||0;
+    var deficiency=Math.max(0,(+d.balance||0)-netSell);
+    var notes={
+      keep:'La deuda continúa en tu plan de pagos.',
+      sell:eq>=0?'Valor: '+fmt(netSell)+'. Saldo: '+fmt(d.balance)+'. Liberas '+fmt(eq)+' — deuda eliminada.':'Valor: '+fmt(netSell)+'. Saldo: '+fmt(d.balance)+'. Déficit de '+fmt(deficiency)+' entra como deuda sin garantía.',
+      refi:'Refinancias a mejor tasa. Deuda permanece pero a menor costo.',
+      surrender:'Entrega voluntaria. '+(eq<0?'Posible déficit de '+fmt(Math.max(0,d.balance-d.assetValue*0.85))+'.':'Activo liberado.')
+    };
+    html+='<div class="asset-card">'
+      +'<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px">'
+      +'<div><div class="asset-name">'+(d.name||s.catName)+'</div><div class="asset-type">'+s.catName+'</div></div>'
+      +(pct>10?'<span class="chip chip-amber" style="margin-top:2px">'+pct.toFixed(0)+'% servicio</span>':'')
+      +'</div>'
+      +'<div class="asset-nums">'
+      +'<div class="an-block"><div class="an-label">Valor</div><div class="an-val">'+fmt(d.assetValue)+'</div></div>'
+      +'<div class="an-block"><div class="an-label">Saldo</div><div class="an-val">'+fmt(d.balance)+'</div></div>'
+      +'<div class="an-block"><div class="an-label">Equity</div><div class="an-val" style="color:'+eqColor+'">'+fmt(eq)+'</div></div>'
+      +'</div>'
+      +'<div class="action-btns">'
+      +'<button class="act-btn'+(act==='keep'?' on-keep':'')+'" onclick="setAct(\''+key+'\',\'keep\')">Mantener</button>'
+      +'<button class="act-btn'+(act==='sell'?' on-sell':'')+'" onclick="setAct(\''+key+'\',\'sell\')">Vender</button>'
+      +(s.catId!=='auto'?'<button class="act-btn'+(act==='refi'?' on-refi':'')+'" onclick="setAct(\''+key+'\',\'refi\')">Refinanciar</button>':'')
+      +(s.catId!=='auto'?'<button class="act-btn'+(act==='surrender'?' on-surr':'')+'" onclick="setAct(\''+key+'\',\'surrender\')">Entrega</button>':'')
+      +'</div>'
+      +'<div class="action-note">'+notes[act]+'</div></div>';
+  });
+  document.getElementById('asset-cards').innerHTML=html;
+  renderAssetMetrics();renderAssetAlerts();
+}
+function setAct(key,act){assetActions[key]=act;renderAssetCards();}
+function getExposedList(){
+  var list=[];
+  cats.forEach(function(cat){
+    cat.items.forEach(function(d,i){
+      var key=cat.id+'-'+i;
+      if(!selectedDebts[key])return;
+      var bal=+d.balance||0;
+      if(cat.hasAsset){
+        var act=assetActions[key]||'keep';
+        if(act==='sell')bal=Math.max(0,bal-(+d.assetValue||0));
+        if(act==='surrender')bal=Math.max(0,bal-(+d.assetValue||0)*0.85);
+      }
+      if(bal>0)list.push({name:d.name||cat.name,balance:bal,apr:+d.apr||18,min:+d.min||25});
+    });
+  });
+  return list;
+}
+function renderAssetMetrics(){
+  var selBal=0,selMin=0;
+  cats.forEach(function(cat){cat.items.forEach(function(d,i){if(selectedDebts[cat.id+'-'+i]){selBal+=(+d.balance||0);selMin+=(+d.min||0);}});});
+  var expBal=getExposedList().reduce(function(s,d){return s+d.balance;},0);
+  document.getElementById('asset-metrics').innerHTML=
+    metricCard('Deuda seleccionada',fmt(selBal),'','#fff5f5','#c53030','#feb2b2')+
+    metricCard('Liberada por activos',fmt(Math.max(0,selBal-expBal)),'','#f0fff4','#276749','#9ae6b4')+
+    metricCard('Entra a estrategia',fmt(expBal),'tras activos','#ebf8ff','#2b6cb0','#90cdf4')+
+    metricCard('Pagos mínimos',fmt(selMin),'por mes','#fffaf0','#c05621','#fbd38d');
+}
+function renderAssetAlerts(){
+  var alerts=[],tm=totalMin();
+  getSelectedAssets().forEach(function(s){
+    var d=s.d,eq=(+d.assetValue||0)-(+d.balance||0),pct=tm>0?(d.min/tm*100):0,act=assetActions[s.key]||'keep';
+    if(s.catId==='auto'&&pct>10&&act==='keep')alerts.push({t:'warn',i:'▲',m:'<b>Auto:</b> pago representa '+pct.toFixed(0)+'% del servicio. Considera vender.'});
+    if(eq<0&&act==='keep')alerts.push({t:'warn',i:'▲',m:'<b>'+(d.name||s.catName)+':</b> bajo el agua en '+fmt(-eq)+'.'});
+  });
+  if(alerts.length===0)alerts.push({t:'ok',i:'✓',m:'Tus decisiones de activos se ven razonables.'});
+  document.getElementById('asset-alerts').innerHTML=alerts.map(function(a){
+    return '<div class="alert alert-'+a.t+'"><span class="alert-icon">'+a.i+'</span><span>'+a.m+'</span></div>';
+  }).join('');
+}
+
+/* PHASE 4 */
+function snowball(dl,ex){
+  var ds=dl.map(function(d){return{b:d.balance,apr:d.apr,mn:Math.max(d.min,20)};});
+  ds.sort(function(a,b){return a.b-b.b;});
+  var ti=0,mo=0,h=[ds.reduce(function(s,d){return s+d.b;},0)];
+  while(ds.some(function(d){return d.b>0;})&&mo<360){
+    mo++;ds.forEach(function(d){if(d.b>0){var i=d.b*(d.apr/100/12);ti+=i;d.b+=i;}});
+    ds.forEach(function(d){if(d.b>0){d.b-=Math.min(d.b,d.mn);if(d.b<0)d.b=0;}});
+    var t=ds.find(function(d){return d.b>0;});
+    if(t&&ex>0){t.b-=Math.min(t.b,ex);if(t.b<0)t.b=0;}
+    h.push(Math.max(0,ds.reduce(function(s,d){return s+d.b;},0)));
+  }
+  return{months:mo,interest:ti,history:h};
+}
+function consol(dl,ex,rate){
+  var tot=dl.reduce(function(s,d){return s+d.balance;},0);
+  var pm=dl.reduce(function(s,d){return s+d.min;},0);
+  var r=(rate||9.5)/100/12,pay=pm+ex,b=tot,mo=0,ti=0,h=[b];
+  while(b>0&&mo<360){mo++;var i=b*r;ti+=i;b+=i;b-=Math.min(b,pay);h.push(Math.max(0,b));}
+  return{months:mo,interest:ti,history:h,rate:rate||9.5};
+}
+function negot(dl,ex,pct){
+  var tot=dl.reduce(function(s,d){return s+d.balance;},0);
+  var red=tot*(pct||55)/100,pm=dl.reduce(function(s,d){return s+d.min;},0);
+  var avg=dl.reduce(function(s,d){return s+d.apr;},0)/(dl.length||1);
+  var pay=pm+ex,r=avg*0.5/100/12,b=red,mo=0,ti=0,h=[tot,red];
+  while(b>0&&mo<360){mo++;var i=b*r;ti+=i;b+=i;b-=Math.min(b,pay);h.push(Math.max(0,b));}
+  return{months:mo+1,interest:ti,history:h,reduction:tot-red,pct:pct||55};
+}
+function renderStratMetrics(){
+  var dl=getExposedList();
+  var tot=dl.reduce(function(s,d){return s+d.balance;},0);
+  var pm=dl.reduce(function(s,d){return s+d.min;},0);
+  document.getElementById('strat-metrics').innerHTML=
+    metricCard('Deuda a resolver',fmt(tot),dl.length+' deudas','#fff5f5','#c53030','#feb2b2')+
+    metricCard('Pagos mínimos',fmt(pm),'/mes','#fffaf0','#c05621','#fbd38d')+
+    metricCard('Total con extra',fmt(pm+extraPay),'/mes','#ebf8ff','#2b6cb0','#90cdf4');
+}
+function renderStrat(){
+  renderStratMetrics();
+  var dl=getExposedList();
+  if(dl.length===0){
+    document.getElementById('strat-output').innerHTML='<div class="alert alert-ok"><span class="alert-icon">✓</span><span>Sin deuda expuesta. ¡Excelente posición!</span></div>';
+    return;
+  }
+  var c,c1,c2,steps,warn='',rights='';
+  if(curStrat==='snow'){
+    c=snowball(dl,extraPay);c1='#1a56db';c2='#eff6ff';
+    var srt=[...dl].sort(function(a,b){return a.balance-b.balance;});
+    steps=[
+      {t:'Ordena de menor a mayor',d:'Primero: "'+srt[0].name+'" ('+fmt(srt[0].balance)+'). La victoria rápida genera motivación.'},
+      {t:'Mínimos en todas',d:'Asegura el pago mínimo en cada deuda. Ninguna puede caer en mora.'},
+      {t:'Extra al saldo menor',d:'Los $'+extraPay.toLocaleString()+' extra van 100% al primer objetivo.'},
+      {t:'Efecto de nieve',d:'Al liquidar una, suma su pago a la siguiente. Plan completo en '+c.months+' meses.'}
+    ];
+  } else if(curStrat==='consol'){
+    c=consol(dl,extraPay,consolRate);c1='#2b6cb0';c2='#ebf8ff';
+    steps=[
+      {t:'Verifica tu crédito',d:'Score 650+ para tasas de 8–12%. Revisa en annualcreditreport.com gratis.'},
+      {t:'Compara 3 opciones',d:'Préstamo personal, balance transfer 0% intro, o HELOC si tienes equity.'},
+      {t:'Consolida al '+consolRate+'% APR',d:'Un solo pago mensual. El ahorro en interés se reinvierte.'},
+      {t:'Congela las tarjetas',d:'No generes deuda nueva mientras pagas el préstamo.'}
+    ];
+  } else {
+    c=negot(dl,extraPay,negotPct);c1='#b7791f';c2='#fffff0';
+    warn='<div class="alert alert-info" style="margin-bottom:8px"><span class="alert-icon">i</span><span><b>¿Cuándo usar esto?</b> Solo cuando ya estás en mora +90 días o en situación crítica. Los acreedores negocian cuando la alternativa es no cobrar nada.</span></div>'
+      +'<div class="alert alert-warn"><span class="alert-icon">▲</span><span>Puede reducir tu score hasta 100 puntos. La deuda perdonada puede ser ingreso gravable (Form 1099-C).</span></div>';
+    steps=[
+      {t:'Evalúa tu situación',d:'Calcula efectivo disponible. Prioriza deudas más cercanas a acción legal.'},
+      {t:'Verifica la deuda',d:'Pide carta de validación antes de negociar. Confirma monto y que te pertenece.'},
+      {t:'Prepara tu estrategia',d:'Ofrece '+negotPct+'% del saldo. Ahorro estimado: '+fmt(c.reduction)+'. Un pago único tiene más poder.'},
+      {t:'Contacta al acreedor',d:'Pide el depto. de "hardship" o "settlement". Anota nombre, fecha y resumen.'},
+      {t:'Acuerdo por escrito',d:'Nunca pagues sin documento escrito que diga "paid in full" o "settled in full".'},
+      {t:'Paga con seguridad',d:'Usa cheque de caja o money order. Verifica el reporte en 30–60 días.'}
+    ];
+    rights='<div class="rights-box">'
+      +'<div class="rights-header"><span class="cfpb-badge">CFPB</span><span class="rights-title">Tus derechos frente a cobradores</span></div>'
+      +'<div class="rights-items">'
+      +'<div class="rights-item"><div class="ri-title">Horario permitido</div><div class="ri-desc">Solo pueden llamar entre <b>8 a.m. y 9 p.m.</b> Si indicas que cierto horario es inconveniente, deben respetarlo.</div></div>'
+      +'<div class="rights-item"><div class="ri-title">Límite de llamadas (FDCPA)</div><div class="ri-desc">Violación presumida si llaman <b>más de 7 veces en 7 días</b> sobre la misma deuda, o dentro de 7 días tras una conversación.</div></div>'
+      +'<div class="rights-item"><div class="ri-title">Derecho a que paren</div><div class="ri-desc">Puedes pedirles por escrito que <b>cesen todo contacto</b>. Solo pueden responder para confirmar que pararán o notificar acción legal.</div></div>'
+      +'<div class="rights-item"><div class="ri-title">Prohibido acosar</div><div class="ri-desc">Llamadas repetidas para <b>molestar o acosar</b> están prohibidas, incluyendo mensajes de voz.</div></div>'
+      +'</div>'
+      +'<div class="cfpb-link"><span>CFPB · Dic. 2024</span><a href="https://www.consumerfinance.gov/ask-cfpb/when-and-how-often-can-a-debt-collector-call-me-on-the-phone-en-2110/" target="_blank">Ver artículo →</a></div>'
+      +'</div>';
+  }
+
+  var h=c.history,step=Math.max(1,Math.floor(h.length/16));
+  var lbls=[],dat=[];
+  for(var i=0;i<h.length;i+=step){lbls.push('M'+i);dat.push(Math.round(h[i]));}
+  if(dat[dat.length-1]!==0){lbls.push('M'+(h.length-1));dat.push(0);}
+
+  var mHtml='<div class="metric-grid" style="margin-bottom:14px">';
+  mHtml+=metricCard('Libre de deuda en',c.months+' meses',(c.months/12).toFixed(1)+' años','#f0fff4','#276749','#9ae6b4');
+  mHtml+=metricCard('Interés total',fmt(c.interest),'','#fff5f5','#c53030','#feb2b2');
+  if(curStrat==='negot')mHtml+=metricCard('Ahorro estimado',fmt(c.reduction),'perdonado','#f0fff4','#276749','#9ae6b4');
+  if(curStrat==='consol')mHtml+=metricCard('Nueva tasa',c.rate+'%','APR','#ebf8ff','#2b6cb0','#90cdf4');
+  mHtml+='</div>';
+
+  var stepsHtml='<div class="step-list">'+steps.map(function(s,i){
+    return '<div class="step-item"><div class="step-num-circle" style="background:'+c1+'">'+(i+1)+'</div><div><div class="step-title">'+s.t+'</div><div class="step-desc">'+s.d+'</div></div></div>';
+  }).join('')+'</div>';
+
+  var selBal=0,excBal=0;
+  cats.forEach(function(cat){cat.items.forEach(function(d,i){if(selectedDebts[cat.id+'-'+i])selBal+=(+d.balance||0);});if(cat.excluded)cat.items.forEach(function(d){excBal+=(+d.balance||0);});});
+  var sumHtml='<div class="result-box" style="margin-top:14px">'
+    +'<div class="rb-title">Resumen del plan</div>'
+    +'<div class="rb-row"><span>Deudas en el plan</span><span>'+fmt(selBal)+'</span></div>'
+    +'<div class="rb-row"><span>Excluidas por ahora</span><span>'+fmt(excBal)+'</span></div>'
+    +'<div class="rb-row"><span>Deuda total original</span><span>'+fmt(totalDebt())+'</span></div>'
+    +'</div>';
+
+  document.getElementById('strat-output').innerHTML=mHtml
+    +'<div class="chart-legend"><span><span class="leg-dot" style="background:'+c1+'"></span>Saldo proyectado</span></div>'
+    +'<div class="chart-wrap"><canvas id="sc" role="img" aria-label="Proyección de saldo">Proyección de deuda.</canvas></div>'
+    +warn+stepsHtml+rights+sumHtml;
+
+  if(chartInst){chartInst.destroy();chartInst=null;}
+  chartInst=new Chart(document.getElementById('sc').getContext('2d'),{
+    type:'line',
+    data:{labels:lbls,datasets:[{label:'Saldo',data:dat,borderColor:c1,backgroundColor:c2,fill:true,tension:0.35,pointRadius:0,borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return ' '+fmt(c.raw);}}}},
+      scales:{
+        x:{ticks:{color:'#a0aec0',font:{size:10},maxTicksLimit:6},grid:{display:false}},
+        y:{ticks:{color:'#a0aec0',font:{size:10},callback:function(v){return '$'+Math.round(v/1000)+'K';}},grid:{color:'rgba(0,0,0,0.04)'}}
+      }
+    }
+  });
+}
+function selStrat(s,btn){
+  curStrat=s;
+  document.querySelectorAll('.stab').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+  document.getElementById('consol-box').classList.toggle('show',s==='consol');
+  document.getElementById('negot-box').classList.toggle('show',s==='negot');
+  renderStrat();
+}
+
+/* NAVIGATION */
+function goPhase(n){
+  if(n<1||n>4)return;
+  if(n===3&&!hasSelectedAssets()){
+    if(curPhase<3) n=4;
+    else n=2;
+  }
+  document.querySelectorAll('.phase').forEach(function(p){p.classList.remove('active');});
+  document.getElementById('phase'+n).classList.add('active');
+  curPhase=n;
+  document.getElementById('content').scrollTop=0;
+
+  var labels=['Inventario','Selección','Activos','Estrategia'];
+  var totalSteps=hasSelectedAssets()?4:3;
+  var displayStep=n>3?totalSteps:(n>2&&!hasSelectedAssets()?3:n);
+  document.getElementById('step-badge').textContent='Paso '+displayStep+' de '+totalSteps+' · '+labels[n-1];
+  ['d1','d2','d3','d4'].forEach(function(id,i){
+    var el=document.getElementById(id);
+    el.classList.remove('active','done');
+    if(i+1===n)el.classList.add('active');
+    else if(i+1<n)el.classList.add('done');
+  });
+  if(!hasSelectedAssets()) document.getElementById('d3').style.opacity='0.25';
+  else document.getElementById('d3').style.opacity='';
+
+  document.getElementById('btn-back').style.display=n>1?'flex':'none';
+  document.getElementById('btn-next').textContent=n===4?'Finalizar ✓':'Siguiente →';
+  document.getElementById('btn-next').disabled=false;
+
+  if(n===2){initSelected();renderSelCards();updateSelSummary();}
+  if(n===3){renderAssetCards();}
+  if(n===4){renderStratMetrics();renderStrat();}
+}
+function hasSelectedAssets(){
+  return cats.some(function(cat){
+    if(!cat.hasAsset)return false;
+    return cat.items.some(function(d,i){return selectedDebts[cat.id+'-'+i]&&(+d.balance||0)>0;});
+  });
+}
+function handleNext(){
+  if(curPhase===1){
+    var hasDebt=cats.some(function(c){return c.items.some(function(d){return (+d.balance||0)>0;});});
+    if(!hasDebt){
+      var btn=document.getElementById('btn-next');
+      btn.textContent='Agrega al menos una deuda';
+      btn.style.background='#e53e3e';
+      setTimeout(function(){btn.textContent='Siguiente →';btn.style.background='';},2000);
+      return;
+    }
+    goPhase(2);
+    return;
+  }
+  if(curPhase===2){
+    if(hasSelectedAssets()) goPhase(3);
+    else goPhase(4);
+    return;
+  }
+  if(curPhase===3) goPhase(4);
+}
+
+/* INIT */
+renderCatList();
+renderInvMetrics();
+</script>
+</body>
+</html>
