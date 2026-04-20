@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan de Salida de Deudas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --navy: #0f2744;
+    --navy-light: #1a3a5c;
+    --accent: #2b7fff;
+    --accent-light: #e8f1ff;
+    --green: #0e9f6e;
+    --green-light: #e8faf3;
+    --amber: #c27803;
+    --amber-light: #fef3c7;
+    --red: #d9534f;
+    --red-light: #fdf2f2;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-700: #374151;
+    --gray-900: #111827;
+    --radius: 10px;
+    --radius-lg: 14px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #fff;
+    color: var(--gray-900);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* HEADER */
+  .app-header {
+    background: #fff;
+    padding: 0;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .app-header-inner {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 20px 32px 16px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  .app-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 24px;
+    color: var(--navy);
+    letter-spacing: -0.3px;
+    line-height: 1.1;
+  }
+  .app-subtitle {
+    font-size: 13px;
+    color: var(--gray-400);
+    margin-top: 4px;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+  }
+  .header-disclaimer {
+    font-size: 11px;
+    color: var(--gray-400);
+    text-align: right;
+    max-width: 200px;
+    line-height: 1.4;
+  }
+
+  /* PROGRESS */
+  .prog-outer {
+    background: #fff;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .prog-inner {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 32px;
+    display: flex;
+    align-items: stretch;
+  }
+  .prog-step {
+    flex: 1;
+    padding: 12px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    cursor: pointer;
+    opacity: 0.4;
+    transition: opacity 0.2s;
+    border-bottom: 2px solid transparent;
+    position: relative;
+  }
+  .prog-step.active { opacity: 1; border-bottom-color: var(--accent); }
+  .prog-step.done { opacity: 0.65; }
+  .prog-step.done .ps-num { background: var(--green); color: #fff; }
+  .prog-step.active .ps-num { background: var(--accent); color: #fff; }
+  .ps-num {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--gray-200);
+    color: var(--gray-500);
+    font-size: 11px;
+    font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .ps-label { font-size: 12px; color: var(--gray-700); font-weight: 400; }
+  .ps-sub { font-size: 10px; color: var(--gray-400); }
+  .prog-sep { width: 1px; background: var(--gray-200); margin: 10px 0; }
+
+  /* MAIN CONTENT */
+  .main {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 32px 32px 60px;
+  }
+
+  /* PHASE */
+  .phase { display: none; }
+  .phase.active { display: block; }
+
+  .phase-header { margin-bottom: 24px; }
+  .phase-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--gray-900);
+    margin-bottom: 5px;
+    letter-spacing: -0.2px;
+  }
+  .phase-sub { font-size: 13px; color: var(--gray-500); line-height: 1.55; }
+
+  /* METRICS */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .metric-card {
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+  }
+  .mc-label { font-size: 11px; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+  .mc-value { font-size: 22px; font-weight: 600; color: var(--gray-900); letter-spacing: -0.5px; }
+  .mc-sub { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+
+  /* CARDS */
+  .card {
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .card-header:hover { background: var(--gray-50); }
+  .card-left { display: flex; align-items: center; gap: 10px; }
+  .cat-badge {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 600; flex-shrink: 0;
+  }
+  .cat-name { font-size: 14px; font-weight: 500; color: var(--gray-900); }
+  .cat-sub-lbl { font-size: 11px; color: var(--gray-400); }
+  .cat-total { font-size: 13px; font-weight: 600; color: var(--gray-700); }
+  .chevron { font-size: 10px; color: var(--gray-400); transition: transform 0.2s; margin-left: 8px; }
+  .chevron.open { transform: rotate(90deg); }
+
+  .card-body { display: none; border-top: 1px solid var(--gray-100); padding: 14px 16px; }
+  .card-body.open { display: block; }
+
+  /* DEBT ROW */
+  .debt-row {
+    display: grid; gap: 8px; align-items: center;
+    background: var(--gray-50);
+    border: 1px solid var(--gray-100);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  .dr-5 { grid-template-columns: 1.8fr 1fr 0.7fr 0.7fr 30px; }
+  .dr-6 { grid-template-columns: 1.5fr 1fr 0.75fr 0.6fr 0.85fr 30px; }
+  .dr-7 { grid-template-columns: 1.4fr 0.9fr 0.8fr 0.6fr 0.65fr 0.75fr 30px; }
+  .fi { display: flex; flex-direction: column; gap: 2px; }
+  .fl { font-size: 10px; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.04em; }
+  input[type=text], input[type=number] {
+    border: 1px solid var(--gray-200);
+    border-radius: 7px;
+    padding: 6px 9px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    background: #fff;
+    color: var(--gray-900);
+    width: 100%;
+    transition: border-color 0.15s;
+  }
+  input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(43,127,255,0.1); }
+  .del-btn {
+    width: 28px; height: 28px;
+    border: 1px solid var(--gray-200);
+    border-radius: 7px;
+    background: #fff;
+    cursor: pointer;
+    color: var(--gray-400);
+    font-size: 13px;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .del-btn:hover { background: var(--red-light); color: var(--red); border-color: #fca5a5; }
+  .add-row-btn {
+    font-size: 12px; color: var(--accent);
+    background: transparent;
+    border: 1px dashed #93c5fd;
+    border-radius: 7px;
+    padding: 5px 12px;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: background 0.15s;
+  }
+  .add-row-btn:hover { background: var(--accent-light); }
+
+  /* SELECTION CARDS */
+  .group-header {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; font-weight: 600; color: var(--gray-500);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin: 20px 0 10px;
+  }
+  .group-header:first-child { margin-top: 0; }
+  .gh-pill {
+    display: inline-block; padding: 2px 9px;
+    border-radius: 99px; font-size: 10px; font-weight: 600;
+  }
+  .sel-card {
+    display: flex; align-items: flex-start; gap: 12px;
+    background: #fff;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    padding: 13px 15px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .sel-card:hover { border-color: var(--gray-300); }
+  .sel-card.checked { border-color: var(--green); background: var(--green-light); }
+  .sel-card.excluded { opacity: 0.5; cursor: default; background: var(--gray-50); }
+  .chk-box {
+    width: 20px; height: 20px;
+    border-radius: 5px;
+    border: 2px solid var(--gray-300);
+    flex-shrink: 0; margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: #fff;
+    background: #fff;
+    transition: all 0.15s;
+  }
+  .sel-card.checked .chk-box { background: var(--green); border-color: var(--green); }
+  .sel-card.excluded .chk-box { background: var(--gray-200); border-color: var(--gray-200); }
+  .sc-name { font-size: 14px; font-weight: 500; color: var(--gray-900); margin-bottom: 5px; }
+  .sc-cat { font-size: 11px; color: var(--gray-400); font-weight: 400; }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 5px; }
+  .chip {
+    font-size: 11px; padding: 2px 8px; border-radius: 99px;
+    background: var(--gray-100); color: var(--gray-500);
+  }
+  .chip-red { background: #fef2f2; color: #b91c1c; }
+  .chip-amber { background: #fffbeb; color: #b45309; }
+  .chip-green { background: #f0fdf4; color: #166534; }
+  .sc-why { font-size: 12px; color: var(--gray-500); line-height: 1.4; }
+  .prio-tag {
+    font-size: 10px; font-weight: 600; padding: 3px 8px;
+    border-radius: 99px; flex-shrink: 0; margin-top: 2px;
+  }
+  .excl-tag {
+    display: inline-block; margin-top: 5px;
+    font-size: 11px; padding: 3px 9px; border-radius: 99px;
+    background: var(--gray-100); color: var(--gray-500);
+  }
+
+  /* SEL SUMMARY */
+  .sel-summary {
+    background: var(--gray-100);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-size: 13px; color: var(--gray-500);
+    margin-top: 16px; line-height: 1.6;
+  }
+  .sel-summary b { color: var(--gray-900); }
+
+  /* ASSET CARDS */
+  .asset-card {
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+  }
+  .asset-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+  .asset-name { font-size: 15px; font-weight: 600; color: var(--gray-900); }
+  .asset-type { font-size: 12px; color: var(--gray-400); margin-top: 1px; }
+  .asset-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+  .an-block { text-align: center; padding: 8px; background: var(--gray-50); border-radius: var(--radius); }
+  .an-label { font-size: 10px; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+  .an-val { font-size: 16px; font-weight: 600; color: var(--gray-900); }
+  .action-row { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 10px; }
+  .act-btn {
+    padding: 6px 13px; font-size: 12px;
+    border: 1px solid var(--gray-200);
+    border-radius: 7px; cursor: pointer;
+    background: #fff; color: var(--gray-600);
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .act-btn:hover { background: var(--gray-50); }
+  .act-btn.on-keep { background: #f0fdf4; border-color: #86efac; color: #166534; font-weight: 500; }
+  .act-btn.on-sell { background: #fffbeb; border-color: #fcd34d; color: #b45309; font-weight: 500; }
+  .act-btn.on-refi { background: var(--accent-light); border-color: #93c5fd; color: #1d4ed8; font-weight: 500; }
+  .act-btn.on-surr { background: #fef2f2; border-color: #fca5a5; color: #b91c1c; font-weight: 500; }
+  .action-note {
+    font-size: 12px; color: var(--gray-500);
+    background: var(--gray-50); border-radius: 7px;
+    padding: 8px 10px; line-height: 1.5;
+  }
+
+  /* ALERTS */
+  .alert {
+    display: flex; align-items: flex-start; gap: 9px;
+    border-radius: var(--radius); padding: 10px 13px;
+    font-size: 12px; line-height: 1.55; margin-bottom: 8px;
+  }
+  .alert-icon { font-size: 13px; flex-shrink: 0; font-weight: 700; margin-top: 0.5px; }
+  .alert-warn { background: var(--amber-light); color: #78350f; }
+  .alert-danger { background: var(--red-light); color: #7f1d1d; }
+  .alert-ok { background: var(--green-light); color: #064e3b; }
+  .alert-info { background: var(--accent-light); color: #1e40af; }
+
+  /* STRATEGY */
+  .strat-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  .stab {
+    padding: 9px 16px; border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius); font-size: 12px;
+    cursor: pointer; background: #fff; color: var(--gray-500);
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s; text-align: left; line-height: 1.3;
+  }
+  .stab:hover { border-color: var(--gray-300); }
+  .stab-hint { font-size: 10px; display: block; margin-bottom: 1px; opacity: 0.6; }
+  .stab.s-snow.on { background: var(--green-light); border-color: var(--green); color: #065f46; font-weight: 500; }
+  .stab.s-consol.on { background: var(--accent-light); border-color: var(--accent); color: #1e40af; font-weight: 500; }
+  .stab.s-negot.on { background: var(--amber-light); border-color: #f59e0b; color: #78350f; font-weight: 500; }
+
+  .step-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 16px; }
+  .step-card {
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    padding: 14px 15px;
+    box-shadow: var(--shadow);
+  }
+  .sc-step-num { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+  .sc-step-title { font-size: 13px; font-weight: 600; color: var(--gray-900); margin-bottom: 4px; }
+  .sc-step-desc { font-size: 12px; color: var(--gray-500); line-height: 1.5; }
+
+  .chart-wrap { position: relative; width: 100%; height: 220px; margin-bottom: 8px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--gray-500); margin-bottom: 14px; }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .leg-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+  /* RESULT BOX */
+  .result-box {
+    background: var(--navy);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    margin-top: 20px;
+  }
+  .rb-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 16px; color: #fff; margin-bottom: 12px;
+  }
+  .rb-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px; color: rgba(255,255,255,0.6);
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .rb-row:last-child { border: none; color: #fff; font-weight: 600; font-size: 14px; padding-top: 10px; }
+  .rb-row span:last-child { color: rgba(255,255,255,0.85); }
+  .rb-row:last-child span:last-child { color: #fff; }
+
+  /* NAV BUTTONS */
+  .nav-row { display: flex; gap: 10px; margin-top: 28px; }
+  .btn-back {
+    padding: 10px 20px;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    background: #fff; font-size: 13px; font-weight: 500;
+    cursor: pointer; color: var(--gray-500);
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .btn-back:hover { background: var(--gray-50); border-color: var(--gray-300); }
+  .btn-next {
+    flex: 1; padding: 10px 20px;
+    border: none; border-radius: var(--radius);
+    background: var(--navy); font-size: 13px; font-weight: 600;
+    cursor: pointer; color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    transition: background 0.15s;
+    letter-spacing: 0.01em;
+  }
+  .btn-next:hover { background: var(--navy-light); }
+
+  /* EXTRA SLIDER */
+  .slider-section { margin-bottom: 20px; }
+  .slider-label { font-size: 12px; color: var(--gray-500); margin-bottom: 8px; }
+  .slider-row { display: flex; align-items: center; gap: 14px; }
+  .slider-row input[type=range] {
+    flex: 1; height: 4px; background: var(--gray-200);
+    border-radius: 2px; outline: none; border: none;
+    cursor: pointer; -webkit-appearance: none;
+    padding: 0; box-shadow: none;
+  }
+  .slider-row input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 18px; height: 18px;
+    border-radius: 50%; background: var(--accent);
+    cursor: pointer; border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  .slider-val { font-size: 16px; font-weight: 600; color: var(--gray-900); min-width: 70px; text-align: right; }
+
+  .divider { border: none; border-top: 1px solid var(--gray-200); margin: 24px 0; }
+
+  /* FOOTER */
+  .app-footer {
+    text-align: center; padding: 24px 32px;
+    font-size: 11px; color: var(--gray-400);
+    border-top: 1px solid var(--gray-200);
+    max-width: 860px; margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 600px) {
+    .app-header-inner { flex-direction: column; align-items: flex-start; }
+    .main { padding: 20px 16px 48px; }
+    .prog-inner { padding: 0 16px; overflow-x: auto; }
+    .ps-sub { display: none; }
+    .dr-5, .dr-6, .dr-7 { grid-template-columns: 1fr 1fr; }
+    .dr-5 .fi:first-child, .dr-6 .fi:first-child, .dr-7 .fi:first-child { grid-column: 1 / -1; }
+    .del-btn { grid-column: 2; justify-self: end; }
+    .asset-nums { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="app-header-inner">
+    <div>
+      <div class="app-title">Plan de Salida de Deudas</div>
+      <div class="app-subtitle">Herramienta educativa de planificación financiera personal</div>
+    </div>
+
+  </div>
+  <div class="prog-outer">
+    <div class="prog-inner" id="prog-inner">
+      <div class="prog-step active" id="ps1" onclick="goPhase(1)">
+        <div class="ps-num">1</div>
+        <div><div class="ps-label">Inventario</div><div class="ps-sub">Registra tus deudas</div></div>
+      </div>
+      <div class="prog-sep"></div>
+      <div class="prog-step" id="ps2" onclick="goPhase(2)">
+        <div class="ps-num">2</div>
+        <div><div class="ps-label">Selección</div><div class="ps-sub">Elige qué atacar</div></div>
+      </div>
+      <div class="prog-sep"></div>
+      <div class="prog-step" id="ps3" onclick="goPhase(3)">
+        <div class="ps-num">3</div>
+        <div><div class="ps-label">Activos</div><div class="ps-sub">Decisiones clave</div></div>
+      </div>
+      <div class="prog-sep"></div>
+      <div class="prog-step" id="ps4" onclick="goPhase(4)">
+        <div class="ps-num">4</div>
+        <div><div class="ps-label">Estrategia</div><div class="ps-sub">Tu plan de salida</div></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- FASE 1: INVENTARIO -->
+  <div class="phase active" id="phase1">
+    <div class="phase-header">
+      <h1 class="phase-title">Inventario de deudas</h1>
+      <p class="phase-sub">Ingresa todas tus deudas por categoría. Para activos (casa, auto) incluye el valor de mercado actual.</p>
+    </div>
+    <div class="metrics-grid" id="inv-metrics"></div>
+    <div id="cat-list"></div>
+    <div class="nav-row">
+      <button class="btn-next" onclick="goPhase(2)">Siguiente: seleccionar deudas →</button>
+    </div>
+  </div>
+
+  <!-- FASE 2: SELECCIÓN -->
+  <div class="phase" id="phase2">
+    <div class="phase-header">
+      <h1 class="phase-title">¿Qué deudas quieres atacar?</h1>
+      <p class="phase-sub">Selecciona las deudas que entrarán en tu plan. Las tarjetas de crédito, líneas personales y auto son el punto de partida recomendado.</p>
+    </div>
+    <div id="sel-cards"></div>
+    <div class="sel-summary" id="sel-summary"></div>
+    <div class="nav-row">
+      <button class="btn-back" onclick="goPhase(1)">← Atrás</button>
+      <button class="btn-next" id="btn-p2next" onclick="goPhase(3)">Siguiente: decisiones de activos →</button>
+    </div>
+  </div>
+
+  <!-- FASE 3: ACTIVOS -->
+  <div class="phase" id="phase3">
+    <div class="phase-header">
+      <h1 class="phase-title">Decisiones de activos</h1>
+      <p class="phase-sub">Para cada activo en tu plan, elige qué hacer. Esto define cuánta deuda queda expuesta para la estrategia.</p>
+    </div>
+    <div id="asset-cards"></div>
+    <hr class="divider">
+    <div class="metrics-grid" id="asset-metrics"></div>
+    <div id="asset-alerts"></div>
+    <div class="nav-row">
+      <button class="btn-back" onclick="goPhase(2)">← Atrás</button>
+      <button class="btn-next" onclick="goPhase(4)">Siguiente: estrategia de salida →</button>
+    </div>
+  </div>
+
+  <!-- FASE 4: ESTRATEGIA -->
+  <div class="phase" id="phase4">
+    <div class="phase-header">
+      <h1 class="phase-title">Estrategia de salida</h1>
+      <p class="phase-sub">Plan basado en tu deuda seleccionada después de decisiones de activos.</p>
+    </div>
+
+    <div style="margin-bottom:28px">
+      <p style="font-size:13px;color:var(--gray-500);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;font-weight:600">Pago extra mensual disponible</p>
+      <p style="font-size:12px;color:var(--gray-400);margin-bottom:14px">Cuánto puedes agregar sobre los pagos mínimos cada mes</p>
+      <div style="display:flex;align-items:center;gap:16px">
+        <input type="range" id="extra-sl" min="0" max="2000" step="25" value="200" style="flex:1"
+          oninput="extraPay=+this.value;document.getElementById('extra-disp').textContent='$'+extraPay.toLocaleString();renderStrat()">
+        <span style="font-size:32px;font-weight:600;color:var(--navy);min-width:100px;text-align:right" id="extra-disp">$200</span>
+      </div>
+    </div>
+
+    <div class="metrics-grid" id="strat-metrics"></div>
+
+    <div class="strat-tabs">
+      <button class="stab s-snow on" onclick="selStrat('snow',this)"><span class="stab-hint">Más motivadora</span>Bola de nieve</button>
+      <button class="stab s-consol" onclick="selStrat('consol',this)"><span class="stab-hint">Un solo pago</span>Consolidación</button>
+      <button class="stab s-negot" onclick="selStrat('negot',this)"><span class="stab-hint">Reducción directa</span>Negociación</button>
+    </div>
+
+    <div id="consol-rate-row" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px 16px;margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+        <div>
+          <p style="font-size:13px;font-weight:600;color:#1e40af;margin-bottom:2px">APR del préstamo consolidado</p>
+          <p style="font-size:11px;color:#3b82f6">Ingresa la tasa que te ofrece el prestamista</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="range" min="1" max="30" step="0.5" value="9.5" id="consol-rate-slider"
+            style="width:140px"
+            oninput="consolRate=+this.value;document.getElementById('consol-rate-disp-input').value=consolRate.toFixed(1);document.getElementById('consol-rate-disp').textContent=consolRate.toFixed(1)+'%';renderStrat()">
+          <input type="number" id="consol-rate-disp-input" min="1" max="30" step="0.1" value="9.5"
+            style="width:72px;font-size:16px;font-weight:600;color:#1e40af;text-align:center;border:1px solid #93c5fd;border-radius:7px;padding:5px 8px"
+            oninput="consolRate=+this.value||9.5;document.getElementById('consol-rate-slider').value=consolRate;document.getElementById('consol-rate-disp').textContent=consolRate.toFixed(1)+'%';renderStrat()">
+          <span id="consol-rate-disp" style="display:none">9.5%</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="negot-pct-row" style="display:none;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 16px;margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+        <div>
+          <p style="font-size:13px;font-weight:600;color:#78350f;margin-bottom:2px">Porcentaje a pagar al acreedor</p>
+          <p style="font-size:11px;color:#b45309">Típicamente 40–60% del saldo total. Ajusta según tu negociación.</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="range" min="10" max="95" step="1" value="55" id="negot-pct-slider"
+            style="width:140px"
+            oninput="negotPct=+this.value;document.getElementById('negot-pct-input').value=negotPct;renderStrat()">
+          <input type="number" id="negot-pct-input" min="10" max="95" step="1" value="55"
+            style="width:72px;font-size:16px;font-weight:600;color:#78350f;text-align:center;border:1px solid #fcd34d;border-radius:7px;padding:5px 8px"
+            oninput="negotPct=Math.min(95,Math.max(10,+this.value||55));document.getElementById('negot-pct-slider').value=negotPct;renderStrat()">
+          <span style="font-size:16px;font-weight:600;color:#78350f">%</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="strat-output"></div>
+
+    <div class="nav-row" style="margin-top: 28px;">
+      <button class="btn-back" onclick="goPhase(3)">← Atrás</button>
+      
+    </div>
+  </div>
+
+</main>
+
+
+<script>
+var cats = [
+  {id:'cc',  name:'Tarjetas de crédito', sub:'Credit Cards',       ic:'CC',  bg:'#fef2f2', fc:'#dc2626', hasAsset:false, priority:1,
+   items:[]},
+  {id:'loc', name:'Línea de crédito personal', sub:'Personal LOC', ic:'LOC', bg:'#fdf4ff', fc:'#9333ea', hasAsset:false, priority:1,
+   items:[]},
+  {id:'auto',name:'Préstamo de auto',     sub:'Auto Loan',         ic:'AU',  bg:'#eff6ff', fc:'#2563eb', hasAsset:true,  priority:2,
+   items:[]},
+  {id:'heloc',name:'Línea hipotecaria',   sub:'HELOC',             ic:'HE',  bg:'#fffbeb', fc:'#d97706', hasAsset:true,  priority:3,
+   items:[]},
+  {id:'mortgage',name:'Hipoteca',         sub:'Mortgage',          ic:'MG',  bg:'#fff7ed', fc:'#c2410c', hasAsset:true,  priority:null, excluded:true,
+   excludeReason:'Estrategia separada: refinanciamiento, forbearance o plan de venta',
+   items:[]},
+  {id:'student',name:'Préstamos estudiantiles',sub:'Student Loans',ic:'SL', bg:'#f5f3ff', fc:'#7c3aed', hasAsset:false, priority:null, excluded:true,
+   excludeReason:'No descargables en bancarrota. Evalúa IDR, PSLF o refinanciamiento privado',
+   items:[]},
+  {id:'taxes',name:'Impuestos atrasados', sub:'Back Taxes',        ic:'TX',  bg:'#f9fafb', fc:'#6b7280', hasAsset:false, priority:null, excluded:true,
+   excludeReason:'Negociación directa con IRS / estado (OIC, installment agreement)',
+   items:[]},
+  {id:'other',name:'Otros préstamos',     sub:'Other Loans',       ic:'OT',  bg:'#f9fafb', fc:'#6b7280', hasAsset:false, priority:3,
+   items:[]}
+];
+
+var openCats = {cc:true};
+var selectedDebts = {};
+var assetActions = {};
+var extraPay = 200;
+var consolRate = 9.5;
+var negotPct = 55;
+var curStrat = 'snow';
+var chartInst = null;
+
+function fmt(n){ return '$' + Math.round(+n||0).toLocaleString('en-US'); }
+function aprChipClass(apr){ return apr>=20?'chip-red':apr>=12?'chip-amber':'chip-green'; }
+
+function totalDebt(){ return cats.reduce(function(s,c){return s+c.items.reduce(function(ss,d){return ss+(+d.balance||0);},0);},0); }
+function totalMin(){  return cats.reduce(function(s,c){return s+c.items.reduce(function(ss,d){return ss+(+d.min||0);},0);},0); }
+
+/* ---- PHASE 1 ---- */
+function renderInvMetrics(){
+  var td=totalDebt(), tm=totalMin();
+  var sec=cats.filter(function(c){return c.hasAsset;}).reduce(function(s,c){return s+c.items.reduce(function(ss,d){return ss+(+d.balance||0);},0);},0);
+  document.getElementById('inv-metrics').innerHTML =
+    metricColor('Deuda total', fmt(td), '', '#fef2f2','#b91c1c','#fca5a5') +
+    metricColor('Servicio mensual', fmt(tm), 'pagos mínimos', '#fff7ed','#c2410c','#fdba74') +
+    metricColor('Con activo', fmt(sec), '', '#eff6ff','#1d4ed8','#93c5fd') +
+    metricColor('Sin activo', fmt(td-sec), 'deuda expuesta', '#fdf4ff','#7e22ce','#d8b4fe');
+}
+function metric(label, value, sub){
+  return '<div class="metric-card"><div class="mc-label">'+label+'</div><div class="mc-value">'+value+'</div>'+(sub?'<div class="mc-sub">'+sub+'</div>':'')+'</div>';
+}
+function metricColor(label, value, sub, bg, textColor, borderColor){
+  return '<div class="metric-card" style="background:'+bg+';border-color:'+borderColor+'">'
+    +'<div class="mc-label" style="color:'+textColor+';opacity:0.7">'+label+'</div>'
+    +'<div class="mc-value" style="color:'+textColor+'">'+value+'</div>'
+    +(sub?'<div class="mc-sub" style="color:'+textColor+';opacity:0.6">'+sub+'</div>':'')
+    +'</div>';
+}
+
+function renderCatList(){
+  var el=document.getElementById('cat-list'); el.innerHTML='';
+  cats.forEach(function(cat){
+    var bal=cat.items.reduce(function(s,d){return s+(+d.balance||0);},0);
+    var isOpen=!!openCats[cat.id];
+    var d=document.createElement('div'); d.className='card';
+    d.innerHTML = '<div class="card-header" onclick="toggleCat(\''+cat.id+'\')"><div class="card-left">'
+      +'<div class="cat-badge" style="background:'+cat.bg+';color:'+cat.fc+'">'+cat.ic+'</div>'
+      +'<div><div class="cat-name">'+cat.name+'</div><div class="cat-sub-lbl">'+cat.sub+'</div></div>'
+      +'</div><div style="display:flex;align-items:center">'
+      +'<span id="ctot-'+cat.id+'" class="cat-total">'+(bal>0?fmt(bal):'—')+'</span>'
+      +'<span class="chevron'+(isOpen?' open':'')+'" id="chev-'+cat.id+'">▶</span></div></div>'
+      +'<div class="card-body'+(isOpen?' open':'')+'" id="cbody-'+cat.id+'"></div>';
+    el.appendChild(d);
+    renderCatBody(cat.id);
+  });
+}
+function toggleCat(id){
+  openCats[id]=!openCats[id];
+  document.getElementById('cbody-'+id).classList.toggle('open',openCats[id]);
+  document.getElementById('chev-'+id).classList.toggle('open',openCats[id]);
+}
+function renderCatBody(catId){
+  var cat=cats.find(function(c){return c.id===catId;});
+  var body=document.getElementById('cbody-'+catId); if(!body)return;
+  var html='';
+  cat.items.forEach(function(d,i){
+    if(cat.hasAsset){
+      var eq=(+d.assetValue||0)-(+d.balance||0);
+      var ec=eq>=0?'#16a34a':'#dc2626';
+      html+='<div class="debt-row dr-7">'
+        +'<div class="fi"><span class="fl">Nombre</span><input type="text" value="'+d.name+'" onchange="setF(\''+catId+'\','+i+',\'name\',this.value)"></div>'
+        +'<div class="fi"><span class="fl">Valor activo ($)</span><input type="number" value="'+(d.assetValue||'')+'" min="0" onchange="setF(\''+catId+'\','+i+',\'assetValue\',this.value)"></div>'
+        +'<div class="fi"><span class="fl">Saldo ($)</span><input type="number" value="'+(d.balance||'')+'" min="0" onchange="setF(\''+catId+'\','+i+',\'balance\',this.value)"></div>'
+        +'<div class="fi"><span class="fl">APR (%)</span><input type="number" value="'+(d.apr||'')+'" min="0" step="0.1" onchange="setF(\''+catId+'\','+i+',\'apr\',this.value)"></div>'
+        +'<div class="fi"><span class="fl">Pago mens. ($)</span><input type="number" value="'+(d.min||'')+'" min="0" onchange="setF(\''+catId+'\','+i+',\'min\',this.value)"></div>'
+        +'<div class="fi"><span class="fl">Equity</span><span style="font-size:13px;font-weight:600;color:'+ec+'">'+fmt(eq)+'</span></div>'
+        +'<button class="del-btn" onclick="delItem(\''+catId+'\','+i+')">×</button></div>';
+    } else {
+      html+='<div class="debt-row dr-5">'
+        +'<div class="fi"><span class="fl">Nombre</span><input type="text" value="'+d.name+'" onchange="setF(\''+catId+'\','+i+',\'name\',this.value)"></div>'
+        +'<div class="fi"><span class="fl">Saldo ($)</span><input type="number" value="'+(d.balance||'')+'" min="0" onchange="setF(\''+catId+'\','+i+',\'balance\',this.value)"></div>'
+        +'<div class="fi"><span class="fl">APR (%)</span><input type="number" value="'+(d.apr||'')+'" min="0" step="0.1" onchange="setF(\''+catId+'\','+i+',\'apr\',this.value)"></div>'
+        +'<div class="fi"><span class="fl">Pago mín. ($)</span><input type="number" value="'+(d.min||'')+'" min="0" onchange="setF(\''+catId+'\','+i+',\'min\',this.value)"></div>'
+        +'<button class="del-btn" onclick="delItem(\''+catId+'\','+i+')">×</button></div>';
+    }
+  });
+  html+='<button class="add-row-btn" onclick="addItem(\''+catId+'\')">+ Agregar '+cat.name.toLowerCase()+'</button>';
+  body.innerHTML=html;
+}
+function setF(catId,idx,field,val){
+  var cat=cats.find(function(c){return c.id===catId;});
+  cat.items[idx][field]=field==='name'?val:(+val||0);
+  if(!cat.hasAsset&&(field==='balance'||field==='apr')){
+    var d=cat.items[idx];
+    var bal=+d.balance||0;
+    var apr=+d.apr||0;
+    if(bal>0&&apr>0) d.min=Math.round(bal*apr/100/12);
+  }
+  var bal=cat.items.reduce(function(s,d){return s+(+d.balance||0);},0);
+  var el=document.getElementById('ctot-'+catId); if(el)el.textContent=bal>0?fmt(bal):'—';
+  renderInvMetrics(); renderCatBody(catId);
+}
+function addItem(catId){
+  var cat=cats.find(function(c){return c.id===catId;});
+  var b={name:'',balance:0,apr:18,min:25}; if(cat.hasAsset)b.assetValue=0;
+  cat.items.push(b); openCats[catId]=true;
+  document.getElementById('cbody-'+catId).classList.add('open');
+  document.getElementById('chev-'+catId).classList.add('open');
+  renderCatBody(catId); renderInvMetrics();
+}
+function delItem(catId,idx){
+  cats.find(function(c){return c.id===catId;}).items.splice(idx,1);
+  renderCatBody(catId); renderInvMetrics();
+}
+
+/* ---- PHASE 2 ---- */
+function initSelected(){
+  selectedDebts={};
+  cats.forEach(function(cat){
+    cat.items.forEach(function(d,i){
+      if(cat.excluded) selectedDebts[cat.id+'-'+i]=false;
+      else selectedDebts[cat.id+'-'+i]=(cat.priority===1||cat.priority===2);
+    });
+  });
+}
+function renderSelCards(){
+  initSelected();
+  var tm=totalMin();
+  var html='';
+  var groups=[
+    {label:'Recomendadas — atacar primero', ghBg:'#fef2f2', ghColor:'#b91c1c', pillBg:'#fef2f2', pillColor:'#b91c1c', pText:'Prioridad 1', pCls:'chip-red', prio:[1]},
+    {label:'Opcionales — incluir si tienes flujo', ghBg:'#fffbeb', ghColor:'#b45309', pillBg:'#fffbeb', pillColor:'#b45309', pText:'Prioridad 2', pCls:'chip-amber', prio:[2]},
+    {label:'Complementarias', ghBg:'#eff6ff', ghColor:'#1d4ed8', pillBg:'#eff6ff', pillColor:'#1d4ed8', pText:'Prioridad 3', pCls:'', prio:[3]}
+  ];
+  groups.forEach(function(g){
+    var gCats=cats.filter(function(c){return !c.excluded&&g.prio.indexOf(c.priority)>=0&&c.items.length>0;});
+    if(gCats.length===0)return;
+    html+='<div class="group-header"><span class="gh-pill" style="background:'+g.pillBg+';color:'+g.pillColor+'">'+g.pText+'</span>'+g.label+'</div>';
+    gCats.forEach(function(cat){
+      cat.items.forEach(function(d,i){
+        if(!d.balance&&!d.name)return;
+        var key=cat.id+'-'+i;
+        var isSel=!!selectedDebts[key];
+        var pctSvc=tm>0&&d.min?(d.min/tm*100):0;
+        var why='';
+        if(cat.id==='cc'||cat.id==='loc') why='Sin activo detrás — alto impacto al eliminar. APR elevado genera interés compuesto costoso.';
+        else if(cat.id==='auto'&&pctSvc>10) why='Pago representa '+pctSvc.toFixed(0)+'% del servicio total. Supera el 10% recomendado — considera venta.';
+        else if(cat.id==='auto') why='Deuda garantizada. Equity actual: '+fmt((+d.assetValue||0)-(+d.balance||0))+'. Pago: '+pctSvc.toFixed(0)+'% del servicio.';
+        else why='Deuda de APR moderado. Incluir si tienes flujo disponible.';
+        html+='<div class="sel-card'+(isSel?' checked':'')+'" id="sc-'+key+'" onclick="toggleSel(\''+key+'\')"><div class="chk-box" id="cb-'+key+'">'+(isSel?'✓':'')+'</div>'
+          +'<div style="flex:1"><div class="sc-name">'+(d.name||cat.name)+' <span class="sc-cat">· '+cat.sub+'</span></div>'
+          +'<div class="chips">'
+          +'<span class="chip '+aprChipClass(d.apr)+'">'+d.apr+'% APR</span>'
+          +'<span class="chip">'+fmt(d.balance)+'</span>'
+          +(d.min?'<span class="chip">'+fmt(d.min)+'/mes</span>':'')
+          +'</div><div class="sc-why">'+why+'</div></div>'
+          +'<span class="prio-tag" style="background:'+g.pillBg+';color:'+g.pillColor+'">'+g.pText+'</span></div>';
+      });
+    });
+  });
+  html+='<hr class="divider" style="margin:20px 0 12px">';
+  html+='<div class="group-header">Sugeridas excluir — requieren estrategia separada <span style="font-size:10px;font-weight:400;color:var(--gray-400);text-transform:none;letter-spacing:0">&nbsp;(puedes incluirlas si lo deseas)</span></div>';
+  cats.filter(function(c){return c.excluded;}).forEach(function(cat){
+    var itemsWithData=cat.items.filter(function(d){return d.balance>0||d.name;});
+    if(itemsWithData.length===0){
+      html+='<div class="sel-card excluded" style="opacity:.4;cursor:default"><div class="chk-box"></div><div style="flex:1"><div class="sc-name">'+cat.name+' <span class="sc-cat">· '+cat.sub+'</span></div><div class="chips"><span class="chip">Sin deudas registradas</span></div></div></div>';
+      return;
+    }
+    itemsWithData.forEach(function(d,i){
+      var realIdx=cat.items.indexOf(d);
+      var key=cat.id+'-'+realIdx;
+      var isSel=!!selectedDebts[key];
+      html+='<div class="sel-card'+(isSel?' checked':'')+'" id="sc-'+key+'" onclick="toggleSel(\''+key+'\')">'
+        +'<div class="chk-box" id="cb-'+key+'">'+(isSel?'✓':'')+'</div>'
+        +'<div style="flex:1">'
+        +'<div class="sc-name">'+(d.name||cat.name)+' <span class="sc-cat">· '+cat.sub+'</span></div>'
+        +'<div class="chips">'
+        +(d.apr?'<span class="chip '+aprChipClass(d.apr)+'">'+d.apr+'% APR</span>':'')
+        +'<span class="chip">'+fmt(d.balance)+'</span>'
+        +(d.min?'<span class="chip">'+fmt(d.min)+'/mes</span>':'')
+        +'</div>'
+        +'<div style="display:flex;align-items:flex-start;gap:6px;margin-top:5px;background:#fffbeb;border-radius:6px;padding:6px 8px;">'
+        +'<span style="color:#b45309;font-size:12px;flex-shrink:0;font-weight:600;">⚠</span>'
+        +'<span style="font-size:11px;color:#78350f;line-height:1.45;">'+cat.excludeReason+'</span>'
+        +'</div>'
+        +'</div></div>';
+    });
+  });
+  document.getElementById('sel-cards').innerHTML=html;
+  updateSelSummary();
+}
+function toggleSel(key){
+  selectedDebts[key]=!selectedDebts[key];
+  var card=document.getElementById('sc-'+key);
+  var box=document.getElementById('cb-'+key);
+  if(card)card.classList.toggle('checked',selectedDebts[key]);
+  if(box)box.textContent=selectedDebts[key]?'✓':'';
+  updateSelSummary();
+}
+function updateSelSummary(){
+  var cnt=0,bal=0,mn=0;
+  cats.forEach(function(cat){cat.items.forEach(function(d,i){if(selectedDebts[cat.id+'-'+i]){cnt++;bal+=(+d.balance||0);mn+=(+d.min||0);}});});
+  document.getElementById('sel-summary').innerHTML=
+    '<b>'+cnt+' deuda'+(cnt!==1?'s':'')+' seleccionada'+(cnt!==1?'s':'')+' para el plan</b>'
+    +' &nbsp;·&nbsp; Total a resolver: <b>'+fmt(bal)+'</b>'
+    +' &nbsp;·&nbsp; Servicio mensual: <b>'+fmt(mn)+'</b>'
+    +(cnt===0?'<br><span style="color:#b91c1c;font-size:12px">Selecciona al menos una deuda para continuar.</span>':'');
+  document.getElementById('btn-p2next').disabled=cnt===0;
+}
+
+/* ---- PHASE 3 ---- */
+function getSelectedAssets(){
+  var list=[];
+  cats.forEach(function(cat){
+    if(!cat.hasAsset)return;
+    cat.items.forEach(function(d,i){
+      var key=cat.id+'-'+i;
+      if(selectedDebts[key]&&(+d.balance||0)>0) list.push({catId:cat.id,catName:cat.name,idx:i,key:key,d:d});
+    });
+  });
+  return list;
+}
+function renderAssetCards(){
+  var sa=getSelectedAssets(), tm=totalMin(), html='';
+  if(sa.length===0) html='<div class="alert alert-ok"><span class="alert-icon">✓</span><span>No tienes activos en tu plan de selección. Puedes pasar directo a la estrategia.</span></div>';
+  sa.forEach(function(s){
+    var key=s.key, act=assetActions[key]||'keep', d=s.d;
+    var eq=(+d.assetValue||0)-(+d.balance||0);
+    var pct=tm>0?(d.min/tm*100):0;
+    var eqColor=eq>=0?'#16a34a':'#dc2626';
+    var netSell=+d.assetValue||0;
+    var deficiency=Math.max(0,(+d.balance||0)-netSell);
+    var notes={
+      keep:'Mantienes el activo y la deuda continúa en tu plan de pagos.',
+      sell:(eq>=0)
+        ?'Valor del activo: '+fmt(netSell)+'. Saldo: '+fmt(d.balance)+'. Liberas '+fmt(eq)+' — deuda eliminada completamente.'
+        :'Valor del activo: '+fmt(netSell)+'. Saldo: '+fmt(d.balance)+'. Déficit bruto de '+fmt(deficiency)+' entra a tu plan como deuda sin garantía. (Los costos reales de venta reducirán aún más el neto.)',
+      refi:'Refinancias a mejor tasa para reducir el pago mensual. La deuda permanece pero a menor costo. Requiere buen historial crediticio.',
+      surrender:'Entrega voluntaria del activo al prestamista (~85% del valor). '+(eq<0?'Posible deficiency balance de '+fmt(Math.max(0,(+d.balance||0)-(+d.assetValue||0)*0.85))+' que entra a tu plan.':'El activo queda liberado.')
+    };
+    html+='<div class="asset-card">'
+      +'<div class="asset-top"><div><div class="asset-name">'+(d.name||s.catName)+'</div><div class="asset-type">'+s.catName+'</div></div>'
+      +(pct>10?'<span class="chip chip-amber">'+pct.toFixed(0)+'% del servicio</span>':'')+'</div>'
+      +'<div class="asset-nums">'
+      +'<div class="an-block"><div class="an-label">Valor activo</div><div class="an-val">'+fmt(d.assetValue)+'</div></div>'
+      +'<div class="an-block"><div class="an-label">Saldo deuda</div><div class="an-val">'+fmt(d.balance)+'</div></div>'
+      +'<div class="an-block"><div class="an-label">Equity</div><div class="an-val" style="color:'+eqColor+'">'+fmt(eq)+'</div></div>'
+      +'</div>'
+      +'<div class="action-row">'
+      +'<button class="act-btn'+(act==='keep'?' on-keep':'')+'" onclick="setAct(\''+key+'\',\'keep\')">Mantener</button>'
+      +'<button class="act-btn'+(act==='sell'?' on-sell':'')+'" onclick="setAct(\''+key+'\',\'sell\')">Vender</button>'
+      +(s.catId!=='auto'?'<button class="act-btn'+(act==='refi'?' on-refi':'')+'" onclick="setAct(\''+key+'\',\'refi\')">Refinanciar</button>':'')
+      +(s.catId!=='auto'?'<button class="act-btn'+(act==='surrender'?' on-surr':'')+'" onclick="setAct(\''+key+'\',\'surrender\')">Entrega voluntaria</button>':'')
+      +'</div>'
+      +'<div class="action-note">'+notes[act]+'</div></div>';
+  });
+  document.getElementById('asset-cards').innerHTML=html;
+  renderAssetMetrics(); renderAssetAlerts();
+}
+function setAct(key,act){ assetActions[key]=act; renderAssetCards(); }
+function setAssetVal(catId,idx,val){
+  var cat=cats.find(function(c){return c.id===catId;});
+  cat.items[idx].assetValue=+val||0;
+  renderAssetCards();
+}
+function getExposedList(){
+  var list=[];
+  cats.forEach(function(cat){
+    cat.items.forEach(function(d,i){
+      var key=cat.id+'-'+i;
+      if(!selectedDebts[key])return;
+      var bal=+d.balance||0;
+      if(cat.hasAsset){
+        var act=assetActions[key]||'keep';
+        if(act==='sell')   bal=Math.max(0,bal-(+d.assetValue||0));
+        if(act==='surrender') bal=Math.max(0,bal-(+d.assetValue||0)*0.85);
+      }
+      if(bal>0) list.push({name:d.name||cat.name, balance:bal, apr:+d.apr||18, min:+d.min||25});
+    });
+  });
+  return list;
+}
+function renderAssetMetrics(){
+  var selBal=0,selMin=0;
+  cats.forEach(function(cat){cat.items.forEach(function(d,i){if(selectedDebts[cat.id+'-'+i]){selBal+=(+d.balance||0);selMin+=(+d.min||0);}});});
+  var expBal=getExposedList().reduce(function(s,d){return s+d.balance;},0);
+  document.getElementById('asset-metrics').innerHTML=
+    metric('Deuda seleccionada', fmt(selBal)) +
+    metric('Liberada por activos', fmt(Math.max(0,selBal-expBal))) +
+    metric('Entra a estrategia', fmt(expBal), 'después de activos') +
+    metric('Pagos mínimos mensuales', fmt(selMin), 'suma de cuotas seleccionadas');
+}
+function renderAssetAlerts(){
+  var alerts=[], tm=totalMin();
+  getSelectedAssets().forEach(function(s){
+    var d=s.d, eq=(+d.assetValue||0)-(+d.balance||0), pct=tm>0?(d.min/tm*100):0, act=assetActions[s.key]||'keep';
+    if(s.catId==='auto'&&pct>10&&act==='keep') alerts.push({t:'warn',i:'▲',m:'<b>Auto ('+d.name+'):</b> su pago representa el '+pct.toFixed(0)+'% del servicio total. Considera venderlo y reemplazarlo por un vehículo con pago menor al 10%.'});
+    if(eq<0&&act==='keep') alerts.push({t:'warn',i:'▲',m:'<b>'+(d.name||s.catName)+':</b> estás bajo el agua en '+fmt(-eq)+'. Si decides vender necesitarás cubrir esa diferencia con otros fondos.'});
+    if(eq>15000&&(s.catId==='heloc')&&act==='keep') alerts.push({t:'ok',i:'✓',m:'<b>HELOC ('+d.name+'):</b> tienes '+fmt(eq)+' de equity disponible. Podrías usar esta línea para consolidar deudas de tarjetas de alto APR.'});
+  });
+  if(alerts.length===0) alerts.push({t:'ok',i:'✓',m:'Tus decisiones de activos se ven razonables con la información actual.'});
+  document.getElementById('asset-alerts').innerHTML=alerts.map(function(a){
+    return '<div class="alert alert-'+a.t+'"><span class="alert-icon">'+a.i+'</span><span>'+a.m+'</span></div>';
+  }).join('');
+}
+
+/* ---- PHASE 4 ---- */
+function snowball(dl,ex){
+  var ds=dl.map(function(d){return{b:d.balance,apr:d.apr,mn:Math.max(d.min,20)};});
+  ds.sort(function(a,b){return a.b-b.b;});
+  var ti=0,mo=0,h=[ds.reduce(function(s,d){return s+d.b;},0)];
+  while(ds.some(function(d){return d.b>0;})&&mo<360){
+    mo++;
+    ds.forEach(function(d){if(d.b>0){var i=d.b*(d.apr/100/12);ti+=i;d.b+=i;}});
+    ds.forEach(function(d){if(d.b>0){d.b-=Math.min(d.b,d.mn);if(d.b<0)d.b=0;}});
+    var t=ds.find(function(d){return d.b>0;});
+    if(t&&ex>0){t.b-=Math.min(t.b,ex);if(t.b<0)t.b=0;}
+    h.push(Math.max(0,ds.reduce(function(s,d){return s+d.b;},0)));
+  }
+  return{months:mo,interest:ti,history:h};
+}
+function consol(dl,ex,rate){
+  var tot=dl.reduce(function(s,d){return s+d.balance;},0);
+  var pm=dl.reduce(function(s,d){return s+d.min;},0);
+  var r=(rate||9.5)/100/12,pay=pm+ex,b=tot,mo=0,ti=0,h=[b];
+  while(b>0&&mo<360){mo++;var i=b*r;ti+=i;b+=i;b-=Math.min(b,pay);h.push(Math.max(0,b));}
+  return{months:mo,interest:ti,history:h,rate:rate||9.5};
+}
+function negot(dl,ex,pct){
+  var tot=dl.reduce(function(s,d){return s+d.balance;},0);
+  var red=tot*(pct||55)/100, pm=dl.reduce(function(s,d){return s+d.min;},0);
+  var avg=dl.reduce(function(s,d){return s+d.apr;},0)/(dl.length||1);
+  var pay=pm+ex,r=avg*0.5/100/12,b=red,mo=0,ti=0,h=[tot,red];
+  while(b>0&&mo<360){mo++;var i=b*r;ti+=i;b+=i;b-=Math.min(b,pay);h.push(Math.max(0,b));}
+  return{months:mo+1,interest:ti,history:h,reduction:tot-red,pct:pct||55};
+}
+function renderStratMetrics(){
+  var el=getExposedList();
+  var tot=el.reduce(function(s,d){return s+d.balance;},0);
+  var pm=el.reduce(function(s,d){return s+d.min;},0);
+  document.getElementById('strat-metrics').innerHTML=
+    metricColor('Deuda a resolver', fmt(tot), el.length+' deudas', '#fef2f2','#b91c1c','#fca5a5') +
+    metricColor('Pagos mínimos', fmt(pm), 'por mes', '#fff7ed','#c2410c','#fdba74') +
+    metricColor('Total con extra', fmt(pm+extraPay), '/mes', '#eff6ff','#1d4ed8','#93c5fd');
+}
+function renderStrat(){
+  renderStratMetrics();
+  var dl=getExposedList();
+  if(dl.length===0){
+    document.getElementById('strat-output').innerHTML='<div class="alert alert-ok"><span class="alert-icon">✓</span><span>No hay deuda expuesta con las decisiones actuales. ¡Excelente posición financiera!</span></div>';
+    return;
+  }
+  var c,c1,c2,steps,warn='',rights='';
+  if(curStrat==='snow'){
+    c=snowball(dl,extraPay); c1='#0e9f6e'; c2='#d1fae5';
+    var srt=[...dl].sort(function(a,b){return a.balance-b.balance;});
+    steps=[
+      {n:'Paso 1',t:'Ordena de menor a mayor',d:'Primero: "'+srt[0].name+'" ('+fmt(srt[0].balance)+'). La victoria rápida genera momentum y motivación para continuar.'},
+      {n:'Paso 2',t:'Mínimos en todas',d:'Asegura el pago mínimo en cada deuda este mes. Ninguna puede caer en mora mientras atacas la primera.'},
+      {n:'Paso 3',t:'Extra al saldo menor',d:'Los $'+extraPay.toLocaleString()+' extra van 100% al primer objetivo hasta liquidarlo por completo.'},
+      {n:'Paso 4',t:'Efecto de nieve',d:'Al liquidar una, suma su pago a la siguiente. En '+c.months+' meses puedes terminar el plan completo.'}
+    ];
+  } else if(curStrat==='consol'){
+    c=consol(dl,extraPay,consolRate); c1='#2b7fff'; c2='#dbeafe';
+    steps=[
+      {n:'Paso 1',t:'Verifica tu crédito',d:'Necesitas score 650+ para tasas competitivas (8–12%). Obtén tu reporte en annualcreditreport.com sin costo.'},
+      {n:'Paso 2',t:'Compara 3 opciones',d:'Préstamo personal, balance transfer 0% intro, o HELOC si tienes equity. No aceptes el primero que encuentres.'},
+      {n:'Paso 3',t:'Consolida al '+consolRate+'% APR',d:'Un solo pago mensual simplifica el manejo. El ahorro en interés puede reinvertirse como pago extra.'},
+      {n:'Paso 4',t:'Congela las tarjetas',d:'El mayor riesgo: acumular deuda nueva mientras pagas el préstamo. Guarda las tarjetas. No las cierres aún.'}
+    ];
+  } else if(curStrat==='negot'){
+    c=negot(dl,extraPay,negotPct); c1='#c27803'; c2='#fef9c3';
+    warn='<div class="alert alert-info" style="margin-bottom:8px"><span class="alert-icon" style="color:#1e40af">i</span><span><b>¿Cuándo usar esta estrategia?</b> La negociación funciona cuando ya estás en mora (+90 días sin pagar) o la situación financiera es crítica — pérdida de empleo, enfermedad, reducción severa de ingresos. Los acreedores solo aceptan reducir el saldo cuando ven que la alternativa es no cobrar nada. Si estás al día en tus pagos, es muy difícil que negocien una quita.</span></div>'
+    +'<div class="alert alert-warn" style="margin-bottom:8px"><span class="alert-icon">▲</span><span>La negociación puede reducir tu score hasta 100 puntos temporalmente. La deuda perdonada puede ser ingreso gravable (Form 1099-C). Consulta un contador antes de cerrar acuerdos.</span></div>';
+    var rights='<div style="border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-top:16px;background:#fff">'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+    +'<span style="background:#e0f2fe;color:#0369a1;font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;letter-spacing:0.04em">CFPB · Fuente oficial</span>'
+    +'<span style="font-size:13px;font-weight:600;color:#111827">Tus derechos frente a cobradores de deuda</span>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-bottom:10px">'
+    +'<div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><div style="font-size:11px;font-weight:600;color:#374151;margin-bottom:3px">Horario permitido</div><div style="font-size:12px;color:#6b7280;line-height:1.5">Solo pueden llamarte entre las <b style="color:#111">8 a.m. y 9 p.m.</b> Si les indicas que cierto horario o lugar es inconveniente, deben respetarlo. Si no puedes recibir llamadas personales en el trabajo, no pueden contactarte ahí.</div></div>'
+    +'<div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><div style="font-size:11px;font-weight:600;color:#374151;margin-bottom:3px">Límite de llamadas (FDCPA)</div><div style="font-size:12px;color:#6b7280;line-height:1.5">Se presume violación de la ley si te llaman <b style="color:#111">más de 7 veces en 7 días</b> sobre una misma deuda, o si te llaman dentro de los 7 días siguientes a una conversación telefónica que ya tuviste con ellos.</div></div>'
+    +'<div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><div style="font-size:11px;font-weight:600;color:#374151;margin-bottom:3px">Derecho a que paren</div><div style="font-size:12px;color:#6b7280;line-height:1.5">Tienes derecho a pedirle al cobrador que <b style="color:#111">deje de contactarte</b> por completo. Una vez notificados por escrito, solo pueden contactarte para confirmar que pararán o para informarte de una acción legal específica.</div></div>'
+    +'<div style="background:#f9fafb;border-radius:8px;padding:10px 12px"><div style="font-size:11px;font-weight:600;color:#374151;margin-bottom:3px">Prohibido acosar</div><div style="font-size:12px;color:#6b7280;line-height:1.5">La ley prohíbe llamadas repetidas con intención de <b style="color:#111">molestar, abusar o acosar</b>. Esto incluye mensajes de voz. Las leyes de tu estado pueden ofrecer protecciones adicionales.</div></div>'
+    +'</div>'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">'
+    +'<span style="font-size:11px;color:#9ca3af">Fuente: Consumer Financial Protection Bureau (CFPB) · Actualizado dic. 2024</span>'
+    +'<a href="https://www.consumerfinance.gov/ask-cfpb/when-and-how-often-can-a-debt-collector-call-me-on-the-phone-en-2110/" target="_blank" style="font-size:11px;color:#2b7fff;text-decoration:none;font-weight:500">Ver artículo completo →</a>'
+    +'</div>'
+    +'</div>';
+    steps=[
+      {n:'Paso 1',t:'Evalúa tu situación financiera',d:'Calcula ingresos, gastos esenciales y efectivo disponible para un pago único. Lista todas tus deudas indicando acreedor, saldo, tasa y si está en cobros. Prioriza las más cercanas a acción legal o con mayor tasa.'},
+      {n:'Paso 2',t:'Verifica la deuda',d:'Solicita una carta de validación de deuda al cobrador antes de hablar de pagos — confirma que te pertenece y que el monto es correcto. Verifica también el estatuto de limitaciones de tu estado (plazo legal para demandar).'},
+      {n:'Paso 3',t:'Prepara tu estrategia',d:'Define el máximo que puedes pagar. Empieza ofreciendo 25–30% del saldo total, con meta de acordar entre 30–60%. Un pago único tiene más poder de negociación que un plan de cuotas. Si no puedes pagar un monto único, pregunta por un "hardship program".'},
+      {n:'Paso 4',t:'Contacta al acreedor',d:'Llama y pide el departamento de "hardship", "loss mitigation" o "settlement". Explica tu situación con calma y presenta tu oferta. Anota el nombre del agente, empresa, fecha, hora y resumen de la conversación.'},
+      {n:'Paso 5',t:'Acuerdo por escrito',d:'Nunca pagues sin recibir primero un documento escrito (correo, email o fax) que indique el monto acordado y que la cuenta quedará como "paid in full" o "settled in full". Verifica que incluya tu nombre, número de cuenta, monto exacto y fecha límite.'},
+      {n:'Paso 6',t:'Realiza el pago con seguridad',d:'Usa cheque de caja o money order — no des acceso directo a tu cuenta bancaria. Guarda el recibo y el acuerdo escrito. Verifica con las agencias de crédito 30–60 días después que la deuda aparezca como saldada.'}
+    ];
+  }
+
+  var h=c.history, step=Math.max(1,Math.floor(h.length/22));
+  var lbls=[],dat=[];
+  for(var i=0;i<h.length;i+=step){lbls.push('M'+i);dat.push(Math.round(h[i]));}
+  if(dat.length===0||dat[dat.length-1]!==0){lbls.push('M'+(h.length-1));dat.push(0);}
+
+  var metricsHtml='<div class="metrics-grid" style="margin-bottom:20px">';
+  metricsHtml+=metricColor('Libre de deuda en', c.months+' meses', (c.months/12).toFixed(1)+' años', '#f0fdf4','#166534','#86efac');
+  metricsHtml+=metricColor('Interés total pagado', fmt(c.interest), '', '#fef2f2','#b91c1c','#fca5a5');
+  if(curStrat==='negot') metricsHtml+=metricColor('Ahorro estimado', fmt(c.reduction), 'deuda perdonada', '#f0fdf4','#166534','#86efac');
+  if(curStrat==='consol') metricsHtml+=metricColor('Nueva tasa', c.rate+'% APR', 'estimado', '#eff6ff','#1d4ed8','#93c5fd');
+  metricsHtml+='</div>';
+
+  var selBal=0,excBal=0;
+  cats.forEach(function(cat){
+    cat.items.forEach(function(d,i){if(selectedDebts[cat.id+'-'+i])selBal+=(+d.balance||0);});
+    if(cat.excluded)cat.items.forEach(function(d){excBal+=(+d.balance||0);});
+  });
+  var sumHtml='<div class="result-box"><p class="rb-title">Resumen del plan completo</p>'
+    +'<div class="rb-row"><span>Deudas incluidas en el plan</span><span>'+fmt(selBal)+'</span></div>'
+    +'<div class="rb-row"><span>Deudas excluidas / estrategia separada</span><span>'+fmt(excBal)+'</span></div>'
+    +'<div class="rb-row"><span>Total deuda original</span><span>'+fmt(totalDebt())+'</span></div></div>';
+
+  document.getElementById('strat-output').innerHTML = metricsHtml
+    +'<div class="legend"><span><span class="leg-dot" style="background:'+c1+'"></span>Saldo proyectado</span></div>'
+    +'<div class="chart-wrap"><canvas id="sc" role="img" aria-label="Proyección de reducción de saldo de deuda">Gráfica de proyección de deuda.</canvas></div>'
+    +warn
+    +'<div class="step-cards">'+steps.map(function(s){
+      return '<div class="step-card"><div class="sc-step-num" style="color:'+c1+'">'+s.n+'</div><div class="sc-step-title">'+s.t+'</div><div class="sc-step-desc">'+s.d+'</div></div>';
+    }).join('')+'</div>'
+    +rights
+    +sumHtml;
+
+  if(chartInst){chartInst.destroy();chartInst=null;}
+  chartInst=new Chart(document.getElementById('sc').getContext('2d'),{
+    type:'line',
+    data:{labels:lbls,datasets:[{label:'Saldo',data:dat,borderColor:c1,backgroundColor:c2,fill:true,tension:0.35,pointRadius:1,borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return ' '+fmt(c.raw);}}}},
+      scales:{
+        x:{ticks:{color:'#9ca3af',font:{size:11},maxTicksLimit:10},grid:{display:false}},
+        y:{ticks:{color:'#9ca3af',font:{size:11},callback:function(v){return '$'+Math.round(v/1000)+'K';}},grid:{color:'rgba(0,0,0,0.04)'}}
+      }
+    }
+  });
+}
+function selStrat(s,btn){
+  curStrat=s;
+  document.querySelectorAll('.stab').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+  var consolRow=document.getElementById('consol-rate-row');
+  var negotRow=document.getElementById('negot-pct-row');
+  if(consolRow) consolRow.style.display=(s==='consol')?'block':'none';
+  if(negotRow)  negotRow.style.display=(s==='negot')?'block':'none';
+  renderStrat();
+}
+
+/* ---- NAVIGATION ---- */
+function goPhase(n){
+  document.querySelectorAll('.phase').forEach(function(p){p.classList.remove('active');});
+  document.getElementById('phase'+n).classList.add('active');
+  ['ps1','ps2','ps3','ps4'].forEach(function(id,i){
+    var el=document.getElementById(id);
+    el.classList.remove('active','done');
+    if(i+1===n)el.classList.add('active');
+    else if(i+1<n)el.classList.add('done');
+  });
+  if(n===2){initSelected();renderSelCards();}
+  if(n===3){renderAssetCards();}
+  if(n===4){renderStratMetrics();renderStrat();}
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ---- INIT ---- */
+renderCatList();
+renderInvMetrics();
+</script>
+</body>
+</html>
