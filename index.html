@@ -619,6 +619,10 @@
           <span>Tus Metas</span>
         </a>
 
+        <a data-key="etapas">
+          <span>Etapas</span>
+        </a>
+
         <a data-key="conocimiento" id="conocimientoBtn">
           <span>Conocimiento</span>
           <span id="arrow">▾</span>
@@ -776,6 +780,7 @@
               <span class="badge">Tablero</span>
               <span class="badge">Tu Radiografía</span>
               <span class="badge">Tus Metas</span>
+              <span class="badge">Etapas</span>
               <span class="badge">Conocimiento</span>
               <span class="badge">Herramientas</span>
               <span class="badge">Tu Coach</span>
@@ -852,6 +857,7 @@
       tablero: 'Bienvenido, Frank 👋',
       radiografia: 'Tu Radiografía',
       metas: 'Tus Metas',
+      etapas: 'Etapas',
       conocimiento: 'Conocimiento',
       videos: 'Videos',
       articulos: 'Artículos',
@@ -873,6 +879,10 @@
       metas: `
         <h3>Tus Metas</h3>
         <p>Aquí puedes mostrar metas, progreso y próximos pasos.</p>
+      `,
+      etapas: `
+        <h3>Etapas</h3>
+        <p>Aquí puedes mostrar las etapas del proceso o desarrollo del usuario.</p>
       `,
       conocimiento: `
         <h3>Conocimiento</h3>
@@ -924,13 +934,14 @@
         return;
       }
 
-      [...nav.querySelectorAll('a')].forEach(x => x.classList.remove('active'));
+      [...nav.querySelectorAll('a')].forEach(x => {
+        x.classList.remove('active');
+      });
+
       a.classList.add('active');
 
       pageTitle.textContent = pageTitles[key] || '';
-      contentArea.innerHTML = pageTitles[key]
-        ? (contentTemplates[key] || '')
-        : '';
+      contentArea.innerHTML = contentTemplates[key] || '';
     });
 
     conocimientoBtn.addEventListener('click', (e) => {
