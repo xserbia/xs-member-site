@@ -35,7 +35,6 @@
       min-height:100vh;
     }
 
-    /* ===== Sidebar ===== */
     .sidebar{
       width:290px;
       background:#fff;
@@ -124,7 +123,6 @@
       font-weight:800;
     }
 
-    /* ===== Main ===== */
     .main{
       flex:1;
       padding:26px 28px;
@@ -137,7 +135,6 @@
       box-shadow:var(--shadow);
     }
 
-    /* ===== Top Bar ===== */
     .topBar{
       display:flex;
       align-items:center;
@@ -163,7 +160,6 @@
       white-space:nowrap;
     }
 
-    /* ===== Profile Block ===== */
     .profileBlock{
       display:flex;
       align-items:center;
@@ -228,7 +224,6 @@
       margin-left:4px;
     }
 
-    /* ===== Content card ===== */
     .contentCard{
       padding:24px;
       min-height:420px;
@@ -247,7 +242,6 @@
       line-height:1.55;
     }
 
-    /* ===== PROFILE MODAL ===== */
     .modalOverlay{
       position:fixed;
       inset:0;
@@ -465,29 +459,6 @@
       padding-top:0;
     }
 
-    .badgeRow{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      margin-top:4px;
-    }
-
-    .badge{
-      font-size:12px;
-      font-weight:900;
-      padding:5px 12px;
-      border-radius:999px;
-      background:#eef2ff;
-      color:var(--primary);
-      border:1px solid #c7d2fe;
-    }
-
-    .badge.green{
-      background:#f0fdf4;
-      color:#16a34a;
-      border-color:#bbf7d0;
-    }
-
     .pwStrength{
       display:flex;
       gap:4px;
@@ -607,21 +578,10 @@
       </div>
 
       <nav class="nav" id="nav">
-        <a class="active" data-key="tablero">
-          <span>Tablero</span>
-        </a>
-
-        <a data-key="radiografia">
-          <span>Tu Radiografía</span>
-        </a>
-
-        <a data-key="metas">
-          <span>Tus Metas</span>
-        </a>
-
-        <a data-key="etapas">
-          <span>Etapas</span>
-        </a>
+        <a class="active" data-key="tablero"><span>Tablero</span></a>
+        <a data-key="radiografia"><span>Tu Radiografía</span></a>
+        <a data-key="metas"><span>Tus Metas</span></a>
+        <a data-key="etapas"><span>Etapas</span></a>
 
         <a data-key="conocimiento" id="conocimientoBtn">
           <span>Conocimiento</span>
@@ -634,13 +594,8 @@
           <a data-key="cursos"><span>Cursos</span></a>
         </div>
 
-        <a data-key="herramientas">
-          <span>Herramientas</span>
-        </a>
-
-        <a data-key="coach">
-          <span>Tu Coach</span>
-        </a>
+        <a data-key="herramientas"><span>Herramientas</span></a>
+        <a data-key="coach"><span>Tu Coach</span></a>
 
         <div style="flex:1;min-height:32px;"></div>
 
@@ -673,7 +628,6 @@
     </main>
   </div>
 
-  <!-- ===== PROFILE MODAL ===== -->
   <div class="modalOverlay" id="modalOverlay">
     <div class="modalBox">
 
@@ -690,7 +644,6 @@
 
       <div class="modalTabs" id="modalTabs">
         <div class="modalTab active" data-panel="personal">Información Personal</div>
-        <div class="modalTab" data-panel="empleo">Empleo</div>
         <div class="modalTab" data-panel="acceso">Acceso & Contraseña</div>
       </div>
 
@@ -733,61 +686,6 @@
           </div>
         </div>
 
-        <div class="tabPanel" id="panel-empleo">
-          <div class="sectionDivider">Datos del empleado</div>
-          <div class="formGrid">
-            <div class="formGroup">
-              <label class="formLabel">ID de Empleado</label>
-              <input class="formInput" type="text" value="EMP-00482" disabled/>
-            </div>
-            <div class="formGroup">
-              <label class="formLabel">Fecha de ingreso</label>
-              <input class="formInput" type="date" value="2021-08-01" disabled/>
-            </div>
-            <div class="formGroup">
-              <label class="formLabel">Departamento</label>
-              <select class="formInput">
-                <option>Finanzas</option>
-                <option>Recursos Humanos</option>
-                <option>Tecnología</option>
-                <option>Operaciones</option>
-              </select>
-            </div>
-            <div class="formGroup">
-              <label class="formLabel">Puesto</label>
-              <input class="formInput" type="text" value="Analista Financiero"/>
-            </div>
-            <div class="formGroup">
-              <label class="formLabel">Supervisor directo</label>
-              <input class="formInput" type="text" value="María López" disabled/>
-            </div>
-            <div class="formGroup">
-              <label class="formLabel">Tipo de contrato</label>
-              <input class="formInput" type="text" value="Tiempo completo" disabled/>
-            </div>
-          </div>
-
-          <div class="sectionDivider">Acceso al programa</div>
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <div class="formLabel">Plan activo</div>
-            <div class="badgeRow">
-              <span class="badge">✦ Members Pro</span>
-              <span class="badge green">✓ Activo</span>
-            </div>
-
-            <div class="formLabel" style="margin-top:10px;">Módulos habilitados</div>
-            <div class="badgeRow">
-              <span class="badge">Tablero</span>
-              <span class="badge">Tu Radiografía</span>
-              <span class="badge">Tus Metas</span>
-              <span class="badge">Etapas</span>
-              <span class="badge">Conocimiento</span>
-              <span class="badge">Herramientas</span>
-              <span class="badge">Tu Coach</span>
-            </div>
-          </div>
-        </div>
-
         <div class="tabPanel" id="panel-acceso">
           <div class="sectionDivider">Credenciales de acceso</div>
           <div class="formGrid full">
@@ -826,7 +724,7 @@
                 <div style="font-weight:900;font-size:14px;">Chrome · Windows · Miami, FL</div>
                 <div style="font-size:12px;color:var(--muted);font-weight:700;margin-top:2px;">Sesión actual · hace 2 min</div>
               </div>
-              <span class="badge green">Activa</span>
+              <span style="font-size:12px;font-weight:900;color:#16a34a;">Activa</span>
             </div>
 
             <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;">
@@ -934,10 +832,7 @@
         return;
       }
 
-      [...nav.querySelectorAll('a')].forEach(x => {
-        x.classList.remove('active');
-      });
-
+      [...nav.querySelectorAll('a')].forEach(x => x.classList.remove('active'));
       a.classList.add('active');
 
       pageTitle.textContent = pageTitles[key] || '';
@@ -959,7 +854,6 @@
       contentArea.innerHTML = contentTemplates.conocimiento;
     });
 
-    // Modal open/close
     const modalOverlay = document.getElementById('modalOverlay');
     const profileBtn   = document.getElementById('profileBtn');
     const modalClose   = document.getElementById('modalClose');
@@ -972,7 +866,6 @@
       if(e.target === modalOverlay) modalOverlay.classList.remove('open');
     });
 
-    // Modal tabs
     const modalTabs = document.getElementById('modalTabs');
     modalTabs.addEventListener('click', (e) => {
       const tab = e.target.closest('.modalTab');
@@ -985,7 +878,6 @@
       document.getElementById('panel-' + tab.dataset.panel).classList.add('active');
     });
 
-    // Password strength indicator
     const newPw = document.getElementById('newPw');
     if(newPw) newPw.addEventListener('input', () => {
       const v = newPw.value;
