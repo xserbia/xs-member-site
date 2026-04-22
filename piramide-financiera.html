@@ -4,7 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Tu camino financiero</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
 <style>
 :root{
   --c1:#E24B4A;--c2:#EF9F27;--c3:#378ADD;--c4:#639922;--c5:#7F77DD;
@@ -16,34 +16,90 @@
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:48px 20px}
 .page{max-width:860px;margin:0 auto}
 
-/* HEADER */
-.header{text-align:center;margin-bottom:48px;transition:margin .4s}
+.header{text-align:center;margin-bottom:44px;transition:margin .4s}
 .header-label{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
 .header h1{font-family:'DM Serif Display',serif;font-size:clamp(28px,5vw,48px);font-weight:400;line-height:1.15;margin-bottom:12px}
 .header p{font-size:15px;color:var(--muted);max-width:400px;margin:0 auto;line-height:1.6}
 
-/* PYRAMID CENTERED */
-.pyramid-center{display:flex;flex-direction:column;align-items:center;transition:all .4s}
-.pyramid-hint{font-size:12px;color:var(--muted);margin-bottom:16px;opacity:1;transition:opacity .3s}
-svg.pyr{width:320px;max-width:100%;display:block;transition:all .4s}
-.pslice{cursor:pointer;transition:filter .2s,transform .15s;transform-origin:center bottom}
-.pslice:hover{filter:brightness(.88);transform:scaleY(1.03)}
+/* ── STAIRCASE ── */
+.stair-scene{display:flex;justify-content:center;align-items:flex-end;margin-bottom:12px;transition:opacity .35s,transform .35s}
+.stair-scene.hide{opacity:0;transform:translateY(12px);pointer-events:none}
 
-/* STEPPER (hidden initially) */
-.stepper-wrap{display:none;width:100%;margin-bottom:28px;animation:fadeUp .35s ease}
-@keyframes fadeUp{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
-.stepper{display:flex;width:100%;border-radius:12px;overflow:hidden}
-.step{flex:1;position:relative;padding:10px 6px 10px 22px;cursor:pointer;display:flex;flex-direction:column;justify-content:center;transition:filter .15s;min-width:0}
-.step:hover{filter:brightness(.92)}
-.step::after{content:'';position:absolute;right:-14px;top:0;bottom:0;width:28px;clip-path:polygon(0 0,100% 50%,0 100%);z-index:2}
-.step:last-child::after{display:none}
-.step:first-child{padding-left:14px;border-radius:12px 0 0 12px}
-.step-num{font-size:10px;font-weight:600;letter-spacing:.06em;opacity:.75;margin-bottom:2px}
-.step-name{font-size:11px;font-weight:600;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.step.active{filter:brightness(.85)}
+.stair-hint{text-align:center;font-size:12px;color:var(--muted);margin-bottom:20px;transition:opacity .3s}
 
-/* CONTENT PANEL */
-.content-panel{display:none;background:var(--surface);border-radius:20px;border:1px solid var(--border);overflow:hidden;animation:fadeUp .3s ease}
+.stairs{display:flex;align-items:flex-end;gap:0}
+.stair{
+  display:flex;flex-direction:column;justify-content:space-between;align-items:center;
+  cursor:pointer;position:relative;
+  border-radius:10px 10px 0 0;
+  transition:filter .2s, transform .2s;
+  transform-origin:bottom center;
+  padding:10px 6px 12px;
+}
+.stair:hover{filter:brightness(.88);transform:scaleY(1.04)}
+.stair.pulse{animation:pulse .4s ease}
+@keyframes pulse{0%{transform:scaleY(1)}50%{transform:scaleY(1.06)}100%{transform:scaleY(1)}}
+
+/* widths & heights — each step taller than previous */
+.stair-1{width:80px;height:140px;background:var(--c1)}
+.stair-2{width:80px;height:150px;background:var(--c2)}
+.stair-3{width:80px;height:190px;background:var(--c3)}
+.stair-4{width:80px;height:230px;background:var(--c4)}
+.stair-5{width:80px;height:270px;background:var(--c5)}
+
+/* connector between stairs */
+.stair+.stair{margin-left:3px}
+
+.stair-num{font-size:12px;font-weight:700;color:white;background:rgba(0,0,0,0.15);width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.stair-label{font-size:13px;font-weight:600;color:white;text-align:center;line-height:1}
+.stair-name{position:absolute;top:58%;left:50%;transform:translate(-50%,-50%) rotate(-90deg);font-size:11px;font-weight:600;color:rgba(255,255,255,0.9);white-space:nowrap;pointer-events:none}
+
+/* tiny figure on active stair */
+.stair-figure{
+  position:absolute;top:-28px;left:50%;transform:translateX(-50%);
+  display:none;flex-direction:column;align-items:center;gap:0;
+}
+.stair-figure.show{display:flex}
+.fig-head{width:10px;height:10px;border-radius:50%;background:white;border:2px solid rgba(0,0,0,0.15)}
+.fig-body{width:2px;height:12px;background:white;opacity:.8}
+.fig-legs{display:flex;gap:3px}
+.fig-leg{width:2px;height:8px;background:white;opacity:.8;border-radius:1px}
+
+/* flag at the top */
+.stair-flag{
+  position:absolute;top:-44px;right:8px;
+  display:none;flex-direction:column;align-items:center;
+}
+.stair-flag.show{display:flex}
+.flag-pole{width:2px;height:20px;background:rgba(255,255,255,0.7)}
+.flag-banner{width:14px;height:10px;background:white;border-radius:0 3px 3px 0;margin-top:-1px;margin-left:2px}
+
+/* ground line */
+.ground{width:100%;max-width:423px;height:3px;background:var(--surface);border-radius:999px;margin:0 auto 32px}
+
+.back-btn{display:none;background:none;border:none;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--muted);cursor:pointer;padding:0 0 16px;display:none;align-items:center;gap:6px;transition:color .15s}
+.back-btn:hover{color:var(--text)}
+.back-btn svg{flex-shrink:0}
+.road-wrap{display:none;width:100%;margin-bottom:32px;animation:fadeUp .35s ease;padding:0 8px 28px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.road{position:relative;display:flex;align-items:center;justify-content:space-between;padding-top:0}
+.road-track{position:absolute;top:50%;transform:translateY(-50%);left:18px;right:18px;height:6px;background:var(--surface);border-radius:999px;z-index:0;overflow:hidden}
+.road-track-fill{height:100%;background:linear-gradient(90deg,#E24B4A,#EF9F27,#378ADD,#639922,#7F77DD);border-radius:999px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.road-stop{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;position:relative;z-index:1;flex:1;transition:transform .2s}
+.road-stop:hover{transform:translateY(-2px)}
+.road-dot{width:36px;height:36px;border-radius:50%;border:3px solid;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;background:#fff;transition:transform .2s,box-shadow .2s;position:relative}
+.road-stop.active .road-dot{transform:scale(1.15);box-shadow:0 0 0 5px rgba(0,0,0,0.06)}
+.road-dot-inner{width:10px;height:10px;border-radius:50%}
+.road-stop-num{position:absolute;top:-18px;font-size:9px;font-weight:600;letter-spacing:.06em;color:var(--muted)}
+.road-stop-label{font-size:10px;font-weight:500;color:var(--muted);text-align:center;line-height:1.3;max-width:64px;transition:color .2s,font-weight .2s}
+.road-stop.active .road-stop-label{color:var(--text);font-weight:600}
+.road-car{position:absolute;top:calc(50% + 24px);transform:translateX(-50%);width:18px;height:18px;z-index:3;transform:translateX(-50%);transition:left .6s cubic-bezier(.4,0,.2,1);display:flex;align-items:center;justify-content:center}
+.road-flag{position:absolute;right:-2px;top:-34px;display:flex;flex-direction:column;align-items:flex-start}
+.road-flag-pole{width:2px;height:18px;background:rgba(0,0,0,0.18);margin-left:2px}
+.road-flag-banner{width:12px;height:8px;border-radius:0 3px 3px 0;margin-top:-1px;margin-left:2px;background:#7F77DD}
+
+/* ── CONTENT ── */
+.content-panel{display:none;background:var(--surface);border-radius:20px;border:1px solid var(--border);overflow:hidden;transition:opacity .25s}
 .info-top{padding:28px 28px 22px;border-bottom:1px solid var(--border);background:#fff}
 .info-badge{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:4px 12px;border-radius:999px;margin-bottom:12px}
 .info-name{font-family:'DM Serif Display',serif;font-size:32px;font-weight:400;line-height:1.1;margin-bottom:4px}
@@ -58,7 +114,6 @@ svg.pyr{width:320px;max-width:100%;display:block;transition:all .4s}
 .m-text{font-size:13px;font-weight:500;line-height:1.4}
 .m-sub{font-size:11px;color:var(--muted);margin-top:2px}
 
-/* TRACKER */
 .tracker{background:#e8e8ea;border-radius:14px;padding:20px;margin-top:20px}
 .tracker-title{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:8px}
 .tracker-title::after{content:'';flex:1;height:1px;background:var(--border)}
@@ -78,7 +133,7 @@ svg.pyr{width:320px;max-width:100%;display:block;transition:all .4s}
 .tnote{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.4}
 .check-row{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
 .check-row:last-child{border-bottom:none}
-.cbox{width:18px;height:18px;border-radius:4px;border:1.5px solid rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:background .15s,border-color .15s}
+.cbox{width:18px;height:18px;border-radius:4px;border:1.5px solid rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:background .15s}
 .cbox.on{border-color:transparent}
 .ctick{display:none;width:10px;height:10px}
 .cbox.on .ctick{display:block}
@@ -90,20 +145,23 @@ svg.pyr{width:320px;max-width:100%;display:block;transition:all .4s}
 .saved-msg{font-size:11px;color:#3B6D11;opacity:0;transition:opacity .3s}
 .saved-msg.show{opacity:1}
 
-/* CTA */
 .cta-bar{margin-top:36px;background:var(--surface);border-radius:20px;border:1px solid var(--border);padding:26px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px}
 .cta-bar h3{font-family:'DM Serif Display',serif;font-size:20px;font-weight:400;margin-bottom:4px}
 .cta-bar p{font-size:13px;color:var(--muted)}
 .cta-btn{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;background:var(--text);color:#fff;border:none;border-radius:999px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:opacity .15s}
 .cta-btn:hover{opacity:.82}
 
-@media(max-width:600px){
-  body{padding:28px 14px}
-  .step-name{font-size:10px}
-  .step-num{display:none}
+@media(max-width:500px){
+  .stair-1{width:56px;height:110px}
+  .stair-2{width:56px;height:118px}
+  .stair-3{width:56px;height:150px}
+  .stair-4{width:56px;height:182px}
+  .stair-5{width:56px;height:214px}
+  .stair-label{font-size:10px}
   .info-top,.info-body{padding:18px 16px}
   .tracker{padding:14px}
   .cta-bar{flex-direction:column;text-align:center}
+  body{padding:28px 12px}
 }
 </style>
 </head>
@@ -113,58 +171,102 @@ svg.pyr{width:320px;max-width:100%;display:block;transition:all .4s}
   <div class="header" id="header">
     <div class="header-label">Finanzas personales</div>
     <h1>Tu camino hacia<br>la libertad financiera</h1>
-    <p>Cinco etapas para transformar tu relación con el dinero. Toca un nivel para comenzar.</p>
+    <p>Cinco escalones que transforman tu relación con el dinero. Toca uno para comenzar.</p>
   </div>
 
-  <!-- PYRAMID -->
-  <div class="pyramid-center" id="pyramidCenter">
-    <div class="pyramid-hint" id="pyramidHint">toca un nivel para explorar</div>
-    <svg class="pyr" viewBox="0 0 320 360" xmlns="http://www.w3.org/2000/svg">
-      <polygon class="pslice" points="160,12 228,78 92,78" fill="#7F77DD" onclick="selectStage(5)"/>
-      <polygon class="pslice" points="92,84 228,84 252,148 68,148" fill="#639922" onclick="selectStage(4)"/>
-      <polygon class="pslice" points="68,154 252,154 274,218 46,218" fill="#378ADD" onclick="selectStage(3)"/>
-      <polygon class="pslice" points="46,224 274,224 290,288 30,288" fill="#EF9F27" onclick="selectStage(2)"/>
-      <polygon class="pslice" points="30,294 290,294 290,348 30,348" fill="#E24B4A" onclick="selectStage(1)"/>
-      <text font-family="DM Sans,sans-serif" x="160" y="52" text-anchor="middle" fill="white" font-size="10" font-weight="600" letter-spacing="0.07em" pointer-events="none">LIBERTAD</text>
-      <text font-family="DM Sans,sans-serif" x="160" y="116" text-anchor="middle" fill="white" font-size="10" font-weight="500" pointer-events="none">04 · Independencia</text>
-      <text font-family="DM Sans,sans-serif" x="160" y="190" text-anchor="middle" fill="white" font-size="11" font-weight="500" pointer-events="none">03 · Acumulación</text>
-      <text font-family="DM Sans,sans-serif" x="160" y="260" text-anchor="middle" fill="white" font-size="11" font-weight="500" pointer-events="none">02 · Seguridad</text>
-      <text font-family="DM Sans,sans-serif" x="160" y="325" text-anchor="middle" fill="white" font-size="12" font-weight="600" pointer-events="none">01 · Supervivencia</text>
-    </svg>
+  <!-- STAIRCASE -->
+  <div class="stair-hint" id="stairHint">toca un escalón para explorar</div>
+  <div class="stair-scene" id="stairScene">
+    <div class="stairs">
+      <div class="stair stair-1" id="stair1" onclick="selectStage(1)">
+        <div class="stair-num">01</div>
+        <div class="stair-name">Supervivencia</div>
+        <div class="stair-figure" id="fig1">
+          <div class="fig-head"></div>
+          <div class="fig-body"></div>
+          <div class="fig-legs"><div class="fig-leg"></div><div class="fig-leg"></div></div>
+        </div>
+      </div>
+      <div class="stair stair-2" id="stair2" onclick="selectStage(2)">
+        <div class="stair-num">02</div>
+        <div class="stair-name">Seguridad</div>
+        <div class="stair-figure" id="fig2">
+          <div class="fig-head"></div>
+          <div class="fig-body"></div>
+          <div class="fig-legs"><div class="fig-leg"></div><div class="fig-leg"></div></div>
+        </div>
+      </div>
+      <div class="stair stair-3" id="stair3" onclick="selectStage(3)">
+        <div class="stair-num">03</div>
+        <div class="stair-name">Acumulación</div>
+        <div class="stair-figure" id="fig3">
+          <div class="fig-head"></div>
+          <div class="fig-body"></div>
+          <div class="fig-legs"><div class="fig-leg"></div><div class="fig-leg"></div></div>
+        </div>
+      </div>
+      <div class="stair stair-4" id="stair4" onclick="selectStage(4)">
+        <div class="stair-num">04</div>
+        <div class="stair-name">Independencia</div>
+        <div class="stair-figure" id="fig4">
+          <div class="fig-head"></div>
+          <div class="fig-body"></div>
+          <div class="fig-legs"><div class="fig-leg"></div><div class="fig-leg"></div></div>
+        </div>
+      </div>
+      <div class="stair stair-5" id="stair5" onclick="selectStage(5)">
+        <div class="stair-num">05</div>
+        <div class="stair-name">Libertad</div>
+        <div class="stair-figure" id="fig5">
+          <div class="fig-head"></div>
+          <div class="fig-body"></div>
+          <div class="fig-legs"><div class="fig-leg"></div><div class="fig-leg"></div></div>
+        </div>
+        <div class="stair-flag" id="flag5"><div class="flag-pole"></div><div class="flag-banner"></div></div>
+      </div>
+    </div>
   </div>
+  <div class="ground" id="ground"></div>
 
-  <!-- STEPPER -->
-  <div class="stepper-wrap" id="stepperWrap">
-    <div class="stepper" id="stepper">
-      <div class="step" id="st1" style="background:#E24B4A;color:white" onclick="selectStage(1)">
-        <div class="step-num">01</div>
-        <div class="step-name">Supervivencia</div>
+  <!-- BACK -->
+  <button class="back-btn" id="backBtn" onclick="goBack()">← Volver a los escalones</button>
+
+  <!-- ROAD NAV -->
+  <div class="road-wrap" id="roadWrap">
+    <div class="road" id="roadEl">
+      <div class="road-track"><div class="road-track-fill" id="roadFill" style="width:0%"></div></div>
+      <div class="road-car" id="roadCar">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <rect x="3" y="7" width="12" height="7" rx="2" fill="#1a1a1a"/>
+          <rect x="5" y="4" width="8" height="5" rx="1.5" fill="#444"/>
+          <circle cx="5.5" cy="14.5" r="1.5" fill="#fff" stroke="#1a1a1a" stroke-width="1"/>
+          <circle cx="12.5" cy="14.5" r="1.5" fill="#fff" stroke="#1a1a1a" stroke-width="1"/>
+        </svg>
       </div>
-      <div class="step" id="st2" style="background:#EF9F27;color:white" onclick="selectStage(2)">
-        <div class="step-num">02</div>
-        <div class="step-name">Seguridad</div>
+      <div class="road-stop" id="st1" onclick="selectStage(1)">
+        <div class="road-dot" style="border-color:#E24B4A;background:#E24B4A;color:white">1</div>
       </div>
-      <div class="step" id="st3" style="background:#378ADD;color:white" onclick="selectStage(3)">
-        <div class="step-num">03</div>
-        <div class="step-name">Acumulación</div>
+      <div class="road-stop" id="st2" onclick="selectStage(2)">
+        <div class="road-dot" style="border-color:#EF9F27;background:#EF9F27;color:white">2</div>
       </div>
-      <div class="step" id="st4" style="background:#639922;color:white" onclick="selectStage(4)">
-        <div class="step-num">04</div>
-        <div class="step-name">Independencia</div>
+      <div class="road-stop" id="st3" onclick="selectStage(3)">
+        <div class="road-dot" style="border-color:#378ADD;background:#378ADD;color:white">3</div>
       </div>
-      <div class="step" id="st5" style="background:#7F77DD;color:white;border-radius:0 12px 12px 0" onclick="selectStage(5)">
-        <div class="step-num">05</div>
-        <div class="step-name">Libertad</div>
+      <div class="road-stop" id="st4" onclick="selectStage(4)">
+        <div class="road-dot" style="border-color:#639922;background:#639922;color:white">4</div>
+      </div>
+      <div class="road-stop" id="st5" onclick="selectStage(5)">
+        <div class="road-dot" style="border-color:#7F77DD;background:#7F77DD;color:white;position:relative">5<div class="road-flag"><div class="road-flag-pole"></div><div class="road-flag-banner"></div></div></div>
       </div>
     </div>
   </div>
 
-  <!-- CONTENT PANEL -->
+  <!-- CONTENT -->
   <div class="content-panel" id="contentPanel"></div>
 
   <div class="cta-bar">
     <div>
-      <h3>¿No sabes en qué etapa estás?</h3>
+      <h3>¿No sabes en qué escalón estás?</h3>
       <p>Responde 14 preguntas y obtén tu diagnóstico personalizado</p>
     </div>
     <button class="cta-btn">Hacer el diagnóstico →</button>
@@ -189,199 +291,105 @@ function ring(p,col){
 }
 function bar(p,col){return `<div class="pbar-bg"><div class="pbar-fill" style="width:${p}%;background:${col}"></div></div>`;}
 function tick(ok,col){return `<div class="cbox ${ok?'on':''}" style="${ok?'background:'+col:''}"><svg class="ctick" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`;}
-function checks(arr,stored,col){
-  return arr.map(s=>{const ok=stored[s.k]==='true';return`<div class="check-row" onclick="tog('${s.k}',this)"><div id="cb_${s.k}">${tick(ok,col)}</div><span class="clabel ${ok?'done':''}" id="cl_${s.k}">${s.l}</span></div>`;}).join('');
-}
+function checks(arr,stored,col){return arr.map(s=>{const ok=stored[s.k]==='true';return`<div class="check-row" onclick="tog('${s.k}',this)"><div id="cb_${s.k}">${tick(ok,col)}</div><span class="clabel ${ok?'done':''}" id="cl_${s.k}">${s.l}</span></div>`;}).join('');}
 
 const ST={
-  1:{
-    badge:'Etapa 1',bb:'#FCEBEB',bc:'#A32D2D',col:'#E24B4A',coll:'#FCEBEB',
-    name:'Supervivencia',tag:'El mes a mes consume toda tu energía',tc:'#A32D2D',
+  1:{badge:'Etapa 1',bb:'#FCEBEB',bc:'#A32D2D',col:'#E24B4A',coll:'#FCEBEB',name:'Supervivencia',tag:'El mes a mes consume toda tu energía',tc:'#A32D2D',
     desc:'Cada quincena es una carrera contra el tiempo. Los gastos llegan antes que el dinero y cualquier imprevisto desestabiliza todo. El objetivo: estabilizar el flujo y crear tu primer colchón.',
     ms:[{t:'Ingresos cubren gastos cada mes',s:'Sin usar crédito ni consumir ahorros'},{t:'1 mes de gastos esenciales guardado',s:'Renta + servicios + comida + transporte básico'}],
-    calcTotal(d){const g=parseFloat(d.s1_gastos)||0,a=parseFloat(d.s1_ahorro)||0;return Math.round(((d.s1_flujo==='true'?100:0)+( g>0?pc(a,g):0))/2);},
-    inputs(d){
-      const g=d.s1_gastos||'',a=d.s1_ahorro||'',fok=d.s1_flujo==='true';
-      const p1=fok?100:0,p2=(parseFloat(g)>0)?pc(parseFloat(a)||0,parseFloat(g)):0;
-      const note=g?`Meta: $${parseFloat(g).toLocaleString()} · Llevas $${(parseFloat(a)||0).toLocaleString()} (${p2}%)`:'Ingresa tus gastos esenciales para ver tu avance.';
-      return `
-        <div class="tracker-item">
-          <div class="t-item-head"><span>Flujo mensual positivo</span><span class="t-pct" style="color:#E24B4A">${fok?'✓ Logrado':'Pendiente'}</span></div>
-          ${bar(p1,'#E24B4A')}
-          <div class="check-row" onclick="tog('s1_flujo',this)"><div id="cb_s1_flujo">${tick(fok,'#E24B4A')}</div><span class="clabel ${fok?'done':''}" id="cl_s1_flujo">Mis ingresos cubren todos mis gastos este mes</span></div>
-          <div class="tnote">Marca cuando tu ingreso cubra los gastos de forma consistente sin usar crédito.</div>
-        </div>
-        <div class="tracker-item">
-          <div class="t-item-head"><span>Meta: 1 mes de reserva</span><span class="t-pct" style="color:#E24B4A" id="pct_s1">${p2}%</span></div>
-          <div id="bar_s1">${bar(p2,'#E24B4A')}</div>
-          <div class="input-row"><span class="ilabel">Gastos esenciales/mes $</span><input class="tinput" type="number" id="s1_gastos" placeholder="ej. 2500" value="${g}" oninput="live1()"/></div>
-          <div class="input-row" style="margin-top:5px"><span class="ilabel">Ahorro actual $</span><input class="tinput" type="number" id="s1_ahorro" placeholder="ej. 800" value="${a}" oninput="live1()"/></div>
-          <div class="tnote" id="note_s1">${note}</div>
-        </div>`;
+    calcTotal(d){const g=parseFloat(d.s1_gastos)||0,a=parseFloat(d.s1_ahorro)||0;return Math.round(((d.s1_flujo==='true'?100:0)+(g>0?pc(a,g):0))/2);},
+    inputs(d){const g=d.s1_gastos||'',a=d.s1_ahorro||'',fok=d.s1_flujo==='true';const p1=fok?100:0,p2=(parseFloat(g)>0)?pc(parseFloat(a)||0,parseFloat(g)):0;const note=g?`Meta: $${parseFloat(g).toLocaleString()} · Llevas $${(parseFloat(a)||0).toLocaleString()} (${p2}%)`:'Ingresa tus gastos esenciales para ver tu avance.';
+      return `<div class="tracker-item"><div class="t-item-head"><span>Flujo mensual positivo</span><span class="t-pct" style="color:#E24B4A">${fok?'✓ Logrado':'Pendiente'}</span></div>${bar(p1,'#E24B4A')}<div class="check-row" onclick="tog('s1_flujo',this)"><div id="cb_s1_flujo">${tick(fok,'#E24B4A')}</div><span class="clabel ${fok?'done':''}" id="cl_s1_flujo">Mis ingresos cubren todos mis gastos este mes</span></div><div class="tnote">Marca cuando tu ingreso cubra los gastos de forma consistente sin usar crédito.</div></div>
+      <div class="tracker-item"><div class="t-item-head"><span>Meta: 1 mes de reserva</span><span class="t-pct" style="color:#E24B4A" id="pct_s1">${p2}%</span></div><div id="bar_s1">${bar(p2,'#E24B4A')}</div><div class="input-row"><span class="ilabel">Gastos esenciales/mes $</span><input class="tinput" type="number" id="s1_gastos" placeholder="ej. 2500" value="${g}" oninput="live1()"/></div><div class="input-row" style="margin-top:5px"><span class="ilabel">Ahorro actual $</span><input class="tinput" type="number" id="s1_ahorro" placeholder="ej. 800" value="${a}" oninput="live1()"/></div><div class="tnote" id="note_s1">${note}</div></div>`;
     }
   },
-  2:{
-    badge:'Etapa 2',bb:'#FAEEDA',bc:'#854F0B',col:'#EF9F27',coll:'#FAEEDA',
-    name:'Seguridad',tag:'Tienes piso, pero eres vulnerable',tc:'#BA7517',
+  2:{badge:'Etapa 2',bb:'#FAEEDA',bc:'#854F0B',col:'#EF9F27',coll:'#FAEEDA',name:'Seguridad',tag:'Tienes piso, pero eres vulnerable',tc:'#BA7517',
     desc:'El dinero alcanza, pero un golpe inesperado podría mandarte al inicio. Esta etapa construye el escudo real: reserva completa, deudas bajo control, seguros y herencia básica.',
     ms:[{t:'Reserva de emergencia completa',s:'6 a 36 meses según tu perfil y dependientes'},{t:'Deuda menor al 36% del ingreso neto',s:'Hipoteca, tarjetas y préstamos incluidos'},{t:'Seguros fundamentales activos',s:'Salud, accidente, propiedad, vida si tienes dependientes'},{t:'Herencia básica establecida',s:'Beneficiarios, testamento, directiva médica'}],
     segs:[{k:'s2_ss',l:'Seguro de salud'},{k:'s2_sv',l:'Seguro de vida'},{k:'s2_sa',l:'Seguro de auto'},{k:'s2_sp',l:'Seguro de propiedad / renta'}],
     ests:[{k:'s2_eb',l:'Beneficiarios designados en cuentas'},{k:'s2_et',l:'Testamento / will firmado'},{k:'s2_ed',l:'Directiva médica / POA salud'}],
-    calcTotal(d){
-      const ma=parseFloat(d.s2_meses)||0,mm=parseFloat(d.s2_meta)||6,dv=parseFloat(d.s2_deuda)||100;
-      const p1=pc(ma,mm),p2=dv<=36?100:Math.max(0,Math.round((1-(dv-36)/64)*100));
-      return Math.round((p1+p2+chkPct(this.segs,d)+chkPct(this.ests,d))/4);
-    },
-    inputs(d){
-      const ma=d.s2_meses||'',mm=d.s2_meta||'6',dv=d.s2_deuda||'';
-      const p1=pc(parseFloat(ma)||0,parseFloat(mm)||6);
-      const dn=parseFloat(dv)||0,p2=dv!==''?(dn<=36?100:Math.max(0,Math.round((1-(dn-36)/64)*100))):0;
-      return `
-        <div class="tracker-item">
-          <div class="t-item-head"><span>Reserva de emergencia</span><span class="t-pct" style="color:#EF9F27">${p1}%</span></div>
-          ${bar(p1,'#EF9F27')}
-          <div class="input-row"><span class="ilabel">Tienes (meses)</span><input class="tinput" type="number" id="s2_meses" placeholder="ej. 3" value="${ma}" oninput="live(2)" style="max-width:80px"/>
-          <span class="ilabel">Meta</span>
-          <select class="tinput" id="s2_meta" onchange="live(2)" style="flex:none;width:80px">${['6','9','12','18','24','36'].map(v=>`<option value="${v}"${mm===v?' selected':''}>${v} m</option>`).join('')}</select></div>
-          <div class="tnote">Estable sin dep=6m · Estable con dep=9m · Freelance=18m · Negocio=24m</div>
-        </div>
-        <div class="tracker-item">
-          <div class="t-item-head"><span>Servicio de deuda (% ingreso neto)</span><span class="t-pct" style="color:#EF9F27">${p2}%</span></div>
-          ${bar(p2,'#EF9F27')}
-          <div class="input-row"><span class="ilabel">% actual en deudas</span><input class="tinput" type="number" id="s2_deuda" placeholder="ej. 40" value="${dv}" oninput="live(2)" style="max-width:100px"/></div>
-          <div class="tnote">Meta: menos del 36%. Incluye hipoteca, tarjetas, auto y todos los préstamos.</div>
-        </div>
-        <div class="tracker-item">
-          <div class="t-item-head"><span>Seguros fundamentales</span><span class="t-pct" style="color:#EF9F27">${chkPct(this.segs,d)}%</span></div>
-          ${bar(chkPct(this.segs,d),'#EF9F27')}${checks(this.segs,d,'#EF9F27')}
-        </div>
-        <div class="tracker-item">
-          <div class="t-item-head"><span>Herencia básica</span><span class="t-pct" style="color:#EF9F27">${chkPct(this.ests,d)}%</span></div>
-          ${bar(chkPct(this.ests,d),'#EF9F27')}${checks(this.ests,d,'#EF9F27')}
-        </div>`;
+    calcTotal(d){const ma=parseFloat(d.s2_meses)||0,mm=parseFloat(d.s2_meta)||6,dv=parseFloat(d.s2_deuda)||100;const p2=dv<=36?100:Math.max(0,Math.round((1-(dv-36)/64)*100));return Math.round((pc(ma,mm)+p2+chkPct(this.segs,d)+chkPct(this.ests,d))/4);},
+    inputs(d){const ma=d.s2_meses||'',mm=d.s2_meta||'6',dv=d.s2_deuda||'';const p1=pc(parseFloat(ma)||0,parseFloat(mm)||6);const dn=parseFloat(dv)||0,p2=dv!==''?(dn<=36?100:Math.max(0,Math.round((1-(dn-36)/64)*100))):0;
+      return `<div class="tracker-item"><div class="t-item-head"><span>Reserva de emergencia</span><span class="t-pct" style="color:#EF9F27">${p1}%</span></div>${bar(p1,'#EF9F27')}<div class="input-row"><span class="ilabel">Tienes (meses)</span><input class="tinput" type="number" id="s2_meses" placeholder="ej. 3" value="${ma}" oninput="live(2)" style="max-width:80px"/><span class="ilabel">Meta</span><select class="tinput" id="s2_meta" onchange="live(2)" style="flex:none;width:80px">${['6','9','12','18','24','36'].map(v=>`<option value="${v}"${mm===v?' selected':''}>${v} m</option>`).join('')}</select></div><div class="tnote">Estable sin dep=6m · Con dep=9m · Freelance=18m · Negocio=24m</div></div>
+      <div class="tracker-item"><div class="t-item-head"><span>Servicio de deuda (% ingreso neto)</span><span class="t-pct" style="color:#EF9F27">${p2}%</span></div>${bar(p2,'#EF9F27')}<div class="input-row"><span class="ilabel">% actual en deudas</span><input class="tinput" type="number" id="s2_deuda" placeholder="ej. 40" value="${dv}" oninput="live(2)" style="max-width:100px"/></div><div class="tnote">Meta: menos del 36%. Incluye hipoteca, tarjetas, auto y todos los préstamos.</div></div>
+      <div class="tracker-item"><div class="t-item-head"><span>Seguros fundamentales</span><span class="t-pct" style="color:#EF9F27">${chkPct(this.segs,d)}%</span></div>${bar(chkPct(this.segs,d),'#EF9F27')}${checks(this.segs,d,'#EF9F27')}</div>
+      <div class="tracker-item"><div class="t-item-head"><span>Herencia básica</span><span class="t-pct" style="color:#EF9F27">${chkPct(this.ests,d)}%</span></div>${bar(chkPct(this.ests,d),'#EF9F27')}${checks(this.ests,d,'#EF9F27')}</div>`;
     }
   },
-  3:{
-    badge:'Etapa 3',bb:'#E6F1FB',bc:'#185FA5',col:'#378ADD',coll:'#E6F1FB',
-    name:'Acumulación',tag:'Tu dinero empieza a trabajar por ti',tc:'#185FA5',
+  3:{badge:'Etapa 3',bb:'#E6F1FB',bc:'#185FA5',col:'#378ADD',coll:'#E6F1FB',name:'Acumulación',tag:'Tu dinero empieza a trabajar por ti',tc:'#185FA5',
     desc:'Estás protegido. El objetivo cambia: construir riqueza de forma consistente. Inviertes, diversificas y comienzas a generar ingresos aunque no estés trabajando.',
     ms:[{t:'Patrimonio en trayectoria Stanley Great',s:'Meta: edad ÷ 5 × ingreso anual'},{t:'Ahorras e inviertes el 20% o más',s:'Automatizado, antes de gastar'},{t:'Ingresos pasivos cubren 25–50% de gastos',s:'Rentas, dividendos, negocios, regalías'},{t:'Deuda vs activos menor al 30%',s:'Tu patrimonio crece más que tus deudas'}],
-    calcTotal(d){
-      const ed=parseFloat(d.s3_edad)||30,inc=parseFloat(d.s3_ingreso)||0,pat=parseFloat(d.s3_pat)||0;
-      const ah=parseFloat(d.s3_ahorro)||0,pas=parseFloat(d.s3_pasivo)||0,dr=parseFloat(d.s3_dr)||100;
-      const meta=inc*(ed/5);
-      const p4=dr<=30?100:Math.max(0,Math.round((1-(dr-30)/70)*100));
-      return Math.round(((meta>0?pc(pat,meta):0)+pc(ah,20)+pc(pas,25)+p4)/4);
-    },
-    inputs(d){
-      const ed=d.s3_edad||'',inc=d.s3_ingreso||'',pat=d.s3_pat||'',ah=d.s3_ahorro||'',pas=d.s3_pasivo||'',dr=d.s3_dr||'';
-      const meta=(parseFloat(ed)>0&&parseFloat(inc)>0)?parseFloat(inc)*(parseFloat(ed)/5):0;
-      const p1=meta>0?pc(parseFloat(pat)||0,meta):0,p2=pc(parseFloat(ah)||0,20),p3=pc(parseFloat(pas)||0,25);
-      const drv=parseFloat(dr)||0,p4=dr!==''?(drv<=30?100:Math.max(0,Math.round((1-(drv-30)/70)*100))):0;
-      return `
-        <div class="tracker-item">
-          <div class="t-item-head"><span>Patrimonio neto (Stanley Great)</span><span class="t-pct" style="color:#378ADD">${p1}%</span></div>
-          ${bar(p1,'#378ADD')}
-          <div class="input-row"><span class="ilabel">Edad</span><input class="tinput" type="number" id="s3_edad" placeholder="40" value="${ed}" oninput="live(3)" style="max-width:70px"/>
-          <span class="ilabel">Ingreso anual $</span><input class="tinput" type="number" id="s3_ingreso" placeholder="ej. 60000" value="${inc}" oninput="live(3)"/></div>
-          <div class="input-row" style="margin-top:5px"><span class="ilabel">Patrimonio neto actual $</span><input class="tinput" type="number" id="s3_pat" placeholder="ej. 120000" value="${pat}" oninput="live(3)"/></div>
-          <div class="tnote">${meta>0?`Meta: $${Math.round(meta).toLocaleString()} (${parseFloat(ed)||0} ÷ 5 × ingreso)`:'Ingresa tu edad e ingreso para calcular tu meta.'}</div>
-        </div>
-        <div class="tracker-item">
-          <div class="t-item-head"><span>Tasa de ahorro / inversión</span><span class="t-pct" style="color:#378ADD">${p2}%</span></div>
-          ${bar(p2,'#378ADD')}
-          <div class="input-row"><span class="ilabel">% que ahorras/inviertes hoy</span><input class="tinput" type="number" id="s3_ahorro" placeholder="ej. 15" value="${ah}" oninput="live(3)" style="max-width:100px"/></div>
-          <div class="tnote">Meta: 20% o más. Automatizado antes de gastar.</div>
-        </div>
-        <div class="tracker-item">
-          <div class="t-item-head"><span>Ingresos pasivos (% de gastos)</span><span class="t-pct" style="color:#378ADD">${p3}%</span></div>
-          ${bar(p3,'#378ADD')}
-          <div class="input-row"><span class="ilabel">% gastos cubiertos por pasivos</span><input class="tinput" type="number" id="s3_pasivo" placeholder="ej. 10" value="${pas}" oninput="live(3)" style="max-width:100px"/></div>
-          <div class="tnote">Meta: 25% mínimo. Rentas, dividendos, negocios o regalías.</div>
-        </div>
-        <div class="tracker-item">
-          <div class="t-item-head"><span>Ratio deuda / activos</span><span class="t-pct" style="color:#378ADD">${p4}%</span></div>
-          ${bar(p4,'#378ADD')}
-          <div class="input-row"><span class="ilabel">% activos que son deuda</span><input class="tinput" type="number" id="s3_dr" placeholder="ej. 45" value="${dr}" oninput="live(3)" style="max-width:100px"/></div>
-          <div class="tnote">Meta: menos del 30%. Ej: $500k activos y $150k deuda = 30%.</div>
-        </div>`;
+    calcTotal(d){const ed=parseFloat(d.s3_edad)||30,inc=parseFloat(d.s3_ingreso)||0,pat=parseFloat(d.s3_pat)||0,ah=parseFloat(d.s3_ahorro)||0,pas=parseFloat(d.s3_pasivo)||0,dr=parseFloat(d.s3_dr)||100;const meta=inc*(ed/5);const p4=dr<=30?100:Math.max(0,Math.round((1-(dr-30)/70)*100));return Math.round(((meta>0?pc(pat,meta):0)+pc(ah,20)+pc(pas,25)+p4)/4);},
+    inputs(d){const ed=d.s3_edad||'',inc=d.s3_ingreso||'',pat=d.s3_pat||'',ah=d.s3_ahorro||'',pas=d.s3_pasivo||'',dr=d.s3_dr||'';const meta=(parseFloat(ed)>0&&parseFloat(inc)>0)?parseFloat(inc)*(parseFloat(ed)/5):0;const p1=meta>0?pc(parseFloat(pat)||0,meta):0,p2=pc(parseFloat(ah)||0,20),p3=pc(parseFloat(pas)||0,25);const drv=parseFloat(dr)||0,p4=dr!==''?(drv<=30?100:Math.max(0,Math.round((1-(drv-30)/70)*100))):0;
+      return `<div class="tracker-item"><div class="t-item-head"><span>Patrimonio neto (Stanley Great)</span><span class="t-pct" style="color:#378ADD">${p1}%</span></div>${bar(p1,'#378ADD')}<div class="input-row"><span class="ilabel">Edad</span><input class="tinput" type="number" id="s3_edad" placeholder="40" value="${ed}" oninput="live(3)" style="max-width:70px"/><span class="ilabel">Ingreso anual $</span><input class="tinput" type="number" id="s3_ingreso" placeholder="ej. 60000" value="${inc}" oninput="live(3)"/></div><div class="input-row" style="margin-top:5px"><span class="ilabel">Patrimonio neto actual $</span><input class="tinput" type="number" id="s3_pat" placeholder="ej. 120000" value="${pat}" oninput="live(3)"/></div><div class="tnote">${meta>0?`Meta: $${Math.round(meta).toLocaleString()} (${parseFloat(ed)||0} ÷ 5 × ingreso)`:'Ingresa tu edad e ingreso para calcular tu meta.'}</div></div>
+      <div class="tracker-item"><div class="t-item-head"><span>Tasa de ahorro / inversión</span><span class="t-pct" style="color:#378ADD">${p2}%</span></div>${bar(p2,'#378ADD')}<div class="input-row"><span class="ilabel">% que ahorras/inviertes hoy</span><input class="tinput" type="number" id="s3_ahorro" placeholder="ej. 15" value="${ah}" oninput="live(3)" style="max-width:100px"/></div><div class="tnote">Meta: 20% o más. Automatizado antes de gastar.</div></div>
+      <div class="tracker-item"><div class="t-item-head"><span>Ingresos pasivos (% de gastos)</span><span class="t-pct" style="color:#378ADD">${p3}%</span></div>${bar(p3,'#378ADD')}<div class="input-row"><span class="ilabel">% gastos cubiertos por pasivos</span><input class="tinput" type="number" id="s3_pasivo" placeholder="ej. 10" value="${pas}" oninput="live(3)" style="max-width:100px"/></div><div class="tnote">Meta: 25% mínimo. Rentas, dividendos, negocios o regalías.</div></div>
+      <div class="tracker-item"><div class="t-item-head"><span>Ratio deuda / activos</span><span class="t-pct" style="color:#378ADD">${p4}%</span></div>${bar(p4,'#378ADD')}<div class="input-row"><span class="ilabel">% activos que son deuda</span><input class="tinput" type="number" id="s3_dr" placeholder="ej. 45" value="${dr}" oninput="live(3)" style="max-width:100px"/></div><div class="tnote">Meta: menos del 30%. Ej: $500k activos y $150k deuda = 30%.</div></div>`;
     }
   },
-  4:{
-    badge:'Etapa 4',bb:'#EAF3DE',bc:'#3B6D11',col:'#639922',coll:'#EAF3DE',
-    name:'Independencia',tag:'Trabajar es una elección, no una obligación',tc:'#3B6D11',
+  4:{badge:'Etapa 4',bb:'#EAF3DE',bc:'#3B6D11',col:'#639922',coll:'#EAF3DE',name:'Independencia',tag:'Trabajar es una elección, no una obligación',tc:'#3B6D11',
     desc:'Tus inversiones generan suficiente para cubrir tu vida. Si dejas de trabajar mañana, el dinero sigue llegando. No es retiro — es el poder de elegir cómo usas tu tiempo.',
     ms:[{t:'Ingresos pasivos cubren el 100% de gastos',s:'Rentas, dividendos e intereses sostienen tu vida'},{t:'Deuda menor al 10% del ingreso',s:'Solo deuda productiva u optimizada'},{t:'Estate planning completo',s:'Trust o estructuras patrimoniales establecidas'}],
     ests:[{k:'s4_eb',l:'Beneficiarios y co-ownership establecidos'},{k:'s4_et',l:'Testamento / will actualizado'},{k:'s4_ed',l:'Directiva médica y POA financiero'},{k:'s4_etr',l:'Trust o estructura patrimonial activa'}],
-    calcTotal(d){
-      const pas=parseFloat(d.s4_pasivo)||0,dv=parseFloat(d.s4_deuda)||100;
-      const p2=dv<=10?100:Math.max(0,Math.round((1-(dv-10)/90)*100));
-      return Math.round((pc(pas,100)+p2+chkPct(this.ests,d))/3);
-    },
-    inputs(d){
-      const pas=d.s4_pasivo||'',dv=d.s4_deuda||'';
-      const p1=pc(parseFloat(pas)||0,100);
-      const dvn=parseFloat(dv)||0,p2=dv!==''?(dvn<=10?100:Math.max(0,Math.round((1-(dvn-10)/90)*100))):0;
-      return `
-        <div class="tracker-item">
-          <div class="t-item-head"><span>Ingresos pasivos vs gastos totales</span><span class="t-pct" style="color:#639922">${p1}%</span></div>
-          ${bar(p1,'#639922')}
-          <div class="input-row"><span class="ilabel">% gastos cubiertos por pasivos</span><input class="tinput" type="number" id="s4_pasivo" placeholder="ej. 70" value="${pas}" oninput="live(4)" style="max-width:100px"/></div>
-          <div class="tnote">Meta: 100%. Cuando llegues aquí el trabajo es completamente opcional.</div>
-        </div>
-        <div class="tracker-item">
-          <div class="t-item-head"><span>Servicio de deuda (% ingreso)</span><span class="t-pct" style="color:#639922">${p2}%</span></div>
-          ${bar(p2,'#639922')}
-          <div class="input-row"><span class="ilabel">% ingreso en deudas</span><input class="tinput" type="number" id="s4_deuda" placeholder="ej. 18" value="${dv}" oninput="live(4)" style="max-width:100px"/></div>
-          <div class="tnote">Meta: menos del 10%. Solo hipoteca productiva u optimizada.</div>
-        </div>
-        <div class="tracker-item">
-          <div class="t-item-head"><span>Estate planning completo</span><span class="t-pct" style="color:#639922">${chkPct(this.ests,d)}%</span></div>
-          ${bar(chkPct(this.ests,d),'#639922')}${checks(this.ests,d,'#639922')}
-        </div>`;
+    calcTotal(d){const pas=parseFloat(d.s4_pasivo)||0,dv=parseFloat(d.s4_deuda)||100;const p2=dv<=10?100:Math.max(0,Math.round((1-(dv-10)/90)*100));return Math.round((pc(pas,100)+p2+chkPct(this.ests,d))/3);},
+    inputs(d){const pas=d.s4_pasivo||'',dv=d.s4_deuda||'';const p1=pc(parseFloat(pas)||0,100);const dvn=parseFloat(dv)||0,p2=dv!==''?(dvn<=10?100:Math.max(0,Math.round((1-(dvn-10)/90)*100))):0;
+      return `<div class="tracker-item"><div class="t-item-head"><span>Ingresos pasivos vs gastos totales</span><span class="t-pct" style="color:#639922">${p1}%</span></div>${bar(p1,'#639922')}<div class="input-row"><span class="ilabel">% gastos cubiertos por pasivos</span><input class="tinput" type="number" id="s4_pasivo" placeholder="ej. 70" value="${pas}" oninput="live(4)" style="max-width:100px"/></div><div class="tnote">Meta: 100%. Cuando llegues aquí el trabajo es completamente opcional.</div></div>
+      <div class="tracker-item"><div class="t-item-head"><span>Servicio de deuda (% ingreso)</span><span class="t-pct" style="color:#639922">${p2}%</span></div>${bar(p2,'#639922')}<div class="input-row"><span class="ilabel">% ingreso en deudas</span><input class="tinput" type="number" id="s4_deuda" placeholder="ej. 18" value="${dv}" oninput="live(4)" style="max-width:100px"/></div><div class="tnote">Meta: menos del 10%. Solo hipoteca productiva u optimizada.</div></div>
+      <div class="tracker-item"><div class="t-item-head"><span>Estate planning completo</span><span class="t-pct" style="color:#639922">${chkPct(this.ests,d)}%</span></div>${bar(chkPct(this.ests,d),'#639922')}${checks(this.ests,d,'#639922')}</div>`;
     }
   },
-  5:{
-    badge:'Etapa 5',bb:'#EEEDFE',bc:'#534AB7',col:'#7F77DD',coll:'#EEEDFE',
-    name:'Libertad',tag:'Tu legado trasciende tu propia vida',tc:'#534AB7',
+  5:{badge:'Etapa 5',bb:'#EEEDFE',bc:'#534AB7',col:'#7F77DD',coll:'#EEEDFE',name:'Libertad',tag:'Tu legado trasciende tu propia vida',tc:'#534AB7',
     desc:'La meta final. Tienes más de lo que necesitas — para ti, para los tuyos y para el mundo. La pregunta ya no es cuánto tienes, sino qué haces con ello.',
     ms:[{t:'Preservar y proteger el patrimonio',s:'Estructuras, diversificación y gestión del riesgo'},{t:'Optimización fiscal avanzada',s:'Minimizar carga tributaria de forma legal'},{t:'Legado generacional',s:'Que tu riqueza sirva a quienes vienen después'},{t:'Impacto filantrópico',s:'Dar con propósito e intención'}],
     items:[{k:'s5_pr',l:'Tengo estrategia activa de preservación patrimonial'},{k:'s5_fi',l:'Tengo asesor fiscal y estructura optimizada'},{k:'s5_le',l:'Tengo plan de legado generacional documentado'},{k:'s5_ph',l:'Tengo estrategia filantrópica con propósito definido'}],
     calcTotal(d){return chkPct(this.items,d);},
-    inputs(d){
-      const p=chkPct(this.items,d);
-      return `<div class="tracker-item"><div class="t-item-head"><span>Prioridades activas</span><span class="t-pct" style="color:#7F77DD">${p}%</span></div>${bar(p,'#7F77DD')}${checks(this.items,d,'#7F77DD')}</div>`;
-    }
+    inputs(d){const p=chkPct(this.items,d);return `<div class="tracker-item"><div class="t-item-head"><span>Prioridades activas</span><span class="t-pct" style="color:#7F77DD">${p}%</span></div>${bar(p,'#7F77DD')}${checks(this.items,d,'#7F77DD')}</div>`;}
   }
 };
 
 let cur=null,transformed=false;
 
 function selectStage(n){
-  if(!transformed) transform();
+  const s=document.getElementById('stair'+n);
+  s.classList.add('pulse');
+  setTimeout(()=>s.classList.remove('pulse'),400);
+  if(!transformed) transform(n);
   cur=n;
-  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.road-stop').forEach(s=>s.classList.remove('active'));
   document.getElementById('st'+n).classList.add('active');
+  moveRoadCar(n);
   renderContent(n);
-  if(transformed) document.getElementById('contentPanel').scrollIntoView({behavior:'smooth',block:'nearest'});
+  if(transformed) setTimeout(()=>document.getElementById('contentPanel').scrollIntoView({behavior:'smooth',block:'nearest'}),50);
 }
 
-function transform(){
+function transform(n){
   transformed=true;
-  // shrink header
+  // show figure on selected stair
+  document.querySelectorAll('.stair-figure').forEach(f=>f.classList.remove('show'));
+  document.getElementById('fig'+n).classList.add('show');
+  document.getElementById('flag5').classList.add('show');
+
+  const scene=document.getElementById('stairScene');
+  const hint=document.getElementById('stairHint');
+  const ground=document.getElementById('ground');
   const hdr=document.getElementById('header');
-  hdr.style.marginBottom='24px';
-  // hide pyramid
-  const pc2=document.getElementById('pyramidCenter');
-  pc2.style.opacity='0';
-  pc2.style.transform='scale(0.92)';
-  pc2.style.pointerEvents='none';
-  setTimeout(()=>{pc2.style.display='none';},350);
-  // show stepper
+
+  // fade out stairs
   setTimeout(()=>{
-    document.getElementById('stepperWrap').style.display='block';
+    scene.classList.add('hide');
+    hint.style.opacity='0';
+  },80);
+
+  setTimeout(()=>{
+    scene.style.display='none';
+    hint.style.display='none';
+    ground.style.display='none';
+    hdr.style.display='none';
+    document.getElementById('backBtn').style.display='flex';
+    document.getElementById('roadWrap').style.display='block';
     document.getElementById('contentPanel').style.display='block';
-  },200);
+    setTimeout(()=>moveRoadCar(cur||1),50);
+  },400);
 }
 
 function renderContent(n){
@@ -413,8 +421,7 @@ function renderContent(n){
         </div>
       </div>`;
     panel.style.opacity='1';
-    panel.style.transition='opacity .25s';
-  },120);
+  },140);
 }
 
 function tog(key,row){
@@ -462,14 +469,48 @@ function saveN(n){
   if(m){m.classList.add('show');setTimeout(()=>m.classList.remove('show'),2000);}
 }
 
-/* Arrow shapes for stepper via CSS clip-path */
-const steps=document.querySelectorAll('.step');
-steps.forEach((s,i)=>{
-  if(i<steps.length-1){
-    s.style.clipPath='polygon(0 0,calc(100% - 14px) 0,100% 50%,calc(100% - 14px) 100%,0 100%)';
-    s.style.marginRight='-1px';
-  }
-});
+function moveRoadCar(n){
+  const road = document.getElementById('roadEl');
+  if(!road) return;
+  const stops = road.querySelectorAll('.road-stop');
+  const car = document.getElementById('roadCar');
+  const fill = document.getElementById('roadFill');
+  if(!car || stops.length < n) return;
+  const roadRect = road.getBoundingClientRect();
+  const stopRect = stops[n-1].getBoundingClientRect();
+  const dotEl = stops[n-1].querySelector('.road-dot');
+  const dotRect = dotEl ? dotEl.getBoundingClientRect() : stopRect;
+  const centerX = dotRect.left + dotRect.width/2 - roadRect.left;
+  const pct = ((n-1)/(stops.length-1))*100;
+  car.style.left = centerX + 'px';
+  fill.style.width = pct + '%';
+}
+
+function goBack(){
+  transformed=false;cur=null;
+  // hide road + content + back btn
+  document.getElementById('roadWrap').style.display='none';
+  document.getElementById('contentPanel').style.display='none';
+  document.getElementById('backBtn').style.display='none';
+  // reset road active
+  document.querySelectorAll('.road-stop').forEach(s=>s.classList.remove('active'));
+  document.getElementById('roadFill').style.width='0%';
+  // restore staircase + header
+  const scene=document.getElementById('stairScene');
+  const hint=document.getElementById('stairHint');
+  const ground=document.getElementById('ground');
+  const hdr=document.getElementById('header');
+  scene.style.display='flex';
+  hint.style.display='block';
+  ground.style.display='block';
+  hdr.style.display='block';
+  // reset figures
+  document.querySelectorAll('.stair-figure').forEach(f=>f.classList.remove('show'));
+  setTimeout(()=>{
+    scene.classList.remove('hide');
+    hint.style.opacity='1';
+  },30);
+}
 </script>
 </body>
 </html>
