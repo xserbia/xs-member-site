@@ -6,133 +6,161 @@
 <title>Tu camino financiero</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
 <style>
-:root {
+:root{
   --c1:#E24B4A;--c2:#EF9F27;--c3:#378ADD;--c4:#639922;--c5:#7F77DD;
   --c1l:#FCEBEB;--c2l:#FAEEDA;--c3l:#E6F1FB;--c4l:#EAF3DE;--c5l:#EEEDFE;
   --c1d:#A32D2D;--c2d:#854F0B;--c3d:#185FA5;--c4d:#3B6D11;--c5d:#534AB7;
-  --bg:#ffffff;--card:#F4F4F5;--text:#1a1a1a;--muted:#6b6b6b;--border:rgba(0,0,0,0.08);
+  --bg:#ffffff;--surface:#F4F4F5;--text:#1a1a1a;--muted:#6b6b6b;--border:rgba(0,0,0,0.09);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:48px 20px}
-.page{max-width:920px;margin:0 auto}
-.header{text-align:center;margin-bottom:52px}
-.header-label{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
-.header h1{font-family:'DM Serif Display',serif;font-size:clamp(30px,5vw,50px);font-weight:400;line-height:1.15;margin-bottom:14px}
-.header p{font-size:15px;color:var(--muted);max-width:420px;margin:0 auto;line-height:1.6}
-.main{display:grid;grid-template-columns:280px 1fr;gap:28px;align-items:start}
-.pyramid-wrap{position:sticky;top:28px}
-.pyramid-hint{text-align:center;font-size:12px;color:var(--muted);margin-bottom:12px}
-svg.pyramid{width:100%;display:block}
-.slice{transition:filter .2s;cursor:pointer}
-.slice:hover{filter:brightness(.9)}
-.slice.active{filter:brightness(.82)}
-.stage-dots{display:flex;gap:6px;justify-content:center;margin-top:16px}
-.sdot{width:8px;height:8px;border-radius:50%;cursor:pointer;opacity:.3;transition:opacity .2s,transform .2s;border:none}
-.sdot:hover{opacity:.6}
-.sdot.active{opacity:1;transform:scale(1.35)}
-.info-panel{background:#F4F4F5;border-radius:20px;border:1px solid var(--border);overflow:hidden;min-height:460px;transition:opacity .18s}
-.info-panel.fading{opacity:0}
-.info-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:460px;gap:10px;color:var(--muted);text-align:center;padding:2rem}
-.info-empty .arrow-icon{font-size:28px;opacity:.2}
-.info-empty p{font-size:14px;line-height:1.5}
-.info-top{padding:28px 28px 20px;border-bottom:1px solid var(--border)}
+.page{max-width:860px;margin:0 auto}
+
+/* HEADER */
+.header{text-align:center;margin-bottom:48px;transition:margin .4s}
+.header-label{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.header h1{font-family:'DM Serif Display',serif;font-size:clamp(28px,5vw,48px);font-weight:400;line-height:1.15;margin-bottom:12px}
+.header p{font-size:15px;color:var(--muted);max-width:400px;margin:0 auto;line-height:1.6}
+
+/* PYRAMID CENTERED */
+.pyramid-center{display:flex;flex-direction:column;align-items:center;transition:all .4s}
+.pyramid-hint{font-size:12px;color:var(--muted);margin-bottom:16px;opacity:1;transition:opacity .3s}
+svg.pyr{width:320px;max-width:100%;display:block;transition:all .4s}
+.pslice{cursor:pointer;transition:filter .2s,transform .15s;transform-origin:center bottom}
+.pslice:hover{filter:brightness(.88);transform:scaleY(1.03)}
+
+/* STEPPER (hidden initially) */
+.stepper-wrap{display:none;width:100%;margin-bottom:28px;animation:fadeUp .35s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.stepper{display:flex;width:100%;border-radius:12px;overflow:hidden}
+.step{flex:1;position:relative;padding:10px 6px 10px 22px;cursor:pointer;display:flex;flex-direction:column;justify-content:center;transition:filter .15s;min-width:0}
+.step:hover{filter:brightness(.92)}
+.step::after{content:'';position:absolute;right:-14px;top:0;bottom:0;width:28px;clip-path:polygon(0 0,100% 50%,0 100%);z-index:2}
+.step:last-child::after{display:none}
+.step:first-child{padding-left:14px;border-radius:12px 0 0 12px}
+.step-num{font-size:10px;font-weight:600;letter-spacing:.06em;opacity:.75;margin-bottom:2px}
+.step-name{font-size:11px;font-weight:600;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.step.active{filter:brightness(.85)}
+
+/* CONTENT PANEL */
+.content-panel{display:none;background:var(--surface);border-radius:20px;border:1px solid var(--border);overflow:hidden;animation:fadeUp .3s ease}
+.info-top{padding:28px 28px 22px;border-bottom:1px solid var(--border);background:#fff}
 .info-badge{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:4px 12px;border-radius:999px;margin-bottom:12px}
-.info-name{font-family:'DM Serif Display',serif;font-size:30px;font-weight:400;line-height:1.1;margin-bottom:4px}
+.info-name{font-family:'DM Serif Display',serif;font-size:32px;font-weight:400;line-height:1.1;margin-bottom:4px}
 .info-tagline{font-size:14px;font-weight:500;margin-bottom:12px}
 .info-desc{font-size:13px;color:var(--muted);line-height:1.65}
-.info-body{padding:20px 28px 28px}
+.info-body{padding:22px 28px 28px}
 .section-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
 .milestone{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);align-items:flex-start}
 .milestone:last-child{border-bottom:none}
 .m-dot-wrap{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
 .m-dot{width:8px;height:8px;border-radius:50%}
-.m-text{font-size:13px;font-weight:500;color:var(--text);line-height:1.4}
+.m-text{font-size:13px;font-weight:500;line-height:1.4}
 .m-sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* TRACKER */
 .tracker{background:#e8e8ea;border-radius:14px;padding:20px;margin-top:20px}
 .tracker-title{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:8px}
 .tracker-title::after{content:'';flex:1;height:1px;background:var(--border)}
-.overall-ring{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:16px}
+.overall-ring{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:16px}
 .ring-pct{font-size:22px;font-weight:600;line-height:1}
 .ring-label{font-size:11px;color:var(--muted);margin-top:2px}
 .tracker-item{margin-bottom:16px}
 .tracker-item:last-child{margin-bottom:0}
-.t-item-head{font-size:13px;font-weight:500;color:var(--text);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.t-item-head{font-size:13px;font-weight:500;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
 .t-pct{font-size:12px;font-weight:600}
 .pbar-bg{height:7px;background:rgba(0,0,0,0.07);border-radius:999px;overflow:hidden;margin-bottom:8px}
 .pbar-fill{height:100%;border-radius:999px;transition:width .5s cubic-bezier(.4,0,.2,1)}
 .input-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px}
 .ilabel{font-size:12px;color:var(--muted);white-space:nowrap}
-.tinput{flex:1;min-width:80px;padding:7px 11px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);background:var(--card);outline:none;transition:border-color .15s}
+.tinput{flex:1;min-width:80px;padding:7px 11px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);background:#fff;outline:none;transition:border-color .15s}
 .tinput:focus{border-color:rgba(0,0,0,.28)}
 .tnote{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.4}
-.check-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+.check-row{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
 .check-row:last-child{border-bottom:none}
-.cbox{width:18px;height:18px;border-radius:4px;border:1.5px solid rgba(0,0,0,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,border-color .15s}
+.cbox{width:18px;height:18px;border-radius:4px;border:1.5px solid rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:background .15s,border-color .15s}
 .cbox.on{border-color:transparent}
 .ctick{display:none;width:10px;height:10px}
 .cbox.on .ctick{display:block}
-.clabel{font-size:13px;color:var(--text);line-height:1.4}
+.clabel{font-size:13px;line-height:1.4}
 .clabel.done{text-decoration:line-through;color:var(--muted)}
 .save-row{display:flex;align-items:center;gap:12px;margin-top:16px}
 .save-btn{padding:8px 16px;background:transparent;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s}
 .save-btn:hover{border-color:rgba(0,0,0,.25);color:var(--text)}
 .saved-msg{font-size:11px;color:#3B6D11;opacity:0;transition:opacity .3s}
 .saved-msg.show{opacity:1}
-.cta-bar{margin-top:40px;background:var(--card);border-radius:20px;border:1px solid var(--border);padding:28px 32px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+
+/* CTA */
+.cta-bar{margin-top:36px;background:var(--surface);border-radius:20px;border:1px solid var(--border);padding:26px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px}
 .cta-bar h3{font-family:'DM Serif Display',serif;font-size:20px;font-weight:400;margin-bottom:4px}
 .cta-bar p{font-size:13px;color:var(--muted)}
 .cta-btn{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;background:var(--text);color:#fff;border:none;border-radius:999px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:opacity .15s}
 .cta-btn:hover{opacity:.82}
-@media(max-width:660px){
-  .main{grid-template-columns:1fr}
-  .pyramid-wrap{position:static}
+
+@media(max-width:600px){
   body{padding:28px 14px}
-  .cta-bar{flex-direction:column;text-align:center}
+  .step-name{font-size:10px}
+  .step-num{display:none}
   .info-top,.info-body{padding:18px 16px}
   .tracker{padding:14px}
+  .cta-bar{flex-direction:column;text-align:center}
 }
 </style>
 </head>
 <body>
 <div class="page">
 
-  <div class="header">
+  <div class="header" id="header">
     <div class="header-label">Finanzas personales</div>
     <h1>Tu camino hacia<br>la libertad financiera</h1>
-    <p>Cinco etapas para transformar tu relación con el dinero. Toca cada nivel y mide tu progreso real.</p>
+    <p>Cinco etapas para transformar tu relación con el dinero. Toca un nivel para comenzar.</p>
   </div>
 
-  <div class="main">
-    <div class="pyramid-wrap">
-      <div class="pyramid-hint">toca un nivel para explorar</div>
-      <svg class="pyramid" viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg">
-        <polygon class="slice" id="s5" points="150,10 215,72 85,72" fill="#7F77DD" onclick="show(5)"/>
-        <polygon class="slice" id="s4" points="85,78 215,78 238,138 62,138" fill="#639922" onclick="show(4)"/>
-        <polygon class="slice" id="s3" points="62,144 238,144 260,204 40,204" fill="#378ADD" onclick="show(3)"/>
-        <polygon class="slice" id="s2" points="40,210 260,210 276,270 24,270" fill="#EF9F27" onclick="show(2)"/>
-        <polygon class="slice" id="s1" points="24,276 276,276 276,330 24,330" fill="#E24B4A" onclick="show(1)"/>
-        <text font-family="DM Sans,sans-serif" x="150" y="48" text-anchor="middle" fill="white" font-size="10" font-weight="600" letter-spacing="0.06em" pointer-events="none">LIBERTAD</text>
-        <text font-family="DM Sans,sans-serif" x="150" y="108" text-anchor="middle" fill="white" font-size="10" font-weight="500" pointer-events="none">04 · Independencia</text>
-        <text font-family="DM Sans,sans-serif" x="150" y="178" text-anchor="middle" fill="white" font-size="11" font-weight="500" pointer-events="none">03 · Acumulación</text>
-        <text font-family="DM Sans,sans-serif" x="150" y="244" text-anchor="middle" fill="white" font-size="11" font-weight="500" pointer-events="none">02 · Seguridad</text>
-        <text font-family="DM Sans,sans-serif" x="150" y="307" text-anchor="middle" fill="white" font-size="12" font-weight="600" pointer-events="none">01 · Supervivencia</text>
-      </svg>
-      <div class="stage-dots">
-        <div class="sdot" id="dot1" style="background:#E24B4A" onclick="show(1)"></div>
-        <div class="sdot" id="dot2" style="background:#EF9F27" onclick="show(2)"></div>
-        <div class="sdot" id="dot3" style="background:#378ADD" onclick="show(3)"></div>
-        <div class="sdot" id="dot4" style="background:#639922" onclick="show(4)"></div>
-        <div class="sdot" id="dot5" style="background:#7F77DD" onclick="show(5)"></div>
-      </div>
-    </div>
+  <!-- PYRAMID -->
+  <div class="pyramid-center" id="pyramidCenter">
+    <div class="pyramid-hint" id="pyramidHint">toca un nivel para explorar</div>
+    <svg class="pyr" viewBox="0 0 320 360" xmlns="http://www.w3.org/2000/svg">
+      <polygon class="pslice" points="160,12 228,78 92,78" fill="#7F77DD" onclick="selectStage(5)"/>
+      <polygon class="pslice" points="92,84 228,84 252,148 68,148" fill="#639922" onclick="selectStage(4)"/>
+      <polygon class="pslice" points="68,154 252,154 274,218 46,218" fill="#378ADD" onclick="selectStage(3)"/>
+      <polygon class="pslice" points="46,224 274,224 290,288 30,288" fill="#EF9F27" onclick="selectStage(2)"/>
+      <polygon class="pslice" points="30,294 290,294 290,348 30,348" fill="#E24B4A" onclick="selectStage(1)"/>
+      <text font-family="DM Sans,sans-serif" x="160" y="52" text-anchor="middle" fill="white" font-size="10" font-weight="600" letter-spacing="0.07em" pointer-events="none">LIBERTAD</text>
+      <text font-family="DM Sans,sans-serif" x="160" y="116" text-anchor="middle" fill="white" font-size="10" font-weight="500" pointer-events="none">04 · Independencia</text>
+      <text font-family="DM Sans,sans-serif" x="160" y="190" text-anchor="middle" fill="white" font-size="11" font-weight="500" pointer-events="none">03 · Acumulación</text>
+      <text font-family="DM Sans,sans-serif" x="160" y="260" text-anchor="middle" fill="white" font-size="11" font-weight="500" pointer-events="none">02 · Seguridad</text>
+      <text font-family="DM Sans,sans-serif" x="160" y="325" text-anchor="middle" fill="white" font-size="12" font-weight="600" pointer-events="none">01 · Supervivencia</text>
+    </svg>
+  </div>
 
-    <div class="info-panel" id="infoPanel">
-      <div class="info-empty">
-        <div class="arrow-icon">←</div>
-        <p>Selecciona una etapa de la pirámide<br>para ver tus metas y medir tu progreso</p>
+  <!-- STEPPER -->
+  <div class="stepper-wrap" id="stepperWrap">
+    <div class="stepper" id="stepper">
+      <div class="step" id="st1" style="background:#E24B4A;color:white" onclick="selectStage(1)">
+        <div class="step-num">01</div>
+        <div class="step-name">Supervivencia</div>
+      </div>
+      <div class="step" id="st2" style="background:#EF9F27;color:white" onclick="selectStage(2)">
+        <div class="step-num">02</div>
+        <div class="step-name">Seguridad</div>
+      </div>
+      <div class="step" id="st3" style="background:#378ADD;color:white" onclick="selectStage(3)">
+        <div class="step-num">03</div>
+        <div class="step-name">Acumulación</div>
+      </div>
+      <div class="step" id="st4" style="background:#639922;color:white" onclick="selectStage(4)">
+        <div class="step-num">04</div>
+        <div class="step-name">Independencia</div>
+      </div>
+      <div class="step" id="st5" style="background:#7F77DD;color:white;border-radius:0 12px 12px 0" onclick="selectStage(5)">
+        <div class="step-num">05</div>
+        <div class="step-name">Libertad</div>
       </div>
     </div>
   </div>
+
+  <!-- CONTENT PANEL -->
+  <div class="content-panel" id="contentPanel"></div>
 
   <div class="cta-bar">
     <div>
@@ -144,11 +172,11 @@ svg.pyramid{width:100%;display:block}
 </div>
 
 <script>
-const SK = 'fp_v1';
+const SK='fp_v1';
 function ld(){try{return JSON.parse(localStorage.getItem(SK))||{};}catch(e){return {};}}
 function sv(d){try{localStorage.setItem(SK,JSON.stringify(d));}catch(e){}}
-function cl(v,a,b){return Math.min(b,Math.max(a,v||0));}
 function pc(v,t){return t>0?Math.min(100,Math.round((v/t)*100)):0;}
+function chkPct(arr,stored){return arr.length?Math.round((arr.filter(s=>stored[s.k]==='true').length/arr.length)*100):0;}
 
 function ring(p,col){
   const r=20,ci=2*Math.PI*r,da=(p/100)*ci;
@@ -164,20 +192,14 @@ function tick(ok,col){return `<div class="cbox ${ok?'on':''}" style="${ok?'backg
 function checks(arr,stored,col){
   return arr.map(s=>{const ok=stored[s.k]==='true';return`<div class="check-row" onclick="tog('${s.k}',this)"><div id="cb_${s.k}">${tick(ok,col)}</div><span class="clabel ${ok?'done':''}" id="cl_${s.k}">${s.l}</span></div>`;}).join('');
 }
-function chkPct(arr,stored){return Math.round((arr.filter(s=>stored[s.k]==='true').length/arr.length)*100);}
 
-const ST = {
+const ST={
   1:{
     badge:'Etapa 1',bb:'#FCEBEB',bc:'#A32D2D',col:'#E24B4A',coll:'#FCEBEB',
     name:'Supervivencia',tag:'El mes a mes consume toda tu energía',tc:'#A32D2D',
     desc:'Cada quincena es una carrera contra el tiempo. Los gastos llegan antes que el dinero y cualquier imprevisto desestabiliza todo. El objetivo: estabilizar el flujo y crear tu primer colchón.',
     ms:[{t:'Ingresos cubren gastos cada mes',s:'Sin usar crédito ni consumir ahorros'},{t:'1 mes de gastos esenciales guardado',s:'Renta + servicios + comida + transporte básico'}],
-    calcTotal(d){
-      const g=parseFloat(d.s1_gastos)||0,a=parseFloat(d.s1_ahorro)||0;
-      const p1=d.s1_flujo==='true'?100:0;
-      const p2=g>0?pc(a,g):0;
-      return Math.round((p1+p2)/2);
-    },
+    calcTotal(d){const g=parseFloat(d.s1_gastos)||0,a=parseFloat(d.s1_ahorro)||0;return Math.round(((d.s1_flujo==='true'?100:0)+( g>0?pc(a,g):0))/2);},
     inputs(d){
       const g=d.s1_gastos||'',a=d.s1_ahorro||'',fok=d.s1_flujo==='true';
       const p1=fok?100:0,p2=(parseFloat(g)>0)?pc(parseFloat(a)||0,parseFloat(g)):0;
@@ -190,8 +212,8 @@ const ST = {
           <div class="tnote">Marca cuando tu ingreso cubra los gastos de forma consistente sin usar crédito.</div>
         </div>
         <div class="tracker-item">
-          <div class="t-item-head"><span>Meta: 1 mes de reserva</span><span class="t-pct" style="color:#E24B4A" id="pct_s1_res">${p2}%</span></div>
-          <div id="bar_s1_res">${bar(p2,'#E24B4A')}</div>
+          <div class="t-item-head"><span>Meta: 1 mes de reserva</span><span class="t-pct" style="color:#E24B4A" id="pct_s1">${p2}%</span></div>
+          <div id="bar_s1">${bar(p2,'#E24B4A')}</div>
           <div class="input-row"><span class="ilabel">Gastos esenciales/mes $</span><input class="tinput" type="number" id="s1_gastos" placeholder="ej. 2500" value="${g}" oninput="live1()"/></div>
           <div class="input-row" style="margin-top:5px"><span class="ilabel">Ahorro actual $</span><input class="tinput" type="number" id="s1_ahorro" placeholder="ej. 800" value="${a}" oninput="live1()"/></div>
           <div class="tnote" id="note_s1">${note}</div>
@@ -206,17 +228,14 @@ const ST = {
     segs:[{k:'s2_ss',l:'Seguro de salud'},{k:'s2_sv',l:'Seguro de vida'},{k:'s2_sa',l:'Seguro de auto'},{k:'s2_sp',l:'Seguro de propiedad / renta'}],
     ests:[{k:'s2_eb',l:'Beneficiarios designados en cuentas'},{k:'s2_et',l:'Testamento / will firmado'},{k:'s2_ed',l:'Directiva médica / POA salud'}],
     calcTotal(d){
-      const ma=parseFloat(d.s2_meses)||0,mm=parseFloat(d.s2_meta)||6;
-      const dv=parseFloat(d.s2_deuda)||100;
+      const ma=parseFloat(d.s2_meses)||0,mm=parseFloat(d.s2_meta)||6,dv=parseFloat(d.s2_deuda)||100;
       const p1=pc(ma,mm),p2=dv<=36?100:Math.max(0,Math.round((1-(dv-36)/64)*100));
-      const p3=chkPct(this.segs,d),p4=chkPct(this.ests,d);
-      return Math.round((p1+p2+p3+p4)/4);
+      return Math.round((p1+p2+chkPct(this.segs,d)+chkPct(this.ests,d))/4);
     },
     inputs(d){
       const ma=d.s2_meses||'',mm=d.s2_meta||'6',dv=d.s2_deuda||'';
       const p1=pc(parseFloat(ma)||0,parseFloat(mm)||6);
       const dn=parseFloat(dv)||0,p2=dv!==''?(dn<=36?100:Math.max(0,Math.round((1-(dn-36)/64)*100))):0;
-      const p3=chkPct(this.segs,d),p4=chkPct(this.ests,d);
       return `
         <div class="tracker-item">
           <div class="t-item-head"><span>Reserva de emergencia</span><span class="t-pct" style="color:#EF9F27">${p1}%</span></div>
@@ -224,23 +243,21 @@ const ST = {
           <div class="input-row"><span class="ilabel">Tienes (meses)</span><input class="tinput" type="number" id="s2_meses" placeholder="ej. 3" value="${ma}" oninput="live(2)" style="max-width:80px"/>
           <span class="ilabel">Meta</span>
           <select class="tinput" id="s2_meta" onchange="live(2)" style="flex:none;width:80px">${['6','9','12','18','24','36'].map(v=>`<option value="${v}"${mm===v?' selected':''}>${v} m</option>`).join('')}</select></div>
-          <div class="tnote">Empleo estable=6m · Con dependientes=9m · Freelance=18m · Negocio=24m</div>
+          <div class="tnote">Estable sin dep=6m · Estable con dep=9m · Freelance=18m · Negocio=24m</div>
         </div>
         <div class="tracker-item">
           <div class="t-item-head"><span>Servicio de deuda (% ingreso neto)</span><span class="t-pct" style="color:#EF9F27">${p2}%</span></div>
           ${bar(p2,'#EF9F27')}
-          <div class="input-row"><span class="ilabel">% actual destinado a deudas</span><input class="tinput" type="number" id="s2_deuda" placeholder="ej. 40" value="${dv}" oninput="live(2)" style="max-width:100px"/></div>
+          <div class="input-row"><span class="ilabel">% actual en deudas</span><input class="tinput" type="number" id="s2_deuda" placeholder="ej. 40" value="${dv}" oninput="live(2)" style="max-width:100px"/></div>
           <div class="tnote">Meta: menos del 36%. Incluye hipoteca, tarjetas, auto y todos los préstamos.</div>
         </div>
         <div class="tracker-item">
-          <div class="t-item-head"><span>Seguros fundamentales</span><span class="t-pct" style="color:#EF9F27">${p3}%</span></div>
-          ${bar(p3,'#EF9F27')}
-          ${checks(this.segs,d,'#EF9F27')}
+          <div class="t-item-head"><span>Seguros fundamentales</span><span class="t-pct" style="color:#EF9F27">${chkPct(this.segs,d)}%</span></div>
+          ${bar(chkPct(this.segs,d),'#EF9F27')}${checks(this.segs,d,'#EF9F27')}
         </div>
         <div class="tracker-item">
-          <div class="t-item-head"><span>Herencia básica</span><span class="t-pct" style="color:#EF9F27">${p4}%</span></div>
-          ${bar(p4,'#EF9F27')}
-          ${checks(this.ests,d,'#EF9F27')}
+          <div class="t-item-head"><span>Herencia básica</span><span class="t-pct" style="color:#EF9F27">${chkPct(this.ests,d)}%</span></div>
+          ${bar(chkPct(this.ests,d),'#EF9F27')}${checks(this.ests,d,'#EF9F27')}
         </div>`;
     }
   },
@@ -250,32 +267,31 @@ const ST = {
     desc:'Estás protegido. El objetivo cambia: construir riqueza de forma consistente. Inviertes, diversificas y comienzas a generar ingresos aunque no estés trabajando.',
     ms:[{t:'Patrimonio en trayectoria Stanley Great',s:'Meta: edad ÷ 5 × ingreso anual'},{t:'Ahorras e inviertes el 20% o más',s:'Automatizado, antes de gastar'},{t:'Ingresos pasivos cubren 25–50% de gastos',s:'Rentas, dividendos, negocios, regalías'},{t:'Deuda vs activos menor al 30%',s:'Tu patrimonio crece más que tus deudas'}],
     calcTotal(d){
-      const ed=parseFloat(d.s3_edad)||30,in_=parseFloat(d.s3_ingreso)||0,pat=parseFloat(d.s3_pat)||0;
+      const ed=parseFloat(d.s3_edad)||30,inc=parseFloat(d.s3_ingreso)||0,pat=parseFloat(d.s3_pat)||0;
       const ah=parseFloat(d.s3_ahorro)||0,pas=parseFloat(d.s3_pasivo)||0,dr=parseFloat(d.s3_dr)||100;
-      const meta=in_*(ed/5);
-      const p1=meta>0?pc(pat,meta):0,p2=pc(ah,20),p3=pc(pas,25);
+      const meta=inc*(ed/5);
       const p4=dr<=30?100:Math.max(0,Math.round((1-(dr-30)/70)*100));
-      return Math.round((p1+p2+p3+p4)/4);
+      return Math.round(((meta>0?pc(pat,meta):0)+pc(ah,20)+pc(pas,25)+p4)/4);
     },
     inputs(d){
-      const ed=d.s3_edad||'',in_=d.s3_ingreso||'',pat=d.s3_pat||'',ah=d.s3_ahorro||'',pas=d.s3_pasivo||'',dr=d.s3_dr||'';
-      const meta=(parseFloat(ed)>0&&parseFloat(in_)>0)?parseFloat(in_)*(parseFloat(ed)/5):0;
+      const ed=d.s3_edad||'',inc=d.s3_ingreso||'',pat=d.s3_pat||'',ah=d.s3_ahorro||'',pas=d.s3_pasivo||'',dr=d.s3_dr||'';
+      const meta=(parseFloat(ed)>0&&parseFloat(inc)>0)?parseFloat(inc)*(parseFloat(ed)/5):0;
       const p1=meta>0?pc(parseFloat(pat)||0,meta):0,p2=pc(parseFloat(ah)||0,20),p3=pc(parseFloat(pas)||0,25);
       const drv=parseFloat(dr)||0,p4=dr!==''?(drv<=30?100:Math.max(0,Math.round((1-(drv-30)/70)*100))):0;
       return `
         <div class="tracker-item">
           <div class="t-item-head"><span>Patrimonio neto (Stanley Great)</span><span class="t-pct" style="color:#378ADD">${p1}%</span></div>
           ${bar(p1,'#378ADD')}
-          <div class="input-row"><span class="ilabel">Edad</span><input class="tinput" type="number" id="s3_edad" placeholder="40" value="${ed}" oninput="live(3)" style="max-width:72px"/>
-          <span class="ilabel">Ingreso anual $</span><input class="tinput" type="number" id="s3_ingreso" placeholder="ej. 60000" value="${in_}" oninput="live(3)"/></div>
+          <div class="input-row"><span class="ilabel">Edad</span><input class="tinput" type="number" id="s3_edad" placeholder="40" value="${ed}" oninput="live(3)" style="max-width:70px"/>
+          <span class="ilabel">Ingreso anual $</span><input class="tinput" type="number" id="s3_ingreso" placeholder="ej. 60000" value="${inc}" oninput="live(3)"/></div>
           <div class="input-row" style="margin-top:5px"><span class="ilabel">Patrimonio neto actual $</span><input class="tinput" type="number" id="s3_pat" placeholder="ej. 120000" value="${pat}" oninput="live(3)"/></div>
-          <div class="tnote">${meta>0?`Meta: $${Math.round(meta).toLocaleString()} (${parseFloat(ed)||0} ÷ 5 × ingreso anual)`:'Ingresa tu edad e ingreso para calcular tu meta.'}</div>
+          <div class="tnote">${meta>0?`Meta: $${Math.round(meta).toLocaleString()} (${parseFloat(ed)||0} ÷ 5 × ingreso)`:'Ingresa tu edad e ingreso para calcular tu meta.'}</div>
         </div>
         <div class="tracker-item">
           <div class="t-item-head"><span>Tasa de ahorro / inversión</span><span class="t-pct" style="color:#378ADD">${p2}%</span></div>
           ${bar(p2,'#378ADD')}
           <div class="input-row"><span class="ilabel">% que ahorras/inviertes hoy</span><input class="tinput" type="number" id="s3_ahorro" placeholder="ej. 15" value="${ah}" oninput="live(3)" style="max-width:100px"/></div>
-          <div class="tnote">Meta: 20% o más de tu ingreso. Automatizado antes de gastar.</div>
+          <div class="tnote">Meta: 20% o más. Automatizado antes de gastar.</div>
         </div>
         <div class="tracker-item">
           <div class="t-item-head"><span>Ingresos pasivos (% de gastos)</span><span class="t-pct" style="color:#378ADD">${p3}%</span></div>
@@ -299,32 +315,29 @@ const ST = {
     ests:[{k:'s4_eb',l:'Beneficiarios y co-ownership establecidos'},{k:'s4_et',l:'Testamento / will actualizado'},{k:'s4_ed',l:'Directiva médica y POA financiero'},{k:'s4_etr',l:'Trust o estructura patrimonial activa'}],
     calcTotal(d){
       const pas=parseFloat(d.s4_pasivo)||0,dv=parseFloat(d.s4_deuda)||100;
-      const p1=pc(pas,100),p2=dv<=10?100:Math.max(0,Math.round((1-(dv-10)/90)*100));
-      const p3=chkPct(this.ests,d);
-      return Math.round((p1+p2+p3)/3);
+      const p2=dv<=10?100:Math.max(0,Math.round((1-(dv-10)/90)*100));
+      return Math.round((pc(pas,100)+p2+chkPct(this.ests,d))/3);
     },
     inputs(d){
       const pas=d.s4_pasivo||'',dv=d.s4_deuda||'';
-      const pv=parseFloat(pas)||0,p1=pc(pv,100);
+      const p1=pc(parseFloat(pas)||0,100);
       const dvn=parseFloat(dv)||0,p2=dv!==''?(dvn<=10?100:Math.max(0,Math.round((1-(dvn-10)/90)*100))):0;
-      const p3=chkPct(this.ests,d);
       return `
         <div class="tracker-item">
           <div class="t-item-head"><span>Ingresos pasivos vs gastos totales</span><span class="t-pct" style="color:#639922">${p1}%</span></div>
           ${bar(p1,'#639922')}
           <div class="input-row"><span class="ilabel">% gastos cubiertos por pasivos</span><input class="tinput" type="number" id="s4_pasivo" placeholder="ej. 70" value="${pas}" oninput="live(4)" style="max-width:100px"/></div>
-          <div class="tnote">Meta: 100%. Cuando llegues aquí, el trabajo es completamente opcional.</div>
+          <div class="tnote">Meta: 100%. Cuando llegues aquí el trabajo es completamente opcional.</div>
         </div>
         <div class="tracker-item">
           <div class="t-item-head"><span>Servicio de deuda (% ingreso)</span><span class="t-pct" style="color:#639922">${p2}%</span></div>
           ${bar(p2,'#639922')}
-          <div class="input-row"><span class="ilabel">% ingreso destinado a deudas</span><input class="tinput" type="number" id="s4_deuda" placeholder="ej. 18" value="${dv}" oninput="live(4)" style="max-width:100px"/></div>
+          <div class="input-row"><span class="ilabel">% ingreso en deudas</span><input class="tinput" type="number" id="s4_deuda" placeholder="ej. 18" value="${dv}" oninput="live(4)" style="max-width:100px"/></div>
           <div class="tnote">Meta: menos del 10%. Solo hipoteca productiva u optimizada.</div>
         </div>
         <div class="tracker-item">
-          <div class="t-item-head"><span>Estate planning completo</span><span class="t-pct" style="color:#639922">${p3}%</span></div>
-          ${bar(p3,'#639922')}
-          ${checks(this.ests,d,'#639922')}
+          <div class="t-item-head"><span>Estate planning completo</span><span class="t-pct" style="color:#639922">${chkPct(this.ests,d)}%</span></div>
+          ${bar(chkPct(this.ests,d),'#639922')}${checks(this.ests,d,'#639922')}
         </div>`;
     }
   },
@@ -342,19 +355,40 @@ const ST = {
   }
 };
 
-let cur=null;
+let cur=null,transformed=false;
 
-function show(n){
-  const panel=document.getElementById('infoPanel');
-  const d=ST[n];const stored=ld();
-  document.querySelectorAll('.slice').forEach(s=>s.classList.remove('active'));
-  document.querySelectorAll('.sdot').forEach(s=>s.classList.remove('active'));
-  document.getElementById('s'+n).classList.add('active');
-  document.getElementById('dot'+n).classList.add('active');
+function selectStage(n){
+  if(!transformed) transform();
   cur=n;
-  panel.classList.add('fading');
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+  document.getElementById('st'+n).classList.add('active');
+  renderContent(n);
+  if(transformed) document.getElementById('contentPanel').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function transform(){
+  transformed=true;
+  // shrink header
+  const hdr=document.getElementById('header');
+  hdr.style.marginBottom='24px';
+  // hide pyramid
+  const pc2=document.getElementById('pyramidCenter');
+  pc2.style.opacity='0';
+  pc2.style.transform='scale(0.92)';
+  pc2.style.pointerEvents='none';
+  setTimeout(()=>{pc2.style.display='none';},350);
+  // show stepper
   setTimeout(()=>{
-    const tot=d.calcTotal(stored);
+    document.getElementById('stepperWrap').style.display='block';
+    document.getElementById('contentPanel').style.display='block';
+  },200);
+}
+
+function renderContent(n){
+  const d=ST[n],stored=ld(),tot=d.calcTotal(stored);
+  const panel=document.getElementById('contentPanel');
+  panel.style.opacity='0';
+  setTimeout(()=>{
     panel.innerHTML=`
       <div class="info-top">
         <div class="info-badge" style="background:${d.bb};color:${d.bc}">${d.badge}</div>
@@ -378,8 +412,9 @@ function show(n){
           </div>
         </div>
       </div>`;
-    panel.classList.remove('fading');
-  },180);
+    panel.style.opacity='1';
+    panel.style.transition='opacity .25s';
+  },120);
 }
 
 function tog(key,row){
@@ -387,8 +422,8 @@ function tog(key,row){
   const cb=document.getElementById('cb_'+key);
   const cl=document.getElementById('cl_'+key);
   const col=ST[cur].col;
-  if(cb) cb.innerHTML=tick(!was,col);
-  if(cl){cl.classList.toggle('done',!was);}
+  if(cb)cb.innerHTML=tick(!was,col);
+  if(cl)cl.classList.toggle('done',!was);
   refreshRing(cur);
 }
 
@@ -398,10 +433,8 @@ function live1(){
   const a=parseFloat(document.getElementById('s1_ahorro')?.value)||0;
   d.s1_gastos=g||'';d.s1_ahorro=a||'';sv(d);
   const p=g>0?pc(a,g):0;
-  const bf=document.querySelector('#tinputs_1 .pbar-fill:last-of-type');
-  if(bf)bf.style.width=p+'%';
-  const pe=document.getElementById('pct_s1_res');if(pe)pe.textContent=p+'%';
-  const bd=document.getElementById('bar_s1_res');if(bd)bd.innerHTML=`<div class="pbar-bg"><div class="pbar-fill" style="width:${p}%;background:#E24B4A"></div></div>`;
+  const bd=document.getElementById('bar_s1');if(bd)bd.innerHTML=`<div class="pbar-bg"><div class="pbar-fill" style="width:${p}%;background:#E24B4A"></div></div>`;
+  const pe=document.getElementById('pct_s1');if(pe)pe.textContent=p+'%';
   const ne=document.getElementById('note_s1');if(ne)ne.textContent=g?`Meta: $${g.toLocaleString()} · Llevas $${a.toLocaleString()} (${p}%)`:'Ingresa tus gastos esenciales para ver tu avance.';
   refreshRing(1);
 }
@@ -410,8 +443,8 @@ function live(n){
   const d=ld();
   document.querySelectorAll(`#tinputs_${n} input,#tinputs_${n} select`).forEach(f=>{if(f.id)d[f.id]=f.value;});
   sv(d);
-  const tinputs=document.getElementById(`tinputs_${n}`);
-  if(tinputs)tinputs.innerHTML=ST[n].inputs(d);
+  const t=document.getElementById(`tinputs_${n}`);
+  if(t)t.innerHTML=ST[n].inputs(d);
   refreshRing(n);
 }
 
@@ -428,6 +461,15 @@ function saveN(n){
   const m=document.getElementById(`smsg_${n}`);
   if(m){m.classList.add('show');setTimeout(()=>m.classList.remove('show'),2000);}
 }
+
+/* Arrow shapes for stepper via CSS clip-path */
+const steps=document.querySelectorAll('.step');
+steps.forEach((s,i)=>{
+  if(i<steps.length-1){
+    s.style.clipPath='polygon(0 0,calc(100% - 14px) 0,100% 50%,calc(100% - 14px) 100%,0 100%)';
+    s.style.marginRight='-1px';
+  }
+});
 </script>
 </body>
 </html>
